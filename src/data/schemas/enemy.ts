@@ -16,6 +16,13 @@ export const EnemySchema = z.object({
     .boolean()
     .describe('heavy enemies shove the hero on contact: knockback + ~0.4s control loss'),
   eliteEligible: z.boolean().describe('can spawn crowned (elite modifier)'),
+  frontalBlock: z
+    .object({
+      arcDegrees: z.number().gt(0).lte(360),
+      multiplier: z.number().min(0).lt(1).describe('damage factor for hits from the front'),
+    })
+    .optional()
+    .describe('Shieldbearer: reduced damage from sources ahead of it — flank it or shoot it from behind'),
   spriteRef: SpriteRefSchema,
 });
 export type Enemy = z.infer<typeof EnemySchema>;

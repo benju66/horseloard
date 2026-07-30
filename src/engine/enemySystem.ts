@@ -1,4 +1,4 @@
-import type { Enemy } from '../data/schemas';
+import type { EliteConfig, Enemy } from '../data/schemas';
 import type { IdGenerator } from './ids';
 import type { LanePath } from './path';
 
@@ -16,6 +16,7 @@ export interface EnemyInstance {
   readonly config: Enemy;
   readonly laneId: string;
   readonly maxHp: number;
+  readonly isElite: boolean;
   hp: number;
   distance: number;
   state: EnemyState;
@@ -25,6 +26,14 @@ export interface EnemyInstance {
   /** siege position assigned by the GateSystem while to-slot / at-slot */
   slotX: number;
   slotY: number;
+  /** normalized travel direction — the shieldbearer's shield faces this way */
+  facingX: number;
+  facingY: number;
+  /** movement debuff: 1 = none, 0 = frozen. Applied while slowRemaining > 0. */
+  slowFactor: number;
+  slowRemaining: number;
+  /** damage taken multiplier while slowed (Brittle marks) */
+  vulnerability: number;
 }
 
 /**
@@ -35,8 +44,11 @@ export class EnemySystem {
   private readonly configs: Map<string, Enemy>;
   private readonly lanes: Map<string, LanePath>;
   private readonly ids: IdGenerator;
+  private readonly elite: EliteConfig | null;
+  private readonly rng: () => number;
   private readonly list: EnemyInstance[] = [];
   private readonly byId = new Map<number, EnemyInstance>();
+  private readonly scratchDir = { x: 0, y: 1 };
 
   /** Listener arrays — the sim and the renderer both subscribe. */
   readonly onSpawn: Array<(e: EnemyInstance) => void> = [];
@@ -44,10 +56,18 @@ export class EnemySystem {
   readonly onReachEnd: Array<(e: EnemyInstance) => void> = [];
   readonly onDamaged: Array<(e: EnemyInstance, amount: number) => void> = [];
 
-  constructor(configs: readonly Enemy[], lanes: Map<string, LanePath>, ids: IdGenerator) {
+  constructor(
+    configs: readonly Enemy[],
+    lanes: Map<string, LanePath>,
+    ids: IdGenerator,
+    elite: EliteConfig | null = null,
+    rng: () => number = Math.random,
+  ) {
     this.configs = new Map(configs.map((c) => [c.id, c]));
     this.lanes = lanes;
     this.ids = ids;
+    this.elite = elite;
+    this.rng = rng;
   }
 
   spawn(enemyId: string, laneId: string, hpMultiplier: number): EnemyInstance {
@@ -56,12 +76,16 @@ export class EnemySystem {
     const lane = this.lanes.get(laneId);
     if (!lane) throw new Error(`EnemySystem: unknown lane "${laneId}"`);
 
-    const maxHp = Math.round(config.hp * hpMultiplier);
+    const isElite =
+      this.elite !== null && config.eliteEligible && this.rng() < this.elite.chance;
+    const eliteMult = isElite ? this.elite!.hpMultiplier : 1;
+    const maxHp = Math.round(config.hp * hpMultiplier * eliteMult);
     const e: EnemyInstance = {
       id: this.ids.allocate(),
       config,
       laneId,
       maxHp,
+      isElite,
       hp: maxHp,
       distance: 0,
       state: 'walking',
@@ -69,8 +93,16 @@ export class EnemySystem {
       y: 0,
       slotX: 0,
       slotY: 0,
+      facingX: 0,
+      facingY: 1,
+      slowFactor: 1,
+      slowRemaining: 0,
+      vulnerability: 1,
     };
     lane.positionAt(0, e);
+    const dir = lane.directionAt(0, this.scratchDir);
+    e.facingX = dir.x;
+    e.facingY = dir.y;
     this.list.push(e);
     this.byId.set(e.id, e);
     for (const fn of this.onSpawn) fn(e);
@@ -79,9 +111,19 @@ export class EnemySystem {
 
   tick(dt: number): void {
     for (const e of this.list) {
+      if (e.slowRemaining > 0) {
+        e.slowRemaining -= dt;
+        if (e.slowRemaining <= 0) {
+          e.slowRemaining = 0;
+          e.slowFactor = 1;
+          e.vulnerability = 1;
+        }
+      }
+      const speed = e.config.speed * (e.slowRemaining > 0 ? e.slowFactor : 1);
+
       if (e.state === 'walking') {
         const lane = this.lanes.get(e.laneId)!;
-        e.distance += e.config.speed * dt;
+        e.distance += speed * dt;
         if (e.distance >= lane.totalLength) {
           e.distance = lane.totalLength;
           lane.positionAt(e.distance, e);
@@ -91,36 +133,69 @@ export class EnemySystem {
           for (const fn of this.onReachEnd) fn(e);
         } else {
           lane.positionAt(e.distance, e);
+          const dir = lane.directionAt(e.distance, this.scratchDir);
+          e.facingX = dir.x;
+          e.facingY = dir.y;
         }
       } else if (e.state === 'to-slot') {
         const dx = e.slotX - e.x;
         const dy = e.slotY - e.y;
         const dist = Math.hypot(dx, dy);
-        const step = e.config.speed * dt;
+        const step = speed * dt;
         if (dist <= Math.max(step, 2)) {
           e.x = e.slotX;
           e.y = e.slotY;
           e.state = 'at-slot';
         } else {
-          e.x += (dx / dist) * step;
-          e.y += (dy / dist) * step;
+          e.facingX = dx / dist;
+          e.facingY = dy / dist;
+          e.x += e.facingX * step;
+          e.y += e.facingY * step;
         }
       }
       // 'at-slot': stands its ground; the GateSystem decides if it deals siege damage
     }
   }
 
-  /** Returns true if the hit was lethal. Dead enemies are removed immediately. */
-  applyDamage(id: number, amount: number): boolean {
+  /**
+   * Returns true if the hit was lethal. Pass the damage source position so
+   * frontal-block enemies (Shieldbearer) can reduce damage from ahead —
+   * omitting it means the hit ignores facing (auras, blasts).
+   */
+  applyDamage(id: number, amount: number, sourceX?: number, sourceY?: number): boolean {
     const e = this.byId.get(id);
     if (!e) return false;
-    e.hp -= amount;
-    for (const fn of this.onDamaged) fn(e, amount);
+
+    let dealt = amount;
+    const block = e.config.frontalBlock;
+    if (block && sourceX !== undefined && sourceY !== undefined) {
+      const dx = sourceX - e.x;
+      const dy = sourceY - e.y;
+      const d = Math.hypot(dx, dy);
+      if (d > 0.001) {
+        const cos = (dx * e.facingX + dy * e.facingY) / d;
+        const halfArc = (block.arcDegrees / 2) * (Math.PI / 180);
+        if (cos >= Math.cos(halfArc)) dealt *= block.multiplier;
+      }
+    }
+    if (e.slowRemaining > 0 && e.vulnerability > 1) dealt *= e.vulnerability;
+
+    e.hp -= dealt;
+    for (const fn of this.onDamaged) fn(e, dealt);
     if (e.hp > 0) return false;
     e.hp = 0;
     this.remove(e);
     for (const fn of this.onDeath) fn(e);
     return true;
+  }
+
+  /** Slow (or freeze at factor 0). Stronger slows win; durations refresh. */
+  applySlow(id: number, factor: number, duration: number, vulnerability = 1): void {
+    const e = this.byId.get(id);
+    if (!e) return;
+    if (e.slowRemaining <= 0 || factor <= e.slowFactor) e.slowFactor = factor;
+    e.slowRemaining = Math.max(e.slowRemaining, duration);
+    if (vulnerability > e.vulnerability) e.vulnerability = vulnerability;
   }
 
   private remove(e: EnemyInstance): void {

@@ -14,6 +14,8 @@ export interface PlotState {
   /** total coins ever spent on this instance — sell refunds a fraction of this */
   invested: number;
   cooldown: number;
+  /** seconds until the next income drop (economy towers) */
+  incomeCooldown: number;
 }
 
 /**
@@ -28,14 +30,25 @@ export class TowerSystem {
   private readonly plotsById = new Map<string, PlotState>();
   private readonly enemies: EnemySystem;
   private readonly projectiles: ProjectileSystem;
+  private readonly rng: () => number;
 
-  constructor(file: TowersFile, plots: readonly Plot[], enemies: EnemySystem, projectiles: ProjectileSystem) {
-    for (const p of file.projectiles) {
-      if (p.behavior === 'aura') {
-        throw new Error(`TowerSystem: projectile "${p.id}" uses "aura" — not implemented until M1 content needs it`);
-      }
-      this.projectilesById.set(p.id, p);
-    }
+  /** Rally Horn: global fire-rate multiplier while remaining > 0 */
+  private rateBuffMultiplier = 1;
+  private rateBuffRemaining = 0;
+
+  /** Economy towers drop coins beside themselves; the sim routes this to the EconomySystem. */
+  readonly onIncome: Array<(x: number, y: number, value: number) => void> = [];
+  /** Aura pulse fired (for rendering) */
+  readonly onAuraPulse: Array<(plot: PlotState, radius: number) => void> = [];
+
+  constructor(
+    file: TowersFile,
+    plots: readonly Plot[],
+    enemies: EnemySystem,
+    projectiles: ProjectileSystem,
+    rng: () => number = Math.random,
+  ) {
+    for (const p of file.projectiles) this.projectilesById.set(p.id, p);
     for (const t of file.towers) this.towersById.set(t.id, t);
     for (const p of plots) {
       const state: PlotState = {
@@ -47,12 +60,14 @@ export class TowerSystem {
         branchId: null,
         invested: 0,
         cooldown: 0,
+        incomeCooldown: 0,
       };
       this.plotList.push(state);
       this.plotsById.set(p.id, state);
     }
     this.enemies = enemies;
     this.projectiles = projectiles;
+    this.rng = rng;
   }
 
   /** The buildable roster, in file order. */
@@ -81,6 +96,14 @@ export class TowerSystem {
       return branch ? branch.stats : null;
     }
     return tower.levels[plot.level - 1] ?? null;
+  }
+
+  /** The projectile def a built plot fires/pulses with (branch override wins). */
+  projectileDef(plot: PlotState): Projectile | null {
+    const tower = plot.towerId ? this.towersById.get(plot.towerId) : undefined;
+    if (!tower) return null;
+    const id = this.projectileIdFor(tower, plot.branchId);
+    return id ? (this.projectilesById.get(id) ?? null) : null;
   }
 
   buildCost(towerId: string): number | null {
@@ -116,6 +139,7 @@ export class TowerSystem {
     plot.branchId = null;
     plot.invested = cost;
     plot.cooldown = 0;
+    plot.incomeCooldown = this.stats(plot)?.income?.interval ?? 0;
     return true;
   }
 
@@ -150,26 +174,103 @@ export class TowerSystem {
     plot.branchId = null;
     plot.invested = 0;
     plot.cooldown = 0;
+    plot.incomeCooldown = 0;
     return refund;
   }
 
+  /** Rally Horn: every tower fires faster for a while. */
+  applyRateBuff(multiplier: number, duration: number): void {
+    this.rateBuffMultiplier = multiplier;
+    this.rateBuffRemaining = duration;
+  }
+
+  get rateBuffActive(): boolean {
+    return this.rateBuffRemaining > 0;
+  }
+
   tick(dt: number): void {
+    if (this.rateBuffRemaining > 0) this.rateBuffRemaining -= dt;
+
     for (const plot of this.plotList) {
       if (plot.towerId === null) continue;
+      const stats = this.stats(plot);
+      if (!stats) continue;
+
+      // Economy: drop coins beside the tower — ride by to scoop them.
+      if (stats.income) {
+        plot.incomeCooldown -= dt;
+        if (plot.incomeCooldown <= 0) {
+          plot.incomeCooldown = stats.income.interval;
+          for (const fn of this.onIncome) fn(plot.x, plot.y, stats.income.value);
+        }
+      }
+
+      const def = this.projectileDef(plot);
+      if (def?.behavior === 'aura') {
+        this.tickAura(plot, stats, def, dt);
+        continue;
+      }
+
       const tower = this.towersById.get(plot.towerId)!;
       if (tower.targeting === 'none') continue;
       plot.cooldown -= dt;
       if (plot.cooldown > 0) continue;
-      const stats = this.stats(plot);
-      if (!stats || stats.damage <= 0) continue;
+      if (!def || stats.damage <= 0) continue;
       const target = this.acquire(tower.targeting, plot.x, plot.y, stats.range);
       if (!target) continue;
-      const projectileId = this.projectileIdFor(tower, plot.branchId);
-      const def = projectileId ? this.projectilesById.get(projectileId) : undefined;
-      if (!def || def.behavior === 'aura') continue; // aura rejected at construction; narrows the type here
-      this.projectiles.spawn(plot.x, plot.y - 26, target.id, stats.damage, def, false);
-      plot.cooldown = stats.fireInterval;
+      this.projectiles.spawn(plot.x, plot.y - 26, target.id, this.rollDamage(plot, stats), def, false);
+      plot.cooldown = this.buffedInterval(stats.fireInterval);
     }
+  }
+
+  private tickAura(
+    plot: PlotState,
+    stats: TowerStats,
+    def: Extract<Projectile, { behavior: 'aura' }>,
+    dt: number,
+  ): void {
+    plot.cooldown -= dt;
+    if (plot.cooldown > 0) return;
+    plot.cooldown = this.buffedInterval(def.tickInterval);
+    for (const fn of this.onAuraPulse) fn(plot, def.radius);
+    const rSq = def.radius * def.radius;
+    const damage = this.rollDamage(plot, stats);
+    // Slow first, then damage — Brittle's vulnerability applies to its own pulse.
+    for (const e of this.enemies.enemies) {
+      const dx = e.x - plot.x;
+      const dy = e.y - plot.y;
+      if (dx * dx + dy * dy > rSq) continue;
+      if (def.slow) this.enemies.applySlow(e.id, def.slow.factor, def.slow.duration, def.vulnerability ?? 1);
+    }
+    if (damage > 0) {
+      // Second pass with a snapshot-free loop is unsafe under removal; collect then apply.
+      const hits: number[] = [];
+      for (const e of this.enemies.enemies) {
+        const dx = e.x - plot.x;
+        const dy = e.y - plot.y;
+        if (dx * dx + dy * dy <= rSq) hits.push(e.id);
+      }
+      for (const id of hits) this.enemies.applyDamage(id, damage); // auras ignore shield facing
+    }
+  }
+
+  /** Crit roll (Sniper) × beacon auras from other plots (Beacon). */
+  private rollDamage(plot: PlotState, stats: TowerStats): number {
+    let damage = stats.damage;
+    if (stats.crit && this.rng() < stats.crit.chance) damage *= stats.crit.multiplier;
+    for (const other of this.plotList) {
+      if (other === plot || other.towerId === null) continue;
+      const aura = this.stats(other)?.towerAura;
+      if (!aura) continue;
+      const dx = plot.x - other.x;
+      const dy = plot.y - other.y;
+      if (dx * dx + dy * dy <= aura.radius * aura.radius) damage *= aura.damageMultiplier;
+    }
+    return damage;
+  }
+
+  private buffedInterval(interval: number): number {
+    return this.rateBuffRemaining > 0 ? interval / this.rateBuffMultiplier : interval;
   }
 
   private projectileIdFor(tower: Tower, branchId: string | null): string | null {

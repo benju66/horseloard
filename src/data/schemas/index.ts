@@ -11,3 +11,4 @@ export * from './wave';
 export * from './metatree';
 export * from './hero';
 export * from './economy';
+export * from './archetype';

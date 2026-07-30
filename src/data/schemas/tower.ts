@@ -11,11 +11,14 @@ const projectileBase = {
   hitSfxRef: SfxRefSchema.optional(),
 };
 
-/**
- * The four projectile behaviors the engine implements (DESIGN §5).
- * Status effects (slow, stun, crit) arrive with Frost Spire/branches in M1 as
- * optional fields on these variants — additive, non-breaking.
- */
+/** A movement debuff: factor 0 = frozen/stunned, 0.5 = half speed. */
+export const SlowEffectSchema = z.object({
+  factor: z.number().min(0).lt(1),
+  duration: z.number().positive().describe('seconds'),
+});
+export type SlowEffect = z.infer<typeof SlowEffectSchema>;
+
+/** The four projectile behaviors the engine implements (DESIGN §5). */
 export const ProjectileSchema = z.discriminatedUnion('behavior', [
   z.object({
     ...projectileBase,
@@ -31,20 +34,57 @@ export const ProjectileSchema = z.discriminatedUnion('behavior', [
     behavior: z.literal('aoe'),
     speed: z.number().positive().describe('world units per second'),
     radius: z.number().positive().describe('blast radius, world units'),
+    stun: SlowEffectSchema.optional().describe('applied to everything in the blast (Concussion)'),
+    bomblets: z
+      .object({
+        count: z.number().int().positive(),
+        damage: z.number().positive(),
+        radius: z.number().positive(),
+        spread: z.number().positive().describe('max offset of each sub-blast from the impact'),
+      })
+      .optional()
+      .describe('secondary explosions around the impact (Cluster)'),
   }),
   z.object({
     ...projectileBase,
     behavior: z.literal('aura'),
     radius: z.number().positive().describe('aura radius, world units'),
-    tickInterval: z.number().positive().describe('seconds between aura applications'),
+    tickInterval: z.number().positive().describe('seconds between aura pulses'),
+    slow: SlowEffectSchema.optional().describe('applied per pulse (Frost; factor 0 = Deep Freeze)'),
+    vulnerability: z
+      .number()
+      .gt(1)
+      .optional()
+      .describe('damage multiplier on enemies while slowed by this aura (Brittle)'),
   }),
 ]);
 export type Projectile = z.infer<typeof ProjectileSchema>;
 
 export const TowerStatsSchema = z.object({
-  damage: z.number().nonnegative(),
+  damage: z.number().nonnegative().describe('per shot, or per pulse for auras'),
   range: z.number().positive().describe('world units'),
-  fireInterval: z.number().positive().describe('seconds between shots'),
+  fireInterval: z.number().positive().describe('seconds between shots (auras use the def tickInterval)'),
+  crit: z
+    .object({
+      chance: z.number().gt(0).lte(1),
+      multiplier: z.number().gt(1),
+    })
+    .optional()
+    .describe('critical hits (Sniper)'),
+  income: z
+    .object({
+      value: z.number().int().positive(),
+      interval: z.number().positive().describe('seconds between coin drops'),
+    })
+    .optional()
+    .describe('economy towers: coins dropped beside the tower (Mill)'),
+  towerAura: z
+    .object({
+      radius: z.number().positive(),
+      damageMultiplier: z.number().gt(1),
+    })
+    .optional()
+    .describe('buffs the damage of other towers in radius (Beacon)'),
 });
 export type TowerStats = z.infer<typeof TowerStatsSchema>;
 
@@ -115,12 +155,23 @@ export const TowersFileSchema = z
       seenTowerIds.add(tower.id);
 
       if (tower.targeting === 'none') {
-        if (tower.projectileId !== null) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['towers', i, 'projectileId'],
-            message: 'towers with targeting "none" must have projectileId null',
-          });
+        // Non-targeting towers: no projectile (Mill) or an aura def (Frost Spire).
+        const ref = tower.projectileId;
+        if (ref !== null) {
+          const def = file.projectiles.find((p) => p.id === ref);
+          if (!def) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['towers', i, 'projectileId'],
+              message: `unknown projectile "${ref}" (known: ${[...projectileIds].join(', ')})`,
+            });
+          } else if (def.behavior !== 'aura') {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['towers', i, 'projectileId'],
+              message: 'towers with targeting "none" may only reference aura projectiles (or null)',
+            });
+          }
         }
       } else if (tower.projectileId === null) {
         ctx.addIssue({

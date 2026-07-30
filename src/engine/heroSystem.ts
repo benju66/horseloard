@@ -43,6 +43,15 @@ export class HeroSystem {
   private readonly staggerReadyAt = new Map<number, number>();
   private readonly bowProjectile: ProjectileDef;
 
+  /** Charge ability: gallop burst, boosted trample, stagger immunity (the escape tool). */
+  private chargeRemaining = 0;
+  private charge: {
+    speedMultiplier: number;
+    damage: number;
+    slowMultiplier: number;
+    slowDuration: number;
+  } | null = null;
+
   readonly onStagger: Array<(by: EnemyInstance) => void> = [];
   readonly onTrample: Array<(target: EnemyInstance) => void> = [];
 
@@ -69,6 +78,22 @@ export class HeroSystem {
     return this.controlLossRemaining > 0;
   }
 
+  get charging(): boolean {
+    return this.chargeRemaining > 0;
+  }
+
+  activateCharge(effect: {
+    duration: number;
+    speedMultiplier: number;
+    damage: number;
+    slowMultiplier: number;
+    slowDuration: number;
+  }): void {
+    this.chargeRemaining = effect.duration;
+    this.charge = effect;
+    this.controlLossRemaining = 0; // charging breaks an active shove — it's the escape tool
+  }
+
   get bowStats() {
     return this.config.bow.levels[this.bowLevel - 1]!;
   }
@@ -90,6 +115,10 @@ export class HeroSystem {
 
   tick(dt: number): void {
     this.time += dt;
+    if (this.chargeRemaining > 0) {
+      this.chargeRemaining -= dt;
+      if (this.chargeRemaining < 1e-9) this.chargeRemaining = 0;
+    }
     this.move(dt);
     this.resolveContacts();
     this.autoFire(dt);
@@ -105,14 +134,22 @@ export class HeroSystem {
     } else {
       let mx = this.input.x;
       let my = this.input.y;
-      const m = Math.hypot(mx, my);
+      let m = Math.hypot(mx, my);
+      if (this.charging && m <= INPUT_DEADZONE) {
+        // burst continues in the facing direction even with a loose stick
+        mx = this.dir;
+        my = 0;
+        m = 1;
+      }
       if (m > INPUT_DEADZONE) {
         if (m > 1) {
           mx /= m;
           my /= m;
         }
-        this.x += mx * this.config.moveSpeed * dt;
-        this.y += my * this.config.moveSpeed * dt;
+        const speed =
+          this.config.moveSpeed * (this.charging ? this.charge!.speedMultiplier : 1);
+        this.x += mx * speed * dt;
+        this.y += my * speed * dt;
         if (Math.abs(mx) > 0.1) this.dir = mx > 0 ? 1 : -1;
         this.moving = true;
       } else {
@@ -132,8 +169,13 @@ export class HeroSystem {
       const dy = this.y - e.y;
       if (dx * dx + dy * dy > reach * reach) continue;
 
-      // No chain-staggers: while already shoved, other heavies can't re-stagger (no stun-lock).
-      if (!this.staggered && e.config.staggersHero && (this.staggerReadyAt.get(e.id) ?? 0) <= this.time) {
+      // No chain-staggers; a charging hero is immune — Charge is the escape tool (DESIGN §4).
+      if (
+        !this.staggered &&
+        !this.charging &&
+        e.config.staggersHero &&
+        (this.staggerReadyAt.get(e.id) ?? 0) <= this.time
+      ) {
         this.staggerReadyAt.set(e.id, this.time + this.config.stagger.perEnemyCooldown);
         const dist = Math.hypot(dx, dy) || 1;
         const shoveSpeed = this.config.stagger.shoveDistance / this.config.stagger.controlLossDuration;
@@ -144,7 +186,12 @@ export class HeroSystem {
       } else if (this.moving && (this.trampleReadyAt.get(e.id) ?? 0) <= this.time) {
         this.trampleReadyAt.set(e.id, this.time + this.config.trample.perEnemyCooldown);
         for (const fn of this.onTrample) fn(e);
-        this.enemies.applyDamage(e.id, this.config.trample.damage);
+        if (this.charging && this.charge) {
+          this.enemies.applySlow(e.id, this.charge.slowMultiplier, this.charge.slowDuration);
+          this.enemies.applyDamage(e.id, this.charge.damage, this.x, this.y);
+        } else {
+          this.enemies.applyDamage(e.id, this.config.trample.damage, this.x, this.y);
+        }
       }
     }
   }

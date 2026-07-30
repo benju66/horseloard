@@ -30,5 +30,12 @@ export const EconomySchema = z.object({
     hpPerPurchase: z.number().int().positive().describe('gate HP restored per repair tap'),
     costPerHp: z.number().positive().describe('coins per HP restored'),
   }),
+  stars: z.object({
+    twoStarMaxDamageFraction: z
+      .number()
+      .gt(0)
+      .lt(1)
+      .describe('2★ if gate damage taken ≤ this fraction of max HP; 3★ = untouched; 1★ = survived'),
+  }),
 });
 export type Economy = z.infer<typeof EconomySchema>;

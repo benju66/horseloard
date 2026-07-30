@@ -1,4 +1,4 @@
-import type { Economy, EnemiesFile, Hero, MapDef, TowersFile, WaveSet } from '../data/schemas';
+import type { Ability, Economy, EnemiesFile, Hero, MapDef, TowersFile, WaveSet } from '../data/schemas';
 import { IdGenerator } from './ids';
 import { buildLanePaths, type LanePath } from './path';
 import { EnemySystem } from './enemySystem';
@@ -8,6 +8,7 @@ import { HeroSystem } from './heroSystem';
 import { EconomySystem } from './economySystem';
 import { TowerSystem } from './towerSystem';
 import { GateSystem } from './gateSystem';
+import { AbilitySystem } from './abilitySystem';
 
 /** Fixed simulation timestep. Rendering framerate is unrelated (CLAUDE.md #2). */
 export const SIM_DT = 1 / 60;
@@ -22,6 +23,10 @@ export interface SimData {
   hero: Hero;
   economy: Economy;
   towers: TowersFile;
+  /** empty array = no abilities (engine tests); the game passes the real roster */
+  abilities?: readonly Ability[];
+  /** ability ids force-unlocked beyond unlockedByDefault (meta-tree flags, M3) */
+  unlockedAbilityIds?: readonly string[];
 }
 
 /**
@@ -49,6 +54,7 @@ export class Simulation {
   readonly economy: EconomySystem;
   readonly towerSystem: TowerSystem;
   readonly gate: GateSystem;
+  readonly abilities: AbilitySystem;
 
   phase: SimPhase = 'build';
   kills = 0;
@@ -59,11 +65,17 @@ export class Simulation {
 
   constructor(data: SimData, rng: () => number = Math.random) {
     this.lanes = buildLanePaths(data.map);
-    this.enemySystem = new EnemySystem(data.enemies.enemies, this.lanes, this.ids);
+    this.enemySystem = new EnemySystem(
+      data.enemies.enemies,
+      this.lanes,
+      this.ids,
+      data.enemies.elite,
+      rng,
+    );
     this.waveRunner = new WaveRunner(data.waveSet, (enemyId, laneId, hpMultiplier) => {
       this.enemySystem.spawn(enemyId, laneId, hpMultiplier);
     });
-    this.projectileSystem = new ProjectileSystem(this.enemySystem);
+    this.projectileSystem = new ProjectileSystem(this.enemySystem, rng);
     this.hero = new HeroSystem(data.hero, data.map, this.enemySystem, this.projectileSystem);
     this.economy = new EconomySystem(data.economy, rng);
     this.towerSystem = new TowerSystem(
@@ -71,7 +83,20 @@ export class Simulation {
       data.map.plots,
       this.enemySystem,
       this.projectileSystem,
+      rng,
     );
+    this.abilities = new AbilitySystem(
+      data.abilities ?? [],
+      data.unlockedAbilityIds ?? [],
+      this.enemySystem,
+      this.hero,
+      this.towerSystem,
+    );
+
+    // Mills drop coins beside themselves — map safety converted into economy.
+    this.towerSystem.onIncome.push((x, y, value) => {
+      this.economy.spawnCoins(x, y, value);
+    });
 
     this.gate = new GateSystem(data.map.gate, this.enemySystem);
     this.gate.onDestroyed.push(() => {
@@ -79,9 +104,11 @@ export class Simulation {
     });
 
     // Kills drop coins where the enemy died — the loot line is the gameplay.
+    // Elites pay double (enemies.json elite.coinMultiplier).
     this.enemySystem.onDeath.push((e) => {
       this.kills++;
-      this.economy.spawnCoins(e.x, e.y, e.config.coinValue);
+      const mult = e.isElite ? data.enemies.elite.coinMultiplier : 1;
+      this.economy.spawnCoins(e.x, e.y, Math.round(e.config.coinValue * mult));
     });
   }
 
@@ -110,6 +137,7 @@ export class Simulation {
     this.gate.tick(SIM_DT);
     this.towerSystem.tick(SIM_DT);
     this.hero.tick(SIM_DT);
+    this.abilities.tick(SIM_DT);
     this.projectileSystem.tick(SIM_DT);
     this.economy.tick(SIM_DT, this.hero.x, this.hero.y, this.phase === 'wave');
 
@@ -215,5 +243,21 @@ export class Simulation {
     if (!quote || !this.economy.spend(quote.cost)) return false;
     this.gate.repair(quote.amount);
     return true;
+  }
+
+  castAbility(abilityId: string): boolean {
+    if (this.phase === 'defeat' || this.phase === 'done') return false;
+    return this.abilities.cast(abilityId);
+  }
+
+  /**
+   * Stars score on damage TAKEN, never HP remaining — repair aids survival,
+   * never the score chase (DESIGN §3).
+   */
+  stars(): 1 | 2 | 3 {
+    const taken = this.gate.totalDamageTaken;
+    if (taken <= 0) return 3;
+    const threshold = this.gate.maxHp * this.economy.config.stars.twoStarMaxDamageFraction;
+    return taken <= threshold ? 2 : 1;
   }
 }

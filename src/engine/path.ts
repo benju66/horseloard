@@ -66,6 +66,22 @@ export class LanePath {
     out.y = this.endY;
     return out;
   }
+
+  /** Normalized travel direction at distance d. Writes into `out`. */
+  directionAt(d: number, out: MutableVec2): MutableVec2 {
+    const clamped = Math.max(0, Math.min(d, this.totalLength));
+    for (const s of this.segments) {
+      if (clamped <= s.start + s.len) {
+        out.x = s.dx / s.len;
+        out.y = s.dy / s.len;
+        return out;
+      }
+    }
+    const last = this.segments[this.segments.length - 1]!;
+    out.x = last.dx / last.len;
+    out.y = last.dy / last.len;
+    return out;
+  }
 }
 
 /** Build every lane on a map, keyed by lane id. */

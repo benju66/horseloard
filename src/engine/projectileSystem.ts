@@ -1,14 +1,17 @@
+import type { SlowEffect } from '../data/schemas';
 import type { EnemySystem } from './enemySystem';
 
 /** Distance at which a projectile counts as connecting, on top of one tick's travel. */
 const HIT_SLOP = 6;
 
-/** The behavior subset the engine implements. Aura (Frost/Beacon) lands with M1 content. */
+/** Non-aura behaviors a projectile spawn can carry. Auras never spawn projectiles — towers pulse them. */
 export interface ProjectileDef {
   behavior: 'ballistic' | 'instant' | 'aoe';
   speed?: number;
   /** blast radius for 'aoe' */
   radius?: number;
+  stun?: SlowEffect;
+  bomblets?: { count: number; damage: number; radius: number; spread: number };
 }
 
 export interface ProjectileInstance {
@@ -25,6 +28,8 @@ export interface ProjectileInstance {
   damage: number;
   speed: number;
   aoeRadius: number; // 0 = single target
+  stun: SlowEffect | null;
+  bomblets: { count: number; damage: number; radius: number; spread: number } | null;
   fromHero: boolean;
 }
 
@@ -32,20 +37,25 @@ export interface ProjectileInstance {
  * Homing projectiles, pooled — spawn/despawn recycles instances so waves of
  * arrows never allocate per shot (CLAUDE.md #5). Prototype behavior: track a
  * live target; if it dies mid-flight, finish the flight to its last position.
- * AoE shots explode at the impact point regardless.
+ * AoE shots explode at the impact point regardless; Cluster splits into
+ * bomblets, Concussion stuns the blast.
  */
 export class ProjectileSystem {
   private readonly enemies: EnemySystem;
+  private readonly rng: () => number;
   private readonly live: ProjectileInstance[] = [];
   private readonly pool: ProjectileInstance[] = [];
   private readonly aoeScratch: number[] = [];
+
   private nextId = 1;
 
   readonly onSpawn: Array<(p: ProjectileInstance) => void> = [];
   readonly onDespawn: Array<(p: ProjectileInstance) => void> = [];
+  readonly onExplosion: Array<(x: number, y: number, radius: number) => void> = [];
 
-  constructor(enemies: EnemySystem) {
+  constructor(enemies: EnemySystem, rng: () => number = Math.random) {
     this.enemies = enemies;
+    this.rng = rng;
   }
 
   spawn(x: number, y: number, targetId: number, damage: number, def: ProjectileDef, fromHero: boolean): void {
@@ -53,7 +63,7 @@ export class ProjectileSystem {
     if (!target) return;
 
     if (def.behavior === 'instant') {
-      this.enemies.applyDamage(targetId, damage);
+      this.enemies.applyDamage(targetId, damage, x, y);
       return;
     }
 
@@ -69,6 +79,8 @@ export class ProjectileSystem {
       damage: 0,
       speed: 0,
       aoeRadius: 0,
+      stun: null,
+      bomblets: null,
       fromHero: false,
     };
     p.id = this.nextId++;
@@ -80,6 +92,8 @@ export class ProjectileSystem {
     p.damage = damage;
     p.speed = def.speed ?? 400;
     p.aoeRadius = def.behavior === 'aoe' ? (def.radius ?? 0) : 0;
+    p.stun = def.behavior === 'aoe' ? (def.stun ?? null) : null;
+    p.bomblets = def.behavior === 'aoe' ? (def.bomblets ?? null) : null;
     p.fromHero = fromHero;
     this.live.push(p);
     for (const fn of this.onSpawn) fn(p);
@@ -99,9 +113,22 @@ export class ProjectileSystem {
       const step = p.speed * dt;
       if (dist <= step + HIT_SLOP) {
         if (p.aoeRadius > 0) {
-          this.explode(p.targetX, p.targetY, p.aoeRadius, p.damage);
+          this.explode(p.targetX, p.targetY, p.aoeRadius, p.damage, p.stun);
+          if (p.bomblets) {
+            for (let k = 0; k < p.bomblets.count; k++) {
+              const angle = this.rng() * Math.PI * 2;
+              const r = p.bomblets.spread * (0.4 + this.rng() * 0.6);
+              this.explode(
+                p.targetX + Math.cos(angle) * r,
+                p.targetY + Math.sin(angle) * r,
+                p.bomblets.radius,
+                p.bomblets.damage,
+                null,
+              );
+            }
+          }
         } else if (target) {
-          this.enemies.applyDamage(target.id, p.damage);
+          this.enemies.applyDamage(target.id, p.damage, p.x, p.y);
         }
         this.release(i, p);
       } else {
@@ -113,7 +140,8 @@ export class ProjectileSystem {
     }
   }
 
-  private explode(x: number, y: number, radius: number, damage: number): void {
+  private explode(x: number, y: number, radius: number, damage: number, stun: SlowEffect | null): void {
+    for (const fn of this.onExplosion) fn(x, y, radius);
     // Collect ids first — applyDamage swap-removes from the list we'd be iterating.
     const hits = this.aoeScratch;
     hits.length = 0;
@@ -123,7 +151,10 @@ export class ProjectileSystem {
       const dy = e.y - y;
       if (dx * dx + dy * dy <= rSq) hits.push(e.id);
     }
-    for (const id of hits) this.enemies.applyDamage(id, damage);
+    for (const id of hits) {
+      if (stun) this.enemies.applySlow(id, stun.factor, stun.duration);
+      this.enemies.applyDamage(id, damage); // blasts ignore shield facing
+    }
   }
 
   private release(index: number, p: ProjectileInstance): void {

@@ -27,6 +27,7 @@ export const TEST_ECONOMY: Economy = {
   waveClearBonus: { base: 10, perWave: 3 },
   earlyStart: { windowSeconds: 12, maxBonus: 15 },
   repair: { hpPerPurchase: 20, costPerHp: 0.5 },
+  stars: { twoStarMaxDamageFraction: 0.3 },
 };
 
 /** Deterministic rng for tests: no coin scatter, no surprises. */
