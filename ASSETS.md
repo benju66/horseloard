@@ -18,5 +18,6 @@ commit that adds the asset.
 | `public/assets/sprites/mill-blades.png` (medievalStructure_14) | Kenney "Medieval RTS" 1.1 | CC0 | No |
 | `public/assets/sprites/gate.png` (medievalStructure_06) | Kenney "Medieval RTS" 1.1 | CC0 | No |
 | `public/assets/sprites/forge.png` (medievalStructure_20) | Kenney "Medieval RTS" 1.1 | CC0 | No |
+| `public/assets/sprites/hero.png` (4-frame gallop strip) | Generated (`scripts/generate-hero-sprites.py`, this repo) | CC0 / project-owned | No |
 
-Outstanding (DESIGN §10 "the one hard asset"): the mounted hero remains the in-repo vector composite (horse + rider drawn in GameScene). Hunt itch.io CC0 mounted packs or commission a directional sheet before publish.
+The mounted hero (DESIGN §10's "one hard asset") is generated in-repo — regenerate/iterate via the script. A commissioned directional sheet remains an optional upgrade if the game earns it.

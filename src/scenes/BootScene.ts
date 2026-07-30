@@ -35,6 +35,7 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     for (const key of SPRITE_KEYS) this.load.image(key, `assets/sprites/${key}.png`);
+    this.load.spritesheet('hero', 'assets/sprites/hero.png', { frameWidth: 128, frameHeight: 128 });
   }
 
   create(): void {

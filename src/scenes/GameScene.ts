@@ -94,6 +94,7 @@ export class GameScene extends Phaser.Scene {
   private ringG!: Phaser.GameObjects.Graphics;
   private towerSprites!: Map<string, Phaser.GameObjects.Sprite>;
   private millBlades!: Map<string, Phaser.GameObjects.Sprite>;
+  private heroSprite: Phaser.GameObjects.Sprite | null = null;
   private startLabel!: Phaser.GameObjects.Text;
   private fpsText: Phaser.GameObjects.Text | null = null;
   private abilityBar!: AbilityBar;
@@ -118,6 +119,7 @@ export class GameScene extends Phaser.Scene {
     this.plotMarkers = new Map();
     this.towerSprites = new Map();
     this.millBlades = new Map();
+    this.heroSprite = null;
     this.bubbles = [];
     this.bob = 0;
     this.ending = false;
@@ -156,6 +158,20 @@ export class GameScene extends Phaser.Scene {
     this.hpG = this.add.graphics().setDepth(11);
     this.arrowG = this.add.graphics().setDepth(14);
     this.heroG = this.add.graphics().setDepth(15);
+    if (this.textures.exists('hero')) {
+      if (!this.anims.exists('hero-gallop')) {
+        this.anims.create({
+          key: 'hero-gallop',
+          frames: this.anims.generateFrameNumbers('hero', { start: 1, end: 3 }),
+          frameRate: 11,
+          repeat: -1,
+        });
+      }
+      this.heroSprite = this.add
+        .sprite(this.sim.hero.x, this.sim.hero.y, 'hero', 0)
+        .setDisplaySize(76, 76)
+        .setDepth(15);
+    }
     this.buildHud();
 
     this.input.addPointer(2); // thumb + future ability taps
@@ -364,6 +380,33 @@ export class GameScene extends Phaser.Scene {
 
   private drawHero(dt: number): void {
     const hero = this.sim.hero;
+
+    if (this.heroSprite) {
+      // Sprite mode: shadow in graphics, body from the generated strip.
+      const g = this.heroG;
+      g.clear();
+      g.setPosition(0, 0);
+      g.setScale(1, 1);
+      g.fillStyle(0x000000, 0.25);
+      g.fillEllipse(hero.x, hero.y + 20, 54, 16);
+      this.heroSprite.setPosition(hero.x, hero.y - 12);
+      this.heroSprite.setFlipX(hero.dir < 0);
+      if (hero.moving) {
+        if (!this.heroSprite.anims.isPlaying) this.heroSprite.play('hero-gallop');
+      } else if (this.heroSprite.anims.isPlaying) {
+        this.heroSprite.stop();
+        this.heroSprite.setFrame(0);
+      }
+      if (hero.staggered) {
+        this.heroSprite.setTintFill(Math.floor(this.time.now / 60) % 2 === 0 ? 0xffffff : 0xe5484d);
+      } else if (hero.charging) {
+        this.heroSprite.setTint(0xaad4ff);
+      } else {
+        this.heroSprite.clearTint();
+      }
+      return;
+    }
+
     if (hero.moving) this.bob += dt * 12;
     const bob = Math.sin(this.bob) * 2;
     const lg = Math.sin(this.bob * 2) * 3;
