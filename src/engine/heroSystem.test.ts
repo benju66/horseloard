@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SIM_DT, Simulation, type SimData } from './simulation';
 import type { EnemiesFile, Hero } from '../data/schemas';
-import { TEST_ECONOMY, TEST_HERO, makeEnemy, makeMap } from './testFixtures';
+import { TEST_ECONOMY, TEST_HERO, TEST_RNG, makeEnemy, makeMap, makeTowersFile } from './testFixtures';
 
 /** Bow that effectively can't fire — contact tests must not be polluted by auto-fire kills. */
 const MELEE_HERO: Hero = {
@@ -43,6 +43,7 @@ function heroFixture(hero: Hero = TEST_HERO): SimData {
     },
     hero,
     economy: TEST_ECONOMY,
+    towers: makeTowersFile(),
   };
 }
 
@@ -53,7 +54,7 @@ function advanceSeconds(sim: Simulation, seconds: number): void {
 
 describe('hero movement', () => {
   it('moves at config speed and clamps to world margins', () => {
-    const sim = new Simulation(heroFixture());
+    const sim = new Simulation(heroFixture(), TEST_RNG);
     sim.hero.input.x = 1;
     advanceSeconds(sim, 2); // 200 units requested, world is 100 wide
     expect(sim.hero.x).toBe(84); // width 100 - margin 16
@@ -66,7 +67,7 @@ describe('hero movement', () => {
   });
 
   it('ignores input inside the deadzone', () => {
-    const sim = new Simulation(heroFixture());
+    const sim = new Simulation(heroFixture(), TEST_RNG);
     sim.hero.input.x = 0.05;
     advanceSeconds(sim, 1);
     expect(sim.hero.x).toBe(50);
@@ -74,7 +75,7 @@ describe('hero movement', () => {
   });
 
   it('scales speed with partial deflection', () => {
-    const sim = new Simulation(heroFixture());
+    const sim = new Simulation(heroFixture(), TEST_RNG);
     sim.hero.input.x = 0.6;
     sim.hero.input.y = -0.8; // magnitude 1.0
     advanceSeconds(sim, 0.3);
@@ -86,7 +87,7 @@ describe('hero movement', () => {
 
 describe('stagger (received)', () => {
   it('heavy contact shoves the hero and cuts control for the configured window', () => {
-    const sim = new Simulation(heroFixture(MELEE_HERO));
+    const sim = new Simulation(heroFixture(MELEE_HERO), TEST_RNG);
     const heavy = sim.enemySystem.spawn('heavy', 'main', 1); // at (20, 20)
     const staggeredBy: string[] = [];
     sim.hero.onStagger.push((by) => staggeredBy.push(by.config.id));
@@ -109,7 +110,7 @@ describe('stagger (received)', () => {
   });
 
   it('respects the per-enemy cooldown but not across enemies', () => {
-    const sim = new Simulation(heroFixture(MELEE_HERO));
+    const sim = new Simulation(heroFixture(MELEE_HERO), TEST_RNG);
     sim.enemySystem.spawn('heavy', 'main', 1);
     const count: string[] = [];
     sim.hero.onStagger.push((by) => count.push(String(by.id)));
@@ -142,7 +143,7 @@ describe('stagger (received)', () => {
   });
 
   it('non-staggering enemies never shove', () => {
-    const sim = new Simulation(heroFixture(MELEE_HERO));
+    const sim = new Simulation(heroFixture(MELEE_HERO), TEST_RNG);
     sim.enemySystem.spawn('walker', 'main', 1);
     sim.hero.x = 22;
     sim.hero.y = 22;
@@ -154,7 +155,7 @@ describe('stagger (received)', () => {
 
 describe('trample', () => {
   it('damages on moving contact with a per-enemy cooldown; kills pay gold', () => {
-    const sim = new Simulation(heroFixture(MELEE_HERO));
+    const sim = new Simulation(heroFixture(MELEE_HERO), TEST_RNG);
     const walker = sim.enemySystem.spawn('walker', 'main', 1); // hp 10 at (20,20)
     sim.hero.x = 20;
     sim.hero.y = 20;
@@ -171,7 +172,7 @@ describe('trample', () => {
   });
 
   it('a stationary hero does not trample', () => {
-    const sim = new Simulation(heroFixture(MELEE_HERO));
+    const sim = new Simulation(heroFixture(MELEE_HERO), TEST_RNG);
     const walker = sim.enemySystem.spawn('walker', 'main', 1);
     sim.hero.x = 25; // inside contact reach (15), outside even the melee-test bow range
     sim.hero.y = 20;
@@ -182,7 +183,7 @@ describe('trample', () => {
 
 describe('auto-fire bow', () => {
   it('fires at the nearest enemy in range on the fire interval', () => {
-    const sim = new Simulation(heroFixture());
+    const sim = new Simulation(heroFixture(), TEST_RNG);
     sim.enemySystem.spawn('walker', 'main', 1); // (20, 20), hp 10
     let shots = 0;
     sim.projectileSystem.onSpawn.push(() => shots++);
@@ -197,7 +198,7 @@ describe('auto-fire bow', () => {
   });
 
   it('holds fire with nothing in range', () => {
-    const sim = new Simulation(heroFixture());
+    const sim = new Simulation(heroFixture(), TEST_RNG);
     sim.enemySystem.spawn('walker', 'main', 1); // (20,20); hero at (50,100) is ~85 away
     let shots = 0;
     sim.projectileSystem.onSpawn.push(() => shots++);
@@ -206,7 +207,7 @@ describe('auto-fire bow', () => {
   });
 
   it('arrows fly to a dead target’s last position and despawn cleanly', () => {
-    const sim = new Simulation(heroFixture());
+    const sim = new Simulation(heroFixture(), TEST_RNG);
     const walker = sim.enemySystem.spawn('walker', 'main', 1);
     sim.hero.x = 20;
     sim.hero.y = 60;
@@ -220,7 +221,7 @@ describe('auto-fire bow', () => {
 
 describe('forge (bow levels)', () => {
   it('buys the next level when affordable, caps at max', () => {
-    const sim = new Simulation(heroFixture()); // gold 45, L2 costs 30
+    const sim = new Simulation(heroFixture(), TEST_RNG); // gold 45, L2 costs 30
     expect(sim.hero.bowStats.damage).toBe(5);
     expect(sim.hero.nextBowCost()).toBe(30);
 
@@ -236,8 +237,8 @@ describe('forge (bow levels)', () => {
 
   it('refuses when gold is short', () => {
     const data = heroFixture();
-    data.economy = { startingGold: 10 };
-    const sim = new Simulation(data);
+    data.economy = { ...TEST_ECONOMY, startingGold: 10 };
+    const sim = new Simulation(data, TEST_RNG);
     expect(sim.buyBowUpgrade()).toBe(false);
     expect(sim.hero.bowLevel).toBe(1);
     expect(sim.gold).toBe(10);

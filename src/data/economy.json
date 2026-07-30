@@ -1,3 +1,22 @@
 {
-  "startingGold": 45
+  "startingGold": 45,
+  "sellRefund": 0.7,
+  "coins": {
+    "magnetRadius": 80,
+    "collectRadius": 20,
+    "expirySeconds": 12,
+    "magnetSpeed": 260
+  },
+  "waveClearBonus": {
+    "base": 10,
+    "perWave": 3
+  },
+  "earlyStart": {
+    "windowSeconds": 12,
+    "maxBonus": 15
+  },
+  "repair": {
+    "hpPerPurchase": 20,
+    "costPerHp": 0.5
+  }
 }

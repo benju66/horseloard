@@ -1,6 +1,6 @@
 import type { Hero, MapDef } from '../data/schemas';
 import type { EnemyInstance, EnemySystem } from './enemySystem';
-import type { ProjectileSystem } from './projectileSystem';
+import type { ProjectileDef, ProjectileSystem } from './projectileSystem';
 
 const INPUT_DEADZONE = 0.08; // prototype: ignore joystick magnitudes below this
 const BOW_MUZZLE_OFFSET_Y = -22; // arrows leave from the rider, not the hooves
@@ -41,6 +41,7 @@ export class HeroSystem {
   private time = 0;
   private readonly trampleReadyAt = new Map<number, number>();
   private readonly staggerReadyAt = new Map<number, number>();
+  private readonly bowProjectile: ProjectileDef;
 
   readonly onStagger: Array<(by: EnemyInstance) => void> = [];
   readonly onTrample: Array<(target: EnemyInstance) => void> = [];
@@ -55,6 +56,7 @@ export class HeroSystem {
     this.maxX = map.world.width - config.margins.x;
     this.minY = config.margins.top;
     this.maxY = map.world.height - config.margins.bottom;
+    this.bowProjectile = { behavior: 'ballistic', speed: config.bow.projectile.speed };
 
     // Per-enemy cooldowns must not leak entries: forget enemies when they die.
     enemies.onDeath.push((e) => {
@@ -158,7 +160,7 @@ export class HeroSystem {
       this.y + BOW_MUZZLE_OFFSET_Y,
       target.id,
       stats.damage,
-      this.config.bow.projectile.speed,
+      this.bowProjectile,
       true,
     );
     this.fireCooldown = stats.fireInterval;

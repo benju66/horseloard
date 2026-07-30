@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import type { GameData } from '../data/loader';
+import type { MapDef } from '../data/schemas';
 import { Simulation } from '../engine/simulation';
 import type { EnemyInstance } from '../engine/enemySystem';
+import type { PlotState } from '../engine/towerSystem';
 import { VirtualJoystick } from '../ui/joystick';
 import { WorldBubble } from '../ui/bubble';
 
@@ -12,9 +14,11 @@ const PAL = {
   pathEdge: 0xa5814a,
   stone: 0x8f8f96,
   stoneDark: 0x6a6a72,
+  wood: 0x6b4a2b,
+  woodDark: 0x4a3018,
   forge: 0x44464e,
   gold: 0xf6c945,
-  goldText: '#f6c945',
+  goldDark: 0xc99a1e,
   text: '#f5ead0',
   btn: 0x3f7d2f,
   btnHi: 0x59a844,
@@ -38,6 +42,8 @@ const ENEMY_TINTS: Record<string, number> = {
 const DEFAULT_TINT = 0x999999;
 const FLASH_MS = 90;
 const FORGE_REACH = 55;
+const PLOT_REACH = 52;
+const MAX_BUBBLES = 4;
 
 /**
  * Pure renderer over the Simulation: creates/destroys enemy circles on sim
@@ -46,18 +52,24 @@ const FORGE_REACH = 55;
 export class GameScene extends Phaser.Scene {
   private sim!: Simulation;
   private data_!: GameData;
-  private enemyViews = new Map<number, Phaser.GameObjects.Arc>();
-  private enemyTints = new Map<number, number>();
-  private flashUntil = new Map<number, number>();
+  private map_!: MapDef;
+  private enemyViews!: Map<number, Phaser.GameObjects.Arc>;
+  private enemyTints!: Map<number, number>;
+  private flashUntil!: Map<number, number>;
+  private plotMarkers!: Map<string, Phaser.GameObjects.Container>;
   private waveLabel!: Phaser.GameObjects.Text;
   private goldText!: Phaser.GameObjects.Text;
   private startButton!: Phaser.GameObjects.Container;
   private joystick!: VirtualJoystick;
   private keys!: Record<'W' | 'A' | 'S' | 'D', Phaser.Input.Keyboard.Key>;
-  private forgeBubble!: WorldBubble;
+  private bubbles!: WorldBubble[];
+  private bubblesUsed = 0;
   private heroG!: Phaser.GameObjects.Graphics;
   private arrowG!: Phaser.GameObjects.Graphics;
   private hpG!: Phaser.GameObjects.Graphics;
+  private towerG!: Phaser.GameObjects.Graphics;
+  private coinG!: Phaser.GameObjects.Graphics;
+  private ringG!: Phaser.GameObjects.Graphics;
   private bob = 0;
 
   constructor() {
@@ -69,8 +81,17 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Phaser scenes are reused across restarts — every collection resets here.
+    this.enemyViews = new Map();
+    this.enemyTints = new Map();
+    this.flashUntil = new Map();
+    this.plotMarkers = new Map();
+    this.bubbles = [];
+    this.bob = 0;
+
     const map = this.data_.maps['meadow-road'];
     if (!map) throw new Error('GameScene: seed map "meadow-road" missing');
+    this.map_ = map;
     const waveSet = this.data_.waveSets[map.id];
     if (!waveSet) throw new Error(`GameScene: no wave set for map "${map.id}"`);
 
@@ -80,6 +101,7 @@ export class GameScene extends Phaser.Scene {
       waveSet,
       hero: this.data_.hero,
       economy: this.data_.economy,
+      towers: this.data_.towers,
     });
     this.sim.enemySystem.onSpawn.push((e) => this.addEnemyView(e));
     this.sim.enemySystem.onDeath.push((e) => this.removeEnemyView(e.id));
@@ -91,6 +113,10 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.drawMap(map);
+    this.createPlotMarkers(map);
+    this.towerG = this.add.graphics().setDepth(9);
+    this.ringG = this.add.graphics().setDepth(8);
+    this.coinG = this.add.graphics().setDepth(10);
     this.hpG = this.add.graphics().setDepth(11);
     this.arrowG = this.add.graphics().setDepth(14);
     this.heroG = this.add.graphics().setDepth(15);
@@ -100,19 +126,19 @@ export class GameScene extends Phaser.Scene {
     this.joystick = new VirtualJoystick(this);
     this.keys = this.input.keyboard!.addKeys('W,A,S,D') as GameScene['keys'];
 
-    this.forgeBubble = new WorldBubble(this);
-    this.forgeBubble.onTap = () => {
-      this.sim.buyBowUpgrade();
-    };
+    for (let i = 0; i < MAX_BUBBLES; i++) this.bubbles.push(new WorldBubble(this));
   }
 
   override update(_time: number, deltaMs: number): void {
     this.readInput();
     this.sim.advance(deltaMs / 1000);
     this.syncEnemies();
+    this.drawTowers();
+    this.drawCoins();
     this.drawHero(deltaMs / 1000);
     this.drawArrows();
     this.updateHud();
+    this.updateBubbles();
   }
 
   private readInput(): void {
@@ -144,6 +170,45 @@ export class GameScene extends Phaser.Scene {
         this.hpG.fillStyle(PAL.hp);
         this.hpG.fillRect(x, y, (w * e.hp) / e.maxHp, 4);
       }
+    }
+  }
+
+  private drawTowers(): void {
+    const g = this.towerG;
+    g.clear();
+    for (const plot of this.sim.towerSystem.plots) {
+      const marker = this.plotMarkers.get(plot.plotId);
+      marker?.setVisible(plot.towerId === null);
+      if (plot.towerId === null) continue;
+
+      const h = 26 + plot.level * 7;
+      g.fillStyle(0x000000, 0.22);
+      g.fillEllipse(plot.x, plot.y + 16, 52, 18);
+      g.fillStyle(PAL.wood);
+      g.fillRoundedRect(plot.x - 15, plot.y - h + 14, 30, h, 4);
+      g.fillStyle(PAL.woodDark);
+      g.fillRoundedRect(plot.x - 15, plot.y - h + 14, 30, 7, 4);
+      g.fillStyle(PAL.stone);
+      g.fillRoundedRect(plot.x - 19, plot.y - h + 2, 38, 14, 3);
+      g.fillStyle(PAL.hero);
+      g.fillCircle(plot.x, plot.y - h + 2, 5);
+      g.fillStyle(PAL.gold);
+      for (let i = 0; i < plot.level; i++) g.fillRect(plot.x - 14 + i * 8, plot.y + 18, 6, 4);
+    }
+  }
+
+  private drawCoins(): void {
+    const g = this.coinG;
+    g.clear();
+    const t = this.time.now / 1000;
+    for (const c of this.sim.economy.coins) {
+      const s = 1 + Math.sin(t * 6 + c.x) * 0.12;
+      g.fillStyle(PAL.goldDark);
+      g.fillCircle(c.x, c.y, 7 * s);
+      g.fillStyle(PAL.gold);
+      g.fillCircle(c.x, c.y - 1, 6 * s);
+      g.fillStyle(0xffffff, 0.7);
+      g.fillRect(c.x - 2, c.y - 4, 2, 2);
     }
   }
 
@@ -203,7 +268,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateHud(): void {
-    const { phase, waveRunner, gold, hero } = this.sim;
+    const { phase, waveRunner, gold } = this.sim;
     this.goldText.setText(String(gold));
     this.startButton.setVisible(phase === 'build');
     if (phase === 'build') {
@@ -215,23 +280,99 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.waveLabel.setText('All waves cleared');
     }
+  }
 
-    // Forge bubble: ride close, bow not maxed
-    const map = this.data_.maps['meadow-road']!;
-    const forge = map.forge.position;
-    const cost = hero.nextBowCost();
-    const near = Math.hypot(hero.x - forge.x, hero.y - forge.y) < FORGE_REACH;
-    if (near && cost !== null) {
-      this.forgeBubble.show(
-        forge.x + 20,
-        forge.y - 100,
-        `Bow Lv${hero.bowLevel + 1}`,
-        `${cost} gold`,
-        gold >= cost,
-      );
-    } else {
-      this.forgeBubble.hide();
+  /** Contextual bubbles: nearest interactive thing (plot or forge) within reach. */
+  private updateBubbles(): void {
+    this.bubblesUsed = 0;
+    this.ringG.clear();
+    const hero = this.sim.hero;
+
+    let nearestPlot: PlotState | null = null;
+    let nearestPlotDist = PLOT_REACH;
+    for (const plot of this.sim.towerSystem.plots) {
+      const d = Math.hypot(hero.x - plot.x, hero.y - plot.y);
+      if (d < nearestPlotDist) {
+        nearestPlotDist = d;
+        nearestPlot = plot;
+      }
     }
+    const forge = this.map_.forge.position;
+    const forgeDist = Math.hypot(hero.x - forge.x, hero.y - forge.y);
+
+    if (nearestPlot && nearestPlotDist <= forgeDist) {
+      this.showPlotBubbles(nearestPlot);
+    } else if (forgeDist < FORGE_REACH) {
+      this.showForgeBubble();
+    }
+    for (let i = this.bubblesUsed; i < this.bubbles.length; i++) this.bubbles[i]!.hide();
+  }
+
+  private nextBubble(): WorldBubble {
+    return this.bubbles[this.bubblesUsed++]!;
+  }
+
+  private showPlotBubbles(plot: PlotState): void {
+    const sys = this.sim.towerSystem;
+    const gold = this.sim.gold;
+    let y = plot.y + 26;
+    const place = (title: string, sub: string, enabled: boolean, onTap: () => void) => {
+      if (this.bubblesUsed >= this.bubbles.length) return;
+      const bubble = this.nextBubble();
+      bubble.show(plot.x, y, title, sub, enabled);
+      bubble.onTap = onTap;
+      y += 56;
+    };
+
+    if (plot.towerId === null) {
+      for (const tower of sys.roster) {
+        const cost = sys.buildCost(tower.id) ?? 0;
+        place(`Build ${tower.name}`, `${cost} gold`, gold >= cost, () => {
+          this.sim.buildTower(plot.plotId, tower.id);
+        });
+      }
+      return;
+    }
+
+    // range ring for the built tower
+    const stats = sys.stats(plot);
+    if (stats) {
+      this.ringG.lineStyle(2, 0xffffff, 0.18);
+      this.ringG.strokeCircle(plot.x, plot.y, stats.range);
+    }
+
+    const upgradeCost = sys.upgradeCost(plot);
+    if (upgradeCost !== null) {
+      place(`Upgrade Lv${plot.level + 1}`, `${upgradeCost} gold`, gold >= upgradeCost, () => {
+        this.sim.upgradeTower(plot.plotId);
+      });
+    }
+    for (const branch of sys.branchOptions(plot)) {
+      place(branch.name, `${branch.cost} gold`, gold >= branch.cost, () => {
+        this.sim.branchTower(plot.plotId, branch.id);
+      });
+    }
+    const refund = sys.sellRefund(plot, this.sim.economy.config.sellRefund);
+    place('Sell', `+${refund} gold`, true, () => {
+      this.sim.sellTower(plot.plotId);
+    });
+  }
+
+  private showForgeBubble(): void {
+    const forge = this.map_.forge.position;
+    const cost = this.sim.hero.nextBowCost();
+    if (cost === null) return;
+    const bubble = this.nextBubble();
+    bubble.show(
+      forge.x + 20,
+      forge.y - 100,
+      `Bow Lv${this.sim.hero.bowLevel + 1}`,
+      `${cost} gold`,
+      this.sim.gold >= cost,
+    );
+    bubble.onTap = () => {
+      this.sim.buyBowUpgrade();
+    };
   }
 
   private addEnemyView(e: EnemyInstance): void {
@@ -249,7 +390,25 @@ export class GameScene extends Phaser.Scene {
     this.flashUntil.delete(id);
   }
 
-  private drawMap(map: NonNullable<GameData['maps'][string]>): void {
+  private createPlotMarkers(map: MapDef): void {
+    for (const plot of map.plots) {
+      const circle = this.add.circle(0, 0, 20).setStrokeStyle(3, 0xffffff, 0.55);
+      const plus = this.add
+        .text(0, 1, '+', {
+          fontFamily: 'sans-serif',
+          fontSize: '20px',
+          fontStyle: 'bold',
+          color: 'rgba(255,255,255,0.55)',
+        })
+        .setOrigin(0.5);
+      const marker = this.add
+        .container(plot.position.x, plot.position.y, [circle, plus])
+        .setDepth(9);
+      this.plotMarkers.set(plot.id, marker);
+    }
+  }
+
+  private drawMap(map: MapDef): void {
     const g = this.add.graphics();
     g.fillStyle(PAL.grassA);
     g.fillRect(0, 0, map.world.width, map.world.height);
@@ -275,11 +434,6 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    for (const plot of map.plots) {
-      g.lineStyle(3, 0xffffff, 0.55);
-      g.strokeCircle(plot.position.x, plot.position.y, 20);
-    }
-
     // Gate
     const gate = map.gate.position;
     g.fillStyle(PAL.stone);
@@ -291,7 +445,7 @@ export class GameScene extends Phaser.Scene {
     const forge = map.forge.position;
     g.fillStyle(0x000000, 0.22);
     g.fillEllipse(forge.x, forge.y + 12, 48, 16);
-    g.fillStyle(0x4a3018);
+    g.fillStyle(PAL.woodDark);
     g.fillRoundedRect(forge.x - 16, forge.y - 2, 32, 14, 3);
     g.fillStyle(PAL.forge);
     g.fillRoundedRect(forge.x - 13, forge.y - 12, 26, 11, 4);

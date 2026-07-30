@@ -1,4 +1,4 @@
-import type { Economy, Enemy, Hero, MapDef } from '../data/schemas';
+import type { Economy, Enemy, Hero, MapDef, Tower, TowersFile } from '../data/schemas';
 
 /**
  * Shared engine-test fixtures. Deliberately fake content — the engine must
@@ -20,7 +20,58 @@ export const TEST_HERO: Hero = {
   stagger: { controlLossDuration: 0.4, shoveDistance: 40, perEnemyCooldown: 1.2 },
 };
 
-export const TEST_ECONOMY: Economy = { startingGold: 45 };
+export const TEST_ECONOMY: Economy = {
+  startingGold: 45,
+  sellRefund: 0.7,
+  coins: { magnetRadius: 80, collectRadius: 20, expirySeconds: 12, magnetSpeed: 260 },
+  waveClearBonus: { base: 10, perWave: 3 },
+  earlyStart: { windowSeconds: 12, maxBonus: 15 },
+  repair: { hpPerPurchase: 20, costPerHp: 0.5 },
+};
+
+/** Deterministic rng for tests: no coin scatter, no surprises. */
+export const TEST_RNG = () => 0.5;
+
+export function makeTowersFile(extraTowers: Tower[] = []): TowersFile {
+  return {
+    projectiles: [
+      { id: 'test-arrow', behavior: 'ballistic', speed: 400, spriteRef: 'x' },
+      { id: 'test-bomb', behavior: 'aoe', speed: 300, radius: 30, spriteRef: 'x' },
+    ],
+    towers: [
+      {
+        id: 'bolt-tower',
+        name: 'Bolt Tower',
+        description: 'test',
+        targeting: 'nearest',
+        projectileId: 'test-arrow',
+        spriteRef: 'x',
+        levels: [
+          { cost: 25, damage: 5, range: 60, fireInterval: 0.5 },
+          { cost: 40, damage: 8, range: 65, fireInterval: 0.4 },
+          { cost: 70, damage: 12, range: 70, fireInterval: 0.3 },
+        ],
+        branches: [
+          {
+            id: 'bolt-sniper',
+            name: 'Sniper',
+            description: 'test',
+            cost: 110,
+            stats: { damage: 30, range: 90, fireInterval: 0.6 },
+          },
+          {
+            id: 'bolt-rapid',
+            name: 'Rapid',
+            description: 'test',
+            cost: 110,
+            stats: { damage: 4, range: 70, fireInterval: 0.1 },
+          },
+        ],
+      },
+      ...extraTowers,
+    ],
+  };
+}
 
 export function makeEnemy(overrides: Partial<Enemy> & { id: string }): Enemy {
   return {

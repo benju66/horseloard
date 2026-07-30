@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SIM_DT, Simulation, type SimData } from './simulation';
 import type { EnemiesFile, WaveSet } from '../data/schemas';
-import { TEST_ECONOMY, TEST_HERO, makeEnemy, makeMap } from './testFixtures';
+import { TEST_ECONOMY, TEST_HERO, TEST_RNG, makeEnemy, makeMap, makeTowersFile } from './testFixtures';
 
 /** Minimal fixture content — the engine must not care that none of it is real. */
 function fixture(overrides?: { waves?: WaveSet['waves'] }): SimData {
@@ -18,7 +18,7 @@ function fixture(overrides?: { waves?: WaveSet['waves'] }): SimData {
       },
     ],
   };
-  return { enemies, map: makeMap(), waveSet, hero: TEST_HERO, economy: TEST_ECONOMY };
+  return { enemies, map: makeMap(), waveSet, hero: TEST_HERO, economy: TEST_ECONOMY, towers: makeTowersFile() };
 }
 
 function advanceSeconds(sim: Simulation, seconds: number): void {
@@ -28,7 +28,7 @@ function advanceSeconds(sim: Simulation, seconds: number): void {
 
 describe('fixed-timestep accumulator', () => {
   it('converts elapsed time into whole ticks and carries the remainder', () => {
-    const sim = new Simulation(fixture());
+    const sim = new Simulation(fixture(), TEST_RNG);
     expect(sim.advance(SIM_DT)).toBe(1);
     expect(sim.advance(SIM_DT * 2.5)).toBe(2);
     expect(sim.advance(SIM_DT * 0.6)).toBe(1); // ~0.5 carried + 0.6 = 1 tick, safely past the boundary
@@ -36,13 +36,13 @@ describe('fixed-timestep accumulator', () => {
   });
 
   it('clamps huge deltas (tab-switch) instead of spiraling', () => {
-    const sim = new Simulation(fixture());
+    const sim = new Simulation(fixture(), TEST_RNG);
     expect(sim.advance(10)).toBe(15); // MAX_FRAME 0.25s = 15 ticks
   });
 
   it('is deterministic: same ticks, same state', () => {
-    const a = new Simulation(fixture());
-    const b = new Simulation(fixture());
+    const a = new Simulation(fixture(), TEST_RNG);
+    const b = new Simulation(fixture(), TEST_RNG);
     a.startNextWave();
     b.startNextWave();
     advanceSeconds(a, 3);
@@ -55,7 +55,7 @@ describe('fixed-timestep accumulator', () => {
 
 describe('enemy movement along the lane', () => {
   it('walks at config speed and tracks world position', () => {
-    const sim = new Simulation(fixture());
+    const sim = new Simulation(fixture(), TEST_RNG);
     sim.startNextWave();
     advanceSeconds(sim, 2); // spawn at ~0s, walk ~2s at speed 10
     const first = sim.enemySystem.enemies.find((e) => e.id === 1)!;
@@ -66,7 +66,7 @@ describe('enemy movement along the lane', () => {
   });
 
   it('assigns stable sequential ids', () => {
-    const sim = new Simulation(fixture());
+    const sim = new Simulation(fixture(), TEST_RNG);
     sim.startNextWave();
     advanceSeconds(sim, 2);
     expect(sim.enemySystem.enemies.map((e) => e.id).sort()).toEqual([1, 2]);
@@ -74,7 +74,7 @@ describe('enemy movement along the lane', () => {
   });
 
   it('leaks never despawn: reaching the end parks the enemy, alive', () => {
-    const sim = new Simulation(fixture());
+    const sim = new Simulation(fixture(), TEST_RNG);
     sim.startNextWave();
     const reached: number[] = [];
     sim.enemySystem.onReachEnd.push((e) => reached.push(e.id));
@@ -128,7 +128,7 @@ describe('wave lifecycle', () => {
   });
 
   it('applyDamage kills at 0 and removes the enemy', () => {
-    const sim = new Simulation(fixture());
+    const sim = new Simulation(fixture(), TEST_RNG);
     sim.startNextWave();
     const deaths: number[] = [];
     sim.enemySystem.onDeath.push((e) => deaths.push(e.id));

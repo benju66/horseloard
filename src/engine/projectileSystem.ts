@@ -1,7 +1,15 @@
 import type { EnemySystem } from './enemySystem';
 
-/** Distance at which an arrow counts as connecting, on top of one tick's travel. */
+/** Distance at which a projectile counts as connecting, on top of one tick's travel. */
 const HIT_SLOP = 6;
+
+/** The behavior subset the engine implements. Aura (Frost/Beacon) lands with M1 content. */
+export interface ProjectileDef {
+  behavior: 'ballistic' | 'instant' | 'aoe';
+  speed?: number;
+  /** blast radius for 'aoe' */
+  radius?: number;
+}
 
 export interface ProjectileInstance {
   id: number;
@@ -16,6 +24,7 @@ export interface ProjectileInstance {
   targetY: number;
   damage: number;
   speed: number;
+  aoeRadius: number; // 0 = single target
   fromHero: boolean;
 }
 
@@ -23,11 +32,13 @@ export interface ProjectileInstance {
  * Homing projectiles, pooled — spawn/despawn recycles instances so waves of
  * arrows never allocate per shot (CLAUDE.md #5). Prototype behavior: track a
  * live target; if it dies mid-flight, finish the flight to its last position.
+ * AoE shots explode at the impact point regardless.
  */
 export class ProjectileSystem {
   private readonly enemies: EnemySystem;
   private readonly live: ProjectileInstance[] = [];
   private readonly pool: ProjectileInstance[] = [];
+  private readonly aoeScratch: number[] = [];
   private nextId = 1;
 
   readonly onSpawn: Array<(p: ProjectileInstance) => void> = [];
@@ -37,9 +48,15 @@ export class ProjectileSystem {
     this.enemies = enemies;
   }
 
-  spawn(x: number, y: number, targetId: number, damage: number, speed: number, fromHero: boolean): void {
+  spawn(x: number, y: number, targetId: number, damage: number, def: ProjectileDef, fromHero: boolean): void {
     const target = this.enemies.getById(targetId);
     if (!target) return;
+
+    if (def.behavior === 'instant') {
+      this.enemies.applyDamage(targetId, damage);
+      return;
+    }
+
     const p = this.pool.pop() ?? {
       id: 0,
       x: 0,
@@ -51,6 +68,7 @@ export class ProjectileSystem {
       targetY: 0,
       damage: 0,
       speed: 0,
+      aoeRadius: 0,
       fromHero: false,
     };
     p.id = this.nextId++;
@@ -60,7 +78,8 @@ export class ProjectileSystem {
     p.targetX = target.x;
     p.targetY = target.y;
     p.damage = damage;
-    p.speed = speed;
+    p.speed = def.speed ?? 400;
+    p.aoeRadius = def.behavior === 'aoe' ? (def.radius ?? 0) : 0;
     p.fromHero = fromHero;
     this.live.push(p);
     for (const fn of this.onSpawn) fn(p);
@@ -79,7 +98,11 @@ export class ProjectileSystem {
       const dist = Math.hypot(dx, dy);
       const step = p.speed * dt;
       if (dist <= step + HIT_SLOP) {
-        if (target) this.enemies.applyDamage(target.id, p.damage);
+        if (p.aoeRadius > 0) {
+          this.explode(p.targetX, p.targetY, p.aoeRadius, p.damage);
+        } else if (target) {
+          this.enemies.applyDamage(target.id, p.damage);
+        }
         this.release(i, p);
       } else {
         p.dirX = dx / dist;
@@ -88,6 +111,19 @@ export class ProjectileSystem {
         p.y += p.dirY * step;
       }
     }
+  }
+
+  private explode(x: number, y: number, radius: number, damage: number): void {
+    // Collect ids first — applyDamage swap-removes from the list we'd be iterating.
+    const hits = this.aoeScratch;
+    hits.length = 0;
+    const rSq = radius * radius;
+    for (const e of this.enemies.enemies) {
+      const dx = e.x - x;
+      const dy = e.y - y;
+      if (dx * dx + dy * dy <= rSq) hits.push(e.id);
+    }
+    for (const id of hits) this.enemies.applyDamage(id, damage);
   }
 
   private release(index: number, p: ProjectileInstance): void {
