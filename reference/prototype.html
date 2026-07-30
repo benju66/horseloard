@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Horse Lord — Tower Defense</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; overflow:hidden; background:#1a2618; touch-action:none;
+    -webkit-user-select:none; user-select:none; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; }
+  #game { display:block; position:fixed; inset:0; touch-action:none; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+"use strict";
+// ============================================================
+// HORSE LORD — a Kingshot-style TD prototype
+// World is fixed 420x780 logical units, letterboxed to screen.
+// ============================================================
+const W = 420, H = 780;
+const cv = document.getElementById("game");
+const cx = cv.getContext("2d");
+let scale = 1, offX = 0, offY = 0;
+
+function resize(){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width  = innerWidth  * dpr;
+  cv.height = innerHeight * dpr;
+  cv.style.width = innerWidth + "px";
+  cv.style.height = innerHeight + "px";
+  scale = Math.min(cv.width / W, cv.height / H);
+  offX = (cv.width  - W*scale)/2;
+  offY = (cv.height - H*scale)/2;
+}
+addEventListener("resize", resize); resize();
+
+// screen->world
+function toWorld(px, py){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  return { x:(px*dpr - offX)/scale, y:(py*dpr - offY)/scale };
+}
+
+// ---------- palette ----------
+const PAL = {
+  grassA:"#4a7c3a", grassB:"#548a41", path:"#c9a86a", pathEdge:"#a5814a",
+  wood:"#6b4a2b", woodDark:"#4a3018", stone:"#8f8f96", stoneDark:"#6a6a72",
+  gold:"#f6c945", goldDark:"#c99a1e", uiBg:"rgba(26,20,12,0.82)",
+  hp:"#e5484d", hpBg:"#3a1518", text:"#f5ead0",
+  hero:"#3b5dc9", horse:"#7a5230", enemy1:"#7a9e3b", enemy2:"#c46a2d", enemy3:"#8d4fa8",
+  arrow:"#e8dcc0", btn:"#3f7d2f", btnHi:"#59a844"
+};
+
+// ---------- path ----------
+const PATH = [
+  {x:210,y:-50},{x:210,y:90},{x:95,y:160},{x:95,y:305},
+  {x:330,y:365},{x:330,y:520},{x:150,y:585},{x:210,y:690}
+];
+const SEG = []; let PATH_LEN = 0;
+for(let i=0;i<PATH.length-1;i++){
+  const a=PATH[i], b=PATH[i+1];
+  const len=Math.hypot(b.x-a.x,b.y-a.y);
+  SEG.push({a,b,len,start:PATH_LEN}); PATH_LEN+=len;
+}
+function pathPos(d){
+  d=Math.max(0,Math.min(d,PATH_LEN-0.001));
+  for(const s of SEG){
+    if(d<=s.start+s.len){
+      const t=(d-s.start)/s.len;
+      return {x:s.a.x+(s.b.x-s.a.x)*t, y:s.a.y+(s.b.y-s.a.y)*t};
+    }
+  }
+  return PATH[PATH.length-1];
+}
+
+// ---------- game state ----------
+const PLOTS = [
+  {x:165,y:135},{x:170,y:295},{x:255,y:240},
+  {x:258,y:455},{x:95,y:465},{x:265,y:610}
+].map(p=>({...p, level:0, cd:0, target:null}));
+
+const FORGE = {x:70,y:690};
+const BASE  = {x:210,y:715};
+
+const TOWER = {
+  buildCost:25,
+  upCost:[0,40,70,110],           // cost to go from level L to L+1
+  dmg:[0,10,16,24,36],
+  range:[0,105,115,125,140],
+  rate:[0,0.85,0.72,0.60,0.48]
+};
+const BOW = {
+  maxLvl:6,
+  cost:l=>30+28*(l-1),
+  dmg:l=>8+5*l,
+  rate:l=>Math.max(0.22, 0.52-0.045*l),
+  range:l=>128+9*l
+};
+
+let G;
+function newGame(){
+  G = {
+    state:"title",          // title | idle | wave | over
+    gold:45, wave:0, baseHP:20, baseMax:20,
+    hero:{x:210,y:640,dir:1,speed:150,bow:1,cd:0,bob:0},
+    enemies:[], arrows:[], coins:[], fx:[], nums:[],
+    spawnQueue:[], spawnT:0, interT:0, shake:0, t:0, kills:0
+  };
+  for(const p of PLOTS){ p.level=0; p.cd=0; p.target=null; }
+}
+newGame();
+
+// ---------- waves ----------
+function buildWave(n){
+  const q=[]; const mult = Math.pow(1.17, n-1);
+  const count = 6 + n*2;
+  for(let i=0;i<count;i++){
+    let type = "grunt";
+    if(n>=2 && i%3===2) type="runner";
+    if(n>=3 && i%5===4) type="brute";
+    if(n>=6 && i%4===1) type="brute";
+    q.push({type, delay: 0.9 - Math.min(0.5, n*0.04), mult});
+  }
+  return q;
+}
+function startWave(){
+  G.wave++; G.state="wave";
+  G.spawnQueue = buildWave(G.wave); G.spawnT = 0.5;
+}
+function spawnEnemy(spec){
+  const base = {
+    grunt:{hp:22,speed:42,coin:4,r:12,c:PAL.enemy1},
+    runner:{hp:13,speed:74,coin:3,r:10,c:PAL.enemy2},
+    brute:{hp:70,speed:27,coin:11,r:16,c:PAL.enemy3}
+  }[spec.type];
+  const hp = Math.round(base.hp * spec.mult);
+  G.enemies.push({...base, type:spec.type, hp, max:hp, d:0, flash:0});
+}
+
+// ---------- input ----------
+const joy = {active:false, id:null, ox:0, oy:0, dx:0, dy:0};
+const keys = {};
+addEventListener("keydown",e=>keys[e.key.toLowerCase()]=true);
+addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+
+// buttons registered per-frame: {x,y,w,h,fn,label...} in world coords
+let buttons = [];
+function hitButton(wx,wy){
+  for(const b of buttons){
+    if(wx>=b.x && wx<=b.x+b.w && wy>=b.y && wy<=b.y+b.h){ b.fn(); return true; }
+  }
+  return false;
+}
+
+function onDown(id, px, py){
+  const p = toWorld(px,py);
+  if(hitButton(p.x,p.y)) return;
+  if(G.state==="title"){ G.state="idle"; return; }
+  if(G.state==="over") return;
+  if(!joy.active){
+    joy.active=true; joy.id=id; joy.ox=p.x; joy.oy=p.y; joy.dx=0; joy.dy=0;
+  }
+}
+function onMove(id, px, py){
+  if(joy.active && joy.id===id){
+    const p = toWorld(px,py);
+    joy.dx=p.x-joy.ox; joy.dy=p.y-joy.oy;
+    const m=Math.hypot(joy.dx,joy.dy), max=55;
+    if(m>max){ joy.dx*=max/m; joy.dy*=max/m; }
+  }
+}
+function onUp(id){
+  if(joy.active && joy.id===id){ joy.active=false; joy.dx=0; joy.dy=0; }
+}
+cv.addEventListener("touchstart",e=>{ e.preventDefault();
+  for(const t of e.changedTouches) onDown(t.identifier,t.clientX,t.clientY); },{passive:false});
+cv.addEventListener("touchmove",e=>{ e.preventDefault();
+  for(const t of e.changedTouches) onMove(t.identifier,t.clientX,t.clientY); },{passive:false});
+cv.addEventListener("touchend",e=>{ e.preventDefault();
+  for(const t of e.changedTouches) onUp(t.identifier); },{passive:false});
+cv.addEventListener("touchcancel",e=>{ for(const t of e.changedTouches) onUp(t.identifier); });
+cv.addEventListener("mousedown",e=>onDown("m",e.clientX,e.clientY));
+cv.addEventListener("mousemove",e=>onMove("m",e.clientX,e.clientY));
+cv.addEventListener("mouseup",()=>onUp("m"));
+
+// ---------- helpers ----------
+function nearestEnemy(x,y,range){
+  let best=null, bd=range;
+  for(const e of G.enemies){
+    const p=pathPos(e.d);
+    const dist=Math.hypot(p.x-x,p.y-y);
+    if(dist<bd){ bd=dist; best=e; }
+  }
+  return best;
+}
+function addNum(x,y,txt,c){ G.nums.push({x,y,txt,c,t:0.8}); }
+function addFx(x,y,c,n=6,sp=70){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, v=sp*(0.4+Math.random()*0.8);
+    G.fx.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0.35,c});
+  }
+}
+function fireArrow(x,y,target,dmg,fromHero){
+  const p=pathPos(target.d);
+  G.arrows.push({x,y,tx:p.x,ty:p.y,target,dmg,speed:420,fromHero});
+}
+
+// ---------- update ----------
+function update(dt){
+  G.t+=dt;
+  if(G.state==="title"||G.state==="over") return;
+  const hero=G.hero;
+
+  // hero movement
+  let mx=0,my=0;
+  if(joy.active){ mx=joy.dx/55; my=joy.dy/55; }
+  if(keys["w"])my-=1; if(keys["s"])my+=1; if(keys["a"])mx-=1; if(keys["d"])mx+=1;
+  const mm=Math.hypot(mx,my);
+  if(mm>0.08){
+    if(mm>1){mx/=mm;my/=mm;}
+    hero.x+=mx*hero.speed*dt; hero.y+=my*hero.speed*dt;
+    hero.x=Math.max(16,Math.min(W-16,hero.x));
+    hero.y=Math.max(60,Math.min(H-60,hero.y));
+    if(Math.abs(mx)>0.1) hero.dir = mx>0?1:-1;
+    hero.bob+=dt*12;
+  }
+
+  // hero auto-fire
+  hero.cd-=dt;
+  if(hero.cd<=0){
+    const t=nearestEnemy(hero.x,hero.y,BOW.range(hero.bow));
+    if(t){ fireArrow(hero.x,hero.y-22,t,BOW.dmg(hero.bow),true); hero.cd=BOW.rate(hero.bow); }
+  }
+
+  // towers
+  for(const p of PLOTS){
+    if(p.level<1) continue;
+    p.cd-=dt;
+    if(p.cd<=0){
+      const t=nearestEnemy(p.x,p.y,TOWER.range[p.level]);
+      if(t){ fireArrow(p.x,p.y-26,t,TOWER.dmg[p.level],false); p.cd=TOWER.rate[p.level]; }
+    }
+  }
+
+  // spawn
+  if(G.state==="wave"){
+    if(G.spawnQueue.length){
+      G.spawnT-=dt;
+      if(G.spawnT<=0){ const s=G.spawnQueue.shift(); spawnEnemy(s); G.spawnT=s.delay; }
+    } else if(G.enemies.length===0){
+      const bonus=10+G.wave*3;
+      G.gold+=bonus; addNum(W/2,300,"+"+bonus+" wave bonus",PAL.gold);
+      G.state="idle";
+    }
+  }
+
+  // enemies
+  for(let i=G.enemies.length-1;i>=0;i--){
+    const e=G.enemies[i];
+    e.d+=e.speed*dt; e.flash=Math.max(0,e.flash-dt*6);
+    if(e.d>=PATH_LEN){
+      G.enemies.splice(i,1);
+      G.baseHP-= (e.type==="brute"?3:1);
+      G.shake=0.35; addFx(BASE.x,BASE.y,PAL.hp,10,120);
+      if(G.baseHP<=0){ G.baseHP=0; G.state="over"; }
+    }
+  }
+
+  // arrows
+  for(let i=G.arrows.length-1;i>=0;i--){
+    const a=G.arrows[i];
+    if(a.target && G.enemies.includes(a.target)){
+      const p=pathPos(a.target.d); a.tx=p.x; a.ty=p.y;
+    }
+    const dx=a.tx-a.x, dy=a.ty-a.y, dist=Math.hypot(dx,dy);
+    const step=a.speed*dt;
+    if(dist<=step+6){
+      // hit
+      if(a.target && G.enemies.includes(a.target)){
+        a.target.hp-=a.dmg; a.target.flash=1;
+        addNum(a.tx,a.ty-16,a.dmg,a.fromHero?"#9db8ff":"#fff");
+        if(a.target.hp<=0){
+          const idx=G.enemies.indexOf(a.target);
+          const p=pathPos(a.target.d);
+          addFx(p.x,p.y,a.target.c,8,90);
+          // drop coins (split into 1-2 piles)
+          let v=a.target.coin;
+          const piles = v>6?2:1;
+          for(let k=0;k<piles;k++){
+            const val = k===piles-1? v-Math.floor(v/piles)*(piles-1) : Math.floor(v/piles);
+            G.coins.push({x:p.x+(Math.random()*30-15), y:p.y+(Math.random()*30-15), v:val, t:0});
+          }
+          G.kills++;
+          G.enemies.splice(idx,1);
+        }
+      }
+      G.arrows.splice(i,1);
+    } else {
+      a.x+=dx/dist*step; a.y+=dy/dist*step;
+    }
+  }
+
+  // coins
+  for(let i=G.coins.length-1;i>=0;i--){
+    const c=G.coins[i]; c.t+=dt;
+    const dx=hero.x-c.x, dy=hero.y-c.y, d=Math.hypot(dx,dy);
+    if(d<80){ // magnet
+      const sp=260*dt/Math.max(d,1);
+      c.x+=dx*sp; c.y+=dy*sp;
+    }
+    if(d<20){
+      G.gold+=c.v; addNum(hero.x,hero.y-34,"+"+c.v,PAL.gold);
+      G.coins.splice(i,1);
+    }
+  }
+
+  // fx + numbers
+  for(let i=G.fx.length-1;i>=0;i--){
+    const f=G.fx[i]; f.t-=dt; f.x+=f.vx*dt; f.y+=f.vy*dt;
+    if(f.t<=0)G.fx.splice(i,1);
+  }
+  for(let i=G.nums.length-1;i>=0;i--){
+    const n=G.nums[i]; n.t-=dt; n.y-=28*dt;
+    if(n.t<=0)G.nums.splice(i,1);
+  }
+  G.shake=Math.max(0,G.shake-dt);
+}
+
+// ---------- draw ----------
+function rr(x,y,w,h,r){ cx.beginPath(); cx.roundRect(x,y,w,h,r); }
+
+function drawWorld(){
+  // grass with subtle checker
+  cx.fillStyle=PAL.grassA; cx.fillRect(0,0,W,H);
+  cx.fillStyle=PAL.grassB;
+  for(let y=0;y<H;y+=60)for(let x=0;x<W;x+=60)
+    if(((x+y)/60)%2===0)cx.fillRect(x,y,60,60);
+  // tufts
+  cx.fillStyle="rgba(255,255,255,0.05)";
+  for(let i=0;i<24;i++){
+    const x=(i*173)%W, y=(i*271)%H;
+    cx.fillRect(x,y,4,2);
+  }
+  // path
+  cx.lineCap="round"; cx.lineJoin="round";
+  cx.strokeStyle=PAL.pathEdge; cx.lineWidth=46;
+  cx.beginPath(); cx.moveTo(PATH[0].x,PATH[0].y);
+  for(const p of PATH)cx.lineTo(p.x,p.y); cx.stroke();
+  cx.strokeStyle=PAL.path; cx.lineWidth=38; cx.stroke();
+}
+
+function drawBase(){
+  const b=BASE;
+  cx.fillStyle="rgba(0,0,0,0.25)"; cx.beginPath(); cx.ellipse(b.x,b.y+22,42,12,0,0,7); cx.fill();
+  cx.fillStyle=PAL.stone; rr(b.x-36,b.y-26,72,48,6); cx.fill();
+  cx.fillStyle=PAL.stoneDark; rr(b.x-36,b.y-26,72,10,[6,6,0,0]); cx.fill();
+  // crenellation
+  cx.fillStyle=PAL.stone;
+  for(let i=-3;i<=3;i+=2) cx.fillRect(b.x+i*10-4,b.y-36,8,12);
+  // door
+  cx.fillStyle=PAL.woodDark; rr(b.x-10,b.y-2,20,24,[10,10,0,0]); cx.fill();
+  // banner
+  cx.fillStyle=PAL.hero; cx.fillRect(b.x-3,b.y-64,3,30);
+  cx.beginPath(); cx.moveTo(b.x,b.y-64); cx.lineTo(b.x+22,b.y-58); cx.lineTo(b.x,b.y-50); cx.fill();
+}
+
+function drawPlot(p){
+  cx.fillStyle="rgba(0,0,0,0.22)"; cx.beginPath(); cx.ellipse(p.x,p.y+16,26,9,0,0,7); cx.fill();
+  if(p.level===0){
+    cx.strokeStyle="rgba(255,255,255,0.55)"; cx.setLineDash([6,5]); cx.lineWidth=3;
+    cx.beginPath(); cx.arc(p.x,p.y,20,0,7); cx.stroke(); cx.setLineDash([]);
+    cx.fillStyle="rgba(255,255,255,0.55)"; cx.font="bold 20px sans-serif";
+    cx.textAlign="center"; cx.fillText("+",p.x,p.y+7);
+  } else {
+    const h=26+p.level*7;
+    cx.fillStyle=PAL.wood; rr(p.x-15,p.y-h+14,30,h,4); cx.fill();
+    cx.fillStyle=PAL.woodDark; rr(p.x-15,p.y-h+14,30,7,[4,4,0,0]); cx.fill();
+    cx.fillStyle=PAL.stone; rr(p.x-19,p.y-h+2,38,14,3); cx.fill();
+    // archer dot
+    cx.fillStyle=PAL.hero; cx.beginPath(); cx.arc(p.x,p.y-h+2,5,0,7); cx.fill();
+    // level pips
+    cx.fillStyle=PAL.gold;
+    for(let i=0;i<p.level;i++)cx.fillRect(p.x-14+i*8,p.y+18,6,4);
+  }
+}
+
+function drawEnemy(e){
+  const p=pathPos(e.d);
+  cx.fillStyle="rgba(0,0,0,0.25)"; cx.beginPath(); cx.ellipse(p.x,p.y+e.r*0.8,e.r,e.r*0.35,0,0,7); cx.fill();
+  const wob=Math.sin(G.t*10+e.d)*2;
+  cx.fillStyle=e.flash>0?"#fff":e.c;
+  cx.beginPath(); cx.arc(p.x,p.y-e.r*0.4+wob*0.3,e.r,0,7); cx.fill();
+  // eyes
+  cx.fillStyle="#1c1c1c";
+  cx.beginPath(); cx.arc(p.x-e.r*0.35,p.y-e.r*0.5,2,0,7);
+  cx.arc(p.x+e.r*0.35,p.y-e.r*0.5,2,0,7); cx.fill();
+  // hp bar
+  if(e.hp<e.max){
+    const w=e.r*2;
+    cx.fillStyle=PAL.hpBg; cx.fillRect(p.x-w/2,p.y-e.r-12,w,4);
+    cx.fillStyle=PAL.hp; cx.fillRect(p.x-w/2,p.y-e.r-12,w*e.hp/e.max,4);
+  }
+}
+
+function drawHero(){
+  const h=G.hero, bob=Math.sin(h.bob)*2;
+  cx.save(); cx.translate(h.x,h.y);
+  cx.fillStyle="rgba(0,0,0,0.25)"; cx.beginPath(); cx.ellipse(0,14,26,8,0,0,7); cx.fill();
+  cx.scale(h.dir,1);
+  // horse body
+  cx.fillStyle=PAL.horse;
+  rr(-20,-10+bob*0.4,40,20,9); cx.fill();
+  // legs
+  cx.fillStyle="#5c3d22";
+  const lg=Math.sin(h.bob*2)*3;
+  cx.fillRect(-16,8,5,10+lg); cx.fillRect(11,8,5,10-lg);
+  // head + neck
+  cx.fillStyle=PAL.horse;
+  rr(14,-22+bob*0.4,10,18,4); cx.fill();
+  rr(18,-26+bob*0.4,14,10,[0,5,5,0]); cx.fill();
+  // mane + tail
+  cx.fillStyle="#3c2814";
+  cx.fillRect(13,-24+bob*0.4,4,14);
+  cx.beginPath(); cx.moveTo(-20,-6); cx.quadraticCurveTo(-30,0,-26,10); cx.quadraticCurveTo(-24,2,-19,-2); cx.fill();
+  // rider
+  cx.fillStyle=PAL.hero;
+  rr(-8,-26+bob,14,18,5); cx.fill();
+  cx.fillStyle="#e8b88a"; cx.beginPath(); cx.arc(-1,-32+bob,6,0,7); cx.fill();
+  cx.fillStyle="#2b3f8f"; rr(-8,-38+bob,14,7,3); cx.fill(); // helm
+  // bow
+  cx.strokeStyle="#d8c9a8"; cx.lineWidth=2.5;
+  cx.beginPath(); cx.arc(10,-22+bob,9,-1.2,1.2); cx.stroke();
+  cx.restore();
+}
+
+function drawCoin(c){
+  const s=1+Math.sin(G.t*6+c.x)*0.12;
+  cx.fillStyle=PAL.goldDark; cx.beginPath(); cx.arc(c.x,c.y,7*s,0,7); cx.fill();
+  cx.fillStyle=PAL.gold; cx.beginPath(); cx.arc(c.x,c.y-1,6*s,0,7); cx.fill();
+  cx.fillStyle="rgba(255,255,255,0.7)"; cx.fillRect(c.x-2,c.y-4,2,2);
+}
+
+function drawBubble(x,y,label,sub,fn,enabled){
+  const w=118,h=46, bx=x-w/2, by=y;
+  cx.fillStyle = enabled? PAL.btn : "rgba(60,60,60,0.85)";
+  rr(bx,by,w,h,12); cx.fill();
+  cx.strokeStyle = enabled? PAL.btnHi : "#555"; cx.lineWidth=2; cx.stroke();
+  cx.fillStyle=PAL.text; cx.textAlign="center";
+  cx.font="bold 15px sans-serif"; cx.fillText(label,x,by+19);
+  cx.font="13px sans-serif"; cx.fillStyle=enabled?PAL.gold:"#999";
+  cx.fillText(sub,x,by+37);
+  if(enabled) buttons.push({x:bx-8,y:by-8,w:w+16,h:h+16,fn});
+}
+
+function drawUI(){
+  buttons=[];
+  const hero=G.hero;
+
+  // ---- top bar ----
+  cx.fillStyle=PAL.uiBg; rr(8,8,W-16,52,12); cx.fill();
+  cx.textAlign="left"; cx.textBaseline="middle";
+  // gold
+  cx.fillStyle=PAL.gold; cx.beginPath(); cx.arc(30,34,9,0,7); cx.fill();
+  cx.fillStyle=PAL.text; cx.font="bold 18px sans-serif"; cx.fillText(G.gold, 45, 35);
+  // wave
+  cx.textAlign="center";
+  cx.fillText(G.state==="wave" ? "Wave "+G.wave : (G.wave===0?"Get ready":"Wave "+G.wave+" clear"), W/2, 35);
+  // base hp
+  cx.textAlign="right"; cx.fillStyle=PAL.hp; cx.font="bold 16px sans-serif";
+  cx.fillText("♥ "+G.baseHP+"/"+G.baseMax, W-22, 35);
+  cx.textBaseline="alphabetic";
+
+  // ---- contextual bubbles ----
+  if(G.state==="idle"||G.state==="wave"){
+    // plots
+    for(const p of PLOTS){
+      const d=Math.hypot(hero.x-p.x,hero.y-p.y);
+      if(d<52){
+        if(p.level===0){
+          const cost=TOWER.buildCost;
+          drawBubble(p.x, p.y+26, "Build tower", cost+" gold", ()=>{
+            if(G.gold>=cost){ G.gold-=cost; p.level=1; addFx(p.x,p.y,PAL.gold,8,80); }
+          }, G.gold>=cost);
+        } else if(p.level<4){
+          const cost=TOWER.upCost[p.level];
+          drawBubble(p.x, p.y+26, "Upgrade Lv"+(p.level+1), cost+" gold", ()=>{
+            if(G.gold>=cost){ G.gold-=cost; p.level++; addFx(p.x,p.y,PAL.gold,8,80); }
+          }, G.gold>=cost);
+        }
+        // range ring
+        if(p.level>0){
+          cx.strokeStyle="rgba(255,255,255,0.18)"; cx.lineWidth=2;
+          cx.beginPath(); cx.arc(p.x,p.y,TOWER.range[p.level],0,7); cx.stroke();
+        }
+      }
+    }
+    // forge
+    const fd=Math.hypot(hero.x-FORGE.x,hero.y-FORGE.y);
+    if(fd<55 && hero.bow<BOW.maxLvl){
+      const cost=BOW.cost(hero.bow);
+      drawBubble(FORGE.x+20, FORGE.y-100, "Bow Lv"+(hero.bow+1), cost+" gold", ()=>{
+        if(G.gold>=cost){ G.gold-=cost; hero.bow++; addFx(hero.x,hero.y-20,"#9db8ff",10,90); }
+      }, G.gold>=cost);
+    }
+  }
+
+  // ---- start wave button ----
+  if(G.state==="idle"){
+    const bw=190,bh=54,bx=W/2-bw/2,by=H-92;
+    cx.fillStyle=PAL.btn; rr(bx,by,bw,bh,16); cx.fill();
+    cx.strokeStyle=PAL.btnHi; cx.lineWidth=3; cx.stroke();
+    cx.fillStyle=PAL.text; cx.font="bold 20px sans-serif"; cx.textAlign="center";
+    cx.fillText("⚔ Start wave "+(G.wave+1), W/2, by+34);
+    buttons.push({x:bx,y:by,w:bw,h:bh,fn:startWave});
+  }
+
+  // ---- joystick ----
+  if(joy.active){
+    cx.strokeStyle="rgba(255,255,255,0.35)"; cx.lineWidth=3;
+    cx.beginPath(); cx.arc(joy.ox,joy.oy,55,0,7); cx.stroke();
+    cx.fillStyle="rgba(255,255,255,0.45)";
+    cx.beginPath(); cx.arc(joy.ox+joy.dx,joy.oy+joy.dy,24,0,7); cx.fill();
+  }
+
+  // ---- title / game over ----
+  if(G.state==="title"){
+    cx.fillStyle="rgba(10,15,8,0.72)"; cx.fillRect(0,0,W,H);
+    cx.fillStyle=PAL.gold; cx.font="bold 44px Georgia,serif"; cx.textAlign="center";
+    cx.fillText("HORSE LORD", W/2, 260);
+    cx.fillStyle=PAL.text; cx.font="17px sans-serif";
+    cx.fillText("Ride. Shoot. Loot. Build.", W/2, 296);
+    cx.font="15px sans-serif"; cx.fillStyle="rgba(245,234,208,0.85)";
+    const lines=[
+      "Thumb anywhere = joystick",
+      "Your bow fires on its own",
+      "Ride over coins to collect",
+      "Ride to a plot → tap Build",
+      "Anvil by the keep upgrades your bow"
+    ];
+    lines.forEach((l,i)=>cx.fillText(l, W/2, 350+i*26));
+    cx.fillStyle=PAL.gold; cx.font="bold 19px sans-serif";
+    cx.fillText("Tap to ride", W/2, 520+Math.sin(G.t*4)*4);
+  }
+  if(G.state==="over"){
+    cx.fillStyle="rgba(10,5,5,0.78)"; cx.fillRect(0,0,W,H);
+    cx.fillStyle=PAL.hp; cx.font="bold 40px Georgia,serif"; cx.textAlign="center";
+    cx.fillText("The keep has fallen", W/2, 300);
+    cx.fillStyle=PAL.text; cx.font="18px sans-serif";
+    cx.fillText("Survived "+ (G.wave) +" waves · "+G.kills+" kills", W/2, 344);
+    const bw=170,bh=54,bx=W/2-bw/2,by=400;
+    cx.fillStyle=PAL.btn; rr(bx,by,bw,bh,16); cx.fill();
+    cx.strokeStyle=PAL.btnHi; cx.lineWidth=3; cx.stroke();
+    cx.fillStyle=PAL.text; cx.font="bold 20px sans-serif";
+    cx.fillText("Ride again", W/2, by+34);
+    buttons.push({x:bx,y:by,w:bw,h:bh,fn:newGame});
+  }
+}
+
+function drawForge(){
+  const f=FORGE;
+  cx.fillStyle="rgba(0,0,0,0.22)"; cx.beginPath(); cx.ellipse(f.x,f.y+12,24,8,0,0,7); cx.fill();
+  cx.fillStyle=PAL.woodDark; rr(f.x-16,f.y-2,32,14,3); cx.fill();     // block
+  cx.fillStyle="#44464e"; rr(f.x-13,f.y-12,26,11,[4,4,0,0]); cx.fill(); // anvil body
+  cx.fillStyle="#5a5d66"; rr(f.x-18,f.y-16,36,6,3); cx.fill();          // anvil top
+  cx.fillStyle=PAL.gold; cx.font="bold 11px sans-serif"; cx.textAlign="center";
+  cx.fillText("FORGE", f.x, f.y+28);
+}
+
+function render(){
+  cx.setTransform(1,0,0,1,0,0);
+  cx.fillStyle="#131c11"; cx.fillRect(0,0,cv.width,cv.height);
+  const sh = G.shake>0 ? (Math.random()-0.5)*10*G.shake : 0;
+  cx.setTransform(scale,0,0,scale, offX+sh*scale, offY+sh*scale);
+
+  drawWorld();
+  drawForge();
+  for(const p of PLOTS) drawPlot(p);
+  drawBase();
+  for(const c of G.coins) drawCoin(c);
+  for(const e of G.enemies) drawEnemy(e);
+  drawHero();
+  // arrows
+  cx.strokeStyle=PAL.arrow; cx.lineWidth=3; cx.lineCap="round";
+  for(const a of G.arrows){
+    const dx=a.tx-a.x, dy=a.ty-a.y, m=Math.hypot(dx,dy)||1;
+    cx.beginPath(); cx.moveTo(a.x,a.y); cx.lineTo(a.x-dx/m*10, a.y-dy/m*10); cx.stroke();
+  }
+  // fx
+  for(const f of G.fx){
+    cx.globalAlpha=Math.max(0,f.t/0.35);
+    cx.fillStyle=f.c; cx.fillRect(f.x-2,f.y-2,4,4);
+  }
+  cx.globalAlpha=1;
+  // damage numbers
+  cx.textAlign="center"; cx.font="bold 15px sans-serif";
+  for(const n of G.nums){
+    cx.globalAlpha=Math.min(1,n.t/0.4);
+    cx.fillStyle="rgba(0,0,0,0.5)"; cx.fillText(n.txt,n.x+1,n.y+1);
+    cx.fillStyle=n.c; cx.fillText(n.txt,n.x,n.y);
+  }
+  cx.globalAlpha=1;
+  drawUI();
+}
+
+// ---------- loop ----------
+let last=performance.now();
+function loop(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  update(dt); render();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
