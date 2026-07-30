@@ -36,12 +36,12 @@
   ],
   "plots": [
     { "id": "west-hill", "position": { "x": 48, "y": 240 } },
-    { "id": "upper-bank", "position": { "x": 210, "y": 200 } },
+    { "id": "upper-bank", "position": { "x": 210, "y": 170 } },
     { "id": "east-hill", "position": { "x": 372, "y": 240 } },
-    { "id": "ford-island", "position": { "x": 210, "y": 355 } },
-    { "id": "west-shore", "position": { "x": 105, "y": 505 } },
-    { "id": "east-shore", "position": { "x": 315, "y": 505 } },
-    { "id": "gate-yard", "position": { "x": 275, "y": 620 } }
+    { "id": "ford-island", "position": { "x": 210, "y": 368 } },
+    { "id": "west-shore", "position": { "x": 128, "y": 492 } },
+    { "id": "east-shore", "position": { "x": 292, "y": 492 } },
+    { "id": "gate-yard", "position": { "x": 268, "y": 606 } }
   ],
   "gate": {
     "position": { "x": 210, "y": 715 },
