@@ -1,0 +1,45 @@
+{
+  "elite": {
+    "chance": 0.08,
+    "hpMultiplier": 2.5,
+    "coinMultiplier": 2
+  },
+  "enemies": [
+    {
+      "id": "grunt",
+      "name": "Grunt",
+      "hp": 22,
+      "speed": 42,
+      "radius": 12,
+      "coinValue": 4,
+      "siegeDps": 2,
+      "staggersHero": false,
+      "eliteEligible": true,
+      "spriteRef": "enemy-grunt"
+    },
+    {
+      "id": "runner",
+      "name": "Runner",
+      "hp": 13,
+      "speed": 74,
+      "radius": 10,
+      "coinValue": 3,
+      "siegeDps": 1.5,
+      "staggersHero": false,
+      "eliteEligible": true,
+      "spriteRef": "enemy-runner"
+    },
+    {
+      "id": "brute",
+      "name": "Brute",
+      "hp": 70,
+      "speed": 27,
+      "radius": 16,
+      "coinValue": 11,
+      "siegeDps": 6,
+      "staggersHero": true,
+      "eliteEligible": true,
+      "spriteRef": "enemy-brute"
+    }
+  ]
+}

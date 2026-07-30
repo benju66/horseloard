@@ -1,0 +1,49 @@
+{
+  "abilities": [
+    {
+      "id": "charge",
+      "name": "Charge",
+      "description": "A galloping burst — trample through enemies, damaging and slowing them.",
+      "cooldown": 12,
+      "unlockedByDefault": true,
+      "effect": {
+        "type": "charge",
+        "duration": 1,
+        "speedMultiplier": 2.2,
+        "damage": 15,
+        "slowMultiplier": 0.5,
+        "slowDuration": 1.5
+      },
+      "iconRef": "icon-charge",
+      "castSfxRef": "sfx-charge"
+    },
+    {
+      "id": "volley",
+      "name": "Volley",
+      "description": "Arrow rain at your position — delete the clump you rode into.",
+      "cooldown": 18,
+      "unlockedByDefault": false,
+      "effect": {
+        "type": "aoe-damage",
+        "damage": 35,
+        "radius": 90
+      },
+      "iconRef": "icon-volley",
+      "castSfxRef": "sfx-volley"
+    },
+    {
+      "id": "rally-horn",
+      "name": "Rally Horn",
+      "description": "All towers fire 50% faster for 6 seconds.",
+      "cooldown": 30,
+      "unlockedByDefault": false,
+      "effect": {
+        "type": "tower-rate-buff",
+        "rateMultiplier": 1.5,
+        "duration": 6
+      },
+      "iconRef": "icon-rally-horn",
+      "castSfxRef": "sfx-rally-horn"
+    }
+  ]
+}

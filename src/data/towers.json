@@ -1,0 +1,43 @@
+{
+  "projectiles": [
+    {
+      "id": "arrow",
+      "behavior": "ballistic",
+      "speed": 420,
+      "spriteRef": "proj-arrow",
+      "hitSfxRef": "sfx-hit-light"
+    }
+  ],
+  "towers": [
+    {
+      "id": "archer",
+      "name": "Archer Tower",
+      "description": "Single-target damage. Cheap, reliable.",
+      "targeting": "nearest",
+      "projectileId": "arrow",
+      "spriteRef": "tower-archer",
+      "fireSfxRef": "sfx-bow-release",
+      "levels": [
+        { "cost": 25, "damage": 10, "range": 105, "fireInterval": 0.85 },
+        { "cost": 40, "damage": 16, "range": 115, "fireInterval": 0.72 },
+        { "cost": 70, "damage": 24, "range": 125, "fireInterval": 0.6 }
+      ],
+      "branches": [
+        {
+          "id": "archer-sniper",
+          "name": "Sniper",
+          "description": "Huge range, heavy single shots.",
+          "cost": 110,
+          "stats": { "damage": 60, "range": 200, "fireInterval": 0.9 }
+        },
+        {
+          "id": "archer-rapid",
+          "name": "Rapid",
+          "description": "Sheer fire rate — shreds swarms.",
+          "cost": 110,
+          "stats": { "damage": 14, "range": 130, "fireInterval": 0.18 }
+        }
+      ]
+    }
+  ]
+}

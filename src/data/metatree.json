@@ -1,0 +1,85 @@
+{
+  "nodes": [
+    {
+      "id": "swift-steed",
+      "branch": "hero",
+      "name": "Swift Steed",
+      "description": "Your horse moves faster.",
+      "costPerRank": [10, 15, 20],
+      "requires": [],
+      "effect": { "type": "hero-stat", "stat": "moveSpeed", "perRank": 10, "mode": "add" }
+    },
+    {
+      "id": "bowyer",
+      "branch": "hero",
+      "name": "Bowyer",
+      "description": "Your bow hits harder.",
+      "costPerRank": [10, 15, 25],
+      "requires": [],
+      "effect": { "type": "hero-stat", "stat": "bowDamage", "perRank": 1.1, "mode": "multiply" }
+    },
+    {
+      "id": "learn-volley",
+      "branch": "hero",
+      "name": "Volley",
+      "description": "Unlock the Volley ability.",
+      "costPerRank": [15],
+      "requires": [],
+      "effect": { "type": "unlock-ability", "abilityId": "volley" }
+    },
+    {
+      "id": "learn-rally-horn",
+      "branch": "hero",
+      "name": "Rally Horn",
+      "description": "Unlock the Rally Horn ability.",
+      "costPerRank": [15],
+      "requires": [],
+      "effect": { "type": "unlock-ability", "abilityId": "rally-horn" }
+    },
+    {
+      "id": "fletchers",
+      "branch": "towers",
+      "name": "Fletchers",
+      "description": "All towers deal more damage.",
+      "costPerRank": [15, 25, 40],
+      "requires": [],
+      "effect": { "type": "tower-stat", "towerId": null, "stat": "damage", "perRank": 1.05, "mode": "multiply" }
+    },
+    {
+      "id": "masonry",
+      "branch": "towers",
+      "name": "Masonry",
+      "description": "Towers cost less to build and upgrade.",
+      "costPerRank": [20, 35],
+      "requires": ["fletchers"],
+      "effect": { "type": "tower-stat", "towerId": null, "stat": "cost", "perRank": 0.95, "mode": "multiply" }
+    },
+    {
+      "id": "war-chest",
+      "branch": "kingdom",
+      "name": "War Chest",
+      "description": "Start every run with more gold.",
+      "costPerRank": [10, 20, 30],
+      "requires": [],
+      "effect": { "type": "kingdom-stat", "stat": "startingGold", "perRank": 15, "mode": "add" }
+    },
+    {
+      "id": "stone-gate",
+      "branch": "kingdom",
+      "name": "Stone Gate",
+      "description": "The gate withstands more punishment.",
+      "costPerRank": [15, 25, 40],
+      "requires": [],
+      "effect": { "type": "kingdom-stat", "stat": "gateMaxHp", "perRank": 25, "mode": "add" }
+    },
+    {
+      "id": "lodestone",
+      "branch": "kingdom",
+      "name": "Lodestone",
+      "description": "Coins fly to you from farther away.",
+      "costPerRank": [10, 20],
+      "requires": [],
+      "effect": { "type": "kingdom-stat", "stat": "coinMagnetRadius", "perRank": 12, "mode": "add" }
+    }
+  ]
+}
