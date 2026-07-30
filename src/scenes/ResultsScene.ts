@@ -7,6 +7,8 @@ export interface ResultsData {
   totalWaves: number;
   kills: number;
   damageTaken: number;
+  stars: 1 | 2 | 3;
+  mapId: string;
   gameData: GameData;
 }
 
@@ -37,13 +39,23 @@ export class ResultsScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    if (r.victory) {
+      this.add
+        .text(210, 300, '\u2605'.repeat(r.stars) + '\u2606'.repeat(3 - r.stars), {
+          fontFamily: 'sans-serif',
+          fontSize: '34px',
+          color: '#f6c945',
+        })
+        .setOrigin(0.5);
+    }
+
     const lines = [
       `Waves cleared  ${r.wavesCleared} / ${r.totalWaves}`,
       `Kills  ${r.kills}`,
       `Gate damage taken  ${Math.ceil(r.damageTaken)}`,
     ];
     this.add
-      .text(210, 340, lines.join('\n'), {
+      .text(210, 356, lines.join('\n'), {
         fontFamily: 'sans-serif',
         fontSize: '18px',
         color: '#f5ead0',
@@ -63,7 +75,7 @@ export class ResultsScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.add.container(210, 520, [bg, label]);
     bg.setInteractive({ useHandCursor: true }).once('pointerdown', () => {
-      this.scene.start('Game', { gameData: r.gameData });
+      this.scene.start('Game', { gameData: r.gameData, mapId: r.mapId });
     });
   }
 }

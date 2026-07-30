@@ -50,8 +50,8 @@ export class BootScene extends Phaser.Scene {
         370,
         [
           'data validated ✓',
-          `${data.towers.towers.length} tower · ${data.enemies.enemies.length} enemies · ${data.abilities.length} abilities`,
-          `${Object.keys(data.maps).length} map · ${waveCount} waves · ${data.metaTree.length} meta nodes`,
+          `${data.towers.towers.length} towers · ${data.enemies.enemies.length} enemies · ${data.abilities.length} abilities`,
+          `${Object.keys(data.maps).length} maps · ${waveCount} waves · ${data.metaTree.length} meta nodes`,
         ].join('\n'),
         {
           fontFamily: 'sans-serif',
@@ -81,7 +81,9 @@ export class BootScene extends Phaser.Scene {
     });
 
     this.input.once('pointerdown', () => {
-      this.scene.start('Game', { gameData: data });
+      const requested = new URLSearchParams(window.location.search).get('map');
+      const mapId = requested && data.maps[requested] ? requested : 'the-ford';
+      this.scene.start('Game', { gameData: data, mapId });
     });
   }
 

@@ -1,4 +1,4 @@
-import type { WaveSet } from '../data/schemas';
+import type { Wave, WaveSet } from '../data/schemas';
 
 export type SpawnFn = (enemyId: string, laneId: string, hpMultiplier: number) => void;
 
@@ -36,6 +36,11 @@ export class WaveRunner {
 
   get totalWaves(): number {
     return this.waveSet.waves.length;
+  }
+
+  /** The wave currently running (or last run); null before the first start. */
+  get currentWaveData(): Wave | null {
+    return this.waveSet.waves[this.waveIndex] ?? null;
   }
 
   get hasMoreWaves(): boolean {

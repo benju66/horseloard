@@ -6,6 +6,7 @@ import type { EnemyInstance } from '../engine/enemySystem';
 import type { PlotState } from '../engine/towerSystem';
 import { VirtualJoystick } from '../ui/joystick';
 import { WorldBubble } from '../ui/bubble';
+import { AbilityBar } from '../ui/abilityBar';
 
 const PAL = {
   grassA: 0x4a7c3a,
@@ -38,7 +39,19 @@ const ENEMY_TINTS: Record<string, number> = {
   'enemy-grunt': 0x7a9e3b,
   'enemy-runner': 0xc46a2d,
   'enemy-brute': 0x8d4fa8,
+  'enemy-shieldbearer': 0x8fa3b8,
+  'enemy-swarm': 0xd9c85a,
 };
+/** Placeholder cap tints so the four towers read apart before the art pass. */
+const TOWER_TINTS: Record<string, number> = {
+  'tower-archer': 0x3b5dc9,
+  'tower-bombard': 0x44464e,
+  'tower-frost': 0x7fd4e8,
+  'tower-mill': 0xf6c945,
+};
+const ELITE_GLOW = 0xf6c945;
+/** M1: abilities unlocked by flag until the meta tree lands (M3). */
+const FLAG_UNLOCKED_ABILITIES = ['volley', 'rally-horn'];
 const DEFAULT_TINT = 0x999999;
 const FLASH_MS = 90;
 const FORGE_REACH = 55;
@@ -74,6 +87,8 @@ export class GameScene extends Phaser.Scene {
   private ringG!: Phaser.GameObjects.Graphics;
   private startLabel!: Phaser.GameObjects.Text;
   private fpsText: Phaser.GameObjects.Text | null = null;
+  private abilityBar!: AbilityBar;
+  private mapId = 'the-ford';
   private ending = false;
   private bob = 0;
 
@@ -81,8 +96,9 @@ export class GameScene extends Phaser.Scene {
     super('Game');
   }
 
-  init(args: { gameData: GameData }): void {
+  init(args: { gameData: GameData; mapId?: string }): void {
     this.data_ = args.gameData;
+    this.mapId = args.mapId && args.gameData.maps[args.mapId] ? args.mapId : 'the-ford';
   }
 
   create(): void {
@@ -96,8 +112,8 @@ export class GameScene extends Phaser.Scene {
     this.ending = false;
     this.fpsText = null;
 
-    const map = this.data_.maps['meadow-road'];
-    if (!map) throw new Error('GameScene: seed map "meadow-road" missing');
+    const map = this.data_.maps[this.mapId];
+    if (!map) throw new Error(`GameScene: map "${this.mapId}" missing`);
     this.map_ = map;
     const waveSet = this.data_.waveSets[map.id];
     if (!waveSet) throw new Error(`GameScene: no wave set for map "${map.id}"`);
@@ -109,6 +125,8 @@ export class GameScene extends Phaser.Scene {
       hero: this.data_.hero,
       economy: this.data_.economy,
       towers: this.data_.towers,
+      abilities: this.data_.abilities,
+      unlockedAbilityIds: FLAG_UNLOCKED_ABILITIES,
     });
     this.sim.enemySystem.onSpawn.push((e) => this.addEnemyView(e));
     this.sim.enemySystem.onDeath.push((e) => this.removeEnemyView(e.id));
@@ -135,6 +153,23 @@ export class GameScene extends Phaser.Scene {
 
     for (let i = 0; i < MAX_BUBBLES; i++) this.bubbles.push(new WorldBubble(this));
 
+    this.abilityBar = new AbilityBar(this, this.sim.abilities.slots, (id) => {
+      this.sim.castAbility(id);
+    });
+
+    // Blast feedback: a quick expanding ring wherever aoe lands.
+    this.sim.projectileSystem.onExplosion.push((x, y, radius) => {
+      this.blastRing(x, y, radius, 0xf0e0b0);
+    });
+    // Hero-cast feedback: Volley rains on the hero's position.
+    this.sim.abilities.onCast.push((ability) => {
+      if (ability.effect.type === 'aoe-damage') {
+        this.blastRing(this.sim.hero.x, this.sim.hero.y, ability.effect.radius, 0x9db8ff);
+      } else if (ability.effect.type === 'tower-rate-buff') {
+        this.cameras.main.flash(180, 60, 120, 45);
+      }
+    });
+
     // FPS overlay: always in dev, ?fps in production — the M0 exit gate is 60fps on-device.
     if (import.meta.env.DEV || new URLSearchParams(window.location.search).has('fps')) {
       this.fpsText = this.add
@@ -153,8 +188,21 @@ export class GameScene extends Phaser.Scene {
     this.drawArrows();
     this.updateHud();
     this.updateBubbles();
+    this.abilityBar.update();
     this.fpsText?.setText(`${Math.round(this.game.loop.actualFps)} fps`);
     this.maybeEndRun();
+  }
+
+  private blastRing(x: number, y: number, radius: number, color: number): void {
+    const ring = this.add.circle(x, y, 6).setStrokeStyle(4, color, 0.9).setDepth(13);
+    this.tweens.add({
+      targets: ring,
+      radius,
+      alpha: 0,
+      duration: 220,
+      ease: 'Quad.easeOut',
+      onComplete: () => ring.destroy(),
+    });
   }
 
   private maybeEndRun(): void {
@@ -169,6 +217,8 @@ export class GameScene extends Phaser.Scene {
         totalWaves: this.sim.waveRunner.totalWaves,
         kills: this.sim.kills,
         damageTaken: this.sim.gate.totalDamageTaken,
+        stars: this.sim.stars(),
+        mapId: this.mapId,
         gameData: this.data_,
       });
     });
@@ -223,8 +273,19 @@ export class GameScene extends Phaser.Scene {
       g.fillRoundedRect(plot.x - 15, plot.y - h + 14, 30, 7, 4);
       g.fillStyle(PAL.stone);
       g.fillRoundedRect(plot.x - 19, plot.y - h + 2, 38, 14, 3);
-      g.fillStyle(PAL.hero);
+      const tower = this.sim.towerSystem.getTower(plot.towerId);
+      g.fillStyle(TOWER_TINTS[tower?.spriteRef ?? ''] ?? PAL.hero);
       g.fillCircle(plot.x, plot.y - h + 2, 5);
+      const def = this.sim.towerSystem.projectileDef(plot);
+      if (def?.behavior === 'aura') {
+        g.lineStyle(2, 0x7fd4e8, 0.22);
+        g.strokeCircle(plot.x, plot.y, def.radius);
+      }
+      const aura = this.sim.towerSystem.stats(plot)?.towerAura;
+      if (aura) {
+        g.lineStyle(2, 0xf6c945, 0.2);
+        g.strokeCircle(plot.x, plot.y, aura.radius);
+      }
       g.fillStyle(PAL.gold);
       for (let i = 0; i < plot.level; i++) g.fillRect(plot.x - 14 + i * 8, plot.y + 18, 6, 4);
     }
@@ -442,8 +503,10 @@ export class GameScene extends Phaser.Scene {
 
   private addEnemyView(e: EnemyInstance): void {
     const tint = ENEMY_TINTS[e.config.spriteRef] ?? DEFAULT_TINT;
-    const view = this.add.circle(e.x, e.y, e.config.radius, tint).setDepth(10);
-    view.setStrokeStyle(2, 0x1c1c1c, 0.6);
+    const radius = e.isElite ? e.config.radius + 3 : e.config.radius;
+    const view = this.add.circle(e.x, e.y, radius, tint).setDepth(10);
+    if (e.isElite) view.setStrokeStyle(4, ELITE_GLOW, 0.95); // crowned
+    else view.setStrokeStyle(2, 0x1c1c1c, 0.6);
     this.enemyViews.set(e.id, view);
     this.enemyTints.set(e.id, tint);
   }
@@ -567,7 +630,47 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.startButton = this.add.container(210, 715, [bg, this.startLabel]).setDepth(20); // prototype: top edge at H-92
     bg.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
-      this.sim.startNextWave();
+      if (!this.sim.startNextWave()) return;
+      const wave = this.sim.waveRunner.currentWaveData;
+      if (wave?.archetypeId) {
+        const archetype = this.data_.archetypes.find((a) => a.id === wave.archetypeId);
+        if (archetype) this.showBanner(archetype.name, archetype.subtitle);
+      }
     });
+  }
+
+  /** Special-wave warning banner: fades in, holds, fades (DESIGN §8). */
+  private showBanner(name: string, subtitle: string): void {
+    const bg = this.add.rectangle(210, 250, 420, 84, 0x1a0c0c, 0.85).setDepth(35);
+    const title = this.add
+      .text(210, 238, `⚠ ${name}`, {
+        fontFamily: 'Georgia, serif',
+        fontSize: '30px',
+        fontStyle: 'bold',
+        color: '#e5484d',
+      })
+      .setOrigin(0.5)
+      .setDepth(36);
+    const sub = this.add
+      .text(210, 268, subtitle, {
+        fontFamily: 'sans-serif',
+        fontSize: '13px',
+        color: '#f5ead0',
+      })
+      .setOrigin(0.5)
+      .setDepth(36);
+    const parts: Array<Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text> = [bg, title, sub];
+    for (const part of parts) part.setAlpha(0);
+    this.tweens.add({
+      targets: parts,
+      alpha: 1,
+      duration: 250,
+      yoyo: true,
+      hold: 2100,
+      onComplete: () => {
+        for (const part of parts) part.destroy();
+      },
+    });
+    this.cameras.main.shake(150, 0.004);
   }
 }

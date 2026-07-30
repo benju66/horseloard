@@ -51,14 +51,15 @@ Schema requirements (design, don't over-build): towers need per-level stats + Lv
 
 Goal: one map at publishable quality — the go/no-go gate for art spend.
 
-[ ] Map 2 layout (split-and-rejoin lanes), authored 10-wave set incl. one special archetype with banner
-[ ] All 4 towers real, with Lv4 branches
-[ ] 5 enemy types + elite modifier
-[ ] All 3 abilities + ability bar (Charge free; others unlocked-by-flag for now)
+[x] Map 2 layout (split-and-rejoin lanes), authored 10-wave set incl. one special archetype with banner
+[x] All 4 towers real, with Lv4 branches
+[x] 5 enemy types + elite modifier
+[x] All 3 abilities + ability bar (Charge free; others unlocked-by-flag for now)
 [ ] Sprite art pass: Kenney/CC0 base, composite horse+rider hero (see DESIGN.md §10), ASSETS.md current
 [ ] Audio pass: SFX set + two music states with crossfade
-[ ] Juice pass: hit flash, screen shake, particles, coin pitch streaks, haptics
-[ ] Star scoring on damage taken
+[ ] Juice pass: hit flash, screen shake, particles, coin pitch streaks, haptics (partial: hit flash, stagger/banner shakes, blast rings exist)
+[x] Star scoring on damage taken
+**learned (mechanical slice, 2026-07-30):** all four towers + branches are pure data — Frost's Deep Freeze/Brittle are just different aura defs, Bombard's Cluster/Concussion different aoe defs; engine grew slows/stuns+vulnerability, facing+frontal block, elite rolls, auras, bomblets, mill income, beacon towerAura, crits, rate buff, AbilitySystem (charge = stagger-immune escape). The Ford: 3 banner waves (raid/horde/war-party), ford-island premium plot; ?map= param picks maps until MapSelect (M2). Lazy baseline dies w6 of 10 — one unanswered leak grinds the gate over minutes, the map's core lesson. 24 new tests (96).
 **Accept — M1 EXIT:** an outside playtester finishes Map 2 unprompted and can articulate the loot-vs-defend tension. Ben's call: does one map sing?
 
 ---
