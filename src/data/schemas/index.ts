@@ -9,3 +9,5 @@ export * from './ability';
 export * from './map';
 export * from './wave';
 export * from './metatree';
+export * from './hero';
+export * from './economy';

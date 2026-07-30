@@ -1,13 +1,17 @@
 import type { z } from 'zod';
 import {
   AbilitiesFileSchema,
+  EconomySchema,
   EnemiesFileSchema,
+  HeroSchema,
   MapSchema,
   MetaTreeFileSchema,
   TowersFileSchema,
   WaveSetSchema,
   type AbilitiesFile,
+  type Economy,
   type EnemiesFile,
+  type Hero,
   type MapDef,
   type MetaTreeFile,
   type TowersFile,
@@ -18,6 +22,8 @@ import towersJson from './towers.json';
 import enemiesJson from './enemies.json';
 import abilitiesJson from './abilities.json';
 import metatreeJson from './metatree.json';
+import heroJson from './hero.json';
+import economyJson from './economy.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
 
@@ -27,6 +33,8 @@ export interface GameData {
   enemies: EnemiesFile;
   abilities: AbilitiesFile['abilities'];
   metaTree: MetaTreeFile['nodes'];
+  hero: Hero;
+  economy: Economy;
   /** keyed by map id */
   maps: Record<string, MapDef>;
   /** keyed by map id */
@@ -60,6 +68,8 @@ export interface RawGameData {
   enemies: unknown;
   abilities: unknown;
   metatree: unknown;
+  hero: unknown;
+  economy: unknown;
   /** file path (for messages) → raw content */
   maps: Record<string, unknown>;
   /** file path (for messages) → raw content */
@@ -76,6 +86,8 @@ export function validateGameData(raw: RawGameData): GameData {
   const enemies = validateFile(EnemiesFileSchema, raw.enemies, 'enemies.json');
   const abilitiesFile = validateFile(AbilitiesFileSchema, raw.abilities, 'abilities.json');
   const metaTreeFile = validateFile(MetaTreeFileSchema, raw.metatree, 'metatree.json');
+  const hero = validateFile(HeroSchema, raw.hero, 'hero.json');
+  const economy = validateFile(EconomySchema, raw.economy, 'economy.json');
 
   const maps: Record<string, MapDef> = {};
   for (const [file, content] of Object.entries(raw.maps)) {
@@ -152,6 +164,8 @@ export function validateGameData(raw: RawGameData): GameData {
     enemies,
     abilities: abilitiesFile.abilities,
     metaTree: metaTreeFile.nodes,
+    hero,
+    economy,
     maps,
     waveSets,
   };
@@ -164,6 +178,8 @@ export function loadGameData(): GameData {
     enemies: enemiesJson,
     abilities: abilitiesJson,
     metatree: metatreeJson,
+    hero: heroJson,
+    economy: economyJson,
     maps: { 'maps/meadow-road.json': meadowRoadMapJson },
     waveSets: { 'waves/meadow-road.json': meadowRoadWavesJson },
   });

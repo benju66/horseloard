@@ -1,44 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { SIM_DT, Simulation, type SimData } from './simulation';
-import type { EnemiesFile, MapDef, WaveSet } from '../data/schemas';
+import type { EnemiesFile, WaveSet } from '../data/schemas';
+import { TEST_ECONOMY, TEST_HERO, makeEnemy, makeMap } from './testFixtures';
 
 /** Minimal fixture content — the engine must not care that none of it is real. */
 function fixture(overrides?: { waves?: WaveSet['waves'] }): SimData {
   const enemies: EnemiesFile = {
     elite: { chance: 0, hpMultiplier: 2, coinMultiplier: 2 },
-    enemies: [
-      {
-        id: 'walker',
-        name: 'Walker',
-        hp: 10,
-        speed: 10,
-        radius: 5,
-        coinValue: 1,
-        siegeDps: 1,
-        staggersHero: false,
-        eliteEligible: false,
-        spriteRef: 'x',
-      },
-    ],
-  };
-  const map: MapDef = {
-    id: 'straight',
-    name: 'Straight',
-    description: 'test',
-    world: { width: 100, height: 200 },
-    heroSpawn: { x: 50, y: 100 },
-    lanes: [
-      {
-        id: 'main',
-        waypoints: [
-          { x: 0, y: 0 },
-          { x: 0, y: 100 },
-        ],
-      },
-    ],
-    plots: [{ id: 'p1', position: { x: 10, y: 10 } }],
-    gate: { position: { x: 0, y: 110 }, hp: 100, attackSlots: 5 },
-    forge: { position: { x: 20, y: 20 } },
+    enemies: [makeEnemy({ id: 'walker', name: 'Walker' })],
   };
   const waveSet: WaveSet = {
     mapId: 'straight',
@@ -49,7 +18,7 @@ function fixture(overrides?: { waves?: WaveSet['waves'] }): SimData {
       },
     ],
   };
-  return { enemies, map, waveSet };
+  return { enemies, map: makeMap(), waveSet, hero: TEST_HERO, economy: TEST_ECONOMY };
 }
 
 function advanceSeconds(sim: Simulation, seconds: number): void {
@@ -108,7 +77,7 @@ describe('enemy movement along the lane', () => {
     const sim = new Simulation(fixture());
     sim.startNextWave();
     const reached: number[] = [];
-    sim.enemySystem.onReachEnd = (e) => reached.push(e.id);
+    sim.enemySystem.onReachEnd.push((e) => reached.push(e.id));
     advanceSeconds(sim, 15); // lane is 100 long, speed 10 → ends by ~11s
     expect(sim.enemySystem.aliveCount).toBe(2);
     expect(reached.sort()).toEqual([1, 2]);
@@ -162,7 +131,7 @@ describe('wave lifecycle', () => {
     const sim = new Simulation(fixture());
     sim.startNextWave();
     const deaths: number[] = [];
-    sim.enemySystem.onDeath = (e) => deaths.push(e.id);
+    sim.enemySystem.onDeath.push((e) => deaths.push(e.id));
     advanceSeconds(sim, 1.5); // both spawned
     expect(sim.enemySystem.applyDamage(1, 4)).toBe(false);
     expect(sim.enemySystem.getById(1)!.hp).toBe(6);

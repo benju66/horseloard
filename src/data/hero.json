@@ -1,0 +1,29 @@
+{
+  "moveSpeed": 150,
+  "radius": 16,
+  "margins": { "x": 16, "top": 60, "bottom": 60 },
+  "bow": {
+    "projectile": {
+      "speed": 420,
+      "spriteRef": "proj-arrow",
+      "hitSfxRef": "sfx-hit-light"
+    },
+    "levels": [
+      { "cost": 0, "damage": 13, "fireInterval": 0.475, "range": 137 },
+      { "cost": 30, "damage": 18, "fireInterval": 0.43, "range": 146 },
+      { "cost": 58, "damage": 23, "fireInterval": 0.385, "range": 155 },
+      { "cost": 86, "damage": 28, "fireInterval": 0.34, "range": 164 },
+      { "cost": 114, "damage": 33, "fireInterval": 0.295, "range": 173 },
+      { "cost": 142, "damage": 38, "fireInterval": 0.25, "range": 182 }
+    ]
+  },
+  "trample": {
+    "damage": 6,
+    "perEnemyCooldown": 1
+  },
+  "stagger": {
+    "controlLossDuration": 0.4,
+    "shoveDistance": 45,
+    "perEnemyCooldown": 1.2
+  }
+}

@@ -5,6 +5,8 @@ import towersJson from './towers.json';
 import enemiesJson from './enemies.json';
 import abilitiesJson from './abilities.json';
 import metatreeJson from './metatree.json';
+import heroJson from './hero.json';
+import economyJson from './economy.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
 
@@ -15,6 +17,8 @@ function seed(): RawGameData & Record<string, any> {
     enemies: enemiesJson,
     abilities: abilitiesJson,
     metatree: metatreeJson,
+    hero: heroJson,
+    economy: economyJson,
     maps: { 'maps/meadow-road.json': meadowRoadMapJson },
     waveSets: { 'waves/meadow-road.json': meadowRoadWavesJson },
   }) as RawGameData & Record<string, any>;
@@ -105,6 +109,18 @@ describe('schema validation fails loud with file + field path', () => {
     const raw = seed();
     (raw.maps['maps/meadow-road.json'] as any).lanes[0].waypoints = [{ x: 0, y: 0 }];
     expect(() => validateGameData(raw)).toThrow('maps/meadow-road.json → lanes.0.waypoints');
+  });
+
+  it('hero bow level with negative cost', () => {
+    const raw = seed();
+    (raw.hero as any).bow.levels[1].cost = -30;
+    expect(() => validateGameData(raw)).toThrow('hero.json → bow.levels.1.cost');
+  });
+
+  it('economy with non-integer starting gold', () => {
+    const raw = seed();
+    (raw.economy as any).startingGold = 45.5;
+    expect(() => validateGameData(raw)).toThrow('economy.json → startingGold');
   });
 });
 

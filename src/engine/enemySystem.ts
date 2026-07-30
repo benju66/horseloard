@@ -33,9 +33,11 @@ export class EnemySystem {
   private readonly list: EnemyInstance[] = [];
   private readonly byId = new Map<number, EnemyInstance>();
 
-  onSpawn: ((e: EnemyInstance) => void) | null = null;
-  onDeath: ((e: EnemyInstance) => void) | null = null;
-  onReachEnd: ((e: EnemyInstance) => void) | null = null;
+  /** Listener arrays — the sim and the renderer both subscribe. */
+  readonly onSpawn: Array<(e: EnemyInstance) => void> = [];
+  readonly onDeath: Array<(e: EnemyInstance) => void> = [];
+  readonly onReachEnd: Array<(e: EnemyInstance) => void> = [];
+  readonly onDamaged: Array<(e: EnemyInstance, amount: number) => void> = [];
 
   constructor(configs: readonly Enemy[], lanes: Map<string, LanePath>, ids: IdGenerator) {
     this.configs = new Map(configs.map((c) => [c.id, c]));
@@ -64,7 +66,7 @@ export class EnemySystem {
     lane.positionAt(0, e);
     this.list.push(e);
     this.byId.set(e.id, e);
-    this.onSpawn?.(e);
+    for (const fn of this.onSpawn) fn(e);
     return e;
   }
 
@@ -77,7 +79,7 @@ export class EnemySystem {
         e.distance = lane.totalLength;
         e.state = 'at-end';
         lane.positionAt(e.distance, e);
-        this.onReachEnd?.(e);
+        for (const fn of this.onReachEnd) fn(e);
       } else {
         lane.positionAt(e.distance, e);
       }
@@ -89,10 +91,11 @@ export class EnemySystem {
     const e = this.byId.get(id);
     if (!e) return false;
     e.hp -= amount;
+    for (const fn of this.onDamaged) fn(e, amount);
     if (e.hp > 0) return false;
     e.hp = 0;
     this.remove(e);
-    this.onDeath?.(e);
+    for (const fn of this.onDeath) fn(e);
     return true;
   }
 
