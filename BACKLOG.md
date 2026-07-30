@@ -55,7 +55,8 @@ Goal: one map at publishable quality — the go/no-go gate for art spend.
 [x] All 4 towers real, with Lv4 branches
 [x] 5 enemy types + elite modifier
 [x] All 3 abilities + ability bar (Charge free; others unlocked-by-flag for now)
-[ ] Sprite art pass: Kenney/CC0 base, composite horse+rider hero (see DESIGN.md §10), ASSETS.md current
+[~] Sprite art pass: Kenney/CC0 base, composite horse+rider hero (see DESIGN.md §10), ASSETS.md current
+**learned:** Kenney Medieval RTS (CC0) is the style match — 12 sprites shipped (5 enemies, 4 towers + spinning mill blades, gate castle, forge smithy), keys = data spriteRefs so rendering stays data-driven; artless refs fall back to vector shapes (substrate holds). Ground/path stay vector (grid retiling not worth it; flat style matches). Remaining: the mounted hero (DESIGN's 'one hard asset' — vector composite for now, itch.io hunt or commission later) and projectile/coin sprites (vector reads fine).
 [ ] Audio pass: SFX set + two music states with crossfade
 [ ] Juice pass: hit flash, screen shake, particles, coin pitch streaks, haptics (partial: hit flash, stagger/banner shakes, blast rings exist)
 [x] Star scoring on damage taken

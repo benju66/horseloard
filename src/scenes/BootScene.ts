@@ -12,9 +12,29 @@ const PAL = {
  * Boot: validates all game data (fails loud, with file + field path), shows
  * the title, and hands the validated data to the Game scene on tap.
  */
+/** Shipped sprite files (public/assets/sprites). Keys match data spriteRefs; missing refs fall back to shapes. */
+const SPRITE_KEYS = [
+  'enemy-grunt',
+  'enemy-runner',
+  'enemy-brute',
+  'enemy-shieldbearer',
+  'enemy-swarm',
+  'tower-archer',
+  'tower-bombard',
+  'tower-frost',
+  'tower-mill',
+  'mill-blades',
+  'gate',
+  'forge',
+];
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot');
+  }
+
+  preload(): void {
+    for (const key of SPRITE_KEYS) this.load.image(key, `assets/sprites/${key}.png`);
   }
 
   create(): void {

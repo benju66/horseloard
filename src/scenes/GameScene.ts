@@ -63,11 +63,18 @@ const MAX_BUBBLES = 4;
  * Pure renderer over the Simulation: creates/destroys enemy circles on sim
  * events, copies positions every frame. All game logic lives in /engine.
  */
+type EnemyView =
+  | { kind: 'sprite'; obj: Phaser.GameObjects.Sprite }
+  | { kind: 'circle'; obj: Phaser.GameObjects.Arc };
+
+/** Kenney unit frames are 128px with ~55px of body — scale so body ≈ 2×radius. */
+const ENEMY_SPRITE_SCALE = 4.7;
+
 export class GameScene extends Phaser.Scene {
   private sim!: Simulation;
   private data_!: GameData;
   private map_!: MapDef;
-  private enemyViews!: Map<number, Phaser.GameObjects.Arc>;
+  private enemyViews!: Map<number, EnemyView>;
   private enemyTints!: Map<number, number>;
   private flashUntil!: Map<number, number>;
   private plotMarkers!: Map<string, Phaser.GameObjects.Container>;
@@ -85,6 +92,8 @@ export class GameScene extends Phaser.Scene {
   private towerG!: Phaser.GameObjects.Graphics;
   private coinG!: Phaser.GameObjects.Graphics;
   private ringG!: Phaser.GameObjects.Graphics;
+  private towerSprites!: Map<string, Phaser.GameObjects.Sprite>;
+  private millBlades!: Map<string, Phaser.GameObjects.Sprite>;
   private startLabel!: Phaser.GameObjects.Text;
   private fpsText: Phaser.GameObjects.Text | null = null;
   private abilityBar!: AbilityBar;
@@ -107,6 +116,8 @@ export class GameScene extends Phaser.Scene {
     this.enemyTints = new Map();
     this.flashUntil = new Map();
     this.plotMarkers = new Map();
+    this.towerSprites = new Map();
+    this.millBlades = new Map();
     this.bubbles = [];
     this.bob = 0;
     this.ending = false;
@@ -182,7 +193,7 @@ export class GameScene extends Phaser.Scene {
     this.readInput();
     this.sim.advance(deltaMs / 1000);
     this.syncEnemies();
-    this.drawTowers();
+    this.drawTowers(deltaMs);
     this.drawCoins();
     this.drawHero(deltaMs / 1000);
     this.drawArrows();
@@ -241,9 +252,19 @@ export class GameScene extends Phaser.Scene {
     for (const e of this.sim.enemySystem.enemies) {
       const view = this.enemyViews.get(e.id);
       if (!view) continue;
-      view.setPosition(e.x, e.y);
+      view.obj.setPosition(e.x, e.y);
       const flashing = (this.flashUntil.get(e.id) ?? 0) > now;
-      view.fillColor = flashing ? 0xffffff : (this.enemyTints.get(e.id) ?? DEFAULT_TINT);
+      if (view.kind === 'sprite') {
+        if (flashing) view.obj.setTintFill(0xffffff);
+        else view.obj.clearTint();
+        view.obj.setFlipX(e.facingX < -0.1);
+      } else {
+        view.obj.fillColor = flashing ? 0xffffff : (this.enemyTints.get(e.id) ?? DEFAULT_TINT);
+      }
+      if (e.isElite) {
+        this.hpG.lineStyle(3, ELITE_GLOW, 0.9);
+        this.hpG.strokeCircle(e.x, e.y, e.config.radius + 6);
+      }
       if (e.hp < e.maxHp) {
         const w = e.config.radius * 2;
         const x = e.x - w / 2;
@@ -256,26 +277,61 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private drawTowers(): void {
+  private drawTowers(deltaMs: number): void {
     const g = this.towerG;
     g.clear();
     for (const plot of this.sim.towerSystem.plots) {
       const marker = this.plotMarkers.get(plot.plotId);
       marker?.setVisible(plot.towerId === null);
-      if (plot.towerId === null) continue;
 
-      const h = 26 + plot.level * 7;
+      let sprite = this.towerSprites.get(plot.plotId);
+      let blades = this.millBlades.get(plot.plotId);
+
+      if (plot.towerId === null) {
+        sprite?.setVisible(false);
+        blades?.setVisible(false);
+        continue;
+      }
+
+      const tower = this.sim.towerSystem.getTower(plot.towerId)!;
+      const hasArt = this.textures.exists(tower.spriteRef);
+      const size = 52 + plot.level * 6;
+
       g.fillStyle(0x000000, 0.22);
       g.fillEllipse(plot.x, plot.y + 16, 52, 18);
-      g.fillStyle(PAL.wood);
-      g.fillRoundedRect(plot.x - 15, plot.y - h + 14, 30, h, 4);
-      g.fillStyle(PAL.woodDark);
-      g.fillRoundedRect(plot.x - 15, plot.y - h + 14, 30, 7, 4);
-      g.fillStyle(PAL.stone);
-      g.fillRoundedRect(plot.x - 19, plot.y - h + 2, 38, 14, 3);
-      const tower = this.sim.towerSystem.getTower(plot.towerId);
-      g.fillStyle(TOWER_TINTS[tower?.spriteRef ?? ''] ?? PAL.hero);
-      g.fillCircle(plot.x, plot.y - h + 2, 5);
+
+      if (hasArt) {
+        if (!sprite) {
+          sprite = this.add.sprite(plot.x, plot.y - 6, tower.spriteRef).setDepth(9);
+          this.towerSprites.set(plot.plotId, sprite);
+        }
+        if (sprite.texture.key !== tower.spriteRef) sprite.setTexture(tower.spriteRef);
+        sprite.setVisible(true).setPosition(plot.x, plot.y - 6).setDisplaySize(size, size);
+
+        // Economy towers with art get spinning windmill blades if we ship them.
+        const wantsBlades = this.sim.towerSystem.stats(plot)?.income !== undefined && this.textures.exists('mill-blades');
+        if (wantsBlades) {
+          if (!blades) {
+            blades = this.add.sprite(plot.x, plot.y - 14, 'mill-blades').setDepth(10);
+            this.millBlades.set(plot.plotId, blades);
+          }
+          blades.setVisible(true).setPosition(plot.x, plot.y - 14).setDisplaySize(size * 0.95, size * 0.95);
+          blades.rotation += deltaMs * 0.0006;
+        } else {
+          blades?.setVisible(false);
+        }
+      } else {
+        // No art for this tower (future content): the old vector tower keeps it playable.
+        sprite?.setVisible(false);
+        const h = 26 + plot.level * 7;
+        g.fillStyle(PAL.wood);
+        g.fillRoundedRect(plot.x - 15, plot.y - h + 14, 30, h, 4);
+        g.fillStyle(PAL.stone);
+        g.fillRoundedRect(plot.x - 19, plot.y - h + 2, 38, 14, 3);
+        g.fillStyle(TOWER_TINTS[tower.spriteRef] ?? PAL.hero);
+        g.fillCircle(plot.x, plot.y - h + 2, 5);
+      }
+
       const def = this.sim.towerSystem.projectileDef(plot);
       if (def?.behavior === 'aura') {
         g.lineStyle(2, 0x7fd4e8, 0.22);
@@ -287,7 +343,7 @@ export class GameScene extends Phaser.Scene {
         g.strokeCircle(plot.x, plot.y, aura.radius);
       }
       g.fillStyle(PAL.gold);
-      for (let i = 0; i < plot.level; i++) g.fillRect(plot.x - 14 + i * 8, plot.y + 18, 6, 4);
+      for (let i = 0; i < plot.level; i++) g.fillRect(plot.x - 14 + i * 8, plot.y + 26, 6, 4);
     }
   }
 
@@ -502,17 +558,22 @@ export class GameScene extends Phaser.Scene {
   }
 
   private addEnemyView(e: EnemyInstance): void {
-    const tint = ENEMY_TINTS[e.config.spriteRef] ?? DEFAULT_TINT;
-    const radius = e.isElite ? e.config.radius + 3 : e.config.radius;
-    const view = this.add.circle(e.x, e.y, radius, tint).setDepth(10);
-    if (e.isElite) view.setStrokeStyle(4, ELITE_GLOW, 0.95); // crowned
-    else view.setStrokeStyle(2, 0x1c1c1c, 0.6);
-    this.enemyViews.set(e.id, view);
-    this.enemyTints.set(e.id, tint);
+    if (this.textures.exists(e.config.spriteRef)) {
+      const size = e.config.radius * ENEMY_SPRITE_SCALE * (e.isElite ? 1.18 : 1);
+      const obj = this.add.sprite(e.x, e.y, e.config.spriteRef).setDisplaySize(size, size).setDepth(10);
+      this.enemyViews.set(e.id, { kind: 'sprite', obj });
+    } else {
+      // No art for this ref (future content): tinted circle keeps the game playable.
+      const tint = ENEMY_TINTS[e.config.spriteRef] ?? DEFAULT_TINT;
+      const obj = this.add.circle(e.x, e.y, e.config.radius, tint).setDepth(10);
+      obj.setStrokeStyle(2, 0x1c1c1c, 0.6);
+      this.enemyViews.set(e.id, { kind: 'circle', obj });
+      this.enemyTints.set(e.id, tint);
+    }
   }
 
   private removeEnemyView(id: number): void {
-    this.enemyViews.get(id)?.destroy();
+    this.enemyViews.get(id)?.obj.destroy();
     this.enemyViews.delete(id);
     this.enemyTints.delete(id);
     this.flashUntil.delete(id);
@@ -562,23 +623,32 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // Gate
+    // Gate + forge: shipped sprites, vector fallback for artless maps
     const gate = map.gate.position;
-    g.fillStyle(PAL.stone);
-    g.fillRect(gate.x - 36, gate.y - 26, 72, 48);
-    g.fillStyle(PAL.stoneDark);
-    g.fillRect(gate.x - 36, gate.y - 26, 72, 10);
+    if (this.textures.exists('gate')) {
+      g.fillStyle(0x000000, 0.22);
+      g.fillEllipse(gate.x, gate.y + 22, 96, 24);
+      this.add.image(gate.x, gate.y, 'gate').setDisplaySize(104, 104);
+    } else {
+      g.fillStyle(PAL.stone);
+      g.fillRect(gate.x - 36, gate.y - 26, 72, 48);
+      g.fillStyle(PAL.stoneDark);
+      g.fillRect(gate.x - 36, gate.y - 26, 72, 10);
+    }
 
-    // Forge (anvil)
     const forge = map.forge.position;
     g.fillStyle(0x000000, 0.22);
-    g.fillEllipse(forge.x, forge.y + 12, 48, 16);
-    g.fillStyle(PAL.woodDark);
-    g.fillRoundedRect(forge.x - 16, forge.y - 2, 32, 14, 3);
-    g.fillStyle(PAL.forge);
-    g.fillRoundedRect(forge.x - 13, forge.y - 12, 26, 11, 4);
-    g.fillStyle(0x5a5d66);
-    g.fillRoundedRect(forge.x - 18, forge.y - 16, 36, 6, 3);
+    g.fillEllipse(forge.x, forge.y + 14, 52, 16);
+    if (this.textures.exists('forge')) {
+      this.add.image(forge.x, forge.y - 4, 'forge').setDisplaySize(60, 60);
+    } else {
+      g.fillStyle(PAL.woodDark);
+      g.fillRoundedRect(forge.x - 16, forge.y - 2, 32, 14, 3);
+      g.fillStyle(PAL.forge);
+      g.fillRoundedRect(forge.x - 13, forge.y - 12, 26, 11, 4);
+      g.fillStyle(0x5a5d66);
+      g.fillRoundedRect(forge.x - 18, forge.y - 16, 36, 6, 3);
+    }
   }
 
   private buildHud(): void {
