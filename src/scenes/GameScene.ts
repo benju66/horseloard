@@ -116,7 +116,7 @@ export class GameScene extends Phaser.Scene {
       this.flashUntil.set(e.id, this.time.now + FLASH_MS);
     });
     this.sim.hero.onStagger.push(() => {
-      this.cameras.main.shake(120, 0.006);
+      this.cameras.main.shake(200, 0.012);
     });
 
     this.drawMap(map);
@@ -274,12 +274,17 @@ export class GameScene extends Phaser.Scene {
     g.fillStyle(PAL.mane);
     g.fillRect(13, -24 + bob * 0.4, 4, 14);
     g.fillTriangle(-20, -8, -28, 2, -19, 6);
-    // rider
-    g.fillStyle(PAL.hero);
+    // rider — flashes red/white while shoved so the stagger reads on the body, not just the camera
+    const staggerFlash = hero.staggered
+      ? Math.floor(this.time.now / 60) % 2 === 0
+        ? 0xffffff
+        : 0xe5484d
+      : null;
+    g.fillStyle(staggerFlash ?? PAL.hero);
     g.fillRoundedRect(-8, -26 + bob, 14, 18, 5);
-    g.fillStyle(PAL.skin);
+    g.fillStyle(staggerFlash ?? PAL.skin);
     g.fillCircle(-1, -32 + bob, 6);
-    g.fillStyle(PAL.heroHelm);
+    g.fillStyle(staggerFlash ?? PAL.heroHelm);
     g.fillRoundedRect(-8, -38 + bob, 14, 7, 3);
     // bow
     g.lineStyle(2.5, PAL.arrow);

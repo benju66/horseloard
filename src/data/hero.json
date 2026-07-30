@@ -23,7 +23,7 @@
   },
   "stagger": {
     "controlLossDuration": 0.4,
-    "shoveDistance": 45,
+    "shoveDistance": 70,
     "perEnemyCooldown": 1.2
   }
 }

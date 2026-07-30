@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "balance": "vitest run --mode balance src/engine/balance.harness.test.ts"
   },
   "dependencies": {
     "phaser": "^3.90.0",
