@@ -53,6 +53,8 @@ export class Simulation {
   phase: SimPhase = 'build';
   kills = 0;
   tickCount = 0;
+  /** seconds spent in the current build phase — the early-start bonus decays over it */
+  buildElapsed = 0;
   private accumulator = 0;
 
   constructor(data: SimData, rng: () => number = Math.random) {
@@ -102,6 +104,7 @@ export class Simulation {
   tick(): void {
     if (this.phase === 'defeat') return; // the keep has fallen; the field freezes
     this.tickCount++;
+    if (this.phase === 'build') this.buildElapsed += SIM_DT;
     if (this.phase === 'wave') this.waveRunner.tick(SIM_DT);
     this.enemySystem.tick(SIM_DT); // besiegers persist and act across phases
     this.gate.tick(SIM_DT);
@@ -129,11 +132,26 @@ export class Simulation {
     this.economy.gold += base + perWave * this.waveRunner.waveNumber;
     this.economy.sweep();
     this.phase = nextPhase;
+    this.buildElapsed = 0;
+  }
+
+  /**
+   * Coins paid for starting the next wave now, decaying over the build
+   * phase. Rewards confident players, never punishes deliberate ones
+   * (DESIGN §8). Zero before the first wave — nothing was cleared yet.
+   */
+  earlyStartBonus(): number {
+    if (this.phase !== 'build' || this.waveRunner.waveNumber === 0) return 0;
+    const { windowSeconds, maxBonus } = this.economy.config.earlyStart;
+    const remaining = Math.max(0, windowSeconds - this.buildElapsed);
+    return Math.ceil((maxBonus * remaining) / windowSeconds);
   }
 
   startNextWave(): boolean {
     if (this.phase !== 'build') return false;
+    const bonus = this.earlyStartBonus();
     if (!this.waveRunner.startNextWave()) return false;
+    this.economy.gold += bonus;
     this.phase = 'wave';
     return true;
   }

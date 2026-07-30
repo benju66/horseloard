@@ -128,6 +128,62 @@ describe('wave lifecycle', () => {
     expect(sim.phase).toBe('done');
   });
 
+  it('pays an early-start bonus that decays over the build phase', () => {
+    const sim = new Simulation(
+      fixture({
+        waves: [
+          {
+            hpMultiplier: 1,
+            entries: [{ enemyId: 'walker', count: 1, spacing: 1, laneId: 'main', delay: 0 }],
+          },
+          {
+            hpMultiplier: 1,
+            entries: [{ enemyId: 'walker', count: 1, spacing: 1, laneId: 'main', delay: 0 }],
+          },
+        ],
+      }),
+      TEST_RNG,
+    );
+    expect(sim.earlyStartBonus()).toBe(0); // nothing cleared yet
+    sim.startNextWave();
+    advanceSeconds(sim, 1);
+    sim.enemySystem.applyDamage(1, 999);
+    advanceSeconds(sim, SIM_DT * 2);
+    expect(sim.phase).toBe('build');
+
+    // instant restart: full bonus
+    expect(sim.earlyStartBonus()).toBe(TEST_ECONOMY.earlyStart.maxBonus);
+    const before = sim.gold;
+    sim.startNextWave();
+    expect(sim.gold).toBe(before + TEST_ECONOMY.earlyStart.maxBonus);
+  });
+
+  it('pays nothing for a slow start', () => {
+    const sim = new Simulation(
+      fixture({
+        waves: [
+          {
+            hpMultiplier: 1,
+            entries: [{ enemyId: 'walker', count: 1, spacing: 1, laneId: 'main', delay: 0 }],
+          },
+          {
+            hpMultiplier: 1,
+            entries: [{ enemyId: 'walker', count: 1, spacing: 1, laneId: 'main', delay: 0 }],
+          },
+        ],
+      }),
+      TEST_RNG,
+    );
+    sim.startNextWave();
+    advanceSeconds(sim, 1);
+    sim.enemySystem.applyDamage(1, 999);
+    advanceSeconds(sim, TEST_ECONOMY.earlyStart.windowSeconds + 1); // dawdle past the window
+    expect(sim.earlyStartBonus()).toBe(0);
+    const before = sim.gold;
+    sim.startNextWave();
+    expect(sim.gold).toBe(before);
+  });
+
   it('applyDamage kills at 0 and removes the enemy', () => {
     const sim = new Simulation(fixture(), TEST_RNG);
     sim.startNextWave();

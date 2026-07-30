@@ -118,9 +118,10 @@ export class GateSystem {
       if (id === null) continue;
       const e = this.enemies.getById(id);
       if (!e || e.state !== 'at-slot') continue;
-      const damage = e.config.siegeDps * dt;
+      const damage = Math.min(e.config.siegeDps * dt, this.hp); // can't take more than it has
       this.hp -= damage;
       this.totalDamageTaken += damage;
+      if (this.hp <= 0) break;
     }
     if (this.hp <= 0) {
       this.hp = 0;

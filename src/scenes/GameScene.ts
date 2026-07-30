@@ -72,6 +72,9 @@ export class GameScene extends Phaser.Scene {
   private towerG!: Phaser.GameObjects.Graphics;
   private coinG!: Phaser.GameObjects.Graphics;
   private ringG!: Phaser.GameObjects.Graphics;
+  private startLabel!: Phaser.GameObjects.Text;
+  private fpsText: Phaser.GameObjects.Text | null = null;
+  private ending = false;
   private bob = 0;
 
   constructor() {
@@ -90,6 +93,8 @@ export class GameScene extends Phaser.Scene {
     this.plotMarkers = new Map();
     this.bubbles = [];
     this.bob = 0;
+    this.ending = false;
+    this.fpsText = null;
 
     const map = this.data_.maps['meadow-road'];
     if (!map) throw new Error('GameScene: seed map "meadow-road" missing');
@@ -129,6 +134,13 @@ export class GameScene extends Phaser.Scene {
     this.keys = this.input.keyboard!.addKeys('W,A,S,D') as GameScene['keys'];
 
     for (let i = 0; i < MAX_BUBBLES; i++) this.bubbles.push(new WorldBubble(this));
+
+    // FPS overlay: always in dev, ?fps in production — the M0 exit gate is 60fps on-device.
+    if (import.meta.env.DEV || new URLSearchParams(window.location.search).has('fps')) {
+      this.fpsText = this.add
+        .text(12, 66, '', { fontFamily: 'monospace', fontSize: '12px', color: '#9df29d' })
+        .setDepth(50);
+    }
   }
 
   override update(_time: number, deltaMs: number): void {
@@ -141,6 +153,25 @@ export class GameScene extends Phaser.Scene {
     this.drawArrows();
     this.updateHud();
     this.updateBubbles();
+    this.fpsText?.setText(`${Math.round(this.game.loop.actualFps)} fps`);
+    this.maybeEndRun();
+  }
+
+  private maybeEndRun(): void {
+    if (this.ending) return;
+    const { phase } = this.sim;
+    if (phase !== 'done' && phase !== 'defeat') return;
+    this.ending = true;
+    this.time.delayedCall(1400, () => {
+      this.scene.start('Results', {
+        victory: phase === 'done',
+        wavesCleared: this.sim.waveRunner.waveNumber - (phase === 'defeat' ? 1 : 0),
+        totalWaves: this.sim.waveRunner.totalWaves,
+        kills: this.sim.kills,
+        damageTaken: this.sim.gate.totalDamageTaken,
+        gameData: this.data_,
+      });
+    });
   }
 
   private readInput(): void {
@@ -274,6 +305,10 @@ export class GameScene extends Phaser.Scene {
     this.goldText.setText(String(gold));
     this.gateText.setText(`♥ ${Math.ceil(gate.hp)}/${gate.maxHp}`);
     this.startButton.setVisible(phase === 'build');
+    if (phase === 'build') {
+      const bonus = this.sim.earlyStartBonus();
+      this.startLabel.setText(bonus > 0 ? `Start wave  +${bonus}` : 'Start wave');
+    }
     if (phase === 'build') {
       this.waveLabel.setText(
         waveRunner.waveNumber === 0 ? 'Get ready' : `Wave ${waveRunner.waveNumber} clear`,
@@ -517,7 +552,7 @@ export class GameScene extends Phaser.Scene {
     const w = 190;
     const h = 54;
     const bg = this.add.rectangle(0, 0, w, h, PAL.btn).setStrokeStyle(3, PAL.btnHi);
-    const label = this.add
+    this.startLabel = this.add
       .text(0, 0, 'Start wave', {
         fontFamily: 'sans-serif',
         fontSize: '20px',
@@ -525,7 +560,7 @@ export class GameScene extends Phaser.Scene {
         color: PAL.text,
       })
       .setOrigin(0.5);
-    this.startButton = this.add.container(210, 715, [bg, label]).setDepth(20); // prototype: top edge at H-92
+    this.startButton = this.add.container(210, 715, [bg, this.startLabel]).setDepth(20); // prototype: top edge at H-92
     bg.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
       this.sim.startNextWave();
     });
