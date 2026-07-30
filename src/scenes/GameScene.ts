@@ -95,6 +95,10 @@ export class GameScene extends Phaser.Scene {
   private towerSprites!: Map<string, Phaser.GameObjects.Sprite>;
   private millBlades!: Map<string, Phaser.GameObjects.Sprite>;
   private heroSprite: Phaser.GameObjects.Sprite | null = null;
+  private deathPuff!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private eliteBurst!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private coinPop!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private blastDebris!: Phaser.GameObjects.Particles.ParticleEmitter;
   private startLabel!: Phaser.GameObjects.Text;
   private fpsText: Phaser.GameObjects.Text | null = null;
   private abilityBar!: AbilityBar;
@@ -141,14 +145,63 @@ export class GameScene extends Phaser.Scene {
       abilities: this.data_.abilities,
       unlockedAbilityIds: FLAG_UNLOCKED_ABILITIES,
     });
+    // 4px white square shared by every particle effect (tinted per emitter).
+    if (!this.textures.exists('px')) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      g.fillStyle(0xffffff);
+      g.fillRect(0, 0, 4, 4);
+      g.generateTexture('px', 4, 4);
+      g.destroy();
+    }
+    const makeBurst = (tint: number, speed: number) =>
+      this.add
+        .particles(0, 0, 'px', {
+          speed: { min: speed * 0.4, max: speed },
+          lifespan: { min: 200, max: 420 },
+          scale: { start: 1.1, end: 0 },
+          emitting: false,
+          tint,
+        })
+        .setDepth(13);
+    this.deathPuff = makeBurst(0xd8c8a8, 130);
+    this.eliteBurst = makeBurst(0xf6c945, 190);
+    this.coinPop = makeBurst(0xf6c945, 90);
+    this.blastDebris = makeBurst(0xf0e0b0, 170);
+
+    // Subtle haptics (DESIGN §9): heavy kills, leaks reaching the gate, staggers.
+    const buzz = (pattern: number | number[]) => {
+      try {
+        navigator.vibrate?.(pattern);
+      } catch {
+        /* not supported — fine */
+      }
+    };
+
     this.sim.enemySystem.onSpawn.push((e) => this.addEnemyView(e));
-    this.sim.enemySystem.onDeath.push((e) => this.removeEnemyView(e.id));
+    this.sim.enemySystem.onDeath.push((e) => {
+      this.removeEnemyView(e.id);
+      this.deathPuff.explode(9, e.x, e.y);
+      if (e.isElite) this.eliteBurst.explode(14, e.x, e.y);
+      if (e.config.staggersHero) buzz(18);
+    });
     this.sim.enemySystem.onDamaged.push((e) => {
       this.flashUntil.set(e.id, this.time.now + FLASH_MS);
     });
+    this.sim.enemySystem.onReachEnd.push(() => {
+      this.cameras.main.shake(120, 0.005); // a leak reached the gate — feel it
+      buzz(35);
+    });
+    this.sim.economy.onCollect.push((_value, x, y) => {
+      this.coinPop.explode(4, x, y);
+    });
+    this.sim.towerSystem.onAuraPulse.push((plot, radius) => {
+      this.blastRing(plot.x, plot.y, radius, 0x7fd4e8, 0.28);
+    });
     this.sim.hero.onStagger.push(() => {
       this.cameras.main.shake(200, 0.012);
+      buzz(45);
     });
+    this.sim.gate.onDestroyed.push(() => buzz([70, 50, 90]));
 
     this.drawMap(map);
     this.createPlotMarkers(map);
@@ -187,6 +240,7 @@ export class GameScene extends Phaser.Scene {
     // Blast feedback: a quick expanding ring wherever aoe lands.
     this.sim.projectileSystem.onExplosion.push((x, y, radius) => {
       this.blastRing(x, y, radius, 0xf0e0b0);
+      this.blastDebris.explode(11, x, y);
     });
     // Hero-cast feedback: Volley rains on the hero's position.
     this.sim.abilities.onCast.push((ability) => {
@@ -220,8 +274,8 @@ export class GameScene extends Phaser.Scene {
     this.maybeEndRun();
   }
 
-  private blastRing(x: number, y: number, radius: number, color: number): void {
-    const ring = this.add.circle(x, y, 6).setStrokeStyle(4, color, 0.9).setDepth(13);
+  private blastRing(x: number, y: number, radius: number, color: number, alpha = 0.9): void {
+    const ring = this.add.circle(x, y, 6).setStrokeStyle(4, color, alpha).setDepth(13);
     this.tweens.add({
       targets: ring,
       radius,
