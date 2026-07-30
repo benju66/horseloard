@@ -73,21 +73,22 @@ describe('enemy movement along the lane', () => {
     expect(sim.enemySystem.getById(1)!.config.id).toBe('walker');
   });
 
-  it('leaks never despawn: reaching the end parks the enemy, alive', () => {
+  it('leaks never despawn: reaching the end turns walkers into besiegers', () => {
     const sim = new Simulation(fixture(), TEST_RNG);
     sim.startNextWave();
     const reached: number[] = [];
     sim.enemySystem.onReachEnd.push((e) => reached.push(e.id));
-    advanceSeconds(sim, 15); // lane is 100 long, speed 10 → ends by ~11s
+    advanceSeconds(sim, 20); // lane is 100 long, speed 10 → ends ~11s; slot walk after
     expect(sim.enemySystem.aliveCount).toBe(2);
     expect(reached.sort()).toEqual([1, 2]);
     for (const e of sim.enemySystem.enemies) {
-      expect(e.state).toBe('at-end');
+      expect(e.state).toBe('at-slot');
       expect(e.distance).toBe(100);
-      expect(e.y).toBe(100);
     }
-    // wave is over (nothing still walking) but the leaks remain
-    expect(sim.phase).toBe('done');
+    // final wave with a standing siege: no victory, and the gate is paying for it
+    expect(sim.phase).toBe('wave');
+    expect(sim.gate.besiegerCount).toBe(2);
+    expect(sim.gate.hp).toBeLessThan(sim.gate.maxHp);
   });
 });
 

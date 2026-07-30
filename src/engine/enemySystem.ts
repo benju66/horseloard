@@ -3,11 +3,13 @@ import type { IdGenerator } from './ids';
 import type { LanePath } from './path';
 
 /**
- * 'walking'  — advancing along its lane
- * 'at-end'   — reached the path end. Leaks never despawn (DESIGN §6);
- *              M0.6 turns this into the besieger state machine.
+ * 'walking' — advancing along its lane
+ * 'to-slot' — reached the path end, marching to its assigned siege position
+ * 'at-slot' — in position at the gate. Leaks never despawn (DESIGN §6);
+ *             whether this spot deals siege damage is the GateSystem's call
+ *             (attack slot) or not (overflow queue).
  */
-export type EnemyState = 'walking' | 'at-end';
+export type EnemyState = 'walking' | 'to-slot' | 'at-slot';
 
 export interface EnemyInstance {
   readonly id: number;
@@ -20,6 +22,9 @@ export interface EnemyInstance {
   /** world position, refreshed every tick from the lane path (no per-tick allocation) */
   x: number;
   y: number;
+  /** siege position assigned by the GateSystem while to-slot / at-slot */
+  slotX: number;
+  slotY: number;
 }
 
 /**
@@ -62,6 +67,8 @@ export class EnemySystem {
       state: 'walking',
       x: 0,
       y: 0,
+      slotX: 0,
+      slotY: 0,
     };
     lane.positionAt(0, e);
     this.list.push(e);
@@ -72,17 +79,34 @@ export class EnemySystem {
 
   tick(dt: number): void {
     for (const e of this.list) {
-      if (e.state !== 'walking') continue;
-      const lane = this.lanes.get(e.laneId)!;
-      e.distance += e.config.speed * dt;
-      if (e.distance >= lane.totalLength) {
-        e.distance = lane.totalLength;
-        e.state = 'at-end';
-        lane.positionAt(e.distance, e);
-        for (const fn of this.onReachEnd) fn(e);
-      } else {
-        lane.positionAt(e.distance, e);
+      if (e.state === 'walking') {
+        const lane = this.lanes.get(e.laneId)!;
+        e.distance += e.config.speed * dt;
+        if (e.distance >= lane.totalLength) {
+          e.distance = lane.totalLength;
+          lane.positionAt(e.distance, e);
+          e.state = 'to-slot';
+          e.slotX = e.x; // placeholder until a GateSystem listener assigns a real slot
+          e.slotY = e.y;
+          for (const fn of this.onReachEnd) fn(e);
+        } else {
+          lane.positionAt(e.distance, e);
+        }
+      } else if (e.state === 'to-slot') {
+        const dx = e.slotX - e.x;
+        const dy = e.slotY - e.y;
+        const dist = Math.hypot(dx, dy);
+        const step = e.config.speed * dt;
+        if (dist <= Math.max(step, 2)) {
+          e.x = e.slotX;
+          e.y = e.slotY;
+          e.state = 'at-slot';
+        } else {
+          e.x += (dx / dist) * step;
+          e.y += (dy / dist) * step;
+        }
       }
+      // 'at-slot': stands its ground; the GateSystem decides if it deals siege damage
     }
   }
 

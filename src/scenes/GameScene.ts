@@ -43,6 +43,7 @@ const DEFAULT_TINT = 0x999999;
 const FLASH_MS = 90;
 const FORGE_REACH = 55;
 const PLOT_REACH = 52;
+const GATE_REACH = 64;
 const MAX_BUBBLES = 4;
 
 /**
@@ -59,6 +60,7 @@ export class GameScene extends Phaser.Scene {
   private plotMarkers!: Map<string, Phaser.GameObjects.Container>;
   private waveLabel!: Phaser.GameObjects.Text;
   private goldText!: Phaser.GameObjects.Text;
+  private gateText!: Phaser.GameObjects.Text;
   private startButton!: Phaser.GameObjects.Container;
   private joystick!: VirtualJoystick;
   private keys!: Record<'W' | 'A' | 'S' | 'D', Phaser.Input.Keyboard.Key>;
@@ -268,8 +270,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateHud(): void {
-    const { phase, waveRunner, gold } = this.sim;
+    const { phase, waveRunner, gold, gate } = this.sim;
     this.goldText.setText(String(gold));
+    this.gateText.setText(`♥ ${Math.ceil(gate.hp)}/${gate.maxHp}`);
     this.startButton.setVisible(phase === 'build');
     if (phase === 'build') {
       this.waveLabel.setText(
@@ -299,13 +302,35 @@ export class GameScene extends Phaser.Scene {
     }
     const forge = this.map_.forge.position;
     const forgeDist = Math.hypot(hero.x - forge.x, hero.y - forge.y);
+    const gatePos = this.map_.gate.position;
+    const gateDist = Math.hypot(hero.x - gatePos.x, hero.y - gatePos.y);
 
-    if (nearestPlot && nearestPlotDist <= forgeDist) {
+    if (nearestPlot && nearestPlotDist <= forgeDist && nearestPlotDist <= gateDist) {
       this.showPlotBubbles(nearestPlot);
-    } else if (forgeDist < FORGE_REACH) {
+    } else if (forgeDist < FORGE_REACH && forgeDist <= gateDist) {
       this.showForgeBubble();
+    } else if (gateDist < GATE_REACH) {
+      this.showGateBubble();
     }
     for (let i = this.bubblesUsed; i < this.bubbles.length; i++) this.bubbles[i]!.hide();
+  }
+
+  private showGateBubble(): void {
+    if (this.sim.phase !== 'build') return;
+    const quote = this.sim.repairQuote();
+    if (!quote) return;
+    const gatePos = this.map_.gate.position;
+    const bubble = this.nextBubble();
+    bubble.show(
+      gatePos.x,
+      gatePos.y - 110,
+      `Repair +${quote.amount}`,
+      `${quote.cost} gold`,
+      this.sim.gold >= quote.cost,
+    );
+    bubble.onTap = () => {
+      this.sim.repairGate();
+    };
   }
 
   private nextBubble(): WorldBubble {
@@ -477,6 +502,16 @@ export class GameScene extends Phaser.Scene {
         color: PAL.text,
       })
       .setOrigin(0.5)
+      .setDepth(20);
+
+    this.gateText = this.add
+      .text(398, 34, '', {
+        fontFamily: 'sans-serif',
+        fontSize: '16px',
+        fontStyle: 'bold',
+        color: '#e5484d',
+      })
+      .setOrigin(1, 0.5)
       .setDepth(20);
 
     const w = 190;

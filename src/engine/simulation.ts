@@ -7,6 +7,7 @@ import { ProjectileSystem } from './projectileSystem';
 import { HeroSystem } from './heroSystem';
 import { EconomySystem } from './economySystem';
 import { TowerSystem } from './towerSystem';
+import { GateSystem } from './gateSystem';
 
 /** Fixed simulation timestep. Rendering framerate is unrelated (CLAUDE.md #2). */
 export const SIM_DT = 1 / 60;
@@ -24,12 +25,15 @@ export interface SimData {
 }
 
 /**
- * 'build' — between waves, player spends and positions
- * 'wave'  — spawning/fighting; ends when spawning is done and no enemy is
- *           still walking (at-end enemies persist — they're a siege, not a score)
- * 'done'  — all waves cleared AND the field fully cleaned up
+ * 'build'  — between waves, player spends and positions (besiegers may still
+ *            be battering the gate — a leak is a fixable problem, not a score)
+ * 'wave'   — spawning/fighting; ends when spawning is done and nothing walks.
+ *            The FINAL wave also demands a clean field: ride back and break
+ *            the siege before it counts as done.
+ * 'done'   — victory
+ * 'defeat' — the gate fell; the sim freezes
  */
-export type SimPhase = 'build' | 'wave' | 'done';
+export type SimPhase = 'build' | 'wave' | 'done' | 'defeat';
 
 /**
  * The whole game state advances here, in fixed ticks, with no reference to
@@ -44,6 +48,7 @@ export class Simulation {
   readonly hero: HeroSystem;
   readonly economy: EconomySystem;
   readonly towerSystem: TowerSystem;
+  readonly gate: GateSystem;
 
   phase: SimPhase = 'build';
   kills = 0;
@@ -65,6 +70,11 @@ export class Simulation {
       this.enemySystem,
       this.projectileSystem,
     );
+
+    this.gate = new GateSystem(data.map.gate, this.enemySystem);
+    this.gate.onDestroyed.push(() => {
+      this.phase = 'defeat';
+    });
 
     // Kills drop coins where the enemy died — the loot line is the gameplay.
     this.enemySystem.onDeath.push((e) => {
@@ -90,9 +100,11 @@ export class Simulation {
   }
 
   tick(): void {
+    if (this.phase === 'defeat') return; // the keep has fallen; the field freezes
     this.tickCount++;
     if (this.phase === 'wave') this.waveRunner.tick(SIM_DT);
-    this.enemySystem.tick(SIM_DT); // at-end enemies persist across phases (siege groundwork, M0.6)
+    this.enemySystem.tick(SIM_DT); // besiegers persist and act across phases
+    this.gate.tick(SIM_DT);
     this.towerSystem.tick(SIM_DT);
     this.hero.tick(SIM_DT);
     this.projectileSystem.tick(SIM_DT);
@@ -103,15 +115,20 @@ export class Simulation {
       !this.waveRunner.spawning &&
       this.enemySystem.walkingCount === 0
     ) {
-      this.onWaveCleared();
+      if (this.waveRunner.hasMoreWaves) {
+        this.onWaveCleared('build');
+      } else if (this.enemySystem.aliveCount === 0) {
+        // Final wave only counts once the siege is broken too.
+        this.onWaveCleared('done');
+      }
     }
   }
 
-  private onWaveCleared(): void {
+  private onWaveCleared(nextPhase: SimPhase): void {
     const { base, perWave } = this.economy.config.waveClearBonus;
     this.economy.gold += base + perWave * this.waveRunner.waveNumber;
     this.economy.sweep();
-    this.phase = this.waveRunner.hasMoreWaves ? 'build' : 'done';
+    this.phase = nextPhase;
   }
 
   startNextWave(): boolean {
@@ -158,6 +175,27 @@ export class Simulation {
     if (!plot || plot.towerId === null) return false;
     const refund = this.towerSystem.sell(plotId, this.economy.config.sellRefund);
     this.economy.gold += refund;
+    return true;
+  }
+
+  /** Next repair purchase: {amount, cost}, or null when the gate is whole. */
+  repairQuote(): { amount: number; cost: number } | null {
+    const { hpPerPurchase, costPerHp } = this.economy.config.repair;
+    const amount = Math.min(hpPerPurchase, Math.ceil(this.maxGateDeficit()));
+    if (amount <= 0) return null;
+    return { amount, cost: Math.ceil(amount * costPerHp) };
+  }
+
+  private maxGateDeficit(): number {
+    return this.gate.maxHp - this.gate.hp;
+  }
+
+  /** Gate repair: a coin sink, between waves only (DESIGN §6). */
+  repairGate(): boolean {
+    if (this.phase !== 'build') return false;
+    const quote = this.repairQuote();
+    if (!quote || !this.economy.spend(quote.cost)) return false;
+    this.gate.repair(quote.amount);
     return true;
   }
 }
