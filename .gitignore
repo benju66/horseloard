@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dev-dist/
+coverage/
+*.local
+.vercel/
+.DS_Store
+.playwright-mcp/
