@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import {
   AbilitiesFileSchema,
+  ArchetypesFileSchema,
   EconomySchema,
   EnemiesFileSchema,
   HeroSchema,
@@ -9,6 +10,7 @@ import {
   TowersFileSchema,
   WaveSetSchema,
   type AbilitiesFile,
+  type ArchetypesFile,
   type Economy,
   type EnemiesFile,
   type Hero,
@@ -24,8 +26,11 @@ import abilitiesJson from './abilities.json';
 import metatreeJson from './metatree.json';
 import heroJson from './hero.json';
 import economyJson from './economy.json';
+import archetypesJson from './archetypes.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
+import theFordMapJson from './maps/the-ford.json';
+import theFordWavesJson from './waves/the-ford.json';
 
 /** Everything the game needs, validated. Engines receive slices of this — they never import JSON. */
 export interface GameData {
@@ -35,6 +40,7 @@ export interface GameData {
   metaTree: MetaTreeFile['nodes'];
   hero: Hero;
   economy: Economy;
+  archetypes: ArchetypesFile['archetypes'];
   /** keyed by map id */
   maps: Record<string, MapDef>;
   /** keyed by map id */
@@ -70,6 +76,7 @@ export interface RawGameData {
   metatree: unknown;
   hero: unknown;
   economy: unknown;
+  archetypes: unknown;
   /** file path (for messages) → raw content */
   maps: Record<string, unknown>;
   /** file path (for messages) → raw content */
@@ -88,6 +95,7 @@ export function validateGameData(raw: RawGameData): GameData {
   const metaTreeFile = validateFile(MetaTreeFileSchema, raw.metatree, 'metatree.json');
   const hero = validateFile(HeroSchema, raw.hero, 'hero.json');
   const economy = validateFile(EconomySchema, raw.economy, 'economy.json');
+  const archetypesFile = validateFile(ArchetypesFileSchema, raw.archetypes, 'archetypes.json');
 
   const maps: Record<string, MapDef> = {};
   for (const [file, content] of Object.entries(raw.maps)) {
@@ -118,7 +126,13 @@ export function validateGameData(raw: RawGameData): GameData {
     waveSets[waveSet.mapId] = waveSet;
 
     const laneIds = new Set(map.lanes.map((l) => l.id));
+    const archetypeIds = new Set(archetypesFile.archetypes.map((a) => a.id));
     waveSet.waves.forEach((wave, w) => {
+      if (wave.archetypeId !== undefined && !archetypeIds.has(wave.archetypeId)) {
+        errors.push(
+          `${file} → waves.${w}.archetypeId: unknown archetype "${wave.archetypeId}" (known: ${[...archetypeIds].join(', ')})`,
+        );
+      }
       wave.entries.forEach((entry, e) => {
         if (!enemyIds.has(entry.enemyId)) {
           errors.push(
@@ -166,6 +180,7 @@ export function validateGameData(raw: RawGameData): GameData {
     metaTree: metaTreeFile.nodes,
     hero,
     economy,
+    archetypes: archetypesFile.archetypes,
     maps,
     waveSets,
   };
@@ -180,7 +195,14 @@ export function loadGameData(): GameData {
     metatree: metatreeJson,
     hero: heroJson,
     economy: economyJson,
-    maps: { 'maps/meadow-road.json': meadowRoadMapJson },
-    waveSets: { 'waves/meadow-road.json': meadowRoadWavesJson },
+    archetypes: archetypesJson,
+    maps: {
+      'maps/meadow-road.json': meadowRoadMapJson,
+      'maps/the-ford.json': theFordMapJson,
+    },
+    waveSets: {
+      'waves/meadow-road.json': meadowRoadWavesJson,
+      'waves/the-ford.json': theFordWavesJson,
+    },
   });
 }

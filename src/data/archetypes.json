@@ -1,0 +1,19 @@
+{
+  "archetypes": [
+    {
+      "id": "horde",
+      "name": "HORDE",
+      "subtitle": "A tide of bodies — splash damage and trample lines"
+    },
+    {
+      "id": "raid",
+      "name": "RAID",
+      "subtitle": "Runners flooding one lane — intercept or lose it"
+    },
+    {
+      "id": "war-party",
+      "name": "WAR PARTY",
+      "subtitle": "Brutes behind shields — flank them or be ground down"
+    }
+  ]
+}

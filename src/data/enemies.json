@@ -40,6 +40,31 @@
       "staggersHero": true,
       "eliteEligible": true,
       "spriteRef": "enemy-brute"
+    },
+    {
+      "id": "shieldbearer",
+      "name": "Shieldbearer",
+      "hp": 55,
+      "speed": 34,
+      "radius": 13,
+      "coinValue": 8,
+      "siegeDps": 4,
+      "staggersHero": true,
+      "eliteEligible": true,
+      "frontalBlock": { "arcDegrees": 150, "multiplier": 0.25 },
+      "spriteRef": "enemy-shieldbearer"
+    },
+    {
+      "id": "swarm",
+      "name": "Swarmling",
+      "hp": 8,
+      "speed": 55,
+      "radius": 8,
+      "coinValue": 1,
+      "siegeDps": 0.6,
+      "staggersHero": false,
+      "eliteEligible": true,
+      "spriteRef": "enemy-swarm"
     }
   ]
 }

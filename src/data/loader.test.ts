@@ -7,8 +7,11 @@ import abilitiesJson from './abilities.json';
 import metatreeJson from './metatree.json';
 import heroJson from './hero.json';
 import economyJson from './economy.json';
+import archetypesJson from './archetypes.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
+import theFordMapJson from './maps/the-ford.json';
+import theFordWavesJson from './waves/the-ford.json';
 
 /** Fresh deep-cloned seed data; tests mutate it freely. Typed loose on purpose. */
 function seed(): RawGameData & Record<string, any> {
@@ -19,19 +22,28 @@ function seed(): RawGameData & Record<string, any> {
     metatree: metatreeJson,
     hero: heroJson,
     economy: economyJson,
-    maps: { 'maps/meadow-road.json': meadowRoadMapJson },
-    waveSets: { 'waves/meadow-road.json': meadowRoadWavesJson },
+    archetypes: archetypesJson,
+    maps: {
+      'maps/meadow-road.json': meadowRoadMapJson,
+      'maps/the-ford.json': theFordMapJson,
+    },
+    waveSets: {
+      'waves/meadow-road.json': meadowRoadWavesJson,
+      'waves/the-ford.json': theFordWavesJson,
+    },
   }) as RawGameData & Record<string, any>;
 }
 
 describe('seed data', () => {
   it('validates clean', () => {
     const data = validateGameData(seed());
-    expect(data.towers.towers.map((t) => t.id)).toEqual(['archer']);
-    expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute']);
+    expect(data.towers.towers.map((t) => t.id)).toEqual(['archer', 'bombard', 'frost-spire', 'mill']);
+    expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute', 'shieldbearer', 'swarm']);
     expect(data.abilities.map((a) => a.id)).toEqual(['charge', 'volley', 'rally-horn']);
-    expect(Object.keys(data.maps)).toEqual(['meadow-road']);
+    expect(Object.keys(data.maps).sort()).toEqual(['meadow-road', 'the-ford']);
     expect(data.waveSets['meadow-road']?.waves).toHaveLength(8);
+    expect(data.waveSets['the-ford']?.waves).toHaveLength(10);
+    expect(data.archetypes.map((a) => a.id)).toEqual(['horde', 'raid', 'war-party']);
     expect(data.metaTree.length).toBeGreaterThanOrEqual(9);
   });
 
@@ -143,8 +155,16 @@ describe('cross-file references', () => {
 
   it('wave set pointing at an unknown map', () => {
     const raw = seed();
-    (raw.waveSets['waves/meadow-road.json'] as any).mapId = 'the-ford';
-    expect(() => validateGameData(raw)).toThrow('unknown map "the-ford"');
+    (raw.waveSets['waves/meadow-road.json'] as any).mapId = 'the-marsh';
+    expect(() => validateGameData(raw)).toThrow('unknown map "the-marsh"');
+  });
+
+  it('wave with an unknown archetype banner', () => {
+    const raw = seed();
+    (raw.waveSets['waves/the-ford.json'] as any).waves[5].archetypeId = 'ambush';
+    expect(() => validateGameData(raw)).toThrow(
+      'waves/the-ford.json → waves.5.archetypeId: unknown archetype "ambush"',
+    );
   });
 
   it('map without a wave set', () => {
