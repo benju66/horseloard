@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
+import { GameScene } from './scenes/GameScene';
 
 // Fixed logical world, letterboxed to the screen — same convention as the
 // prototype. Portrait 420x780; the sim and all data coordinates use this space.
@@ -16,5 +17,5 @@ new Phaser.Game({
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [BootScene],
+  scene: [BootScene, GameScene],
 });
