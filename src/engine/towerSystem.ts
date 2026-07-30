@@ -35,11 +35,15 @@ export class TowerSystem {
   /** Rally Horn: global fire-rate multiplier while remaining > 0 */
   private rateBuffMultiplier = 1;
   private rateBuffRemaining = 0;
+  private time = 0;
+  private readonly breakReadyAt = new Map<string, number>();
 
   /** Economy towers drop coins beside themselves; the sim routes this to the EconomySystem. */
   readonly onIncome: Array<(x: number, y: number, value: number) => void> = [];
   /** Aura pulse fired (for rendering) */
   readonly onAuraPulse: Array<(plot: PlotState, radius: number) => void> = [];
+  /** A towerBreak enemy stomped this plot down a level (null tower = destroyed outright) */
+  readonly onTowerBroken: Array<(plot: PlotState) => void> = [];
 
   constructor(
     file: TowersFile,
@@ -188,8 +192,41 @@ export class TowerSystem {
     return this.rateBuffRemaining > 0;
   }
 
+  /** One level lost: branch pops first, level 1 loses the tower entirely. */
+  downgrade(plotId: string): void {
+    const plot = this.plotsById.get(plotId);
+    if (!plot || plot.towerId === null) return;
+    if (plot.branchId) {
+      plot.branchId = null;
+      plot.level--;
+    } else if (plot.level > 1) {
+      plot.level--;
+    } else {
+      plot.towerId = null;
+      plot.level = 0;
+      plot.invested = 0;
+    }
+    for (const fn of this.onTowerBroken) fn(plot);
+  }
+
   tick(dt: number): void {
+    this.time += dt;
     if (this.rateBuffRemaining > 0) this.rateBuffRemaining -= dt;
+
+    // Tower breakers (the Warlord) stomp adjacent towers down a level.
+    for (const e of this.enemies.enemies) {
+      const brk = e.config.towerBreak;
+      if (!brk) continue;
+      for (const plot of this.plotList) {
+        if (plot.towerId === null) continue;
+        const dx = plot.x - e.x;
+        const dy = plot.y - e.y;
+        if (dx * dx + dy * dy > brk.radius * brk.radius) continue;
+        if ((this.breakReadyAt.get(plot.plotId) ?? 0) > this.time) continue;
+        this.breakReadyAt.set(plot.plotId, this.time + brk.cooldown);
+        this.downgrade(plot.plotId);
+      }
+    }
 
     for (const plot of this.plotList) {
       if (plot.towerId === null) continue;

@@ -2,6 +2,7 @@
   "id": "meadow-road",
   "name": "The Meadow Road",
   "description": "Single lane, gentle S-curve. Teaches: build, loot, forge.",
+  "order": 1,
   "world": {
     "width": 420,
     "height": 780

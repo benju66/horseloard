@@ -9,7 +9,7 @@ import type { LanePath } from './path';
  *             whether this spot deals siege damage is the GateSystem's call
  *             (attack slot) or not (overflow queue).
  */
-export type EnemyState = 'walking' | 'to-slot' | 'at-slot';
+export type EnemyState = 'walking' | 'to-slot' | 'at-slot' | 'looting';
 
 export interface EnemyInstance {
   readonly id: number;
@@ -34,6 +34,11 @@ export interface EnemyInstance {
   slowRemaining: number;
   /** damage taken multiplier while slowed (Brittle marks) */
   vulnerability: number;
+  /** movement buff from war cries; active while hasteRemaining > 0 */
+  hasteFactor: number;
+  hasteRemaining: number;
+  /** seconds until this enemy's next war cry (warCry configs only) */
+  cryCooldown: number;
 }
 
 /**
@@ -55,6 +60,8 @@ export class EnemySystem {
   readonly onDeath: Array<(e: EnemyInstance) => void> = [];
   readonly onReachEnd: Array<(e: EnemyInstance) => void> = [];
   readonly onDamaged: Array<(e: EnemyInstance, amount: number) => void> = [];
+  readonly onEscape: Array<(e: EnemyInstance) => void> = [];
+  readonly onWarCry: Array<(e: EnemyInstance, radius: number) => void> = [];
 
   constructor(
     configs: readonly Enemy[],
@@ -98,6 +105,9 @@ export class EnemySystem {
       slowFactor: 1,
       slowRemaining: 0,
       vulnerability: 1,
+      hasteFactor: 1,
+      hasteRemaining: 0,
+      cryCooldown: config.warCry ? config.warCry.interval * 0.4 : 0,
     };
     lane.positionAt(0, e);
     const dir = lane.directionAt(0, this.scratchDir);
@@ -119,7 +129,34 @@ export class EnemySystem {
           e.vulnerability = 1;
         }
       }
-      const speed = e.config.speed * (e.slowRemaining > 0 ? e.slowFactor : 1);
+      if (e.hasteRemaining > 0) {
+        e.hasteRemaining -= dt;
+        if (e.hasteRemaining <= 0) {
+          e.hasteRemaining = 0;
+          e.hasteFactor = 1;
+        }
+      }
+      const cry = e.config.warCry;
+      if (cry) {
+        e.cryCooldown -= dt;
+        if (e.cryCooldown <= 0) {
+          e.cryCooldown = cry.interval;
+          const rSq = cry.radius * cry.radius;
+          for (const other of this.list) {
+            if (other === e) continue;
+            const dx = other.x - e.x;
+            const dy = other.y - e.y;
+            if (dx * dx + dy * dy > rSq) continue;
+            other.hasteFactor = Math.max(other.hasteFactor, cry.speedMultiplier);
+            other.hasteRemaining = Math.max(other.hasteRemaining, cry.duration);
+          }
+          for (const fn of this.onWarCry) fn(e, cry.radius);
+        }
+      }
+
+      const speed = this.effectiveSpeed(e);
+
+      if (e.state === 'looting') continue; // the LooterSystem drives these
 
       if (e.state === 'walking') {
         const lane = this.lanes.get(e.laneId)!;
@@ -189,10 +226,26 @@ export class EnemySystem {
     return true;
   }
 
-  /** Slow (or freeze at factor 0). Stronger slows win; durations refresh. */
+  effectiveSpeed(e: EnemyInstance): number {
+    let speed = e.config.speed;
+    if (e.slowRemaining > 0) speed *= e.slowFactor;
+    if (e.hasteRemaining > 0) speed *= e.hasteFactor;
+    return speed;
+  }
+
+  /** Removal without a death: an escapee takes its winnings and leaves. */
+  despawn(id: number): void {
+    const e = this.byId.get(id);
+    if (!e) return;
+    this.remove(e);
+    for (const fn of this.onEscape) fn(e);
+  }
+
+  /** Slow (or freeze at factor 0). Stronger slows win; durations refresh. Slow-immune enemies shrug. */
   applySlow(id: number, factor: number, duration: number, vulnerability = 1): void {
     const e = this.byId.get(id);
     if (!e) return;
+    if (e.config.ignoresSlows) return;
     if (e.slowRemaining <= 0 || factor <= e.slowFactor) e.slowFactor = factor;
     e.slowRemaining = Math.max(e.slowRemaining, duration);
     if (vulnerability > e.vulnerability) e.vulnerability = vulnerability;

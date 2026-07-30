@@ -9,6 +9,8 @@ export interface ResultsData {
   damageTaken: number;
   stars: 1 | 2 | 3;
   mapId: string;
+  endless: boolean;
+  tokensEarned: number;
   gameData: GameData;
 }
 
@@ -50,10 +52,11 @@ export class ResultsScene extends Phaser.Scene {
     }
 
     const lines = [
-      `Waves cleared  ${r.wavesCleared} / ${r.totalWaves}`,
+      r.endless ? `Waves survived  ${r.wavesCleared}` : `Waves cleared  ${r.wavesCleared} / ${r.totalWaves}`,
       `Kills  ${r.kills}`,
       `Gate damage taken  ${Math.ceil(r.damageTaken)}`,
     ];
+    if (r.tokensEarned > 0) lines.push(`Tokens earned  +${r.tokensEarned}`);
     this.add
       .text(210, 356, lines.join('\n'), {
         fontFamily: 'sans-serif',
@@ -64,18 +67,32 @@ export class ResultsScene extends Phaser.Scene {
       })
       .setOrigin(0.5, 0);
 
-    const bg = this.add.rectangle(0, 0, 190, 54, 0x3f7d2f).setStrokeStyle(3, 0x59a844);
+    const bg = this.add.rectangle(0, 0, 180, 54, 0x3f7d2f).setStrokeStyle(3, 0x59a844);
     const label = this.add
       .text(0, 0, 'Ride again', {
         fontFamily: 'sans-serif',
-        fontSize: '20px',
+        fontSize: '19px',
         fontStyle: 'bold',
         color: '#f5ead0',
       })
       .setOrigin(0.5);
-    this.add.container(210, 520, [bg, label]);
+    this.add.container(120, 540, [bg, label]);
     bg.setInteractive({ useHandCursor: true }).once('pointerdown', () => {
-      this.scene.start('Game', { gameData: r.gameData, mapId: r.mapId });
+      this.scene.start('Game', { gameData: r.gameData, mapId: r.mapId, endless: r.endless });
+    });
+
+    const bg2 = this.add.rectangle(0, 0, 180, 54, 0x2c4a63).setStrokeStyle(3, 0x5f9fd4);
+    const label2 = this.add
+      .text(0, 0, 'Map select', {
+        fontFamily: 'sans-serif',
+        fontSize: '19px',
+        fontStyle: 'bold',
+        color: '#f5ead0',
+      })
+      .setOrigin(0.5);
+    this.add.container(302, 540, [bg2, label2]);
+    bg2.setInteractive({ useHandCursor: true }).once('pointerdown', () => {
+      this.scene.start('MapSelect');
     });
   }
 }

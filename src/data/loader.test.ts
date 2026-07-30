@@ -12,6 +12,10 @@ import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
 import theFordMapJson from './maps/the-ford.json';
 import theFordWavesJson from './waves/the-ford.json';
+import crossroadsMapJson from './maps/crossroads.json';
+import crossroadsWavesJson from './waves/crossroads.json';
+import warlordsMarchMapJson from './maps/warlords-march.json';
+import warlordsMarchWavesJson from './waves/warlords-march.json';
 
 /** Fresh deep-cloned seed data; tests mutate it freely. Typed loose on purpose. */
 function seed(): RawGameData & Record<string, any> {
@@ -26,10 +30,14 @@ function seed(): RawGameData & Record<string, any> {
     maps: {
       'maps/meadow-road.json': meadowRoadMapJson,
       'maps/the-ford.json': theFordMapJson,
+      'maps/crossroads.json': crossroadsMapJson,
+      'maps/warlords-march.json': warlordsMarchMapJson,
     },
     waveSets: {
       'waves/meadow-road.json': meadowRoadWavesJson,
       'waves/the-ford.json': theFordWavesJson,
+      'waves/crossroads.json': crossroadsWavesJson,
+      'waves/warlords-march.json': warlordsMarchWavesJson,
     },
   }) as RawGameData & Record<string, any>;
 }
@@ -38,9 +46,9 @@ describe('seed data', () => {
   it('validates clean', () => {
     const data = validateGameData(seed());
     expect(data.towers.towers.map((t) => t.id)).toEqual(['archer', 'bombard', 'frost-spire', 'mill']);
-    expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute', 'shieldbearer', 'swarm']);
+    expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute', 'shieldbearer', 'swarm', 'wolf-rider', 'looter', 'warlord']);
     expect(data.abilities.map((a) => a.id)).toEqual(['charge', 'volley', 'rally-horn']);
-    expect(Object.keys(data.maps).sort()).toEqual(['meadow-road', 'the-ford']);
+    expect(Object.keys(data.maps).sort()).toEqual(['crossroads', 'meadow-road', 'the-ford', 'warlords-march']);
     expect(data.waveSets['meadow-road']?.waves).toHaveLength(8);
     expect(data.waveSets['the-ford']?.waves).toHaveLength(10);
     expect(data.archetypes.map((a) => a.id)).toEqual(['horde', 'raid', 'war-party']);
@@ -139,9 +147,9 @@ describe('schema validation fails loud with file + field path', () => {
 describe('cross-file references', () => {
   it('wave entry with unknown enemy', () => {
     const raw = seed();
-    (raw.waveSets['waves/meadow-road.json'] as any).waves[2].entries[0].enemyId = 'wolf-rider';
+    (raw.waveSets['waves/meadow-road.json'] as any).waves[2].entries[0].enemyId = 'ogre';
     expect(() => validateGameData(raw)).toThrow(
-      'waves/meadow-road.json → waves.2.entries.0.enemyId: unknown enemy "wolf-rider"',
+      'waves/meadow-road.json → waves.2.entries.0.enemyId: unknown enemy "ogre"',
     );
   });
 

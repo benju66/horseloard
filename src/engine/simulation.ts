@@ -9,6 +9,8 @@ import { EconomySystem } from './economySystem';
 import { TowerSystem } from './towerSystem';
 import { GateSystem } from './gateSystem';
 import { AbilitySystem } from './abilitySystem';
+import { LooterSystem } from './looterSystem';
+import { generateEndlessWave } from './endless';
 
 /** Fixed simulation timestep. Rendering framerate is unrelated (CLAUDE.md #2). */
 export const SIM_DT = 1 / 60;
@@ -27,6 +29,8 @@ export interface SimData {
   abilities?: readonly Ability[];
   /** ability ids force-unlocked beyond unlockedByDefault (meta-tree flags, M3) */
   unlockedAbilityIds?: readonly string[];
+  /** endless mode: waves generate forever, victory never comes */
+  endless?: boolean;
 }
 
 /**
@@ -55,15 +59,26 @@ export class Simulation {
   readonly towerSystem: TowerSystem;
   readonly gate: GateSystem;
   readonly abilities: AbilitySystem;
+  readonly looters: LooterSystem;
+  readonly endless: boolean;
+  private readonly enemiesFile: EnemiesFile;
+  private readonly mapDef: MapDef;
+  private readonly rng: () => number;
 
   phase: SimPhase = 'build';
   kills = 0;
+  private waveElapsed = 0;
+  private pendingDrop: { delay: number; x: number; y: number; value: number; lifetime: number } | null = null;
   tickCount = 0;
   /** seconds spent in the current build phase — the early-start bonus decays over it */
   buildElapsed = 0;
   private accumulator = 0;
 
   constructor(data: SimData, rng: () => number = Math.random) {
+    this.endless = data.endless ?? false;
+    this.enemiesFile = data.enemies;
+    this.mapDef = data.map;
+    this.rng = rng;
     this.lanes = buildLanePaths(data.map);
     this.enemySystem = new EnemySystem(
       data.enemies.enemies,
@@ -92,6 +107,8 @@ export class Simulation {
       this.hero,
       this.towerSystem,
     );
+
+    this.looters = new LooterSystem(this.enemySystem, this.economy, this.lanes);
 
     // Mills drop coins beside themselves — map safety converted into economy.
     this.towerSystem.onIncome.push((x, y, value) => {
@@ -132,8 +149,21 @@ export class Simulation {
     if (this.phase === 'defeat') return; // the keep has fallen; the field freezes
     this.tickCount++;
     if (this.phase === 'build') this.buildElapsed += SIM_DT;
-    if (this.phase === 'wave') this.waveRunner.tick(SIM_DT);
+    if (this.phase === 'wave') {
+      this.waveRunner.tick(SIM_DT);
+      this.waveElapsed += SIM_DT;
+      if (this.pendingDrop && this.waveElapsed >= this.pendingDrop.delay) {
+        this.economy.spawnChest(
+          this.pendingDrop.x,
+          this.pendingDrop.y,
+          this.pendingDrop.value,
+          this.pendingDrop.lifetime,
+        );
+        this.pendingDrop = null;
+      }
+    }
     this.enemySystem.tick(SIM_DT); // besiegers persist and act across phases
+    this.looters.tick(SIM_DT);
     this.gate.tick(SIM_DT);
     this.towerSystem.tick(SIM_DT);
     this.hero.tick(SIM_DT);
@@ -146,8 +176,8 @@ export class Simulation {
       !this.waveRunner.spawning &&
       this.enemySystem.walkingCount === 0
     ) {
-      if (this.waveRunner.hasMoreWaves) {
-        this.onWaveCleared('build');
+      if (this.endless || this.waveRunner.hasMoreWaves) {
+        this.onWaveCleared('build'); // endless: there is always another wave
       } else if (this.enemySystem.aliveCount === 0) {
         // Final wave only counts once the siege is broken too.
         this.onWaveCleared('done');
@@ -177,10 +207,17 @@ export class Simulation {
 
   startNextWave(): boolean {
     if (this.phase !== 'build') return false;
+    if (this.endless && !this.waveRunner.hasMoreWaves) {
+      this.waveRunner.appendWave(
+        generateEndlessWave(this.waveRunner.waveNumber + 1, this.enemiesFile, this.mapDef, this.rng),
+      );
+    }
     const bonus = this.earlyStartBonus();
     if (!this.waveRunner.startNextWave()) return false;
     this.economy.gold += bonus;
     this.phase = 'wave';
+    this.waveElapsed = 0;
+    this.pendingDrop = this.waveRunner.currentWaveData?.supplyDrop ?? null;
     return true;
   }
 

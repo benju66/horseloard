@@ -31,6 +31,7 @@ export const MapSchema = z
     id: IdSchema,
     name: z.string().min(1),
     description: z.string().min(1),
+    order: z.number().int().positive().describe('campaign position; unlocks are linear'),
     world: z.object({
       width: z.number().int().positive(),
       height: z.number().int().positive(),

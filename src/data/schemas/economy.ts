@@ -30,6 +30,12 @@ export const EconomySchema = z.object({
     hpPerPurchase: z.number().int().positive().describe('gate HP restored per repair tap'),
     costPerHp: z.number().positive().describe('coins per HP restored'),
   }),
+  tokens: z.object({
+    perStarFirstTime: z.number().int().positive().describe('tokens per newly earned star on a map'),
+    perWaveOnDefeat: z.number().int().nonnegative().describe('loss payout — a failed run is progress'),
+    endlessMilestoneEvery: z.number().int().positive(),
+    perEndlessMilestone: z.number().int().positive(),
+  }),
   stars: z.object({
     twoStarMaxDamageFraction: z
       .number()

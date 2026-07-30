@@ -1,54 +1,163 @@
 {
   "id": "the-ford",
   "name": "The Ford",
-  "description": "The road splits at the river crossing and rejoins below. Two currents, one gate — you cannot stand in both.",
-  "world": { "width": 420, "height": 780 },
-  "heroSpawn": { "x": 210, "y": 600 },
+  "description": "The road splits at the river crossing and rejoins below. Two currents, one gate \u2014 you cannot stand in both.",
+  "order": 2,
+  "world": {
+    "width": 420,
+    "height": 780
+  },
+  "heroSpawn": {
+    "x": 210,
+    "y": 600
+  },
   "lanes": [
     {
       "id": "west",
       "waypoints": [
-        { "x": 210, "y": -50 },
-        { "x": 210, "y": 80 },
-        { "x": 110, "y": 150 },
-        { "x": 110, "y": 330 },
-        { "x": 150, "y": 430 },
-        { "x": 210, "y": 470 },
-        { "x": 210, "y": 560 },
-        { "x": 160, "y": 625 },
-        { "x": 210, "y": 690 }
+        {
+          "x": 210,
+          "y": -50
+        },
+        {
+          "x": 210,
+          "y": 80
+        },
+        {
+          "x": 110,
+          "y": 150
+        },
+        {
+          "x": 110,
+          "y": 330
+        },
+        {
+          "x": 150,
+          "y": 430
+        },
+        {
+          "x": 210,
+          "y": 470
+        },
+        {
+          "x": 210,
+          "y": 560
+        },
+        {
+          "x": 160,
+          "y": 625
+        },
+        {
+          "x": 210,
+          "y": 690
+        }
       ]
     },
     {
       "id": "east",
       "waypoints": [
-        { "x": 210, "y": -50 },
-        { "x": 210, "y": 80 },
-        { "x": 310, "y": 150 },
-        { "x": 310, "y": 330 },
-        { "x": 270, "y": 430 },
-        { "x": 210, "y": 470 },
-        { "x": 210, "y": 560 },
-        { "x": 160, "y": 625 },
-        { "x": 210, "y": 690 }
+        {
+          "x": 210,
+          "y": -50
+        },
+        {
+          "x": 210,
+          "y": 80
+        },
+        {
+          "x": 310,
+          "y": 150
+        },
+        {
+          "x": 310,
+          "y": 330
+        },
+        {
+          "x": 270,
+          "y": 430
+        },
+        {
+          "x": 210,
+          "y": 470
+        },
+        {
+          "x": 210,
+          "y": 560
+        },
+        {
+          "x": 160,
+          "y": 625
+        },
+        {
+          "x": 210,
+          "y": 690
+        }
       ]
     }
   ],
   "plots": [
-    { "id": "west-hill", "position": { "x": 48, "y": 240 } },
-    { "id": "upper-bank", "position": { "x": 210, "y": 170 } },
-    { "id": "east-hill", "position": { "x": 372, "y": 240 } },
-    { "id": "ford-island", "position": { "x": 210, "y": 368 } },
-    { "id": "west-shore", "position": { "x": 128, "y": 492 } },
-    { "id": "east-shore", "position": { "x": 292, "y": 492 } },
-    { "id": "gate-yard", "position": { "x": 268, "y": 606 } }
+    {
+      "id": "west-hill",
+      "position": {
+        "x": 48,
+        "y": 240
+      }
+    },
+    {
+      "id": "upper-bank",
+      "position": {
+        "x": 210,
+        "y": 170
+      }
+    },
+    {
+      "id": "east-hill",
+      "position": {
+        "x": 372,
+        "y": 240
+      }
+    },
+    {
+      "id": "ford-island",
+      "position": {
+        "x": 210,
+        "y": 368
+      }
+    },
+    {
+      "id": "west-shore",
+      "position": {
+        "x": 128,
+        "y": 492
+      }
+    },
+    {
+      "id": "east-shore",
+      "position": {
+        "x": 292,
+        "y": 492
+      }
+    },
+    {
+      "id": "gate-yard",
+      "position": {
+        "x": 268,
+        "y": 606
+      }
+    }
   ],
   "gate": {
-    "position": { "x": 210, "y": 715 },
+    "position": {
+      "x": 210,
+      "y": 715
+    },
     "hp": 100,
     "attackSlots": 5
   },
   "forge": {
-    "position": { "x": 75, "y": 680 }
+    "position": {
+      "x": 75,
+      "y": 680
+    }
   }
 }

@@ -31,6 +31,10 @@ import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
 import theFordMapJson from './maps/the-ford.json';
 import theFordWavesJson from './waves/the-ford.json';
+import crossroadsMapJson from './maps/crossroads.json';
+import crossroadsWavesJson from './waves/crossroads.json';
+import warlordsMarchMapJson from './maps/warlords-march.json';
+import warlordsMarchWavesJson from './waves/warlords-march.json';
 
 /** Everything the game needs, validated. Engines receive slices of this — they never import JSON. */
 export interface GameData {
@@ -199,10 +203,14 @@ export function loadGameData(): GameData {
     maps: {
       'maps/meadow-road.json': meadowRoadMapJson,
       'maps/the-ford.json': theFordMapJson,
+      'maps/crossroads.json': crossroadsMapJson,
+      'maps/warlords-march.json': warlordsMarchMapJson,
     },
     waveSets: {
       'waves/meadow-road.json': meadowRoadWavesJson,
       'waves/the-ford.json': theFordWavesJson,
+      'waves/crossroads.json': crossroadsWavesJson,
+      'waves/warlords-march.json': warlordsMarchWavesJson,
     },
   });
 }

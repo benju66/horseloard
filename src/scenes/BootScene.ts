@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { loadGameData, type GameData } from '../data/loader';
+import { SaveManager } from '../data/saveManager';
 
 const PAL = {
   text: '#f5ead0',
@@ -101,10 +102,19 @@ export class BootScene extends Phaser.Scene {
       ease: 'Sine.easeInOut',
     });
 
-    this.input.once('pointerdown', () => {
-      const requested = new URLSearchParams(window.location.search).get('map');
-      const mapId = requested && data.maps[requested] ? requested : 'the-ford';
-      this.scene.start('Game', { gameData: data, mapId });
+    const saveManager = new SaveManager();
+    void saveManager.load().then((save) => {
+      this.registry.set('gameData', data);
+      this.registry.set('save', save);
+      this.registry.set('saveManager', saveManager);
+      this.input.once('pointerdown', () => {
+        const requested = new URLSearchParams(window.location.search).get('map');
+        if (requested && data.maps[requested]) {
+          this.scene.start('Game', { gameData: data, mapId: requested });
+        } else {
+          this.scene.start('MapSelect');
+        }
+      });
     });
   }
 

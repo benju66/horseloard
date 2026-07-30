@@ -6,6 +6,9 @@ export interface CoinInstance {
   y: number;
   value: number;
   age: number;
+  /** supply-drop chest: no magnet (ride onto it), own lifetime, ignores combat gating */
+  isChest: boolean;
+  lifetime: number;
 }
 
 /**
@@ -43,14 +46,40 @@ export class EconomySystem {
     const per = Math.floor(value / piles);
     for (let k = 0; k < piles; k++) {
       const v = k === piles - 1 ? value - per * (piles - 1) : per;
-      const c = this.pool.pop() ?? { id: 0, x: 0, y: 0, value: 0, age: 0 };
+      const c = this.pool.pop() ?? { id: 0, x: 0, y: 0, value: 0, age: 0, isChest: false, lifetime: 0 };
       c.id = this.nextId++;
       c.x = x + (this.rng() * 30 - 15);
       c.y = y + (this.rng() * 30 - 15);
       c.value = v;
       c.age = 0;
+      c.isChest = false;
+      c.lifetime = 0;
       this.live.push(c);
     }
+  }
+
+  /** A supply drop: free coins if you ride for it before it vanishes (DESIGN par.8). */
+  spawnChest(x: number, y: number, value: number, lifetime: number): void {
+    const c = this.pool.pop() ?? { id: 0, x: 0, y: 0, value: 0, age: 0, isChest: false, lifetime: 0 };
+    c.id = this.nextId++;
+    c.x = x;
+    c.y = y;
+    c.value = value;
+    c.age = 0;
+    c.isChest = true;
+    c.lifetime = lifetime;
+    this.live.push(c);
+  }
+
+  getCoin(id: number): CoinInstance | undefined {
+    return this.live.find((c) => c.id === id);
+  }
+
+  removeCoin(id: number): boolean {
+    const i = this.live.findIndex((c) => c.id === id);
+    if (i < 0) return false;
+    this.release(i, this.live[i]!);
+    return true;
   }
 
   /** Wave clear: every ground coin flies to the hero until collected. */
@@ -62,6 +91,19 @@ export class EconomySystem {
     const { magnetRadius, collectRadius, expirySeconds, magnetSpeed } = this.config.coins;
     for (let i = this.live.length - 1; i >= 0; i--) {
       const c = this.live[i]!;
+      if (c.isChest) {
+        c.age += dt; // chests run out no matter the phase - ride NOW
+        const dxc = heroX - c.x;
+        const dyc = heroY - c.y;
+        if (Math.hypot(dxc, dyc) < collectRadius + 8) {
+          this.gold += c.value;
+          for (const fn of this.onCollect) fn(c.value, c.x, c.y);
+          this.release(i, c);
+        } else if (c.age >= c.lifetime) {
+          this.release(i, c);
+        }
+        continue;
+      }
       if (inCombat && !this.sweepActive) {
         c.age += dt;
         if (c.age >= expirySeconds) {

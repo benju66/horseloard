@@ -23,6 +23,30 @@ export const EnemySchema = z.object({
     })
     .optional()
     .describe('Shieldbearer: reduced damage from sources ahead of it — flank it or shoot it from behind'),
+  ignoresSlows: z.boolean().optional().describe('Wolf Rider: immune to slows and freezes'),
+  lootsCoins: z
+    .object({
+      detectRadius: z.number().positive(),
+      fleeSpeedMultiplier: z.number().gte(1),
+    })
+    .optional()
+    .describe('Looter: beelines for ground coins and flees back up the lane with them'),
+  warCry: z
+    .object({
+      radius: z.number().positive(),
+      speedMultiplier: z.number().gt(1),
+      duration: z.number().positive(),
+      interval: z.number().positive().describe('seconds between cries'),
+    })
+    .optional()
+    .describe('Warlord: periodically hastes every other enemy in radius'),
+  towerBreak: z
+    .object({
+      radius: z.number().positive(),
+      cooldown: z.number().positive().describe('seconds between breaks per plot'),
+    })
+    .optional()
+    .describe('Warlord: knocks a tower down one level when it stomps past'),
   spriteRef: SpriteRefSchema,
 });
 export type Enemy = z.infer<typeof EnemySchema>;

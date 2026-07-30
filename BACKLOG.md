@@ -66,11 +66,13 @@ Goal: one map at publishable quality — the go/no-go gate for art spend.
 
 ---
 
-## M2 — Campaign
+## M2 — Campaign [x 2026-07-30]
 Maps 1, 3, 4 · full enemy roster · Warlord boss (war-cry, tower-break, sieges on leak) · supply drops · Looter · map select + linear unlocks · results/stars persistence.
+**learned:** all traits are generic config flags (ignoresSlows, lootsCoins, warCry, towerBreak) — the Warlord is pure data; LooterSystem drives a 'looting' state (seek coin → grab → flee up-lane; killed = drops the haul, escaped = your gold is gone); supply drops are per-wave authored chests (no magnet — ride onto them, shared timer bar). Crossroads (12w) + Warlord's March (14w, boss w14 ×1.6) authored; coverage guard validated all new plots automatically.
 
-## M3 — Meta
+## M3 — Meta [x core 2026-07-30]
 Token economy + loss payout · meta tree UI + effects (free respec) · endless mode generator + milestones · save versioning proven with one real migration · telemetry (Supabase table: map, wave reached, gold curve, tower comp, death cause) · balance pass.
+**learned:** meta tree = pure data transform (applyMetaModifiers rewrites hero/economy/towers/map copies pre-sim — engine never knows the tree exists); abilities now genuinely gated by tree nodes (flag removed); SaveManager owns IndexedDB (schema v1, migration switch ready); settleRun is pure+tested-by-design (stars pay first-time delta, defeat pays per wave, endless pays per new milestone); endless generator = budget/weights on the wave schema. Remaining for M3: a real migration when v2 arrives, telemetry (parked — solo game), balance pass (ongoing via npm run balance + Ben).
 
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.

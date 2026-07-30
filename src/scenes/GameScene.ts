@@ -4,6 +4,9 @@ import type { MapDef } from '../data/schemas';
 import { Simulation } from '../engine/simulation';
 import type { EnemyInstance } from '../engine/enemySystem';
 import type { PlotState } from '../engine/towerSystem';
+import { applyMetaModifiers } from '../engine/metaModifiers';
+import { settleRun, type SaveData } from '../engine/progression';
+import type { SaveManager } from '../data/saveManager';
 import { VirtualJoystick } from '../ui/joystick';
 import { WorldBubble } from '../ui/bubble';
 import { AbilityBar } from '../ui/abilityBar';
@@ -50,8 +53,6 @@ const TOWER_TINTS: Record<string, number> = {
   'tower-mill': 0xf6c945,
 };
 const ELITE_GLOW = 0xf6c945;
-/** M1: abilities unlocked by flag until the meta tree lands (M3). */
-const FLAG_UNLOCKED_ABILITIES = ['volley', 'rally-horn'];
 const DEFAULT_TINT = 0x999999;
 const FLASH_MS = 90;
 const FORGE_REACH = 55;
@@ -103,6 +104,7 @@ export class GameScene extends Phaser.Scene {
   private fpsText: Phaser.GameObjects.Text | null = null;
   private abilityBar!: AbilityBar;
   private mapId = 'the-ford';
+  private endless = false;
   private ending = false;
   private bob = 0;
 
@@ -110,9 +112,10 @@ export class GameScene extends Phaser.Scene {
     super('Game');
   }
 
-  init(args: { gameData: GameData; mapId?: string }): void {
+  init(args: { gameData: GameData; mapId?: string; endless?: boolean }): void {
     this.data_ = args.gameData;
     this.mapId = args.mapId && args.gameData.maps[args.mapId] ? args.mapId : 'the-ford';
+    this.endless = args.endless ?? false;
   }
 
   create(): void {
@@ -129,21 +132,30 @@ export class GameScene extends Phaser.Scene {
     this.ending = false;
     this.fpsText = null;
 
-    const map = this.data_.maps[this.mapId];
-    if (!map) throw new Error(`GameScene: map "${this.mapId}" missing`);
-    this.map_ = map;
-    const waveSet = this.data_.waveSets[map.id];
-    if (!waveSet) throw new Error(`GameScene: no wave set for map "${map.id}"`);
+    const baseMap = this.data_.maps[this.mapId];
+    if (!baseMap) throw new Error(`GameScene: map "${this.mapId}" missing`);
+    const waveSet = this.data_.waveSets[baseMap.id];
+    if (!waveSet) throw new Error(`GameScene: no wave set for map "${baseMap.id}"`);
+
+    // The meta tree is a pure data transform applied before the sim exists.
+    const save = (this.registry.get('save') as SaveData | undefined) ?? null;
+    const modded = applyMetaModifiers(
+      { hero: this.data_.hero, economy: this.data_.economy, towers: this.data_.towers, map: baseMap },
+      this.data_.metaTree,
+      save?.meta.ranks ?? {},
+    );
+    this.map_ = modded.map;
 
     this.sim = new Simulation({
       enemies: this.data_.enemies,
-      map,
-      waveSet,
-      hero: this.data_.hero,
-      economy: this.data_.economy,
-      towers: this.data_.towers,
+      map: modded.map,
+      waveSet: structuredClone(waveSet), // endless appends waves — never mutate the shared copy
+      hero: modded.hero,
+      economy: modded.economy,
+      towers: modded.towers,
       abilities: this.data_.abilities,
-      unlockedAbilityIds: FLAG_UNLOCKED_ABILITIES,
+      unlockedAbilityIds: modded.unlockedAbilityIds,
+      endless: this.endless,
     });
     // 4px white square shared by every particle effect (tinted per emitter).
     if (!this.textures.exists('px')) {
@@ -202,9 +214,19 @@ export class GameScene extends Phaser.Scene {
       buzz(45);
     });
     this.sim.gate.onDestroyed.push(() => buzz([70, 50, 90]));
+    this.sim.enemySystem.onWarCry.push((e, radius) => {
+      this.blastRing(e.x, e.y, radius, 0xe5484d, 0.5);
+      this.cameras.main.shake(160, 0.007);
+      buzz(30);
+    });
+    this.sim.towerSystem.onTowerBroken.push((plot) => {
+      this.blastRing(plot.x, plot.y, 46, 0xe5484d, 0.8);
+      this.cameras.main.shake(200, 0.01);
+      buzz([40, 30, 40]);
+    });
 
-    this.drawMap(map);
-    this.createPlotMarkers(map);
+    this.drawMap(this.map_);
+    this.createPlotMarkers(this.map_);
     this.towerG = this.add.graphics().setDepth(9);
     this.ringG = this.add.graphics().setDepth(8);
     this.coinG = this.add.graphics().setDepth(10);
@@ -291,15 +313,39 @@ export class GameScene extends Phaser.Scene {
     const { phase } = this.sim;
     if (phase !== 'done' && phase !== 'defeat') return;
     this.ending = true;
+
+    const wavesCleared = this.sim.waveRunner.waveNumber - (phase === 'defeat' ? 1 : 0);
+    const save = this.registry.get('save') as SaveData | undefined;
+    const saveManager = this.registry.get('saveManager') as SaveManager | undefined;
+    let tokensEarned = 0;
+    if (save && saveManager) {
+      const settled = settleRun(
+        save,
+        {
+          mapId: this.mapId,
+          victory: phase === 'done',
+          wavesCleared,
+          stars: this.sim.stars(),
+          endless: this.endless,
+        },
+        this.data_.economy,
+      );
+      tokensEarned = settled.tokensEarned;
+      this.registry.set('save', settled.save);
+      void saveManager.save(settled.save);
+    }
+
     this.time.delayedCall(1400, () => {
       this.scene.start('Results', {
         victory: phase === 'done',
-        wavesCleared: this.sim.waveRunner.waveNumber - (phase === 'defeat' ? 1 : 0),
+        wavesCleared,
         totalWaves: this.sim.waveRunner.totalWaves,
         kills: this.sim.kills,
         damageTaken: this.sim.gate.totalDamageTaken,
         stars: this.sim.stars(),
         mapId: this.mapId,
+        endless: this.endless,
+        tokensEarned,
         gameData: this.data_,
       });
     });
@@ -422,6 +468,21 @@ export class GameScene extends Phaser.Scene {
     g.clear();
     const t = this.time.now / 1000;
     for (const c of this.sim.economy.coins) {
+      if (c.isChest) {
+        // supply drop: a chest with a fading timer ring
+        const frac = Math.max(0, 1 - c.age / c.lifetime);
+        g.lineStyle(3, 0xf6c945, 0.5);
+        g.strokeCircle(c.x, c.y, 18 + 4 * Math.sin(t * 5));
+        g.fillStyle(0x6b4a2b);
+        g.fillRoundedRect(c.x - 13, c.y - 9, 26, 18, 4);
+        g.fillStyle(PAL.gold);
+        g.fillRect(c.x - 13, c.y - 3, 26, 5);
+        g.fillStyle(0x1c1c1c, 0.6);
+        g.fillRect(c.x - 13, c.y + 12, 26, 3);
+        g.fillStyle(0xffffff, 0.8);
+        g.fillRect(c.x - 13, c.y + 12, 26 * frac, 3);
+        continue;
+      }
       const s = 1 + Math.sin(t * 6 + c.x) * 0.12;
       g.fillStyle(PAL.goldDark);
       g.fillCircle(c.x, c.y, 7 * s);
@@ -429,6 +490,14 @@ export class GameScene extends Phaser.Scene {
       g.fillCircle(c.x, c.y - 1, 6 * s);
       g.fillStyle(0xffffff, 0.7);
       g.fillRect(c.x - 2, c.y - 4, 2, 2);
+    }
+    // looters flash the gold they carry — kill them before they're gone
+    for (const e of this.sim.enemySystem.enemies) {
+      const carried = this.sim.looters.carriedBy(e.id);
+      if (carried > 0) {
+        g.fillStyle(PAL.gold);
+        g.fillCircle(e.x, e.y - e.config.radius - 14, 5);
+      }
     }
   }
 
@@ -533,7 +602,9 @@ export class GameScene extends Phaser.Scene {
         waveRunner.waveNumber === 0 ? 'Get ready' : `Wave ${waveRunner.waveNumber} clear`,
       );
     } else if (phase === 'wave') {
-      this.waveLabel.setText(`Wave ${waveRunner.waveNumber} / ${waveRunner.totalWaves}`);
+      this.waveLabel.setText(
+        this.endless ? `Wave ${waveRunner.waveNumber} ∞` : `Wave ${waveRunner.waveNumber} / ${waveRunner.totalWaves}`,
+      );
     } else {
       this.waveLabel.setText('All waves cleared');
     }

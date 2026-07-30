@@ -13,6 +13,16 @@ export type WaveEntry = z.infer<typeof WaveEntrySchema>;
 
 export const WaveSchema = z.object({
   entries: z.array(WaveEntrySchema).min(1),
+  supplyDrop: z
+    .object({
+      delay: z.number().nonnegative().describe('seconds after wave start'),
+      x: z.number(),
+      y: z.number(),
+      value: z.number().int().positive(),
+      lifetime: z.number().positive().describe('seconds before the chest despawns'),
+    })
+    .optional()
+    .describe('an off-path chest — free coins if you ride for it (DESIGN §8)'),
   archetypeId: IdSchema.optional().describe(
     'named special wave (horde/raid/war-party) — shows a warning banner',
   ),

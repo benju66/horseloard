@@ -52,6 +52,11 @@ export class WaveRunner {
     return this.cursor < this.events.length;
   }
 
+  /** Endless mode appends generated waves on the same schema. */
+  appendWave(wave: Wave): void {
+    this.waveSet.waves.push(wave);
+  }
+
   startNextWave(): boolean {
     if (!this.hasMoreWaves) return false;
     this.waveIndex++;

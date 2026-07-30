@@ -21,5 +21,11 @@
   },
   "stars": {
     "twoStarMaxDamageFraction": 0.3
+  },
+  "tokens": {
+    "perStarFirstTime": 10,
+    "perWaveOnDefeat": 1,
+    "endlessMilestoneEvery": 10,
+    "perEndlessMilestone": 5
   }
 }

@@ -27,6 +27,7 @@ export const TEST_ECONOMY: Economy = {
   waveClearBonus: { base: 10, perWave: 3 },
   earlyStart: { windowSeconds: 12, maxBonus: 15 },
   repair: { hpPerPurchase: 20, costPerHp: 0.5 },
+  tokens: { perStarFirstTime: 10, perWaveOnDefeat: 1, endlessMilestoneEvery: 10, perEndlessMilestone: 5 },
   stars: { twoStarMaxDamageFraction: 0.3 },
 };
 
@@ -97,6 +98,7 @@ export function makeMap(overrides?: {
     id: 'straight',
     name: 'Straight',
     description: 'test',
+    order: 1,
     world: { width: 100, height: 200 },
     heroSpawn: overrides?.heroSpawn ?? { x: 50, y: 100 },
     lanes: [
