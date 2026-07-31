@@ -4,6 +4,7 @@ import { Simulation } from '../engine/simulation';
 import { AbilityBar } from '../ui/dom/abilityBar';
 import { BubbleLayer, bubbleActions } from '../ui/dom/bubbles';
 import { DomJoystick } from '../ui/dom/joystick';
+import { RunOverlay } from '../ui/dom/runOverlay';
 import { ModelViewFactory } from './entityViews';
 import { buildWorld, simToWorld } from './world';
 
@@ -36,16 +37,25 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 const world = buildWorld(map, scene);
 
-const sim = new Simulation({
-  enemies: data.enemies,
-  map,
-  waveSet: data.waveSets[map.id]!,
-  hero: data.hero,
-  economy: data.economy,
-  towers: data.towers,
-  abilities: data.abilities,
-  unlockedAbilityIds: data.abilities.map((a) => a.id),
-});
+let leaks = 0;
+
+function newRun(): Simulation {
+  const s = new Simulation({
+    enemies: data.enemies,
+    map,
+    waveSet: data.waveSets[map.id]!,
+    hero: data.hero,
+    economy: data.economy,
+    towers: data.towers,
+    abilities: data.abilities,
+    unlockedAbilityIds: data.abilities.map((a) => a.id),
+  });
+  leaks = 0;
+  s.enemySystem.onReachEnd.push(() => leaks++);
+  return s;
+}
+
+let sim = newRun();
 
 // ─── Views ───
 
@@ -71,6 +81,7 @@ style.textContent =
   DomJoystick.css() +
   BubbleLayer.css() +
   AbilityBar.css() +
+  RunOverlay.css() +
   `
 #hud { position: fixed; inset: 0; pointer-events: none;
   font: 600 14px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; color: #f2ecdd; }
@@ -105,6 +116,26 @@ const joystick = new DomJoystick(canvas, overlay);
 
 const bubbles = new BubbleLayer(hud);
 const abilityBar = new AbilityBar(sim, overlay);
+const runOverlay = new RunOverlay(overlay);
+
+/**
+ * A run ends and the next one starts clean. Views are released back to the
+ * pool rather than destroyed — the next run reuses the same meshes.
+ */
+runOverlay.onRestart = () => {
+  for (const [id, entry] of enemyViews) {
+    entityGroup.remove(entry.object);
+    views.release(entry.modelId, entry.object);
+    enemyViews.delete(id);
+  }
+  for (const [plotId, entry] of towerViews) {
+    entityGroup.remove(entry.object);
+    views.release(entry.modelId, entry.object);
+    towerViews.delete(plotId);
+  }
+  sim = newRun();
+  abilityBar.setSim(sim);
+};
 const bubbleScreens: Array<{ x: number; y: number }> = [];
 
 function resize(): void {
@@ -126,7 +157,11 @@ function step(dt: number): void {
   // Input → sim. The only direction data flows this way.
   sim.hero.input.x = joystick.value.x;
   sim.hero.input.y = joystick.value.y;
-  sim.advance(dt);
+  // ×2 is a tick multiplier on the fixed-timestep sim — nearly free, and it
+  // cannot desync anything because the tick size itself never changes.
+  if (sim.phase !== 'done' && sim.phase !== 'defeat') {
+    sim.advance(dt * runOverlay.speed);
+  }
 
   // Sim → views.
   seen.clear();
@@ -216,6 +251,7 @@ function syncHud(): void {
   }
   bubbles.render(actions, bubbleScreens);
   abilityBar.sync();
+  runOverlay.sync(sim, leaks);
 }
 
 function frame(now: number): void {
@@ -234,5 +270,5 @@ function frame(now: number): void {
 requestAnimationFrame(frame);
 
 if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).game3d = { sim, world, views, renderer, step, syncHud, joystick, map, bubbleActions };
+  (window as unknown as Record<string, unknown>).game3d = { get sim() { return sim; }, world, views, renderer, step, syncHud, joystick, map, bubbleActions, runOverlay };
 }

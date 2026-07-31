@@ -19,7 +19,7 @@ interface Slot {
 
 export class AbilityBar {
   private readonly slots: Slot[] = [];
-  private readonly sim: Simulation;
+  private sim: Simulation;
 
   constructor(sim: Simulation, layer: HTMLElement) {
     this.sim = sim;
@@ -50,6 +50,14 @@ export class AbilityBar {
       wrap.append(button);
       this.slots.push({ button, label, sweep, abilityId });
     }
+  }
+
+  /**
+   * Point the bar at a new run. Buttons are unchanged — the ability roster is
+   * data and does not vary between runs — only the sim they act on.
+   */
+  setSim(sim: Simulation): void {
+    this.sim = sim;
   }
 
   /** Called each frame — only touches the DOM when a value actually changed. */
