@@ -124,7 +124,7 @@ a formality. The decision with real consequences is **MG.2**, where the timebox 
 the kill criterion get set. That number is Ben's to choose and is still unset.
 
 ### MG.2 — Branch + scaffold
-[~] Branch `3d-migration`. Add three + types; remove nothing yet. Render smoke test: ortho camera, lights, palette-textured cube on a ground plane, on-device via LAN.
+[x] Branch `3d-migration`. Add three + types; remove nothing yet. Render smoke test: ortho camera, lights, palette-textured cube on a ground plane, on-device via LAN.
 **Accept:** 60fps spinning cube with shadow on your phone. (Trivial on purpose — proves toolchain + device loop.)
 **Amended:** the cube alone proves the toolchain but not the thing that can kill this migration, so the smoke test also carries a tappable crowd of animated shadow-casters (0 → 40 → 80 → 120). Fail early, while falling back is still free.
 
@@ -160,7 +160,37 @@ call, not two — 40 casters drops from 84 calls to ~44 and the budget breathes 
 Decide this at MG.3/MG.6 rather than carrying real shadow-map casters into MG.4.
 Triangle counts are trivial and not the constraint; draw calls are.
 
-**Outstanding — the actual acceptance criterion (needs a phone):**
+#### MG.2 RESULT — 2026-07-30 · **PASS**
+
+**60 fps held through every step, including 120 animated casters / 240 draw calls**
+(Ben, on-device). The gate passed at three times the enemy count the perf budget
+asks for, and at 2.4× the documented draw-call budget.
+
+**This retracts the blob-shadow conclusion above.** That finding read 84 draw calls
+against Part A's "~100" and concluded shadow-map casters were unaffordable. The
+device disagrees: it renders 240 calls at 60fps without complaint, so the ~100
+figure was pessimistic, not a wall. Soft blob shadows stay a live option **on
+aesthetic grounds** (Part A.1 wants soft and subtle, and shadow-map casters look
+crisp), but they are no longer forced by the budget. Do not treat draw calls as the
+binding constraint on the strength of that earlier note.
+
+**What this does NOT prove — the real unknown moves to MG.4.** The crowd is
+12-triangle boxes: 2,928 triangles at 120 meshes. Real chibi models at the Part A.2
+budget of ≤3k tris each would be ~360,000 triangles at the same count — two orders
+of magnitude more, rendered twice (shadow pass + main pass) — plus per-bone skinning
+work that boxes do not pay at all. **The honest reading of this pass is that the
+toolchain, the device loop, draw-call volume, and transform churn are all fine. Mesh
+complexity and skinning are untested.** Re-run this gate with real rigged models the
+moment MG.4 has them, before the roster is built out on top of them.
+
+**Observed for MG.3 to fix** (cosmetic, expected — MG.2 was toolchain and perf only):
+camera framing pushes the lane spread off the right edge and the ground plane does
+not fill the portrait frame; the dusk lighting model is not reading — it looks flat
+rather than cool-ambient-with-a-warm-corridor, so the hemisphere light is doing too
+much of the work and the warm directional too little; the path stripe is invisible
+under the crowd.
+
+**Superseded — original outstanding instructions (kept for the record):**
 `npm run dev`, then open `http://192.168.4.30:5173/smoke3d.html` on the device
 (same LAN; IP will change between networks). Readout shows fps, caster count and
 draw calls; tap to cycle the crowd. Green ≥55fps, amber ≥40, red below.
