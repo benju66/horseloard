@@ -84,6 +84,13 @@ Token economy + loss payout · meta tree UI + effects (free respec) · endless m
 
 **first run found (tower column later disproven — see above):** (1) 59/60 bot runs WIN — the campaign has no ceiling for competent play with all abilities unlocked. (2) Deep Freeze stacks toward a permanent lock: one spire is 1s freeze per 2.4s tick (42% uptime), but applySlow takes the strongest factor and max()es duration, so 3+ overlapping 95u auras ≈ 100% uptime; bots built 4–8 and took 0 damage. Real mechanic, not a scoring artifact. (3) crossroads' LAZY baseline clears all 12 waves — too soft. (4) bombard + mill built in 0 runs, but that is NOT yet evidence they're dead — the bot scores income instantaneously (undervalues the mill's compounding) and its splash model is a guess. Fix the bot's economics before trusting that column.
 
+## M3.5 — 3D render migration [in progress]
+Plan and per-task tracking live in **MIGRATION-3D.md** (Part C) — that file is authoritative while the swap is in progress.
+[x] MG.1 boundary audit — **GO** (2026-07-30). Zero Phaser imports outside the render layer; zero engine/data imports from scenes or ui; no render concerns in the engine. Headless proof came free from the bot harness (full campaigns, no canvas). Render surface to port = 1,612 lines (GameScene 914). The one coupling to plan for is spriteRef/sfxRef in the *data schemas* (5 files, 34 JSON occurrences), read by exactly two scene files — a clean data↔renderer seam, and Part B §2 already scopes it.
+[x] Part B documentation amendments — DESIGN.md §9 (DOM overlay + ×1/×2 speed toggle), §10 (art plan replaced with low-poly 3D; the "one hard asset" problem is gone), §11 (stack + `/src/render` layout + model refs); CLAUDE.md stack, layout, and a new invariant #2: `/src/render` never contains game logic, `/src/engine` never imports `three`.
+[ ] MG.2 — branch + scaffold. **Blocked on Ben:** the timebox for the kill criterion is set at MG.2 kickoff and is still unchosen.
+**learned:** the migration is affordable because the substrate rule held — the audit found nothing to fix, which means MG.1 was closer to a formality than a gate. The decision with real consequences is MG.2. Suggested amendment to Part C: MG.2's smoke test should include ~40 animated meshes, not just a spinning cube — a cube proves the toolchain, but the thing that can actually kill this migration is 40 SkinnedMeshes at 60fps on a 2021 Android, and that should fail early while falling back is still cheap.
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 

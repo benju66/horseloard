@@ -4,19 +4,24 @@ Mobile-first tower defense PWA. You are the commander on the field: riding, shoo
 
 ## Stack
 
-- Phaser 3 + TypeScript (strict) + Vite
+- Three.js + TypeScript (strict) + Vite — render layer is stylized low-poly 3D
 - `vite-plugin-pwa` for the installable shell (offline-capable, portrait)
 - Deployed on Vercel
 - Vitest for engine-logic tests
 - Zod for runtime schema validation of all game data JSON
 
+M0–M3 shipped on Phaser 3. **MIGRATION-3D.md** is the plan for the render swap and
+is authoritative while it is in progress; the Phaser branch stays intact until its
+MG.7 parity gate passes.
+
 ## Architecture rules (non-negotiable)
 
-1. **Substrate rule.** `/src/engine` never imports specific game content. Engines consume schemas; all balance and content lives in `/src/data/*.json`. If an engine file ever references "archer" or "brute" by name, that's a bug. Adding tower #5 must be a JSON entry + assets, zero engine changes.
-2. **Fixed-timestep simulation**, logic fully separated from rendering. Phaser scenes render; the sim ticks. Stable numeric IDs on every entity. (This is the entire co-op hedge — build nothing else for co-op.)
-3. **Data is validated at load.** Every JSON file passes its Zod schema at boot in dev; fail loud with the path and field.
-4. **Save schema is versioned from the first write.** SaveManager owns all IndexedDB access, includes `schemaVersion`, and has a migration path even at v1. No derived state in saves; timestamps on writes. Designed as if Supabase sync will sit behind it later.
-5. **No per-frame allocation in hot loops.** Object pools for projectiles, coins, particles, damage numbers. Sprite atlases, not loose files.
+1. **Substrate rule.** `/src/engine` never imports specific game content. Engines consume schemas; all balance and content lives in `/src/data/*.json`. If an engine file ever references "archer" or "brute" by name, that's a bug. Adding tower #5 must be a JSON entry + assets, zero engine changes. Enforced by `src/engine/substrate.test.ts` — it scans every engine source for content ids and fails with the file and line.
+2. **Render/sim separation.** `/src/render` never contains game logic; `/src/engine` never imports `three`. The sim decides what is true, the renderer decides what it looks like. This is what made the Phaser → Three.js swap a render-layer job instead of a rewrite — do not spend it.
+3. **Fixed-timestep simulation**, logic fully separated from rendering. The renderer draws; the sim ticks. Stable numeric IDs on every entity. (This is the entire co-op hedge — build nothing else for co-op.) It is also why the sim is driveable headlessly: `npm run bots` plays whole campaigns with no canvas.
+4. **Data is validated at load.** Every JSON file passes its Zod schema at boot in dev; fail loud with the path and field.
+5. **Save schema is versioned from the first write.** SaveManager owns all IndexedDB access, includes `schemaVersion`, and has a migration path even at v1. No derived state in saves; timestamps on writes. Designed as if Supabase sync will sit behind it later.
+6. **No per-frame allocation in hot loops.** Object pools for projectiles, coins, particles, damage numbers. `InstancedMesh` for coins/projectiles/swarms; merged static geometry for terrain props.
 
 ## Directory layout
 
@@ -25,15 +30,18 @@ Mobile-first tower defense PWA. You are the commander on the field: riding, shoo
                 EconomySystem, GateSystem, SaveManager  (generic, tested)
 /src/data       towers.json, enemies.json, abilities.json, metatree.json,
                 maps/*.json, waves/*.json  (+ /src/data/schemas/*.ts — Zod)
-/src/scenes     Boot, MainMenu, MapSelect, Game, MetaTree, Results
-/src/entities   thin classes binding configs to sprites
-/src/ui         joystick, ability bar, world-space bubbles, wave preview, HUD
+/src/render     scene, camera, lights, entity views, decals, fx (never game logic)
+/src/entities   thin classes binding configs to models
+/src/ui         DOM overlay: joystick, ability bar, HUD, wave banner; world→screen
+                projection for bubbles, HP bars, damage numbers
 /reference      prototype.html — the validated vanilla-canvas prototype;
                 port its logic (path follow, targeting, economy, joystick feel),
                 do not extend it
-ASSETS.md       license ledger — one line per sprite/sound: source, license,
+/public/models  CC0 glTF/GLB, palette-textured
+ASSETS.md       license ledger — one line per model/sound: source, license,
                 attribution. Update in the same commit that adds the asset.
 DESIGN.md       the spec
+MIGRATION-3D.md the Phaser → Three.js render swap; authoritative while in progress
 BACKLOG.md      milestones and tasks with acceptance criteria
 ```
 

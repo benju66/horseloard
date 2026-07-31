@@ -160,40 +160,53 @@ Between-wave flow: manual "Start wave" with an optional early-start coin bonus (
 
 Left thumb (anywhere): dynamic joystick. Right thumb: up to 3 ability buttons, bottom-right arc. Contextual world-space bubbles for build/upgrade/forge (ride close → bubble → tap), exactly as prototyped — it tested well because it needs zero UI literacy.
 
+Behavior is unchanged by the 3D render swap; the controls layer becomes a **DOM overlay** above the canvas rather than in-canvas drawing, with world-anchored elements (build bubbles, damage numbers, HP bars) positioned by world→screen projection each frame. A **game speed toggle (×1/×2)** rides the fixed-timestep sim as a tick multiplier and is persisted in settings; "Auto" battle is explicitly rejected — that's idle-game DNA and violates pillar 1.
+
 Portrait orientation, one-handed playable if abilities are ignored. Safe-area insets respected (notches). Haptics via Vibration API on kills of brutes/bosses and keep damage (subtle, toggleable). Pause on visibility change. No pinch-zoom; camera is fixed per map in v1 (maps sized to a 9:19.5 worst case, letterboxed elsewhere) — a scrolling camera is a v2 question only if map 5+ wants bigger spaces.
 
 ---
 
 ## 10. Art Plan
 
-**Phase A (build everything on free CC0).** Kenney packs are the backbone — his top-down tower defense, medieval, and particle packs are CC0, stylistically consistent, and cover towers, enemies, tiles, projectiles, and UI. Fill gaps from itch.io CC0/CC-BY packs.
+**Stylized low-poly 3D** (Kingshot-class mobile look), rendered with Three.js. Full specification in `MIGRATION-3D.md` Parts A and A.1; the essentials:
 
-**The one hard asset: the mounted archer.** Directional horse-and-rider animation is the rarest thing in free packs. Strategy, in order: (1) hunt itch.io for a top-down or ¾-view mounted character pack; (2) composite — separate horse sprite + rider sprite layered, which also lets us do mount/dismount later; (3) if the game proves out, **commission exactly this one asset** (~$100–250 for a directional sheet) while keeping everything else pack-based. The hero is the face of the game; it's the single highest-leverage art dollar.
+**Look.** Fixed orthographic camera, high angle, portrait framing — no player camera control in v1. Dusk lighting: cool desaturated ambient over the terrain, warm light pooled on the path corridor, so lighting *is* the readability system. Flat palette texturing (one small gradient texture serves every model), no PBR. Soft blob shadows, not crisp shadow maps. Per-unit team rings under every unit — red enemies, blue hero — as the faction read at chibi scale. Sparse props clustered at path edges, ~15–25 per map, large negative space elsewhere.
 
-**License ledger from day one:** an `ASSETS.md` in the repo recording source, license, and attribution requirement for every sprite and sound as it's added. Retrofitting attribution before publishing is misery; maintaining it is one line per asset.
+**Characters.** Chibi proportions, ~2–2.5 heads tall, chunky silhouettes, oversized weapons. ~6 base models stretched across the whole roster by composition, scale, and tint — a Runner is a Grunt at 0.9×, a Warlord is the large base at 1.8× with crown and cape props. Never source a unique model when a variant works.
 
-**Phase B (paid upgrade pass).** If the loop is great, replace wholesale with a purchased cohesive pack or commissioned set. Because all sprite refs live in the data configs, an art swap is a reskin, not a refactor. Consistent pixel density and palette discipline (pick one pack family, don't mix pixel scales) matter more than raw asset quality.
+**Phase A (build everything on free CC0).** Kenney, Quaternius, and KayKit glTF packs are the backbone; pick one pack family per category so proportions stay consistent. The mounted hero is a composite — rider mesh parented to horse mesh — which also gives mount/dismount for free later. The old "one hard asset" problem is gone with it: directional horse-and-rider animation was the rarest thing in free *sprite* packs and is a non-issue with a real rig.
+
+**Proportion gate.** Every character must read as one family. When evaluating a pack, drop one model next to the hero at gameplay zoom on-device — if proportions clash, reject the pack, don't mix. If no CC0 family hits the target across the roster, that discovery is the Phase B trigger.
+
+**License ledger from day one:** an `ASSETS.md` in the repo recording source, license, and attribution requirement for every model and sound as it's added. Retrofitting attribution before publishing is misery; maintaining it is one line per asset.
+
+**Phase B (paid upgrade pass).** Paid model packs, or a commissioned matched chibi set (hero + core enemy archetypes). Because all model refs live in the data configs, an art swap is a reskin, not a refactor.
 
 ---
 
 ## 11. Technical Architecture
 
-**Stack: Phaser 3 + TypeScript + Vite, deployed on Vercel as an installable PWA.**
+**Stack: Three.js + TypeScript + Vite, deployed on Vercel as an installable PWA.**
 
-Why Phaser over growing the vanilla prototype: sprite atlases, animation state machines, tweens, particles, audio (Web Audio with unlock handling), scene management, input pointers, and camera effects are all solved. The prototype's logic (path following, targeting, economy) ports directly into Phaser's update loop. Why not React/Next for the game itself: the game is a canvas, not a DOM; React only wraps the shell if at all. Vercel stays your deploy target either way.
+Why Three.js and not Unity: Unity WebGL is incompatible with the PWA goals — 20MB+ bundles, poor mobile-browser performance, opaque builds. Three.js is web-native, tree-shakeable, and low-poly + ortho camera + one shadow-casting light is its bread and butter. Why not React/Next for the game itself: the game is a canvas; React only wraps the shell if at all. Vercel stays the deploy target either way. (M0–M3 shipped on Phaser 3; the render layer swaps to Three.js per `MIGRATION-3D.md`, and only the render layer — the migration is affordable precisely because the substrate rule held.)
 
 ```
 /src
   /engine        # generic: TowerEngine, EnemyEngine, ProjectileSystem,
-                 #   WaveRunner, EconomySystem, SaveManager
+                 #   WaveRunner, EconomySystem, SaveManager  — UNTOUCHED by the render swap
   /data          # towers.json, enemies.json, abilities.json,
-                 #   waves/map01.json..., metatree.json, maps/*.json
-  /scenes        # Boot, MainMenu, MapSelect, Game, MetaTree, Results
+                 #   waves/map01.json..., metatree.json, maps/*.json  — UNTOUCHED
+  /render        # scene, camera, lights, entity views, decals, fx  (replaces /scenes)
   /entities      # Hero, Tower, Enemy, Coin, Projectile (thin classes over configs)
-  /ui            # joystick, ability bar, bubbles, wave preview, HUD
+  /ui            # DOM overlay: joystick, ability bar, HUD, wave banner,
+                 #   world→screen projection for bubbles/HP bars/damage numbers
   /audio         # sfx/music manifest + manager
-/public          # PWA manifest, icons, service worker (vite-plugin-pwa)
+/public
+  /models        # CC0 glTF/GLB, palette-textured
+                 # PWA manifest, icons, service worker (vite-plugin-pwa)
 ```
+
+Data schemas carry **model refs** (`model`, `clip`) where they used to carry sprite refs. The engine never reads either — it doesn't know the fields exist; the renderer does.
 
 **The substrate rule:** `/engine` never imports from `/data` specifics — it consumes schemas. All balance lives in JSON. This is what makes "start lean, expand forever" true, and it also means a future balance patch is a data deploy.
 
