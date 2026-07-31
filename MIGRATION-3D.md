@@ -326,8 +326,41 @@ full roster, then remove Phaser and merge.
 **Accept:** the gate-siege moment (brutes battering, ride back, Charge, repair) reads clearly in 3D; factions readable at a glance from rings alone.
 
 ### MG.7 — Parity + performance gate
-[ ] Full run parity with the Phaser build. Profile on-device: 40+ enemies, shadows, 60fps. Remove Phaser dependency; merge to main.
+[~] Full run parity with the Phaser build. Profile on-device: 40+ enemies, shadows, 60fps. Remove Phaser dependency; merge to main.
 **Accept — MIGRATION EXIT:** M0 exit criteria re-met in 3D. Then resume M1 (The Ford vertical slice) with art/audio/juice tasks interpreted for 3D.
+#### MG.7 progress — parity closed, perf measured, merge is Ben's call
+
+**Parity audit against GameScene found seven gaps**, all now closed: coins (the
+worst — pillar 1 is the loot line and it was invisible), projectiles, enemy HP
+bars, elite rings, supply chests with draining timers, the looter carried-gold
+marker, special-wave banners, and hit flash. Coins/projectiles/bars/rings all
+ride InstancedMesh: 181 coins measured at **zero** extra draw calls.
+
+**Measured at the budget condition** (desktop; the fps number must come from a
+phone):
+
+| alive | coins | draw calls | triangles |
+|---|---|---|---|
+| 40 | 60 | 384 | 97,906 |
+| 60 | 120 | 509 | 100,142 |
+| 80 | 180 | 639 | 102,526 |
+
+Draws scale ~6.3 per enemy, because a placeholder unit is a Group of 2–3 meshes
+and every one of them casts a shadow (shadow pass + main pass). MG.2 proved 240
+draws at 60fps on-device; 384 is 60% beyond what was tested, so **the 40-enemy
+case is genuinely unverified on hardware.**
+
+**The encouraging part:** real glTF characters are typically ONE skinned mesh,
+so they should cost ~2 draws each instead of ~6 — the placeholders are *worse*
+than the real thing on this axis. If the on-device number disappoints, the
+cheap lever is blob shadows (halves every caster) before anything drastic.
+Triangles barely move with coin count, confirming the instancing; the bulk is
+props and plot geometry.
+
+**Outstanding for MIGRATION EXIT:** on-device fps at 40+ enemies, then removing
+Phaser and merging — deliberately left to Ben, since it is the point of no
+easy return.
+
 **Kill criterion:** the Phaser branch is kept intact until MG.7 passes. If the migration stalls badly against the timebox Ben sets at MG.2 kickoff, fall back to the Phaser branch and ship 2D — a finished 2D game beats an unfinished 3D one. A migration that can't fail cleanly is the kind that kills solo projects.
 
 ## Part D — Kickoff prompt (paste into Claude Code)

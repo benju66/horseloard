@@ -99,6 +99,10 @@ const enemyViews = new Map<number, { modelId: string; object: THREE.Object3D }>(
 const towerViews = new Map<string, { modelId: string; object: THREE.Object3D }>();
 const towerModelById = new Map(data.towers.towers.map((t) => [t.id, t.model]));
 const seen = new Set<number>();
+/** enemy id → sim-time at which its hit flash expires. */
+const flashUntil = new Map<number, number>();
+const FLASH_SECONDS = 0.08;
+let simClock = 0;
 const scratch = new THREE.Vector3();
 const projected = new THREE.Vector3();
 let heroView: THREE.Object3D | undefined;
@@ -175,6 +179,9 @@ function startMap(mapId: string): void {
     unlockedAbilityIds: modded.unlockedAbilityIds,
   });
   sim.enemySystem.onReachEnd.push(() => leaks++);
+  flashUntil.clear();
+  simClock = 0;
+  sim.enemySystem.onDamaged.push((e) => flashUntil.set(e.id, simClock + FLASH_SECONDS));
   fx.attach(sim);
 
   abilityBar?.destroy();
@@ -240,7 +247,11 @@ function step(dt: number): void {
   sim.hero.input.y = joystick.value.y;
   // ×2 is a tick multiplier on the fixed-timestep sim — it cannot desync
   // anything, because the tick size itself never changes.
-  if (sim.phase !== 'done' && sim.phase !== 'defeat') sim.advance(dt * runOverlay.speed);
+  if (sim.phase !== 'done' && sim.phase !== 'defeat') {
+    const scaled = dt * runOverlay.speed;
+    simClock += scaled;
+    sim.advance(scaled);
+  }
 
   seen.clear();
   for (const e of sim.enemySystem.enemies) {
@@ -259,9 +270,22 @@ function step(dt: number): void {
     entry.object.position.set(scratch.x, 0, scratch.z);
     if (e.facingX !== 0 || e.facingY !== 0) entry.object.rotation.y = Math.atan2(e.facingX, e.facingY);
     entry.object.visible = true;
+
+    // Hit flash — a white blink is how a hit reads before the HP bar moves.
+    const until = flashUntil.get(e.id);
+    if (until !== undefined) {
+      if (simClock < until) views.setFlash(entry.object, true);
+      else {
+        views.setFlash(entry.object, false);
+        flashUntil.delete(e.id);
+      }
+    }
   }
   for (const [id, entry] of enemyViews) {
     if (seen.has(id)) continue;
+    // Clear any flash before pooling, or the next user of this view inherits it.
+    views.setFlash(entry.object, false);
+    flashUntil.delete(id);
     entityGroup.remove(entry.object);
     views.release(entry.modelId, entry.object);
     enemyViews.delete(id);

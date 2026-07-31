@@ -39,6 +39,8 @@ export class ModelViewFactory {
   private readonly models: readonly ModelDef[];
   private readonly resolved = new Map<string, ModelDef | undefined>();
   private warnedMissingFile = false;
+  /** One shared material for every flashing mesh — see setFlash(). */
+  private readonly flashMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff' });
 
   constructor(models: readonly ModelDef[]) {
     this.models = models;
@@ -92,6 +94,26 @@ export class ModelViewFactory {
   /** True when this model should ride the rigid instanced path (swarms). */
   isInstanced(modelId: string): boolean {
     return this.def(modelId)?.instanced ?? false;
+  }
+
+  /**
+   * Hit flash. Materials are shared across the whole pool — tinting one would
+   * tint every enemy of that colour — so this swaps each mesh onto a single
+   * shared white material and stashes the original to restore. No allocation,
+   * no per-instance material, no extra material count.
+   */
+  setFlash(view: THREE.Object3D, on: boolean): void {
+    view.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      if (on) {
+        if (!mesh.userData.baseMaterial) mesh.userData.baseMaterial = mesh.material;
+        mesh.material = this.flashMaterial;
+      } else if (mesh.userData.baseMaterial) {
+        mesh.material = mesh.userData.baseMaterial as THREE.Material;
+        mesh.userData.baseMaterial = undefined;
+      }
+    });
   }
 
   scaleOf(modelId: string): number {
@@ -198,6 +220,7 @@ export class ModelViewFactory {
   }
 
   dispose(): void {
+    this.flashMaterial.dispose();
     for (const m of this.materials.values()) m.dispose();
     for (const g of this.geometries) g.dispose();
     this.materials.clear();
