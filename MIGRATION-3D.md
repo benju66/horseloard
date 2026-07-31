@@ -291,8 +291,35 @@ cannot quietly become the shipped look.
 - The perf re-test with real rigged models (see MG.2 result) is still the open risk.
 
 ### MG.5 — DOM UI overlay
-[ ] Joystick, HUD, start-wave, speed toggle (x1/x2 via sim tick multiplier, persisted in settings), results → DOM. World-anchored bubbles/HP bars/damage numbers via projection helper.
+[x] Joystick, HUD, start-wave, speed toggle (x1/x2 via sim tick multiplier, persisted in settings), results → DOM. World-anchored bubbles/HP bars/damage numbers via projection helper.
 **Accept:** on-device: full interaction parity with the Phaser build plus working 2x speed; bubbles track entities under camera projection correctly.
+
+#### MG.5 complete — 2026-07-30
+
+Joystick (feel ported verbatim: 55px throw, 24px knob), HUD, contextual bubbles
+with the tuned reach constants, ability bar built from the roster, start-wave with
+early-start bonus, x1/x2 speed toggle, results screen, restart, map select with
+linear unlocks and stars, meta tree with free respec, and IndexedDB persistence.
+
+Verified headlessly end to end: a losing run on meadow-road paid **5 tokens**
+(defeat pays per wave — a failed run is progress, DESIGN §7), recorded
+`bestWavesCleared: 5`, and map select showed the new balance. Buying Swift Steed
+to rank 2 (+10 move speed per rank) moved the hero from **150 → 170 units/sec** in
+the next run — so the meta tree genuinely reaches the sim, still as a pure data
+transform applied before the Simulation exists.
+
+**Bug found and fixed on the way (engine, not render):** Charge only ever ran
+left or right. `HeroSystem` continued a released-stick charge along `dir`, a
+left/right *sprite-mirror flag*, never a heading — steering up and charging sent
+the hero sideways at full speed. Added a true heading; `dir` stays for 2D
+mirroring. **This bug is in the Phaser build too**; a mirrored sprite hid it.
+That is the migration paying for itself: 3D has no mirror to hide behind.
+
+MG.6 landed early as a side effect (team rings, range decals, particles, camera
+kick) — see the FX commit.
+
+**Outstanding for MG.7:** endless mode entry, on-device perf profile with the
+full roster, then remove Phaser and merge.
 
 ### MG.6 — FX + decals
 [ ] Per-unit team rings (red enemies / blue hero), range/targeting ring decals, soft unit shadows, pooled particle bursts (kill, coin, ability), stagger shove feedback, gate siege visual state.

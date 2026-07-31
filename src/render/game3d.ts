@@ -1,23 +1,26 @@
 import * as THREE from 'three';
 import { loadGameData } from '../data/loader';
+import { SaveManager } from '../data/saveManager';
+import { applyMetaModifiers } from '../engine/metaModifiers';
+import { newSave, settleRun, type SaveData } from '../engine/progression';
 import { Simulation } from '../engine/simulation';
 import { AbilityBar } from '../ui/dom/abilityBar';
 import { BubbleLayer, bubbleActions } from '../ui/dom/bubbles';
 import { DomJoystick } from '../ui/dom/joystick';
 import { RunOverlay } from '../ui/dom/runOverlay';
+import { MapSelectScreen, MetaTreeScreen, screensCss } from '../ui/dom/screens';
 import { ModelViewFactory } from './entityViews';
-import { buildWorld, simToWorld } from './world';
 import { FxLayer } from './fx';
+import { buildWorld, simToWorld, type World } from './world';
 
 /**
- * MG.5 (first slice) — the 3D build you can actually play.
+ * The 3D build (MG.5): map select → run → results → back, with the meta tree
+ * and persistence wired through.
  *
- * Joystick → `HeroSystem.input`, tap a plot to build, tap Start to send the
- * wave. The UI is a DOM overlay above the canvas, per Part A: no in-canvas
- * widgets, and world-anchored labels use world→screen projection.
- *
- * The separation from MG.3 still holds exactly — input writes to the sim, the
- * sim decides everything, the renderer only reads. Dev-only: /game3d.html.
+ * Data flows one way in each direction: input writes to the sim, the sim
+ * decides, the renderer reads. The meta tree stays a pure data transform
+ * applied *before* the Simulation exists, so the engine never learns it is
+ * there — the same contract the Phaser build holds.
  */
 
 const PIXEL_RATIO_CAP = 2;
@@ -26,9 +29,7 @@ const canvas = document.getElementById('app') as HTMLCanvasElement;
 const overlay = document.getElementById('overlay') as HTMLDivElement;
 
 const data = loadGameData();
-const requested = new URLSearchParams(location.search).get('map');
-const maps = Object.values(data.maps).sort((a, b) => a.order - b.order);
-const map = (requested ? data.maps[requested] : undefined) ?? maps[0]!;
+const saves = new SaveManager();
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, PIXEL_RATIO_CAP));
@@ -36,48 +37,11 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-const world = buildWorld(map, scene);
-
-let leaks = 0;
-
-function newRun(): Simulation {
-  const s = new Simulation({
-    enemies: data.enemies,
-    map,
-    waveSet: data.waveSets[map.id]!,
-    hero: data.hero,
-    economy: data.economy,
-    towers: data.towers,
-    abilities: data.abilities,
-    unlockedAbilityIds: data.abilities.map((a) => a.id),
-  });
-  leaks = 0;
-  s.enemySystem.onReachEnd.push(() => leaks++);
-  return s;
-}
-
-const fx = new FxLayer(scene, map);
-let sim = newRun();
-fx.attach(sim);
-
-// ─── Views ───
-
 const views = new ModelViewFactory(data.models);
 const entityGroup = new THREE.Group();
 scene.add(entityGroup);
 
-const enemyViews = new Map<number, { modelId: string; object: THREE.Object3D }>();
-const towerViews = new Map<string, { modelId: string; object: THREE.Object3D }>();
-const seen = new Set<number>();
-const scratch = new THREE.Vector3();
-
-const heroModel = data.hero.model;
-const heroView = heroModel ? views.acquire(heroModel) : undefined;
-if (heroView) entityGroup.add(heroView);
-
-const towerModelById = new Map(data.towers.towers.map((t) => [t.id, t.model]));
-
-// ─── DOM overlay ───
+// ─── Style ───
 
 const style = document.createElement('style');
 style.textContent =
@@ -85,6 +49,7 @@ style.textContent =
   BubbleLayer.css() +
   AbilityBar.css() +
   RunOverlay.css() +
+  screensCss() +
   `
 #hud { position: fixed; inset: 0; pointer-events: none;
   font: 600 14px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; color: #f2ecdd; }
@@ -102,6 +67,7 @@ document.head.append(style);
 
 const hud = document.createElement('div');
 hud.id = 'hud';
+hud.style.display = 'none';
 const topbar = document.createElement('div');
 topbar.id = 'topbar';
 const startBtn = document.createElement('button');
@@ -111,21 +77,52 @@ startBtn.textContent = 'Start wave';
 hud.append(topbar, startBtn);
 overlay.append(hud);
 
-startBtn.addEventListener('click', () => sim.startNextWave());
-
 const joystick = new DomJoystick(canvas, overlay);
-
-// ─── Contextual bubbles + abilities ───
-
 const bubbles = new BubbleLayer(hud);
-const abilityBar = new AbilityBar(sim, overlay);
 const runOverlay = new RunOverlay(overlay);
+const bubbleScreens: Array<{ x: number; y: number }> = [];
 
-/**
- * A run ends and the next one starts clean. Views are released back to the
- * pool rather than destroyed — the next run reuses the same meshes.
- */
-runOverlay.onRestart = () => {
+// ─── Run state ───
+
+let save: SaveData = newSave();
+let world: World | null = null;
+let fx: FxLayer | null = null;
+let sim: Simulation | null = null;
+let abilityBar: AbilityBar | null = null;
+let activeMapId: string | null = null;
+let leaks = 0;
+let settled = false;
+
+const enemyViews = new Map<number, { modelId: string; object: THREE.Object3D }>();
+const towerViews = new Map<string, { modelId: string; object: THREE.Object3D }>();
+const towerModelById = new Map(data.towers.towers.map((t) => [t.id, t.model]));
+const seen = new Set<number>();
+const scratch = new THREE.Vector3();
+const projected = new THREE.Vector3();
+let heroView: THREE.Object3D | undefined;
+
+const host = {
+  data,
+  get save(): SaveData {
+    return save;
+  },
+  onPlay: (mapId: string) => startMap(mapId),
+  onSaveChanged: (next: SaveData) => {
+    save = next;
+    void saves.save(save);
+  },
+};
+
+const mapSelect = new MapSelectScreen(overlay, host, () => {
+  mapSelect.hide();
+  metaTree.show();
+});
+const metaTree = new MetaTreeScreen(overlay, host, () => {
+  metaTree.hide();
+  mapSelect.show();
+});
+
+function releaseViews(): void {
   for (const [id, entry] of enemyViews) {
     entityGroup.remove(entry.object);
     views.release(entry.modelId, entry.object);
@@ -136,16 +133,81 @@ runOverlay.onRestart = () => {
     views.release(entry.modelId, entry.object);
     towerViews.delete(plotId);
   }
-  sim = newRun();
-  // Sim callback arrays don't survive a rebuild — re-subscribe the FX layer.
+  if (heroView) {
+    entityGroup.remove(heroView);
+    heroView = undefined;
+  }
+}
+
+function startMap(mapId: string): void {
+  mapSelect.hide();
+  metaTree.hide();
+  runOverlay.hide();
+  releaseViews();
+  world?.dispose();
+  fx?.dispose();
+
+  // The meta tree rewrites copies of the balance data before the sim exists.
+  const modded = applyMetaModifiers(
+    { hero: data.hero, economy: data.economy, towers: data.towers, map: data.maps[mapId]! },
+    data.metaTree,
+    save.meta.ranks,
+  );
+
+  activeMapId = mapId;
+  leaks = 0;
+  settled = false;
+  world = buildWorld(modded.map, scene);
+  fx = new FxLayer(scene, modded.map);
+
+  sim = new Simulation({
+    enemies: data.enemies,
+    map: modded.map,
+    waveSet: data.waveSets[mapId]!,
+    hero: modded.hero,
+    economy: modded.economy,
+    towers: modded.towers,
+    abilities: data.abilities,
+    unlockedAbilityIds: modded.unlockedAbilityIds,
+  });
+  sim.enemySystem.onReachEnd.push(() => leaks++);
   fx.attach(sim);
-  abilityBar.setSim(sim);
+
+  abilityBar?.destroy();
+  abilityBar = new AbilityBar(sim, overlay);
+
+  const heroModel = modded.hero.model;
+  heroView = heroModel ? views.acquire(heroModel) : undefined;
+  if (heroView) entityGroup.add(heroView);
+
+  hud.style.display = '';
+  resize();
+}
+
+function toMapSelect(): void {
+  releaseViews();
+  world?.dispose();
+  fx?.dispose();
+  world = null;
+  fx = null;
+  sim = null;
+  abilityBar?.destroy();
+  abilityBar = null;
+  activeMapId = null;
+  hud.style.display = 'none';
+  runOverlay.hide();
+  mapSelect.show();
+}
+
+runOverlay.onRestart = () => {
+  if (activeMapId) startMap(activeMapId);
 };
-const bubbleScreens: Array<{ x: number; y: number }> = [];
+runOverlay.onExit = () => toMapSelect();
+startBtn.addEventListener('click', () => sim?.startNextWave());
 
 function resize(): void {
   renderer.setSize(window.innerWidth, window.innerHeight);
-  world.resize(window.innerWidth, window.innerHeight);
+  world?.resize(window.innerWidth, window.innerHeight);
 }
 window.addEventListener('resize', resize);
 resize();
@@ -156,19 +218,17 @@ let last = performance.now();
 let fps = 0;
 let frames = 0;
 let fpsStart = last;
-const projected = new THREE.Vector3();
 
 function step(dt: number): void {
-  // Input → sim. The only direction data flows this way.
+  if (!sim || !world || !fx) return;
+  const map = world.map;
+
   sim.hero.input.x = joystick.value.x;
   sim.hero.input.y = joystick.value.y;
-  // ×2 is a tick multiplier on the fixed-timestep sim — nearly free, and it
-  // cannot desync anything because the tick size itself never changes.
-  if (sim.phase !== 'done' && sim.phase !== 'defeat') {
-    sim.advance(dt * runOverlay.speed);
-  }
+  // ×2 is a tick multiplier on the fixed-timestep sim — it cannot desync
+  // anything, because the tick size itself never changes.
+  if (sim.phase !== 'done' && sim.phase !== 'defeat') sim.advance(dt * runOverlay.speed);
 
-  // Sim → views.
   seen.clear();
   for (const e of sim.enemySystem.enemies) {
     seen.add(e.id);
@@ -184,9 +244,7 @@ function step(dt: number): void {
     }
     simToWorld(map, e.x, e.y, scratch);
     entry.object.position.set(scratch.x, 0, scratch.z);
-    if (e.facingX !== 0 || e.facingY !== 0) {
-      entry.object.rotation.y = Math.atan2(e.facingX, e.facingY);
-    }
+    if (e.facingX !== 0 || e.facingY !== 0) entry.object.rotation.y = Math.atan2(e.facingX, e.facingY);
     entry.object.visible = true;
   }
   for (const [id, entry] of enemyViews) {
@@ -228,14 +286,38 @@ function step(dt: number): void {
   simToWorld(map, sim.hero.x, sim.hero.y, scratch);
   if (heroView) {
     heroView.position.set(scratch.x, 0, scratch.z);
-    heroView.rotation.y = Math.atan2(sim.hero.input.x, sim.hero.input.y) || heroView.rotation.y;
+    // Face the true heading, not the sprite-mirror flag — see HeroSystem.
+    if (Math.hypot(sim.hero.headingX, sim.hero.headingY) > 0.01) {
+      heroView.rotation.y = Math.atan2(sim.hero.headingX, sim.hero.headingY);
+    }
   }
 
   fx.update(sim, world.camera, dt);
   renderer.render(scene, world.camera);
 }
 
+/** Persist the run exactly once when it resolves. */
+function settleIfNeeded(): void {
+  if (!sim || settled || !activeMapId) return;
+  if (sim.phase !== 'done' && sim.phase !== 'defeat') return;
+  settled = true;
+  const result = settleRun(
+    save,
+    {
+      mapId: activeMapId,
+      victory: sim.phase === 'done',
+      wavesCleared: sim.waveRunner.waveNumber,
+      stars: sim.stars(),
+      endless: false,
+    },
+    data.economy,
+  );
+  save = result.save;
+  void saves.save(save);
+}
+
 function syncHud(): void {
+  if (!sim || !world) return;
   const bonus = sim.earlyStartBonus();
   startBtn.textContent = sim.phase === 'build' ? (bonus > 0 ? `Start wave +${bonus}` : 'Start wave') : '…';
   startBtn.disabled = sim.phase !== 'build';
@@ -243,11 +325,11 @@ function syncHud(): void {
     `${sim.gold}g · gate ${Math.ceil(sim.gate.hp)}/${sim.gate.maxHp} · ` +
     `w${sim.waveRunner.waveNumber}/${sim.waveRunner.totalWaves} · bow L${sim.hero.bowLevel} · ${fps}fps`;
 
-  // Ride close → bubble → tap. Anchors are projected from sim space each frame.
-  const actions = bubbleActions(sim, map);
+  // Ride close → bubble → tap. Anchors projected from sim space each frame.
+  const actions = bubbleActions(sim, world.map);
   bubbleScreens.length = 0;
   for (const a of actions) {
-    simToWorld(map, a.x, a.y, projected);
+    simToWorld(world.map, a.x, a.y, projected);
     projected.y = 26;
     projected.project(world.camera);
     bubbleScreens.push({
@@ -256,7 +338,8 @@ function syncHud(): void {
     });
   }
   bubbles.render(actions, bubbleScreens);
-  abilityBar.sync();
+  abilityBar?.sync();
+  settleIfNeeded();
   runOverlay.sync(sim, leaks);
 }
 
@@ -273,8 +356,41 @@ function frame(now: number): void {
   syncHud();
   requestAnimationFrame(frame);
 }
-requestAnimationFrame(frame);
+
+void (async () => {
+  try {
+    save = await saves.load();
+  } catch {
+    // A blocked or broken IndexedDB must never stop someone playing.
+    console.warn('[game3d] save unavailable — running on a fresh profile');
+  }
+  const requested = new URLSearchParams(location.search).get('map');
+  if (requested && data.maps[requested]) startMap(requested);
+  else mapSelect.show();
+  requestAnimationFrame(frame);
+})();
 
 if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).game3d = { get sim() { return sim; }, world, views, renderer, step, syncHud, joystick, map, bubbleActions, runOverlay, fx };
+  (window as unknown as Record<string, unknown>).game3d = {
+    get sim() {
+      return sim;
+    },
+    get save() {
+      return save;
+    },
+    get world() {
+      return world;
+    },
+    views,
+    renderer,
+    step,
+    syncHud,
+    joystick,
+    runOverlay,
+    startMap,
+    toMapSelect,
+    data,
+    /** Headless checks need a way to drive the save through the real channel. */
+    setSave: (next: SaveData) => host.onSaveChanged(next),
+  };
 }

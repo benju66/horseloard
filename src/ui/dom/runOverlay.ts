@@ -24,6 +24,9 @@ export class RunOverlay {
 
   /** Assigned by the host: rebuild the run from scratch. */
   onRestart: (() => void) | null = null;
+  /** Assigned by the host: leave the run and return to map select. */
+  onExit: (() => void) | null = null;
+  private readonly exit: HTMLButtonElement;
 
   constructor(layer: HTMLElement) {
     const stored = Number(localStorage.getItem(SPEED_KEY));
@@ -57,7 +60,16 @@ export class RunOverlay {
       this.hide();
       this.onRestart?.();
     });
-    this.panel.append(this.title, this.stats, this.again);
+    this.exit = document.createElement('button');
+    this.exit.className = 'run-again ghost';
+    this.exit.setAttribute('data-ui', '');
+    this.exit.textContent = 'Map select';
+    this.exit.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      this.hide();
+      this.onExit?.();
+    });
+    this.panel.append(this.title, this.stats, this.again, this.exit);
     layer.append(this.speedBtn, this.panel);
   }
 
@@ -118,6 +130,7 @@ export class RunOverlay {
 .run-again {
   margin-top: 10px; padding: 14px 30px; border-radius: 16px; border: 0;
   background: rgba(46,120,120,.92); color: #f2ecdd; font: 700 16px ui-monospace, monospace;
-}`;
+}
+.run-again.ghost { margin-top: 0; background: transparent; border: 1px solid rgba(255,255,255,.25); }`;
   }
 }

@@ -50,6 +50,8 @@ const FORGE_HALF = 26;
 export interface World {
   readonly group: THREE.Group;
   readonly camera: THREE.OrthographicCamera;
+  /** The map this world was built from — meta-modified, so hold onto it. */
+  readonly map: MapDef;
   /** Call on viewport change. */
   resize(width: number, height: number): void;
   dispose(): void;
@@ -211,6 +213,7 @@ export function buildWorld(map: MapDef, scene: THREE.Scene): World {
   return {
     group,
     camera,
+    map,
     resize,
     dispose() {
       scene.remove(group);

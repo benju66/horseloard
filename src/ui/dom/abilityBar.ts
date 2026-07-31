@@ -20,11 +20,13 @@ interface Slot {
 export class AbilityBar {
   private readonly slots: Slot[] = [];
   private sim: Simulation;
+  private readonly wrap: HTMLDivElement;
 
   constructor(sim: Simulation, layer: HTMLElement) {
     this.sim = sim;
 
     const wrap = document.createElement('div');
+    this.wrap = wrap;
     wrap.className = 'ability-bar';
     layer.append(wrap);
 
@@ -50,6 +52,12 @@ export class AbilityBar {
       wrap.append(button);
       this.slots.push({ button, label, sweep, abilityId });
     }
+  }
+
+  /** Remove the bar from the DOM — used when a run ends and the map changes. */
+  destroy(): void {
+    this.wrap.remove();
+    this.slots.length = 0;
   }
 
   /**
