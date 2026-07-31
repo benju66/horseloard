@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "icons": "node scripts/generate-icons.mjs",
-    "balance": "vitest run --mode balance src/engine/balance.harness.test.ts"
+    "sprites": "python scripts/generate-hero-sprites.py",
+    "balance": "vitest run --mode balance src/engine/balance.harness.test.ts",
+    "bots": "vitest run --mode balance src/engine/bots.harness.test.ts"
   },
   "dependencies": {
     "phaser": "^3.90.0",

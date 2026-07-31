@@ -1,18 +1,9 @@
 import { describe, it } from 'vitest';
 import { SIM_DT, Simulation } from './simulation';
-import { validateGameData } from '../data/loader';
-
-import towersJson from '../data/towers.json';
-import enemiesJson from '../data/enemies.json';
-import abilitiesJson from '../data/abilities.json';
-import metatreeJson from '../data/metatree.json';
-import heroJson from '../data/hero.json';
-import economyJson from '../data/economy.json';
-import archetypesJson from '../data/archetypes.json';
-import meadowRoadMapJson from '../data/maps/meadow-road.json';
-import meadowRoadWavesJson from '../data/waves/meadow-road.json';
-import theFordMapJson from '../data/maps/the-ford.json';
-import theFordWavesJson from '../data/waves/the-ford.json';
+import { loadGameData } from '../data/loader';
+import { plotCoverage, sampleLanes } from './coverage';
+import { makeRng, combatValue } from './bots';
+import type { MapDef, TowersFile } from '../data/schemas';
 
 /**
  * Balance harness — a deliberately lazy baseline per map: ONE tower, hero
@@ -20,12 +11,26 @@ import theFordWavesJson from '../data/waves/the-ford.json';
  * upgrades each build phase. If this clears the map, the map is too easy.
  * Target: the lazy baseline collapses in the late waves; active play wins.
  *
+ * The active-play half of the question lives in bots.harness.test.ts.
+ *
  * On-demand (headless playtest, not a test): `npm run balance`
  */
-const LAZY_CONFIGS: Record<
-  string,
-  { plotId: string; towerId: string; branchId: string; park: { x: number; y: number } }
-> = {
+
+interface LazyConfig {
+  plotId: string;
+  towerId: string;
+  branchId: string;
+  park: { x: number; y: number };
+}
+
+/**
+ * Hand-calibrated baselines. These are measuring instruments — the wave a
+ * map's lazy run dies on is the number we tune against, so do NOT casually
+ * re-pick the plot or park spot; that silently moves the reference.
+ * Maps without an entry get a derived config (below), so a new map is
+ * covered the day it lands.
+ */
+const LAZY_CONFIGS: Record<string, LazyConfig> = {
   'meadow-road': {
     plotId: 'plot-3',
     towerId: 'archer',
@@ -40,42 +45,54 @@ const LAZY_CONFIGS: Record<
   },
 };
 
-describe.runIf(import.meta.env.MODE === 'balance')('lazy baselines', () => {
-  const data = validateGameData({
-    towers: towersJson,
-    enemies: enemiesJson,
-    abilities: abilitiesJson,
-    metatree: metatreeJson,
-    hero: heroJson,
-    economy: economyJson,
-    archetypes: archetypesJson,
-    maps: {
-      'maps/meadow-road.json': meadowRoadMapJson,
-      'maps/the-ford.json': theFordMapJson,
-    },
-    waveSets: {
-      'waves/meadow-road.json': meadowRoadWavesJson,
-      'waves/the-ford.json': theFordWavesJson,
-    },
-  });
+/** Best plot, best-value attacking tower, park at the gate. No content names. */
+function deriveConfig(map: MapDef, file: TowersFile): LazyConfig {
+  const samples = sampleLanes(map);
+  const reach = file.towers.reduce((max, t) => Math.max(max, t.levels[0]?.range ?? 0), 0);
 
-  for (const [mapId, cfg] of Object.entries(LAZY_CONFIGS)) {
+  const plot = [...map.plots].sort(
+    (a, b) =>
+      plotCoverage(samples, b.position.x, b.position.y, reach) -
+      plotCoverage(samples, a.position.x, a.position.y, reach),
+  )[0]!;
+
+  const attacking = file.towers.filter((t) => t.targeting !== 'none');
+  const tower = (attacking.length > 0 ? attacking : file.towers).reduce((best, t) => {
+    const def = file.projectiles.find((p) => p.id === t.projectileId) ?? null;
+    const bestDef = file.projectiles.find((p) => p.id === best.projectileId) ?? null;
+    return combatValue(t.levels[0]!, def) > combatValue(best.levels[0]!, bestDef) ? t : best;
+  });
+  const def = file.projectiles.find((p) => p.id === tower.projectileId) ?? null;
+  const branch = tower.branches.reduce((best, b) =>
+    combatValue(b.stats, def) > combatValue(best.stats, def) ? b : best,
+  );
+
+  return {
+    plotId: plot.id,
+    towerId: tower.id,
+    branchId: branch.id,
+    park: { x: map.gate.position.x, y: map.gate.position.y },
+  };
+}
+
+describe.runIf(import.meta.env.MODE === 'balance')('lazy baselines', () => {
+  const data = loadGameData();
+
+  for (const [mapId, map] of Object.entries(data.maps)) {
+    const cfg = LAZY_CONFIGS[mapId] ?? deriveConfig(map, data.towers);
+    const derived = LAZY_CONFIGS[mapId] === undefined;
+
     it(`reports the ${mapId} run`, () => {
-      let seed = 42;
-      const rng = () => {
-        seed = (seed * 1103515245 + 12345) % 2147483648;
-        return seed / 2147483648;
-      };
       const sim = new Simulation(
         {
           enemies: data.enemies,
-          map: data.maps[mapId]!,
+          map,
           waveSet: data.waveSets[mapId]!,
           hero: data.hero,
           economy: data.economy,
           towers: data.towers,
         },
-        rng,
+        makeRng(42),
       );
 
       let leaks = 0;
@@ -121,7 +138,10 @@ describe.runIf(import.meta.env.MODE === 'balance')('lazy baselines', () => {
           break;
         }
       }
-      console.log(`\n[${mapId}]\n` + lines.join('\n'));
+      const tag = derived ? ' (derived config — not yet hand-calibrated)' : '';
+      console.log(
+        `\n[${mapId}]${tag} plot=${cfg.plotId} tower=${cfg.towerId}\n` + lines.join('\n'),
+      );
     });
   }
 });

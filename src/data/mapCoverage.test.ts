@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadGameData } from './loader';
-import type { MapDef } from './schemas';
+import { plotCoverage, sampleLanes } from '../engine/coverage';
 
 /**
  * Every plot on every map must give EVERY level-1 tower something to do —
@@ -10,23 +10,6 @@ import type { MapDef } from './schemas';
  * frost range). Guard the whole class.
  */
 const MIN_COVERAGE_UNITS = 40;
-
-function sampleLanes(map: MapDef): Array<{ x: number; y: number; dl: number }> {
-  const pts: Array<{ x: number; y: number; dl: number }> = [];
-  for (const lane of map.lanes) {
-    for (let i = 0; i < lane.waypoints.length - 1; i++) {
-      const a = lane.waypoints[i]!;
-      const b = lane.waypoints[i + 1]!;
-      const seg = Math.hypot(b.x - a.x, b.y - a.y);
-      const n = Math.max(1, Math.floor(seg / 2));
-      for (let k = 0; k < n; k++) {
-        const t = k / n;
-        pts.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, dl: seg / n });
-      }
-    }
-  }
-  return pts;
-}
 
 describe('map plot coverage', () => {
   const data = loadGameData();
@@ -45,12 +28,7 @@ describe('map plot coverage', () => {
     it(`${mapId}: every plot covers ≥${MIN_COVERAGE_UNITS}u of lane with the weakest L1 tower (${weakest.towerId}, ${weakest.reach})`, () => {
       const pts = sampleLanes(map);
       for (const plot of map.plots) {
-        let coverage = 0;
-        for (const p of pts) {
-          if (Math.hypot(p.x - plot.position.x, p.y - plot.position.y) <= weakest.reach) {
-            coverage += p.dl;
-          }
-        }
+        const coverage = plotCoverage(pts, plot.position.x, plot.position.y, weakest.reach);
         expect(
           coverage,
           `plot "${plot.id}" covers only ${Math.round(coverage)}u at range ${weakest.reach} — a gold trap`,
