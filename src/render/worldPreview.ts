@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { loadGameData } from '../data/loader';
 import { Simulation } from '../engine/simulation';
 import { buildWorld, simToWorld } from './world';
+import { ModelViewFactory } from './entityViews';
 
 /**
  * MG.3 acceptance harness — the map rendered from its JSON, with a REAL
@@ -54,34 +55,21 @@ const sim = new Simulation({
   unlockedAbilityIds: data.abilities.map((a) => a.id),
 });
 
-// ─── Debug markers. Pooled — no per-frame allocation (CLAUDE.md #6). ───
+// ─── Entity views from the model manifest. Pooled per model id (CLAUDE.md #6). ───
 
-const enemyGeo = new THREE.BoxGeometry(1, 1, 1);
-const enemyMat = new THREE.MeshLambertMaterial({ color: '#c4452e' });
-const eliteMat = new THREE.MeshLambertMaterial({ color: '#f6c945' });
-const markerPool: THREE.Mesh[] = [];
-const markerGroup = new THREE.Group();
-scene.add(markerGroup);
+const views = new ModelViewFactory(data.models);
+const entityGroup = new THREE.Group();
+scene.add(entityGroup);
 
-function markerAt(index: number): THREE.Mesh {
-  let m = markerPool[index];
-  if (!m) {
-    m = new THREE.Mesh(enemyGeo, enemyMat);
-    m.castShadow = true;
-    markerPool[index] = m;
-    markerGroup.add(m);
-  }
-  return m;
-}
+/** sim entity id → the view currently representing it, and which model it is. */
+const activeViews = new Map<number, { modelId: string; object: THREE.Object3D }>();
 
-const hero = new THREE.Mesh(
-  new THREE.BoxGeometry(26, 34, 26),
-  new THREE.MeshLambertMaterial({ color: '#3b5dc9' }),
-);
-hero.castShadow = true;
-scene.add(hero);
+const HERO_MODEL = data.hero.model;
+const heroView = HERO_MODEL ? views.acquire(HERO_MODEL) : undefined;
+if (heroView) entityGroup.add(heroView);
 
 const scratch = new THREE.Vector3();
+const seenThisFrame = new Set<number>();
 
 // ─── Loop ───
 
@@ -103,25 +91,44 @@ function step(dt: number): void {
   }
   sim.advance(dt);
 
-  // Read sim state → place markers. Strictly one-directional.
+  // Read sim state → place views. Strictly one-directional: nothing here
+  // writes to the sim, and the sim knows nothing about any of this.
   const enemies = sim.enemySystem.enemies;
-  for (let i = 0; i < enemies.length; i++) {
-    const e = enemies[i]!;
-    const m = markerAt(i);
+  seenThisFrame.clear();
+  for (const e of enemies) {
+    seenThisFrame.add(e.id);
+    let entry = activeViews.get(e.id);
+    if (!entry) {
+      const modelId = e.config.model;
+      if (!modelId) continue; // no model ref yet — nothing to draw
+      const object = views.acquire(modelId);
+      if (!object) continue;
+      entityGroup.add(object);
+      entry = { modelId, object };
+      activeViews.set(e.id, entry);
+    }
     simToWorld(map, e.x, e.y, scratch);
-    const size = e.config.radius * 2;
-    m.scale.set(size, size * 1.9, size);
-    m.position.set(scratch.x, size * 0.95, scratch.z);
-    m.material = e.isElite ? eliteMat : enemyMat;
-    m.visible = true;
+    entry.object.position.set(scratch.x, 0, scratch.z);
+    // Face along travel — the sim already tracks a normalised direction.
+    if (e.facingX !== 0 || e.facingY !== 0) {
+      entry.object.rotation.y = Math.atan2(e.facingX, e.facingY);
+    }
+    entry.object.visible = true;
   }
-  for (let i = enemies.length; i < markerPool.length; i++) {
-    const m = markerPool[i];
-    if (m) m.visible = false;
+
+  // Retire views whose entity is gone. Pooled, not destroyed.
+  for (const [id, entry] of activeViews) {
+    if (seenThisFrame.has(id)) continue;
+    entityGroup.remove(entry.object);
+    views.release(entry.modelId, entry.object);
+    activeViews.delete(id);
   }
 
   simToWorld(map, sim.hero.x, sim.hero.y, scratch);
-  hero.position.set(scratch.x, 17, scratch.z);
+  if (heroView) {
+    heroView.position.set(scratch.x, 0, scratch.z);
+    heroView.rotation.y = sim.hero.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+  }
 
   renderer.render(scene, world.camera);
 }
@@ -156,6 +163,7 @@ if (import.meta.env.DEV) {
     map,
     maps,
     step,
-    markerPool,
+    views,
+    activeViews,
   };
 }

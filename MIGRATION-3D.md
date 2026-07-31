@@ -251,8 +251,44 @@ does it want more (it costs zoom); does the organic path edge read as a worn tra
 or as a wobbly stroke.
 
 ### MG.4 — Entity views + assets
-[ ] Execute the Part A.2 pipeline: model manifest schema (logical states → clips, `procedural` fallback), `npm run asset:add` helper, base models sourced + processed, hero composite (dedicated tuning session), enemy variant system (scale/tint/props), tower views per level, coin/projectile InstancedMesh pools, swarm rigid-instanced path.
+[~] Execute the Part A.2 pipeline: model manifest schema (logical states → clips, `procedural` fallback), `npm run asset:add` helper, base models sourced + processed, hero composite (dedicated tuning session), enemy variant system (scale/tint/props), tower views per level, coin/projectile InstancedMesh pools, swarm rigid-instanced path.
 **Accept:** full M0 roster visible and animated per A.2; proportion gate passed on-device; substrate test still passes (fake tower #5 via JSON incl. model ref, zero engine edits).
+
+#### MG.4 progress — the system, on placeholders (assets outstanding)
+
+Decision (Ben, 2026-07-30): **build the system first, source models later.** The
+manifest makes a missing glTF a valid state, so the whole roster is playable before
+a single asset exists and each real model swaps in as a data edit. Placeholders are
+deliberately crude primitives — impossible to mistake for finished art, so they
+cannot quietly become the shipped look.
+
+**Done:**
+- `src/data/schemas/model.ts` — the manifest. Logical states (`idle`/`walk`/`attack`/
+  `death`/`siege`/`stagger`) → clip names, with `procedural` as a first-class value.
+  Every clip optional: a model shipping only a walk cycle is usable day one.
+- **Variant system** — `base` chains with scale composing multiplicatively, tint by
+  palette slot, and props attached at sockets (`head`/`hand`/`back`/`mount`/`root`).
+  The A.2 table is now data: verified resolving to grunt 1.0, runner 0.9, brute 1.40,
+  warlord 1.80 + crown + cape, swarm 0.6 + `instanced: true`.
+- `src/data/models.json` — 6 base models covering the full roster plus 4 tower entries.
+- Loader validation: unknown model refs and **cyclic base chains** both fail loudly at
+  boot with the path and the known-ids list. A cycle would otherwise hang the resolver
+  at render time, which is a miserable place to find it. 5 new loader tests.
+- `model` added (optional) to enemy, tower and hero schemas **alongside** `spriteRef`,
+  so the Phaser build keeps working until MG.7 removes it.
+- `src/render/entityViews.ts` — pooled per model id; enemies spawn and die constantly
+  and a mesh tree per spawn is exactly the churn CLAUDE.md #6 forbids. Verified views
+  tracking `aliveCount` 1:1 across a full run with 6 distinct variants on screen.
+- **Substrate guard extended** to model and prop ids — it now polices the newest
+  content surface automatically, and the engine still names none of it.
+
+**Outstanding, and honest about why:**
+- glTF loading, `npm run asset:add` (gltf-transform pipeline), hero composite tuning,
+  and the **proportion gate** all need real models — Ben's step per A.2.
+- Tower views per level, and the swarm instanced path: `isInstanced()` reports it
+  correctly but the renderer does not yet take that branch, so swarms currently draw
+  as individual meshes. Both are code, not assets — next session.
+- The perf re-test with real rigged models (see MG.2 result) is still the open risk.
 
 ### MG.5 — DOM UI overlay
 [ ] Joystick, HUD, start-wave, speed toggle (x1/x2 via sim tick multiplier, persisted in settings), results → DOM. World-anchored bubbles/HP bars/damage numbers via projection helper.

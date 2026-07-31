@@ -7,6 +7,7 @@ import {
   HeroSchema,
   MapSchema,
   MetaTreeFileSchema,
+  ModelsFileSchema,
   TowersFileSchema,
   WaveSetSchema,
   type AbilitiesFile,
@@ -16,6 +17,7 @@ import {
   type Hero,
   type MapDef,
   type MetaTreeFile,
+  type ModelsFile,
   type TowersFile,
   type WaveSet,
 } from './schemas';
@@ -27,6 +29,7 @@ import metatreeJson from './metatree.json';
 import heroJson from './hero.json';
 import economyJson from './economy.json';
 import archetypesJson from './archetypes.json';
+import modelsJson from './models.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
 import theFordMapJson from './maps/the-ford.json';
@@ -45,6 +48,8 @@ export interface GameData {
   hero: Hero;
   economy: Economy;
   archetypes: ArchetypesFile['archetypes'];
+  /** Render-layer manifest: logical states -> clips, and the variant roster. */
+  models: ModelsFile['models'];
   /** keyed by map id */
   maps: Record<string, MapDef>;
   /** keyed by map id */
@@ -81,6 +86,7 @@ export interface RawGameData {
   hero: unknown;
   economy: unknown;
   archetypes: unknown;
+  models: unknown;
   /** file path (for messages) → raw content */
   maps: Record<string, unknown>;
   /** file path (for messages) → raw content */
@@ -100,6 +106,7 @@ export function validateGameData(raw: RawGameData): GameData {
   const hero = validateFile(HeroSchema, raw.hero, 'hero.json');
   const economy = validateFile(EconomySchema, raw.economy, 'economy.json');
   const archetypesFile = validateFile(ArchetypesFileSchema, raw.archetypes, 'archetypes.json');
+  const modelsFile = validateFile(ModelsFileSchema, raw.models, 'models.json');
 
   const maps: Record<string, MapDef> = {};
   for (const [file, content] of Object.entries(raw.maps)) {
@@ -175,6 +182,26 @@ export function validateGameData(raw: RawGameData): GameData {
     }
   });
 
+  // Model refs are optional during the migration, but a ref that IS given must
+  // resolve — a typo'd model would otherwise degrade silently to placeholder
+  // geometry and look like an art gap rather than a bug.
+  const modelIds = new Set(modelsFile.models.map((m) => m.id));
+  const knownModels = () => [...modelIds].join(', ');
+  enemies.enemies.forEach((enemy, i) => {
+    if (enemy.model !== undefined && !modelIds.has(enemy.model)) {
+      errors.push(
+        `enemies.json → enemies.${i}.model: unknown model "${enemy.model}" (known: ${knownModels()})`,
+      );
+    }
+  });
+  towers.towers.forEach((tower, i) => {
+    if (tower.model !== undefined && !modelIds.has(tower.model)) {
+      errors.push(
+        `towers.json → towers.${i}.model: unknown model "${tower.model}" (known: ${knownModels()})`,
+      );
+    }
+  });
+
   if (errors.length > 0) fail(errors);
 
   return {
@@ -185,6 +212,7 @@ export function validateGameData(raw: RawGameData): GameData {
     hero,
     economy,
     archetypes: archetypesFile.archetypes,
+    models: modelsFile.models,
     maps,
     waveSets,
   };
@@ -200,6 +228,7 @@ export function loadGameData(): GameData {
     hero: heroJson,
     economy: economyJson,
     archetypes: archetypesJson,
+    models: modelsJson,
     maps: {
       'maps/meadow-road.json': meadowRoadMapJson,
       'maps/the-ford.json': theFordMapJson,

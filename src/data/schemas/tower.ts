@@ -120,6 +120,8 @@ export const TowerSchema = z.object({
     .length(2)
     .describe('the Lv4 specialization pair — exactly two, pick one per instance'),
   spriteRef: SpriteRefSchema,
+  /** Model manifest id (models.json). See the note on EnemySchema.model. */
+  model: IdSchema.optional(),
   fireSfxRef: SfxRefSchema.optional(),
 });
 export type Tower = z.infer<typeof TowerSchema>;

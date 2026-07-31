@@ -1,0 +1,88 @@
+{
+  "models": [
+    {
+      "id": "base-humanoid",
+      "silhouette": "humanoid",
+      "tint": 10,
+      "clips": { "walk": "procedural", "idle": "procedural", "siege": "procedural" }
+    },
+    {
+      "id": "base-large",
+      "silhouette": "humanoid",
+      "scale": 1.35,
+      "tint": 10,
+      "clips": { "walk": "procedural", "idle": "procedural", "siege": "procedural" }
+    },
+    {
+      "id": "base-beast",
+      "silhouette": "beast",
+      "tint": 10,
+      "clips": { "walk": "procedural", "idle": "procedural" }
+    },
+    {
+      "id": "base-mini",
+      "silhouette": "blob",
+      "scale": 0.6,
+      "tint": 10,
+      "instanced": true,
+      "clips": { "walk": "procedural" }
+    },
+    {
+      "id": "base-horse",
+      "silhouette": "mounted",
+      "tint": 6,
+      "clips": { "walk": "procedural", "idle": "procedural" }
+    },
+    {
+      "id": "base-rider",
+      "silhouette": "humanoid",
+      "scale": 0.72,
+      "tint": 9,
+      "clips": { "idle": "procedural" }
+    },
+    {
+      "id": "unit-hero",
+      "base": "base-horse",
+      "tint": 6,
+      "props": [
+        { "id": "hero-rider", "socket": "mount", "shape": "box", "scale": 0.72, "tint": 9 },
+        { "id": "hero-bow", "socket": "hand", "shape": "cylinder", "scale": 0.5, "tint": 7 }
+      ]
+    },
+    { "id": "unit-grunt", "base": "base-humanoid" },
+    { "id": "unit-runner", "base": "base-humanoid", "scale": 0.9, "tint": 1 },
+    { "id": "unit-brute", "base": "base-large", "scale": 1.04 },
+    {
+      "id": "unit-shieldbearer",
+      "base": "base-humanoid",
+      "props": [{ "id": "shield", "socket": "hand", "shape": "box", "scale": 1.1, "tint": 5 }]
+    },
+    { "id": "unit-swarm", "base": "base-mini" },
+    {
+      "id": "unit-wolf-rider",
+      "base": "base-beast",
+      "props": [{ "id": "wolf-rider-body", "socket": "mount", "shape": "box", "scale": 0.6, "tint": 10 }]
+    },
+    {
+      "id": "unit-looter",
+      "base": "base-humanoid",
+      "scale": 0.95,
+      "tint": 8,
+      "props": [{ "id": "sack", "socket": "back", "shape": "sphere", "scale": 0.55, "tint": 6 }]
+    },
+    {
+      "id": "unit-warlord",
+      "base": "base-large",
+      "scale": 1.33,
+      "tint": 7,
+      "props": [
+        { "id": "crown", "socket": "head", "shape": "cone", "scale": 0.45, "tint": 8 },
+        { "id": "cape", "socket": "back", "shape": "box", "scale": 0.9, "tint": 5 }
+      ]
+    },
+    { "id": "build-archer", "silhouette": "structure", "tint": 6 },
+    { "id": "build-bombard", "silhouette": "structure", "tint": 5 },
+    { "id": "build-frost", "silhouette": "structure", "tint": 4 },
+    { "id": "build-mill", "silhouette": "structure", "tint": 7 }
+  ]
+}

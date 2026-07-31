@@ -90,6 +90,10 @@ describe('substrate rule', () => {
   for (const a of data.abilities) add(a.id);
   for (const n of data.metaTree) add(n.id);
   for (const a of data.archetypes) add(a.id);
+  for (const m of data.models) {
+    add(m.id);
+    for (const p of m.props) add(p.id);
+  }
   for (const [mapId, map] of Object.entries(data.maps)) {
     add(mapId);
     for (const plot of map.plots) add(plot.id);

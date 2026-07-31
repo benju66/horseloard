@@ -15,7 +15,8 @@
       "siegeDps": 2,
       "staggersHero": false,
       "eliteEligible": true,
-      "spriteRef": "enemy-grunt"
+      "spriteRef": "enemy-grunt",
+      "model": "unit-grunt"
     },
     {
       "id": "runner",
@@ -27,7 +28,8 @@
       "siegeDps": 1.5,
       "staggersHero": false,
       "eliteEligible": true,
-      "spriteRef": "enemy-runner"
+      "spriteRef": "enemy-runner",
+      "model": "unit-runner"
     },
     {
       "id": "brute",
@@ -39,7 +41,8 @@
       "siegeDps": 6,
       "staggersHero": true,
       "eliteEligible": true,
-      "spriteRef": "enemy-brute"
+      "spriteRef": "enemy-brute",
+      "model": "unit-brute"
     },
     {
       "id": "shieldbearer",
@@ -55,7 +58,8 @@
         "arcDegrees": 150,
         "multiplier": 0.25
       },
-      "spriteRef": "enemy-shieldbearer"
+      "spriteRef": "enemy-shieldbearer",
+      "model": "unit-shieldbearer"
     },
     {
       "id": "swarm",
@@ -67,7 +71,8 @@
       "siegeDps": 0.6,
       "staggersHero": false,
       "eliteEligible": true,
-      "spriteRef": "enemy-swarm"
+      "spriteRef": "enemy-swarm",
+      "model": "unit-swarm"
     },
     {
       "id": "wolf-rider",
@@ -80,7 +85,8 @@
       "staggersHero": true,
       "eliteEligible": true,
       "ignoresSlows": true,
-      "spriteRef": "enemy-wolf-rider"
+      "spriteRef": "enemy-wolf-rider",
+      "model": "unit-wolf-rider"
     },
     {
       "id": "looter",
@@ -96,7 +102,8 @@
         "detectRadius": 90,
         "fleeSpeedMultiplier": 1.3
       },
-      "spriteRef": "enemy-looter"
+      "spriteRef": "enemy-looter",
+      "model": "unit-looter"
     },
     {
       "id": "warlord",
@@ -118,7 +125,8 @@
         "radius": 48,
         "cooldown": 8
       },
-      "spriteRef": "enemy-warlord"
+      "spriteRef": "enemy-warlord",
+      "model": "unit-warlord"
     }
   ]
 }
