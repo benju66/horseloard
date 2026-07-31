@@ -336,7 +336,7 @@ full roster, then remove Phaser and merge.
 [x] Per-unit team rings (red enemies / blue hero), range/targeting ring decals, soft unit shadows, pooled particle bursts (kill, coin, ability), stagger shove feedback, gate siege visual state.
 **Accept:** the gate-siege moment (brutes battering, ride back, Charge, repair) reads clearly in 3D; factions readable at a glance from rings alone.
 
-### MG.7 — Parity + performance gate
+### MG.7 — Parity + performance gate — on-device PASS; only the merge remains
 [~] Full run parity with the Phaser build. Profile on-device: 40+ enemies, shadows, 60fps. Remove Phaser dependency; merge to main.
 **Accept — MIGRATION EXIT:** M0 exit criteria re-met in 3D. Then resume M1 (The Ford vertical slice) with art/audio/juice tasks interpreted for 3D.
 #### MG.7 progress — parity closed, perf measured, merge is Ben's call
@@ -368,9 +368,18 @@ cheap lever is blob shadows (halves every caster) before anything drastic.
 Triangles barely move with coin count, confirming the instancing; the bulk is
 props and plot geometry.
 
-**Outstanding for MIGRATION EXIT:** on-device fps at 40+ enemies, then removing
-Phaser and merging — deliberately left to Ben, since it is the point of no
-easy return.
+**ON-DEVICE: PASS (Ben, 2026-07-31) — "everything works on mobile."** Reported after
+real glTF models landed, so this covers the ~9-mesh-per-character cost, not the cheap
+placeholders. Desktop measured 822 draw calls / 446k triangles at 40 enemies.
+
+*Precision note:* Ben's report was general rather than a specific reading at 40+
+simultaneous enemies. If a late-wave stutter ever shows up, **blob shadows are the
+measured lever** — dropping castShadow on characters alone takes 822 -> 466 draws and
+446k -> 239k triangles, and Part A.1 prefers that look anyway. Nothing needs doing
+unless it does.
+
+**Outstanding for MIGRATION EXIT:** remove Phaser and merge to main — deliberately left
+to Ben, since it is the point of no easy return.
 
 **Kill criterion:** the Phaser branch is kept intact until MG.7 passes. If the migration stalls badly against the timebox Ben sets at MG.2 kickoff, fall back to the Phaser branch and ship 2D — a finished 2D game beats an unfinished 3D one. A migration that can't fail cleanly is the kind that kills solo projects.
 

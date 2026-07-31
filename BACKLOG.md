@@ -22,9 +22,9 @@ already downloaded and ledgered under `public/models/kenney-castle/` and
 largest remaining visual upgrade — the gate is on screen constantly and every map carries
 20+ props. Load them through `ModelViewFactory` the way entity views already do.
 
-**Then MG.7 to close the migration:** on-device perf check at 40+ enemies (blob shadows
-are the measured lever: 822 -> 466 draws), then remove Phaser and merge to main — that
-last step is Ben's call, not Claude's.
+**MG.7 on-device perf: PASSED** (Ben, 2026-07-31 — "everything works on mobile", with
+real glTF models loaded). Only the merge remains, and that is Ben's call. If a late-wave
+stutter ever appears, blob shadows are the measured lever: 822 -> 466 draws at 40 enemies.
 
 **Deferred behind the migration:** solo-carry fix (DESIGN section 6, option C then A),
 biomes + more levels, audio. Do not let audio slip to last.
