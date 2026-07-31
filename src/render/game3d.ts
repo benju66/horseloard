@@ -1,0 +1,270 @@
+import * as THREE from 'three';
+import { loadGameData } from '../data/loader';
+import { Simulation } from '../engine/simulation';
+import { DomJoystick } from '../ui/dom/joystick';
+import { ModelViewFactory } from './entityViews';
+import { buildWorld, simToWorld } from './world';
+
+/**
+ * MG.5 (first slice) — the 3D build you can actually play.
+ *
+ * Joystick → `HeroSystem.input`, tap a plot to build, tap Start to send the
+ * wave. The UI is a DOM overlay above the canvas, per Part A: no in-canvas
+ * widgets, and world-anchored labels use world→screen projection.
+ *
+ * The separation from MG.3 still holds exactly — input writes to the sim, the
+ * sim decides everything, the renderer only reads. Dev-only: /game3d.html.
+ */
+
+const PIXEL_RATIO_CAP = 2;
+
+const canvas = document.getElementById('app') as HTMLCanvasElement;
+const overlay = document.getElementById('overlay') as HTMLDivElement;
+
+const data = loadGameData();
+const requested = new URLSearchParams(location.search).get('map');
+const maps = Object.values(data.maps).sort((a, b) => a.order - b.order);
+const map = (requested ? data.maps[requested] : undefined) ?? maps[0]!;
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, PIXEL_RATIO_CAP));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const world = buildWorld(map, scene);
+
+const sim = new Simulation({
+  enemies: data.enemies,
+  map,
+  waveSet: data.waveSets[map.id]!,
+  hero: data.hero,
+  economy: data.economy,
+  towers: data.towers,
+  abilities: data.abilities,
+  unlockedAbilityIds: data.abilities.map((a) => a.id),
+});
+
+// ─── Views ───
+
+const views = new ModelViewFactory(data.models);
+const entityGroup = new THREE.Group();
+scene.add(entityGroup);
+
+const enemyViews = new Map<number, { modelId: string; object: THREE.Object3D }>();
+const towerViews = new Map<string, { modelId: string; object: THREE.Object3D }>();
+const seen = new Set<number>();
+const scratch = new THREE.Vector3();
+
+const heroModel = data.hero.model;
+const heroView = heroModel ? views.acquire(heroModel) : undefined;
+if (heroView) entityGroup.add(heroView);
+
+const towerModelById = new Map(data.towers.towers.map((t) => [t.id, t.model]));
+
+// ─── DOM overlay ───
+
+const style = document.createElement('style');
+style.textContent =
+  DomJoystick.css() +
+  `
+#hud { position: fixed; inset: 0; pointer-events: none;
+  font: 600 14px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; color: #f2ecdd; }
+#topbar { position: absolute; top: env(safe-area-inset-top, 6px); left: 0; right: 0;
+  display: flex; gap: 10px; justify-content: center; padding: 8px;
+  text-shadow: 0 1px 3px rgba(0,0,0,.85); }
+#startbtn { position: absolute; bottom: calc(env(safe-area-inset-bottom, 12px) + 18px);
+  left: 50%; transform: translateX(-50%); pointer-events: auto;
+  padding: 14px 26px; border-radius: 16px; border: 0;
+  background: rgba(46,120,120,.88); color: #f2ecdd; font: 700 16px ui-monospace, monospace;
+  box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+#startbtn[disabled] { opacity: .35; }
+.plot-label { position: absolute; transform: translate(-50%,-50%);
+  pointer-events: auto; padding: 6px 10px; border-radius: 12px;
+  background: rgba(28,40,34,.82); border: 1px solid rgba(255,255,255,.18);
+  font: 700 12px ui-monospace, monospace; color: #f6c945; white-space: nowrap; }`;
+document.head.append(style);
+
+const hud = document.createElement('div');
+hud.id = 'hud';
+const topbar = document.createElement('div');
+topbar.id = 'topbar';
+const startBtn = document.createElement('button');
+startBtn.id = 'startbtn';
+startBtn.setAttribute('data-ui', '');
+startBtn.textContent = 'Start wave';
+hud.append(topbar, startBtn);
+overlay.append(hud);
+
+startBtn.addEventListener('click', () => sim.startNextWave());
+
+const joystick = new DomJoystick(canvas, overlay);
+
+// ─── Build interaction: tap a plot label ───
+
+const plotLabels = new Map<string, HTMLDivElement>();
+/** Cheapest buildable tower — a stand-in until the radial build bubble lands. */
+function cheapestAffordable(): string | undefined {
+  let best: string | undefined;
+  let bestCost = Infinity;
+  for (const t of sim.towerSystem.roster) {
+    const cost = sim.towerSystem.buildCost(t.id);
+    if (cost !== null && cost <= sim.gold && cost < bestCost) {
+      bestCost = cost;
+      best = t.id;
+    }
+  }
+  return best;
+}
+
+for (const plot of sim.towerSystem.plots) {
+  const el = document.createElement('div');
+  el.className = 'plot-label';
+  el.setAttribute('data-ui', '');
+  el.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const state = sim.towerSystem.getPlot(plot.plotId)!;
+    if (state.towerId === null) {
+      const id = cheapestAffordable();
+      if (id) sim.buildTower(plot.plotId, id);
+    } else {
+      sim.upgradeTower(plot.plotId);
+    }
+  });
+  hud.append(el);
+  plotLabels.set(plot.plotId, el);
+}
+
+function resize(): void {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  world.resize(window.innerWidth, window.innerHeight);
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ─── Loop ───
+
+let last = performance.now();
+let fps = 0;
+let frames = 0;
+let fpsStart = last;
+const projected = new THREE.Vector3();
+
+function step(dt: number): void {
+  // Input → sim. The only direction data flows this way.
+  sim.hero.input.x = joystick.value.x;
+  sim.hero.input.y = joystick.value.y;
+  sim.advance(dt);
+
+  // Sim → views.
+  seen.clear();
+  for (const e of sim.enemySystem.enemies) {
+    seen.add(e.id);
+    let entry = enemyViews.get(e.id);
+    if (!entry) {
+      const modelId = e.config.model;
+      if (!modelId) continue;
+      const object = views.acquire(modelId);
+      if (!object) continue;
+      entityGroup.add(object);
+      entry = { modelId, object };
+      enemyViews.set(e.id, entry);
+    }
+    simToWorld(map, e.x, e.y, scratch);
+    entry.object.position.set(scratch.x, 0, scratch.z);
+    if (e.facingX !== 0 || e.facingY !== 0) {
+      entry.object.rotation.y = Math.atan2(e.facingX, e.facingY);
+    }
+    entry.object.visible = true;
+  }
+  for (const [id, entry] of enemyViews) {
+    if (seen.has(id)) continue;
+    entityGroup.remove(entry.object);
+    views.release(entry.modelId, entry.object);
+    enemyViews.delete(id);
+  }
+
+  for (const plot of sim.towerSystem.plots) {
+    const existing = towerViews.get(plot.plotId);
+    if (plot.towerId === null) {
+      if (existing) {
+        entityGroup.remove(existing.object);
+        views.release(existing.modelId, existing.object);
+        towerViews.delete(plot.plotId);
+      }
+      continue;
+    }
+    const modelId = towerModelById.get(plot.towerId);
+    if (!modelId) continue;
+    if (!existing || existing.modelId !== modelId) {
+      if (existing) {
+        entityGroup.remove(existing.object);
+        views.release(existing.modelId, existing.object);
+      }
+      const object = views.acquire(modelId);
+      if (!object) continue;
+      entityGroup.add(object);
+      towerViews.set(plot.plotId, { modelId, object });
+    }
+    const view = towerViews.get(plot.plotId)!;
+    simToWorld(map, plot.x, plot.y, scratch);
+    view.object.position.set(scratch.x, 4, scratch.z);
+    // Level reads as height until real per-level models land.
+    view.object.scale.setScalar(views.scaleOf(view.modelId) * (0.85 + plot.level * 0.12));
+  }
+
+  simToWorld(map, sim.hero.x, sim.hero.y, scratch);
+  if (heroView) {
+    heroView.position.set(scratch.x, 0, scratch.z);
+    heroView.rotation.y = Math.atan2(sim.hero.input.x, sim.hero.input.y) || heroView.rotation.y;
+  }
+
+  renderer.render(scene, world.camera);
+}
+
+function syncHud(): void {
+  const bonus = sim.earlyStartBonus();
+  startBtn.textContent = sim.phase === 'build' ? (bonus > 0 ? `Start wave +${bonus}` : 'Start wave') : '…';
+  startBtn.disabled = sim.phase !== 'build';
+  topbar.textContent =
+    `${sim.gold}g · gate ${Math.ceil(sim.gate.hp)}/${sim.gate.maxHp} · ` +
+    `w${sim.waveRunner.waveNumber}/${sim.waveRunner.totalWaves} · bow L${sim.hero.bowLevel} · ${fps}fps`;
+
+  for (const plot of sim.towerSystem.plots) {
+    const el = plotLabels.get(plot.plotId)!;
+    simToWorld(map, plot.x, plot.y, projected);
+    projected.y = 20;
+    projected.project(world.camera);
+    const onScreen = Math.abs(projected.x) <= 1.1 && Math.abs(projected.y) <= 1.1;
+    el.style.display = sim.phase === 'build' && onScreen ? '' : 'none';
+    el.style.left = `${((projected.x + 1) / 2) * window.innerWidth}px`;
+    el.style.top = `${((-projected.y + 1) / 2) * window.innerHeight}px`;
+    if (plot.towerId === null) {
+      const id = cheapestAffordable();
+      const cost = id ? sim.towerSystem.buildCost(id) : null;
+      el.textContent = cost === null ? '—' : `Build ${cost}g`;
+    } else {
+      const up = sim.towerSystem.upgradeCost(plot);
+      el.textContent = up === null ? `L${plot.level} max` : `L${plot.level} → ${up}g`;
+    }
+  }
+}
+
+function frame(now: number): void {
+  const dt = Math.min((now - last) / 1000, 0.25);
+  last = now;
+  step(dt);
+  frames++;
+  if (now - fpsStart >= 400) {
+    fps = Math.round((frames * 1000) / (now - fpsStart));
+    frames = 0;
+    fpsStart = now;
+  }
+  syncHud();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+if (import.meta.env.DEV) {
+  (window as unknown as Record<string, unknown>).game3d = { sim, world, views, renderer, step, joystick, map };
+}
