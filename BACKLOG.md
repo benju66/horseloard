@@ -1,5 +1,32 @@
 # BACKLOG.md — Horse Lord
 
+## ▶ START HERE (updated 2026-07-31)
+
+**Branch: `3d-migration`, 17 commits ahead of `main`, unmerged.** `main` is still the
+shipped Phaser 2D build. Read `MIGRATION-3D.md` too — it is authoritative for the
+render swap while that is in progress.
+
+**State:** the Phaser → Three.js migration is functionally complete (MG.1–MG.6 done,
+MG.7 all but the merge). `/game3d.html` is the full playable game with real CC0 models.
+The engine, data schemas and save layer were never touched — that is why it was cheap.
+
+**Run it:** `npm run build && npm run preview -- --host` → `http://<lan-ip>:4173/game3d.html`
+(use the production build for any fps judgement; dev understates it).
+
+**Next task — the one open game problem:** archer and bombard each still solo-carry
+maps 3–4, so composition is preference, not decision, and every level poses the same
+question. Try the cheap data fix first — strengthen enemy counter-traits (shieldbearer
+frontal block, swarm density, wolf-rider speed) and re-run `npm run bots`; success is
+`solo-carriers 0` on crossroads and warlords-march. Only if data cannot do it, build the
+**Barracks** tower (DESIGN §5), which needs real engine work.
+
+**Then:** audio (the largest missing feel element — the game is silent), then biomes and
+more levels, which are cheap now that map lighting is schema data.
+
+**Instruments — do not tune by feel:** `npm run bots` · `npm run balance` · `npm test`
+
+---
+
 Status legend: [ ] todo · [~] in progress · [x] done. Add a one-line "learned:" note under each completed task — this file is the project memory across sessions.
 
 ---
