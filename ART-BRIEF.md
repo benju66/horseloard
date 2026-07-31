@@ -14,11 +14,12 @@ models that load but sit sideways, underground, or cost six times the draw calls
 | Towers, gate, forge, walls | ✅ **Yes, ideal** | Static. No rig, no animation. Image→3D handles these well. |
 | Rocks, trees, barrels, props | ✅ **Yes, ideal** | Same. |
 | **Swarm creature** | ✅ **Yes** | Deliberately rigid and instanced — no skeleton wanted. |
-| **Horse, wolf, humanoid enemies, the rider** | ⚠️ **Usually not** | These need a **skeleton and animation clips**. Most image→3D tools output an unrigged single mesh. A horse with no walk cycle is useless — the hero is on screen 100% of the time. |
+| **Horse, wolf, humanoid enemies, the rider** | ✅ **Yes, with Meshy** | Superseded 2026-07-31. Generic image→3D tools output unrigged meshes, but **Meshy auto-rigs bipeds AND quadrupeds** and applies preset motion clips — which covers the horse and wolf. See §10. |
 
-**Practical plan:** use AI for everything static, keep CC0 packs (KayKit, Quaternius) or
-a commission for anything that walks. If your image→3D tool *does* auto-rig with named
-clips, great — check the clip names against §4 before committing to it.
+**Practical plan (revised):** Meshy can do the whole roster including rigged characters.
+See §10 for its exact settings. Keep the CC0 packs as a fallback and as the proportion
+reference — whatever Meshy produces has to sit beside the existing KayKit skeletons
+without clashing.
 
 ---
 
@@ -227,4 +228,87 @@ half a second.
 5. Towers - currently generic Kenney pieces, functional but interchangeable-looking
 6. Hero progression props (quiver, helm, cape, recurve bow) - see `HERO-DESIGN.md` section 4
 7. Forge, trees, rocks - Kenney models already downloaded, just unwired
+
+---
+
+# 10. Meshy — exact settings for characters
+
+Meshy auto-rigs **bipeds, quadrupeds and winged** body plans, ships 600+ preset motion
+clips, exports GLB, and exposes a target-polycount slider. That covers everything this
+project still needs, including the horse and wolf.
+
+**One structural advantage over the CC0 packs:** Meshy outputs a *single merged mesh*.
+KayKit characters are modular — 11 meshes each — which is why 40 enemies cost 822 draw
+calls. A single-mesh character should cost roughly 2 draws instead of ~18. If Meshy
+characters replace the KayKit ones, that problem largely solves itself.
+
+## Prompt (paste SHARED SPEC from §8, then the SUBJECT block, then this)
+
+> Full body, standing in a neutral A-pose, arms slightly away from the body, facing the
+> viewer directly. Symmetrical. Feet flat and together on the ground. No base, no plinth,
+> no ground plane.
+
+A-pose matters — auto-rigging is far more reliable from a clean neutral pose than from a
+dynamic one, and the game applies all motion itself.
+
+## Generation settings
+
+| Setting | Value | Why |
+|---|---|---|
+| Topology | **Quad** (remesh) | Edge loops at joints deform far better when animated. glTF triangulates on export anyway, so there is no cost. |
+| Target polycount | **~3,000 tris** | Budget from Part A.2. Reference: a KayKit skeleton is ~4,800 verts and reads fine. |
+| Symmetry | **On** | Characters are symmetrical; it produces cleaner topology and a better rig. |
+| PBR / material maps | **Off if offered** | The game uses flat albedo under its own lighting. Normal, roughness and metalness maps are dead weight here and can fight the dusk lighting. If they come through anyway, strip them before shipping. |
+| Texture style | Flat / stylised, **no baked lighting** | Painted-in highlights and shadows conflict with the scene's warm sun over cool fill. |
+
+## Rigging and animation
+
+- **Body plan:** biped for humanoids and the rider; **quadruped for the horse and wolf**.
+- **Clips to apply** — the game maps logical states to clip names, so pick the nearest
+  equivalents from Meshy's library:
+
+  | Game state | Ask Meshy for | Priority |
+  |---|---|---|
+  | `walk` | walk or trot cycle, looping | **essential** |
+  | `idle` | idle / breathing, looping | **essential** |
+  | `attack` | short melee strike, one-shot | nice to have |
+  | `death` | death / collapse, one-shot | nice to have |
+  | `siege` | reuse the attack clip | optional |
+  | `stagger` | hit reaction, short | optional |
+
+  **A model shipping only `walk` and `idle` is usable day one.** Unmapped states fall back
+  to `procedural` motion in code. Do not block on a full set.
+
+- **Keep `attack` very short.** The bow fires as often as every 0.25s at level 6; a long
+  draw animation will look frantic and desynced.
+- **The rider needs no leg animation** — it is seated on the horse. Real saving.
+
+## Export
+
+- Format: **GLB**. Not FBX, not USDZ.
+- Then verify three things the tool will not do for you, and fix in a DCC app if wrong:
+  1. **Facing +Z.** The renderer rotates by `atan2(headingX, headingY)`; a model facing
+     the wrong way walks backwards forever. This is the single most likely thing to be
+     wrong out of the box.
+  2. **Origin at the feet**, centred on X and Z.
+  3. **Y-up.** GLB is Y-up by convention, so this is usually fine.
+- Scale is irrelevant — height is auto-normalised from the bounding box.
+
+## Then
+
+```bash
+npm run asset:optimize public/models/<yours>.glb
+```
+
+Add the `file` and `clips` mapping to `src/data/models.json`, and a line in `ASSETS.md`
+recording Meshy as the source **with whatever its terms say about commercial rights** —
+the project is aiming at release, so that field is no longer cosmetic.
+
+## The check that actually decides it
+
+Drop the first Meshy character beside an existing KayKit skeleton at gameplay zoom on a
+phone. **If the proportions clash, the answer is not to keep the Meshy one and hope** —
+it is to either re-prompt toward the existing family or commit to regenerating the whole
+roster in Meshy so everything matches. Mixed proportions are the most obvious tell of
+assembled-from-parts art, and the hero is the reference everything else is judged against.
 
