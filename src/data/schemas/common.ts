@@ -14,3 +14,8 @@ export const SpriteRefSchema = z.string().min(1);
 
 /** Key into the sfx manifest. */
 export const SfxRefSchema = z.string().min(1);
+
+/** `#rrggbb`. Render-layer data — the engine never reads these. */
+export const HexColorSchema = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/, 'colors are #rrggbb');

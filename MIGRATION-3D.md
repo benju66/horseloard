@@ -203,8 +203,52 @@ at MG.4 and the number will move. A pass here means "not obviously doomed", not
 "budget met".
 
 ### MG.3 — World render
-[ ] Ground plane with organic-edged path, plot markers, gate + forge placeholder meshes — all driven from map JSON. Camera block and lighting block (dusk model per Part A.1) added to map schema. Prop placement from map data (sparse, path-edge clusters).
+[~] Ground plane with organic-edged path, plot markers, gate + forge placeholder meshes — all driven from map JSON. Camera block and lighting block (dusk model per Part A.1) added to map schema. Prop placement from map data (sparse, path-edge clusters).
 **Accept:** the M0 map is recognizable in 3D with the dusk lighting mood; sim entities (headless) walk the path as debug markers.
+
+#### MG.3 progress — mechanically verified, look needs Ben's eye
+
+`/world3d.html?map=<id>` renders any map from its JSON with a **real `Simulation`**
+ticking behind it. Nothing in the render layer moves anything: the sim owns every
+position, the renderer reads and places boxes. Markers tracked `aliveCount` exactly
+at every sample across a full multi-wave run (16→16, 12→12, 17→17), waves advanced,
+and the gate took leak damage — the seam holds under load, not just at boot.
+
+Schema gained `camera` and `lighting` blocks (`MapCameraSchema`, `MapLightingSchema`).
+Both fully defaulted, so **all four shipped maps validate with zero edits**.
+
+| map | lanes | plots | frustum | playfield fill | clipped | draws |
+|---|---|---|---|---|---|---|
+| meadow-road | 1 | 6 | 987 | 0.69 | no | 112 |
+| the-ford | 2 | 7 | 1067 | 0.72 | no | 98 |
+| crossroads | 2 | 8 | 1083 | 0.97 | no | 121 |
+| warlords-march | 2 | 8 | 1117 | 0.66 | no | 121 |
+
+**FINDING — camera yaw is expensive on portrait maps, and it caused the MG.2
+framing bug.** Measured on meadow-road at 19.5:9: the map's corners projected to
+±1.666 NDC at the original yaw of 20° — overflowing the frame by 67%. Yaw swings a
+tall map's diagonal across the short screen axis, so the required frustum grows
+fast: 0° needs 969, 6° needs 1151, 20° needs 1433. Elevation barely matters; width
+is the binding axis throughout. **Default yaw dropped 20° → 8°**, and the schema now
+says so, because "slight yaw" turns out to be load-bearing rather than stylistic.
+
+**Camera now auto-fits per device.** `frustumHeight` became *optional*: omit it and
+the camera solves the tightest framing that still shows the whole playfield at the
+current viewport aspect, re-solved on every resize. That handles unknown phone
+aspects properly instead of hard-coding one. Fitting to **content** (lanes, plots,
+gate, forge) rather than the world rectangle recovered 18% zoom on meadow-road
+(1209 → 987) — the world corners are empty grass and framing them wastes the zoom
+that chibi-scale readability needs. Props are deliberately excluded from the fit;
+letting the outermost ones crop at the frame edge reads as intentional.
+
+**Outstanding — needs your eyes, not a number.** The acceptance criterion is
+"recognizable, with the dusk lighting mood", which no headless check can answer.
+`npm run dev` → `http://192.168.4.30:5173/world3d.html` (append `?map=the-ford`,
+`?map=crossroads`, `?map=warlords-march`). The map plays itself. Specifically worth
+judging: does the warm path corridor read as the brightest region against the cool
+terrain, or is it still flat as it was at MG.2; is the 8° yaw enough depth cue or
+does it want more (it costs zoom); does the organic path edge read as a worn track
+or as a wobbly stroke.
 
 ### MG.4 — Entity views + assets
 [ ] Execute the Part A.2 pipeline: model manifest schema (logical states → clips, `procedural` fallback), `npm run asset:add` helper, base models sourced + processed, hero composite (dedicated tuning session), enemy variant system (scale/tint/props), tower views per level, coin/projectile InstancedMesh pools, swarm rigid-instanced path.
