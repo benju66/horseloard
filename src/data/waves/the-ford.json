@@ -2,91 +2,301 @@
   "mapId": "the-ford",
   "waves": [
     {
-      "hpMultiplier": 1,
+      "hpMultiplier": 1.254,
       "entries": [
-        { "enemyId": "grunt", "count": 6, "spacing": 0.9, "laneId": "west", "delay": 0 },
-        { "enemyId": "grunt", "count": 4, "spacing": 0.9, "laneId": "east", "delay": 1.8 }
+        {
+          "enemyId": "grunt",
+          "count": 6,
+          "spacing": 0.9,
+          "laneId": "west",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 4,
+          "spacing": 0.9,
+          "laneId": "east",
+          "delay": 1.8
+        }
       ]
     },
     {
-      "hpMultiplier": 1.15,
+      "hpMultiplier": 1.443,
       "entries": [
-        { "enemyId": "grunt", "count": 6, "spacing": 0.85, "laneId": "east", "delay": 0 },
-        { "enemyId": "runner", "count": 4, "spacing": 1.8, "laneId": "west", "delay": 1.2 }
+        {
+          "enemyId": "grunt",
+          "count": 6,
+          "spacing": 0.85,
+          "laneId": "east",
+          "delay": 0
+        },
+        {
+          "enemyId": "runner",
+          "count": 4,
+          "spacing": 1.8,
+          "laneId": "west",
+          "delay": 1.2
+        }
       ]
     },
     {
-      "hpMultiplier": 1.35,
+      "hpMultiplier": 1.693,
       "entries": [
-        { "enemyId": "grunt", "count": 6, "spacing": 0.8, "laneId": "west", "delay": 0 },
-        { "enemyId": "swarm", "count": 8, "spacing": 0.15, "laneId": "east", "delay": 2.5 },
-        { "enemyId": "runner", "count": 3, "spacing": 2, "laneId": "east", "delay": 6 }
+        {
+          "enemyId": "grunt",
+          "count": 6,
+          "spacing": 0.8,
+          "laneId": "west",
+          "delay": 0
+        },
+        {
+          "enemyId": "swarm",
+          "count": 8,
+          "spacing": 0.15,
+          "laneId": "east",
+          "delay": 2.5
+        },
+        {
+          "enemyId": "runner",
+          "count": 3,
+          "spacing": 2,
+          "laneId": "east",
+          "delay": 6
+        }
       ]
     },
     {
-      "hpMultiplier": 1.55,
+      "hpMultiplier": 1.944,
       "entries": [
-        { "enemyId": "grunt", "count": 7, "spacing": 0.75, "laneId": "east", "delay": 0 },
-        { "enemyId": "brute", "count": 2, "spacing": 3.5, "laneId": "west", "delay": 1.5 },
-        { "enemyId": "swarm", "count": 8, "spacing": 0.15, "laneId": "west", "delay": 7 }
+        {
+          "enemyId": "grunt",
+          "count": 7,
+          "spacing": 0.75,
+          "laneId": "east",
+          "delay": 0
+        },
+        {
+          "enemyId": "brute",
+          "count": 2,
+          "spacing": 3.5,
+          "laneId": "west",
+          "delay": 1.5
+        },
+        {
+          "enemyId": "swarm",
+          "count": 8,
+          "spacing": 0.15,
+          "laneId": "west",
+          "delay": 7
+        }
       ]
     },
     {
-      "hpMultiplier": 1.8,
+      "hpMultiplier": 2.258,
       "entries": [
-        { "enemyId": "shieldbearer", "count": 3, "spacing": 2.2, "laneId": "west", "delay": 0 },
-        { "enemyId": "grunt", "count": 8, "spacing": 0.65, "laneId": "east", "delay": 1 },
-        { "enemyId": "runner", "count": 5, "spacing": 1.3, "laneId": "west", "delay": 4 }
+        {
+          "enemyId": "shieldbearer",
+          "count": 3,
+          "spacing": 2.2,
+          "laneId": "west",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 8,
+          "spacing": 0.65,
+          "laneId": "east",
+          "delay": 1
+        },
+        {
+          "enemyId": "runner",
+          "count": 5,
+          "spacing": 1.3,
+          "laneId": "west",
+          "delay": 4
+        }
       ]
     },
     {
-      "hpMultiplier": 2.1,
+      "hpMultiplier": 2.634,
       "archetypeId": "raid",
       "entries": [
-        { "enemyId": "runner", "count": 7, "spacing": 0.55, "laneId": "east", "delay": 0 },
-        { "enemyId": "runner", "count": 7, "spacing": 0.55, "laneId": "east", "delay": 6 },
-        { "enemyId": "grunt", "count": 5, "spacing": 1, "laneId": "west", "delay": 2 }
+        {
+          "enemyId": "runner",
+          "count": 7,
+          "spacing": 0.55,
+          "laneId": "east",
+          "delay": 0
+        },
+        {
+          "enemyId": "runner",
+          "count": 7,
+          "spacing": 0.55,
+          "laneId": "east",
+          "delay": 6
+        },
+        {
+          "enemyId": "grunt",
+          "count": 5,
+          "spacing": 1,
+          "laneId": "west",
+          "delay": 2
+        }
       ]
     },
     {
-      "hpMultiplier": 2.45,
+      "hpMultiplier": 3.073,
       "entries": [
-        { "enemyId": "brute", "count": 4, "spacing": 2.4, "laneId": "east", "delay": 0 },
-        { "enemyId": "swarm", "count": 8, "spacing": 0.15, "laneId": "west", "delay": 2 },
-        { "enemyId": "swarm", "count": 8, "spacing": 0.15, "laneId": "west", "delay": 8 },
-        { "enemyId": "shieldbearer", "count": 2, "spacing": 3, "laneId": "west", "delay": 5 }
+        {
+          "enemyId": "brute",
+          "count": 4,
+          "spacing": 2.4,
+          "laneId": "east",
+          "delay": 0
+        },
+        {
+          "enemyId": "swarm",
+          "count": 8,
+          "spacing": 0.15,
+          "laneId": "west",
+          "delay": 2
+        },
+        {
+          "enemyId": "swarm",
+          "count": 8,
+          "spacing": 0.15,
+          "laneId": "west",
+          "delay": 8
+        },
+        {
+          "enemyId": "shieldbearer",
+          "count": 2,
+          "spacing": 3,
+          "laneId": "west",
+          "delay": 5
+        }
       ]
     },
     {
-      "hpMultiplier": 2.85,
+      "hpMultiplier": 3.575,
       "archetypeId": "horde",
       "entries": [
-        { "enemyId": "swarm", "count": 8, "spacing": 0.15, "laneId": "west", "delay": 0 },
-        { "enemyId": "swarm", "count": 8, "spacing": 0.15, "laneId": "east", "delay": 1.5 },
-        { "enemyId": "swarm", "count": 8, "spacing": 0.15, "laneId": "west", "delay": 5 },
-        { "enemyId": "swarm", "count": 8, "spacing": 0.15, "laneId": "east", "delay": 6.5 },
-        { "enemyId": "grunt", "count": 8, "spacing": 0.6, "laneId": "west", "delay": 3 }
+        {
+          "enemyId": "swarm",
+          "count": 8,
+          "spacing": 0.15,
+          "laneId": "west",
+          "delay": 0
+        },
+        {
+          "enemyId": "swarm",
+          "count": 8,
+          "spacing": 0.15,
+          "laneId": "east",
+          "delay": 1.5
+        },
+        {
+          "enemyId": "swarm",
+          "count": 8,
+          "spacing": 0.15,
+          "laneId": "west",
+          "delay": 5
+        },
+        {
+          "enemyId": "swarm",
+          "count": 8,
+          "spacing": 0.15,
+          "laneId": "east",
+          "delay": 6.5
+        },
+        {
+          "enemyId": "grunt",
+          "count": 8,
+          "spacing": 0.6,
+          "laneId": "west",
+          "delay": 3
+        }
       ]
     },
     {
-      "hpMultiplier": 3.3,
+      "hpMultiplier": 4.14,
       "archetypeId": "war-party",
       "entries": [
-        { "enemyId": "shieldbearer", "count": 4, "spacing": 1.6, "laneId": "west", "delay": 0 },
-        { "enemyId": "brute", "count": 5, "spacing": 1.8, "laneId": "west", "delay": 1 },
-        { "enemyId": "shieldbearer", "count": 3, "spacing": 1.8, "laneId": "east", "delay": 3 },
-        { "enemyId": "brute", "count": 4, "spacing": 2, "laneId": "east", "delay": 4.5 }
+        {
+          "enemyId": "shieldbearer",
+          "count": 4,
+          "spacing": 1.6,
+          "laneId": "west",
+          "delay": 0
+        },
+        {
+          "enemyId": "brute",
+          "count": 5,
+          "spacing": 1.8,
+          "laneId": "west",
+          "delay": 1
+        },
+        {
+          "enemyId": "shieldbearer",
+          "count": 3,
+          "spacing": 1.8,
+          "laneId": "east",
+          "delay": 3
+        },
+        {
+          "enemyId": "brute",
+          "count": 4,
+          "spacing": 2,
+          "laneId": "east",
+          "delay": 4.5
+        }
       ]
     },
     {
-      "hpMultiplier": 3.8,
+      "hpMultiplier": 4.767,
       "entries": [
-        { "enemyId": "brute", "count": 6, "spacing": 1.4, "laneId": "west", "delay": 0.5 },
-        { "enemyId": "brute", "count": 6, "spacing": 1.4, "laneId": "east", "delay": 0.5 },
-        { "enemyId": "runner", "count": 6, "spacing": 0.5, "laneId": "west", "delay": 4 },
-        { "enemyId": "runner", "count": 6, "spacing": 0.5, "laneId": "east", "delay": 9 },
-        { "enemyId": "swarm", "count": 8, "spacing": 0.15, "laneId": "west", "delay": 12 },
-        { "enemyId": "shieldbearer", "count": 3, "spacing": 2, "laneId": "east", "delay": 13 }
+        {
+          "enemyId": "brute",
+          "count": 6,
+          "spacing": 1.4,
+          "laneId": "west",
+          "delay": 0.5
+        },
+        {
+          "enemyId": "brute",
+          "count": 6,
+          "spacing": 1.4,
+          "laneId": "east",
+          "delay": 0.5
+        },
+        {
+          "enemyId": "runner",
+          "count": 6,
+          "spacing": 0.5,
+          "laneId": "west",
+          "delay": 4
+        },
+        {
+          "enemyId": "runner",
+          "count": 6,
+          "spacing": 0.5,
+          "laneId": "east",
+          "delay": 9
+        },
+        {
+          "enemyId": "swarm",
+          "count": 8,
+          "spacing": 0.15,
+          "laneId": "west",
+          "delay": 12
+        },
+        {
+          "enemyId": "shieldbearer",
+          "count": 3,
+          "spacing": 2,
+          "laneId": "east",
+          "delay": 13
+        }
       ]
     }
   ]
