@@ -202,8 +202,8 @@ draw calls, shadow cost and transform churn — not skinning. Real rigged models
 at MG.4 and the number will move. A pass here means "not obviously doomed", not
 "budget met".
 
-### MG.3 — World render
-[~] Ground plane with organic-edged path, plot markers, gate + forge placeholder meshes — all driven from map JSON. Camera block and lighting block (dusk model per Part A.1) added to map schema. Prop placement from map data (sparse, path-edge clusters).
+### MG.3 — World render — DONE (Ben confirmed on device 2026-07-30)
+[x] Ground plane with organic-edged path, plot markers, gate + forge placeholder meshes — all driven from map JSON. Camera block and lighting block (dusk model per Part A.1) added to map schema. Prop placement from map data (sparse, path-edge clusters).
 **Accept:** the M0 map is recognizable in 3D with the dusk lighting mood; sim entities (headless) walk the path as debug markers.
 
 #### MG.3 progress — mechanically verified, look needs Ben's eye
@@ -250,7 +250,7 @@ terrain, or is it still flat as it was at MG.2; is the 8° yaw enough depth cue 
 does it want more (it costs zoom); does the organic path edge read as a worn track
 or as a wobbly stroke.
 
-### MG.4 — Entity views + assets
+### MG.4 — Entity views + assets — MOSTLY DONE; tail listed below
 [~] Execute the Part A.2 pipeline: model manifest schema (logical states → clips, `procedural` fallback), `npm run asset:add` helper, base models sourced + processed, hero composite (dedicated tuning session), enemy variant system (scale/tint/props), tower views per level, coin/projectile InstancedMesh pools, swarm rigid-instanced path.
 **Accept:** full M0 roster visible and animated per A.2; proportion gate passed on-device; substrate test still passes (fake tower #5 via JSON incl. model ref, zero engine edits).
 
@@ -282,7 +282,18 @@ cannot quietly become the shipped look.
 - **Substrate guard extended** to model and prop ids — it now polices the newest
   content surface automatically, and the engine still names none of it.
 
-**Outstanding, and honest about why:**
+**Remaining tail (2026-07-31), all small:**
+- Models missing: the **horse** (hero mount — Quaternius is behind Google Drive, manual
+  download), a **wolf** for Wolf Rider, and something for the **swarm**. Those three
+  render as placeholder geometry; the other six enemy types and all four towers use
+  real glTF.
+- **Gate, forge and props are still procedural boxes and cones in `world.ts`.** The
+  Kenney Castle and Nature models are downloaded, ledgered and sitting unused. Wiring
+  them is roughly an hour and is the largest remaining visual upgrade — the gate is on
+  screen constantly and every map carries 20+ props.
+- Tower views do not vary per level (level currently reads as height only).
+
+**Originally outstanding, now largely superseded:**
 - glTF loading, `npm run asset:add` (gltf-transform pipeline), hero composite tuning,
   and the **proportion gate** all need real models — Ben's step per A.2.
 - Tower views per level, and the swarm instanced path: `isInstanced()` reports it
@@ -321,8 +332,8 @@ kick) — see the FX commit.
 **Outstanding for MG.7:** endless mode entry, on-device perf profile with the
 full roster, then remove Phaser and merge.
 
-### MG.6 — FX + decals
-[ ] Per-unit team rings (red enemies / blue hero), range/targeting ring decals, soft unit shadows, pooled particle bursts (kill, coin, ability), stagger shove feedback, gate siege visual state.
+### MG.6 — FX + decals — DONE (landed early, out of order)
+[x] Per-unit team rings (red enemies / blue hero), range/targeting ring decals, soft unit shadows, pooled particle bursts (kill, coin, ability), stagger shove feedback, gate siege visual state.
 **Accept:** the gate-siege moment (brutes battering, ride back, Charge, repair) reads clearly in 3D; factions readable at a glance from rings alone.
 
 ### MG.7 — Parity + performance gate
