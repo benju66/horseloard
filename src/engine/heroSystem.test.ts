@@ -244,3 +244,70 @@ describe('forge (bow levels)', () => {
     expect(sim.gold).toBe(10);
   });
 });
+
+describe('charge heading', () => {
+  /**
+   * Charge continues under its own steam when the stick is released. It used to
+   * steer by `dir` — a left/right sprite-mirror flag — so ANY charge went due
+   * left or due right regardless of where the hero was actually travelling.
+   * Steering up and charging launched you sideways at full speed.
+   *
+   * Found in the 3D build, but the 2D build had it too; a mirrored sprite just
+   * made it easy to miss.
+   */
+  const CHARGE = { duration: 1, speedMultiplier: 3, damage: 5, slowMultiplier: 0.5, slowDuration: 1 };
+
+  function chargeFrom(ix: number, iy: number): { dx: number; dy: number } {
+    const sim = new Simulation(heroFixture(), TEST_RNG);
+    // Centre of the 100x200 fixture map. Charge is 3x a 100u/s walk, so the
+    // sample window has to stay short or the boundary clamp eats the result —
+    // which is exactly what made the first version of this test lie.
+    sim.hero.x = 50;
+    sim.hero.y = 100;
+
+    // Steer briefly so a heading is established, then release and charge.
+    sim.hero.input.x = ix;
+    sim.hero.input.y = iy;
+    for (let i = 0; i < 5; i++) sim.tick();
+    sim.hero.activateCharge(CHARGE);
+    sim.hero.input.x = 0;
+    sim.hero.input.y = 0;
+
+    const x0 = sim.hero.x;
+    const y0 = sim.hero.y;
+    for (let i = 0; i < Math.round(0.12 / SIM_DT); i++) sim.tick();
+    return { dx: sim.hero.x - x0, dy: sim.hero.y - y0 };
+  }
+
+  it('carries the hero along the direction actually travelled, not just left/right', () => {
+    const up = chargeFrom(0, -1);
+    expect(up.dy).toBeLessThan(-5);
+    expect(Math.abs(up.dx)).toBeLessThan(Math.abs(up.dy) * 0.2);
+
+    const down = chargeFrom(0, 1);
+    expect(down.dy).toBeGreaterThan(5);
+    expect(Math.abs(down.dx)).toBeLessThan(Math.abs(down.dy) * 0.2);
+  });
+
+  it('preserves a diagonal heading', () => {
+    const diag = chargeFrom(0.707, -0.707);
+    expect(diag.dx).toBeGreaterThan(3);
+    expect(diag.dy).toBeLessThan(-3);
+    // Roughly 45 degrees: neither axis dominates.
+    expect(Math.abs(Math.abs(diag.dx) - Math.abs(diag.dy))).toBeLessThan(Math.abs(diag.dx) * 0.25);
+  });
+
+  it('still mirrors the 2D sprite flag independently of heading', () => {
+    const sim = new Simulation(heroFixture(), TEST_RNG);
+    sim.hero.input.x = -1;
+    sim.hero.input.y = 0;
+    sim.tick();
+    expect(sim.hero.dir).toBe(-1);
+    // Straight up must not clobber the mirror — there is no "up" sprite.
+    sim.hero.input.x = 0;
+    sim.hero.input.y = -1;
+    sim.tick();
+    expect(sim.hero.dir).toBe(-1);
+    expect(sim.hero.headingY).toBeLessThan(0);
+  });
+});
