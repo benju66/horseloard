@@ -271,6 +271,10 @@ function step(dt: number): void {
     if (e.facingX !== 0 || e.facingY !== 0) entry.object.rotation.y = Math.atan2(e.facingX, e.facingY);
     entry.object.visible = true;
 
+    // Engine state -> logical animation state. The manifest maps that to a
+    // clip name; nothing here knows what the clips are called.
+    views.setState(entry.object, e.state === 'walking' ? 'walk' : 'siege');
+
     // Hit flash — a white blink is how a hit reads before the HP bar moves.
     const until = flashUntil.get(e.id);
     if (until !== undefined) {
@@ -327,8 +331,10 @@ function step(dt: number): void {
     if (Math.hypot(sim.hero.headingX, sim.hero.headingY) > 0.01) {
       heroView.rotation.y = Math.atan2(sim.hero.headingX, sim.hero.headingY);
     }
+    views.setState(heroView, sim.hero.moving ? 'walk' : 'idle');
   }
 
+  views.tick(dt * runOverlay.speed);
   instanced?.update(sim, dt);
   fx.update(sim, world.camera, dt);
   renderer.render(scene, world.camera);
@@ -402,6 +408,10 @@ void (async () => {
     // A blocked or broken IndexedDB must never stop someone playing.
     console.warn('[game3d] save unavailable — running on a fresh profile');
   }
+  // Models must be resident before acquire() runs mid-frame. Map select
+  // covers the wait, so it is invisible.
+  await views.preload();
+
   const requested = new URLSearchParams(location.search).get('map');
   if (requested && data.maps[requested]) startMap(requested);
   else mapSelect.show();

@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { resolveModel, type ModelDef, type ModelProp } from '../data/schemas';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { resolveModel, type AnimationState, type ModelDef, type ModelProp } from '../data/schemas';
 import { PALETTE } from './palette';
 
 /**
@@ -32,6 +34,13 @@ function socketOffset(silhouette: string, socket: string): [number, number, numb
   return SOCKETS[silhouette]?.[socket] ?? SOCKETS['humanoid']![socket] ?? [0, 0, 0];
 }
 
+/** A live view's animation state — mixer plus the actions its manifest maps. */
+interface ViewAnim {
+  mixer: THREE.AnimationMixer;
+  actions: Partial<Record<AnimationState, THREE.AnimationAction>>;
+  current: AnimationState | null;
+}
+
 export class ModelViewFactory {
   private readonly materials = new Map<number, THREE.MeshLambertMaterial>();
   private readonly geometries: THREE.BufferGeometry[] = [];
@@ -39,11 +48,65 @@ export class ModelViewFactory {
   private readonly models: readonly ModelDef[];
   private readonly resolved = new Map<string, ModelDef | undefined>();
   private warnedMissingFile = false;
+  /** file path → parsed glTF scene + clips, loaded once at boot. */
+  private readonly loaded = new Map<string, { scene: THREE.Object3D; clips: THREE.AnimationClip[] }>();
+  /** Every view built from a glTF, so the host can tick their mixers. */
+  private readonly anims = new Map<THREE.Object3D, ViewAnim>();
   /** One shared material for every flashing mesh — see setFlash(). */
   private readonly flashMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff' });
 
   constructor(models: readonly ModelDef[]) {
     this.models = models;
+  }
+
+  /**
+   * Load every glTF the manifest references, once, before the first run.
+   * `acquire()` is synchronous by design — views are created mid-frame as
+   * enemies spawn — so loading has to have already happened. Map select is
+   * on screen while this runs, so the wait is invisible.
+   *
+   * A file that fails to load is reported and left as placeholder geometry
+   * rather than throwing: one bad asset must not take the game down.
+   */
+  async preload(): Promise<void> {
+    const loader = new GLTFLoader();
+    const files = new Set<string>();
+    for (const m of this.models) {
+      const def = this.def(m.id);
+      if (def?.file) files.add(def.file);
+      for (const p of def?.props ?? []) if (p.file) files.add(p.file);
+    }
+    await Promise.all(
+      [...files].map(async (file) => {
+        try {
+          const gltf = await loader.loadAsync(file);
+          this.loaded.set(file, { scene: gltf.scene, clips: gltf.animations });
+        } catch (err) {
+          console.warn(`[entityViews] failed to load "${file}" — using placeholder`, err);
+        }
+      }),
+    );
+  }
+
+  /** Advance every live view's animation. */
+  tick(dt: number): void {
+    for (const a of this.anims.values()) a.mixer.update(dt);
+  }
+
+  /**
+   * Play a logical state. The manifest maps state → clip name, so this file
+   * never learns what a clip is called; `procedural` and unmapped states are
+   * simply no-ops here and handled in code elsewhere.
+   */
+  setState(view: THREE.Object3D, state: AnimationState): void {
+    const anim = this.anims.get(view);
+    if (!anim || anim.current === state) return;
+    const next = anim.actions[state];
+    if (!next) return;
+    const prev = anim.current ? anim.actions[anim.current] : undefined;
+    if (prev && prev !== next) prev.fadeOut(0.15);
+    next.reset().fadeIn(0.15).play();
+    anim.current = state;
   }
 
   private material(tint: number | undefined): THREE.MeshLambertMaterial {
@@ -121,12 +184,11 @@ export class ModelViewFactory {
   }
 
   private build(def: ModelDef): THREE.Object3D {
+    const asset = def.file ? this.loaded.get(def.file) : undefined;
+    if (asset) return this.buildFromGltf(def, asset);
+
     if (def.file && !this.warnedMissingFile) {
-      // A file is declared but glTF loading arrives later in MG.4. Say so once,
-      // loudly, rather than silently showing a placeholder that looks like art.
-      console.warn(
-        `[entityViews] model "${def.id}" declares file "${def.file}" but glTF loading is not wired yet — rendering placeholder.`,
-      );
+      console.warn(`[entityViews] "${def.id}" declares "${def.file}" but it did not load — placeholder.`);
       this.warnedMissingFile = true;
     }
 
@@ -134,6 +196,47 @@ export class ModelViewFactory {
     group.add(this.silhouetteMesh(def));
     for (const prop of def.props) group.add(this.propMesh(def, prop));
     group.scale.setScalar(def.scale);
+    return group;
+  }
+
+  /**
+   * Instantiate a loaded glTF. Uses SkeletonUtils.clone, not Object3D.clone —
+   * a plain clone shares the original skeleton and every copy would animate
+   * as one. Height is normalised from the bounding box so a pack's arbitrary
+   * unit scale becomes the manifest's, and `scale` stays a pure ratio.
+   */
+  private buildFromGltf(
+    def: ModelDef,
+    asset: { scene: THREE.Object3D; clips: THREE.AnimationClip[] },
+  ): THREE.Object3D {
+    const root = cloneSkinned(asset.scene);
+
+    const box = new THREE.Box3().setFromObject(root);
+    const height = Math.max(1e-3, box.max.y - box.min.y);
+    const norm = (UNIT_HEIGHT / height) * def.scale;
+
+    const group = new THREE.Group();
+    root.scale.setScalar(norm);
+    root.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (mesh.isMesh) mesh.castShadow = true;
+    });
+    group.add(root);
+
+    // Wire only the clips the manifest maps; a name that matches nothing is
+    // skipped silently, because 'procedural' is a legitimate value.
+    if (asset.clips.length > 0) {
+      const mixer = new THREE.AnimationMixer(root);
+      const actions: Partial<Record<AnimationState, THREE.AnimationAction>> = {};
+      for (const [state, clipName] of Object.entries(def.clips)) {
+        if (!clipName || clipName === 'procedural') continue;
+        const clip = asset.clips.find((c) => c.name === clipName);
+        if (clip) actions[state as AnimationState] = mixer.clipAction(clip);
+      }
+      this.anims.set(group, { mixer, actions, current: null });
+    }
+
+    for (const prop of def.props) group.add(this.propMesh(def, prop));
     return group;
   }
 
@@ -226,5 +329,6 @@ export class ModelViewFactory {
     this.materials.clear();
     this.geometries.length = 0;
     this.pools.clear();
+    this.anims.clear();
   }
 }
