@@ -7,6 +7,7 @@ import { DomJoystick } from '../ui/dom/joystick';
 import { RunOverlay } from '../ui/dom/runOverlay';
 import { ModelViewFactory } from './entityViews';
 import { buildWorld, simToWorld } from './world';
+import { FxLayer } from './fx';
 
 /**
  * MG.5 (first slice) — the 3D build you can actually play.
@@ -55,7 +56,9 @@ function newRun(): Simulation {
   return s;
 }
 
+const fx = new FxLayer(scene, map);
 let sim = newRun();
+fx.attach(sim);
 
 // ─── Views ───
 
@@ -134,6 +137,8 @@ runOverlay.onRestart = () => {
     towerViews.delete(plotId);
   }
   sim = newRun();
+  // Sim callback arrays don't survive a rebuild — re-subscribe the FX layer.
+  fx.attach(sim);
   abilityBar.setSim(sim);
 };
 const bubbleScreens: Array<{ x: number; y: number }> = [];
@@ -226,6 +231,7 @@ function step(dt: number): void {
     heroView.rotation.y = Math.atan2(sim.hero.input.x, sim.hero.input.y) || heroView.rotation.y;
   }
 
+  fx.update(sim, world.camera, dt);
   renderer.render(scene, world.camera);
 }
 
@@ -270,5 +276,5 @@ function frame(now: number): void {
 requestAnimationFrame(frame);
 
 if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).game3d = { get sim() { return sim; }, world, views, renderer, step, syncHud, joystick, map, bubbleActions, runOverlay };
+  (window as unknown as Record<string, unknown>).game3d = { get sim() { return sim; }, world, views, renderer, step, syncHud, joystick, map, bubbleActions, runOverlay, fx };
 }

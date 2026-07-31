@@ -91,6 +91,9 @@ Plan and per-task tracking live in **MIGRATION-3D.md** (Part C) — that file is
 [ ] MG.2 — branch + scaffold. **Blocked on Ben:** the timebox for the kill criterion is set at MG.2 kickoff and is still unchosen.
 **learned:** the migration is affordable because the substrate rule held — the audit found nothing to fix, which means MG.1 was closer to a formality than a gate. The decision with real consequences is MG.2. Suggested amendment to Part C: MG.2's smoke test should include ~40 animated meshes, not just a spinning cube — a cube proves the toolchain, but the thing that can actually kill this migration is 40 SkinnedMeshes at 60fps on a 2021 Android, and that should fail early while falling back is still cheap.
 
+## Open — abilities evaluation
+[ ] **Charge doesn't make sense** (Ben, 2026-07-30, playing the 3D build). Parked deliberately: the 3D build has zero FX, so Charge currently changes sim state (speed burst, boosted trample, stagger immunity) with no visual whatsoever — it cannot be judged until MG.6 lands particles, camera kick and a speed read. If it still doesn't make sense with feedback, this is a DESIGN §4 pillar problem, not a tuning problem: Charge is the identity verb, and the three-ability loadout would want revisiting whole. See DESIGN §15.7.
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 
