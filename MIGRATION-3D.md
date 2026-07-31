@@ -124,8 +124,53 @@ a formality. The decision with real consequences is **MG.2**, where the timebox 
 the kill criterion get set. That number is Ben's to choose and is still unset.
 
 ### MG.2 — Branch + scaffold
-[ ] Branch `3d-migration`. Add three + types; remove nothing yet. Render smoke test: ortho camera, lights, palette-textured cube on a ground plane, on-device via LAN.
+[~] Branch `3d-migration`. Add three + types; remove nothing yet. Render smoke test: ortho camera, lights, palette-textured cube on a ground plane, on-device via LAN.
 **Accept:** 60fps spinning cube with shadow on your phone. (Trivial on purpose — proves toolchain + device loop.)
+**Amended:** the cube alone proves the toolchain but not the thing that can kill this migration, so the smoke test also carries a tappable crowd of animated shadow-casters (0 → 40 → 80 → 120). Fail early, while falling back is still free.
+
+**Timebox (set 2026-07-30):** 8 working sessions to MG.7. Stall signal = MG.4 not done by session 5. Hard early gate = the on-device fps check below. Ben to override at will.
+
+#### MG.2 progress — desktop verification done, device check outstanding
+
+Branch `3d-migration` cut; `three` in dependencies, `@types/three` in devDependencies.
+Scaffold: `src/render/palette.ts` (the one-texture flat-palette workflow, generated
+in code so recolouring is a diff), `src/render/smoke.ts`, `smoke3d.html`. Dev-only —
+served at `/smoke3d.html`, not in the PWA build, and `src/` game code is untouched.
+
+Verified headlessly: module executes, WebGL2 context acquired, renderer sized,
+PCFSoft shadows on, **zero GL errors**, scene draws.
+
+**FINDING — draw calls scale at 2× per shadow-casting mesh** (one shadow-map pass,
+one main pass). Measured:
+
+| crowd | draw calls | triangles |
+|---|---|---|
+| 0 | 4 | 48 |
+| 40 | **84** | 1,008 |
+| 80 | 164 | 1,968 |
+| 120 | 244 | 2,928 |
+
+Part A budgets **~100 draw calls**; 40 animated casters alone consume 84 of them,
+before a single tower, projectile, coin, prop, gate or forge. The perf budget's
+"40+ animated enemies" and its "~100 draw calls" are in direct tension as written.
+
+This **promotes Part A.1's soft blob shadows from an aesthetic preference to a
+budget requirement**: blob shadows are geometry in the main pass, so they cost one
+call, not two — 40 casters drops from 84 calls to ~44 and the budget breathes again.
+Decide this at MG.3/MG.6 rather than carrying real shadow-map casters into MG.4.
+Triangle counts are trivial and not the constraint; draw calls are.
+
+**Outstanding — the actual acceptance criterion (needs a phone):**
+`npm run dev`, then open `http://192.168.4.30:5173/smoke3d.html` on the device
+(same LAN; IP will change between networks). Readout shows fps, caster count and
+draw calls; tap to cycle the crowd. Green ≥55fps, amber ≥40, red below.
+Record the fps at each step here. **If 40 casters can't hold 60fps, stop and
+reconsider before MG.3** — that is what this gate is for.
+
+**Honest limitation:** the crowd is plain `Mesh`, not `SkinnedMesh`. This measures
+draw calls, shadow cost and transform churn — not skinning. Real rigged models land
+at MG.4 and the number will move. A pass here means "not obviously doomed", not
+"budget met".
 
 ### MG.3 — World render
 [ ] Ground plane with organic-edged path, plot markers, gate + forge placeholder meshes — all driven from map JSON. Camera block and lighting block (dusk model per Part A.1) added to map schema. Prop placement from map data (sparse, path-edge clusters).
