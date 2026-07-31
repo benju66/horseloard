@@ -27,6 +27,7 @@ export class RunOverlay {
   /** Assigned by the host: leave the run and return to map select. */
   onExit: (() => void) | null = null;
   private readonly exit: HTMLButtonElement;
+  private readonly bannerEl: HTMLDivElement;
 
   constructor(layer: HTMLElement) {
     const stored = Number(localStorage.getItem(SPEED_KEY));
@@ -70,7 +71,16 @@ export class RunOverlay {
       this.onExit?.();
     });
     this.panel.append(this.title, this.stats, this.again, this.exit);
-    layer.append(this.speedBtn, this.panel);
+
+    this.bannerEl = document.createElement('div');
+    this.bannerEl.className = 'wave-banner';
+    const bt = document.createElement('div');
+    bt.className = 'banner-title';
+    const bs = document.createElement('div');
+    bs.className = 'banner-sub';
+    this.bannerEl.append(bt, bs);
+
+    layer.append(this.speedBtn, this.panel, this.bannerEl);
   }
 
   /** Multiplier to apply to dt before advancing the sim. */
@@ -104,6 +114,19 @@ export class RunOverlay {
     this.speedBtn.style.display = 'none';
   }
 
+  /**
+   * Special-wave warning (DESIGN §8): fades in, holds, fades. Turns the wave
+   * preview from informational into dramatic, which is its whole job.
+   */
+  banner(name: string, subtitle: string): void {
+    this.bannerEl.querySelector('.banner-title')!.textContent = `⚠ ${name}`;
+    this.bannerEl.querySelector('.banner-sub')!.textContent = subtitle;
+    this.bannerEl.classList.remove('show');
+    // Force a reflow so re-triggering the same banner replays the animation.
+    void this.bannerEl.offsetWidth;
+    this.bannerEl.classList.add('show');
+  }
+
   hide(): void {
     this.panel.style.display = 'none';
     this.speedBtn.style.display = '';
@@ -131,6 +154,19 @@ export class RunOverlay {
   margin-top: 10px; padding: 14px 30px; border-radius: 16px; border: 0;
   background: rgba(46,120,120,.92); color: #f2ecdd; font: 700 16px ui-monospace, monospace;
 }
-.run-again.ghost { margin-top: 0; background: transparent; border: 1px solid rgba(255,255,255,.25); }`;
+.run-again.ghost { margin-top: 0; background: transparent; border: 1px solid rgba(255,255,255,.25); }
+.wave-banner {
+  position: fixed; left: 0; right: 0; top: 34%; pointer-events: none; text-align: center;
+  padding: 16px 12px; background: rgba(26,12,12,.85); opacity: 0;
+}
+.wave-banner.show { animation: banner-flash 2.6s ease-out forwards; }
+@keyframes banner-flash {
+  0% { opacity: 0; transform: scale(.94); }
+  12% { opacity: 1; transform: scale(1); }
+  74% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.banner-title { font: 700 30px Georgia, serif; color: #e5484d; }
+.banner-sub { font: 400 13px sans-serif; color: #f5ead0; margin-top: 4px; }`;
   }
 }

@@ -11,6 +11,7 @@ import { RunOverlay } from '../ui/dom/runOverlay';
 import { MapSelectScreen, MetaTreeScreen, screensCss } from '../ui/dom/screens';
 import { ModelViewFactory } from './entityViews';
 import { FxLayer } from './fx';
+import { InstancedEntities } from './instancedEntities';
 import { buildWorld, simToWorld, type World } from './world';
 
 /**
@@ -87,6 +88,7 @@ const bubbleScreens: Array<{ x: number; y: number }> = [];
 let save: SaveData = newSave();
 let world: World | null = null;
 let fx: FxLayer | null = null;
+let instanced: InstancedEntities | null = null;
 let sim: Simulation | null = null;
 let abilityBar: AbilityBar | null = null;
 let activeMapId: string | null = null;
@@ -146,6 +148,7 @@ function startMap(mapId: string): void {
   releaseViews();
   world?.dispose();
   fx?.dispose();
+  instanced?.dispose();
 
   // The meta tree rewrites copies of the balance data before the sim exists.
   const modded = applyMetaModifiers(
@@ -159,6 +162,7 @@ function startMap(mapId: string): void {
   settled = false;
   world = buildWorld(modded.map, scene);
   fx = new FxLayer(scene, modded.map);
+  instanced = new InstancedEntities(scene, modded.map, modded.map.camera.elevation);
 
   sim = new Simulation({
     enemies: data.enemies,
@@ -188,8 +192,10 @@ function toMapSelect(): void {
   releaseViews();
   world?.dispose();
   fx?.dispose();
+  instanced?.dispose();
   world = null;
   fx = null;
+  instanced = null;
   sim = null;
   abilityBar?.destroy();
   abilityBar = null;
@@ -203,7 +209,14 @@ runOverlay.onRestart = () => {
   if (activeMapId) startMap(activeMapId);
 };
 runOverlay.onExit = () => toMapSelect();
-startBtn.addEventListener('click', () => sim?.startNextWave());
+startBtn.addEventListener('click', () => {
+  if (!sim?.startNextWave()) return;
+  // Announce special waves — the banner is what makes a Horde feel like one.
+  const archetypeId = sim.waveRunner.currentWaveData?.archetypeId;
+  if (!archetypeId) return;
+  const archetype = data.archetypes.find((a) => a.id === archetypeId);
+  if (archetype) runOverlay.banner(archetype.name, archetype.subtitle);
+});
 
 function resize(): void {
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -292,6 +305,7 @@ function step(dt: number): void {
     }
   }
 
+  instanced?.update(sim, dt);
   fx.update(sim, world.camera, dt);
   renderer.render(scene, world.camera);
 }
