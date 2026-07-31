@@ -101,6 +101,56 @@ Launch roster of 7 + 1 boss, all data-driven off one EnemyEngine (same contract 
 
 Shieldbearer and Looter are the two that make *hero position* a counter, not just damage math — they're the roster's pillar-1 enforcers.
 
+### ⚠ Open design problem: nothing hard-counters the Archer (found 2026-07-31)
+
+Measured with the bot harness: **Archer alone clears maps 3 and 4. So does Bombard.**
+Composition is therefore preference, not decision, and every level poses the same
+question — which is the thing that would make twenty levels feel like one.
+
+This is a design gap, not a tuning failure. Read the Counters column above: every
+entry is something an Archer can do. Rapid shreds Swarms and Runners; Sniper is the
+"raw DPS" that answers Wolf Riders; a tower placed beside a Shieldbearer simply
+bypasses its 150° arc. **No enemy in the roster is one an Archer cannot answer**, so
+no amount of wave mixing or HP scaling will make you want a second tower type. It has
+already been tried: composition on maps 3–4 is varied and Archer still carries.
+
+Every tower-defense game that keeps its roster relevant solves this with a *hard*
+counter — something a tower cannot do at all, rather than does slightly worse.
+
+**Option A — Damage types vs armor** (Kingdom Rush's solution, and the standard one).
+Enemies gain `armor`; towers gain a damage type. Physical (Archer) is reduced by
+armor; explosive (Bombard) and magic (Frost) ignore it. An armored enemy then hard-
+counters Archer without being immune to it. *Cost: an enemy field, a tower field, and
+one line where damage is applied.* Highest payoff per unit of work, and it maps
+cleanly onto the four towers we already have.
+
+**Option B — Binary immunities** (Bloons' solution). An enemy a tower literally cannot
+damage or even target: flying units, or a shield that only breaks to AoE. Note §5
+already describes Bombard as "ground only", which implies flyers were intended and
+never built — that hook is sitting unused. *Strongest effect, but binary gates can
+feel like gotchas and punish a player who cannot see why they lost.*
+
+**Option C — Make the positional counter real** (our own idea, currently too soft).
+Shieldbearer's frontal block is 0.25× over 150°. Widen the arc and deepen the
+reduction so a front-facing single-target tower is genuinely useless against it, and
+flanking or AoE becomes mandatory. *Cost: DATA ONLY, zero engine work* — the cheapest
+possible test of whether hard counters fix solo-carry, and it reinforces pillar 1
+because hero position becomes the answer.
+
+**Option D — Barracks** (§5's planned expansion tower). Blockers are a non-DPS answer,
+so they change the question rather than the numbers. *Cost: real engine work — friendly
+units are a new entity type, not a projectile behaviour.*
+
+**Recommended order: C, then A.** C is free and tests the hypothesis that hard counters
+are what's missing. A is the industry-standard fix and cheap for what it buys. B and D
+are bigger swings worth taking only once C and A are proven insufficient.
+
+**Success is measurable, not a feeling:** `npm run bots` must report `solo-carriers 0`
+on crossroads and warlords-march, while the win-rate bands in `DIFFICULTY_TARGETS`
+stay green and all four towers keep appearing in winning runs. The last clause matters —
+the towers are currently well balanced against each other, which is rare and worth not
+breaking on the way to fixing this.
+
 **Elite modifier:** any enemy can spawn crowned (~1 in 12, weighted up in later waves and endless): +150% HP, +100% coin drop, visible glow. One multiplier system on the existing roster — perceived variety doubles at near-zero cost.
 
 ### The Gate (leaks don't despawn — they siege)

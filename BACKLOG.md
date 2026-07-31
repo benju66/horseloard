@@ -13,12 +13,15 @@ The engine, data schemas and save layer were never touched — that is why it wa
 **Run it:** `npm run build && npm run preview -- --host` → `http://<lan-ip>:4173/game3d.html`
 (use the production build for any fps judgement; dev understates it).
 
-**Next task — the one open game problem:** archer and bombard each still solo-carry
-maps 3–4, so composition is preference, not decision, and every level poses the same
-question. Try the cheap data fix first — strengthen enemy counter-traits (shieldbearer
-frontal block, swarm density, wolf-rider speed) and re-run `npm run bots`; success is
-`solo-carriers 0` on crossroads and warlords-march. Only if data cannot do it, build the
-**Barracks** tower (DESIGN §5), which needs real engine work.
+**Next task — the one open game problem:** archer and bombard each solo-carry maps 3–4.
+Root cause found: **nothing hard-counters the Archer** — every entry in DESIGN §6's
+Counters column is something an Archer can do, so no wave mixing will ever make you
+want a second tower. Full analysis and four ranked options are written up in
+**DESIGN §6 → "Open design problem"**. Recommended order: (C) make Shieldbearer's
+frontal block genuinely punishing — data only, zero engine work — then (A) damage types
+vs armor, which is how Kingdom Rush solves it. Success is measurable: `npm run bots`
+reports `solo-carriers 0` on crossroads and warlords-march while win-rate bands stay
+green and all four towers still appear in winning runs.
 
 **Then:** audio (the largest missing feel element — the game is silent), then biomes and
 more levels, which are cheap now that map lighting is schema data.
