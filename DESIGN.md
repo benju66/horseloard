@@ -37,6 +37,14 @@ The tension that makes it work: your body can only be in one place. The economy 
 
 **Endless mode** unlocks per map after first clear. Reuses the map, procedurally escalates waves (composition weights + HP/speed multipliers), pays tokens at milestone waves (10/20/30…). This is the replay engine and costs almost nothing beyond the wave generator.
 
+> ⚠ **Unresolved as of 2026-07-31.** Ben has confirmed the goal is *publishable* and
+> wants distinct biomes/worlds with multiple levels each. That is in direct tension with
+> the v1 commitment below, which exists for a reason worth re-reading before overriding:
+> four maps took a full tuning pass to get into their difficulty bands, and the curve
+> collapses 100%→27% between hp ×1.0 and ×1.4. Adding maps is cheap; making them good is
+> not. Settle this explicitly — either revise the commitment with eyes open, or keep it
+> and treat extra worlds as post-v1 content drops.
+
 **v1 content commitment: 4 maps, single biome (grasslands), one boss.** Lean enough to ship, structured so maps 5–8 and a second biome are pure content drops. Rationale: better to tune 4 maps to publishable quality than spread across 8.
 
 ---

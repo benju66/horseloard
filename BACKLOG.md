@@ -6,6 +6,14 @@
 shipped Phaser 2D build. Read `MIGRATION-3D.md` too — it is authoritative for the
 render swap while that is in progress.
 
+**SCOPE (changed 2026-07-31): PUBLISHABLE, not personal-only.** Audio is mandatory, art
+must read as one family, M4 polish items are real, outside playtesting matters again.
+DESIGN §3's "4 maps, single biome" v1 commitment now conflicts with wanting worlds and
+multiple levels — unresolved, settle it before large content work.
+
+**Agreed order:** (1) solo-carry fix, option C then A — see DESIGN §6 · (2) finish the
+migration tail · (3) biomes + more levels · (4) audio, and do not let it slip to last.
+
 **State:** the Phaser → Three.js migration is functionally complete (MG.1–MG.6 done,
 MG.7 all but the merge). `/game3d.html` is the full playable game with real CC0 models.
 The engine, data schemas and save layer were never touched — that is why it was cheap.
