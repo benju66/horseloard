@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { loadGameData } from '../data/loader';
 import { Simulation } from '../engine/simulation';
+import { AbilityBar } from '../ui/dom/abilityBar';
+import { BubbleLayer, bubbleActions } from '../ui/dom/bubbles';
 import { DomJoystick } from '../ui/dom/joystick';
 import { ModelViewFactory } from './entityViews';
 import { buildWorld, simToWorld } from './world';
@@ -67,6 +69,8 @@ const towerModelById = new Map(data.towers.towers.map((t) => [t.id, t.model]));
 const style = document.createElement('style');
 style.textContent =
   DomJoystick.css() +
+  BubbleLayer.css() +
+  AbilityBar.css() +
   `
 #hud { position: fixed; inset: 0; pointer-events: none;
   font: 600 14px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; color: #f2ecdd; }
@@ -79,10 +83,7 @@ style.textContent =
   background: rgba(46,120,120,.88); color: #f2ecdd; font: 700 16px ui-monospace, monospace;
   box-shadow: 0 4px 14px rgba(0,0,0,.4); }
 #startbtn[disabled] { opacity: .35; }
-.plot-label { position: absolute; transform: translate(-50%,-50%);
-  pointer-events: auto; padding: 6px 10px; border-radius: 12px;
-  background: rgba(28,40,34,.82); border: 1px solid rgba(255,255,255,.18);
-  font: 700 12px ui-monospace, monospace; color: #f6c945; white-space: nowrap; }`;
+`;
 document.head.append(style);
 
 const hud = document.createElement('div');
@@ -100,40 +101,11 @@ startBtn.addEventListener('click', () => sim.startNextWave());
 
 const joystick = new DomJoystick(canvas, overlay);
 
-// ─── Build interaction: tap a plot label ───
+// ─── Contextual bubbles + abilities ───
 
-const plotLabels = new Map<string, HTMLDivElement>();
-/** Cheapest buildable tower — a stand-in until the radial build bubble lands. */
-function cheapestAffordable(): string | undefined {
-  let best: string | undefined;
-  let bestCost = Infinity;
-  for (const t of sim.towerSystem.roster) {
-    const cost = sim.towerSystem.buildCost(t.id);
-    if (cost !== null && cost <= sim.gold && cost < bestCost) {
-      bestCost = cost;
-      best = t.id;
-    }
-  }
-  return best;
-}
-
-for (const plot of sim.towerSystem.plots) {
-  const el = document.createElement('div');
-  el.className = 'plot-label';
-  el.setAttribute('data-ui', '');
-  el.addEventListener('click', (ev) => {
-    ev.stopPropagation();
-    const state = sim.towerSystem.getPlot(plot.plotId)!;
-    if (state.towerId === null) {
-      const id = cheapestAffordable();
-      if (id) sim.buildTower(plot.plotId, id);
-    } else {
-      sim.upgradeTower(plot.plotId);
-    }
-  });
-  hud.append(el);
-  plotLabels.set(plot.plotId, el);
-}
+const bubbles = new BubbleLayer(hud);
+const abilityBar = new AbilityBar(sim, overlay);
+const bubbleScreens: Array<{ x: number; y: number }> = [];
 
 function resize(): void {
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -230,24 +202,20 @@ function syncHud(): void {
     `${sim.gold}g · gate ${Math.ceil(sim.gate.hp)}/${sim.gate.maxHp} · ` +
     `w${sim.waveRunner.waveNumber}/${sim.waveRunner.totalWaves} · bow L${sim.hero.bowLevel} · ${fps}fps`;
 
-  for (const plot of sim.towerSystem.plots) {
-    const el = plotLabels.get(plot.plotId)!;
-    simToWorld(map, plot.x, plot.y, projected);
-    projected.y = 20;
+  // Ride close → bubble → tap. Anchors are projected from sim space each frame.
+  const actions = bubbleActions(sim, map);
+  bubbleScreens.length = 0;
+  for (const a of actions) {
+    simToWorld(map, a.x, a.y, projected);
+    projected.y = 26;
     projected.project(world.camera);
-    const onScreen = Math.abs(projected.x) <= 1.1 && Math.abs(projected.y) <= 1.1;
-    el.style.display = sim.phase === 'build' && onScreen ? '' : 'none';
-    el.style.left = `${((projected.x + 1) / 2) * window.innerWidth}px`;
-    el.style.top = `${((-projected.y + 1) / 2) * window.innerHeight}px`;
-    if (plot.towerId === null) {
-      const id = cheapestAffordable();
-      const cost = id ? sim.towerSystem.buildCost(id) : null;
-      el.textContent = cost === null ? '—' : `Build ${cost}g`;
-    } else {
-      const up = sim.towerSystem.upgradeCost(plot);
-      el.textContent = up === null ? `L${plot.level} max` : `L${plot.level} → ${up}g`;
-    }
+    bubbleScreens.push({
+      x: ((projected.x + 1) / 2) * window.innerWidth,
+      y: ((-projected.y + 1) / 2) * window.innerHeight,
+    });
   }
+  bubbles.render(actions, bubbleScreens);
+  abilityBar.sync();
 }
 
 function frame(now: number): void {
@@ -266,5 +234,5 @@ function frame(now: number): void {
 requestAnimationFrame(frame);
 
 if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).game3d = { sim, world, views, renderer, step, joystick, map };
+  (window as unknown as Record<string, unknown>).game3d = { sim, world, views, renderer, step, syncHud, joystick, map, bubbleActions };
 }
