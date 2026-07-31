@@ -150,3 +150,81 @@ that tool's terms — some grant full rights, some claim a licence over outputs,
 are trained on data with contested provenance. Record whatever you learn in `ASSETS.md`
 alongside the asset, exactly as the CC0 packs are recorded. A ledger that is honest about
 uncertainty is worth far more later than one that quietly says "AI generated".
+
+---
+
+# 8. Per-asset prompt pack
+
+**How to use:** paste **SHARED SPEC** first, then one **SUBJECT** block. The shared spec
+carries every technical constraint; the subject block carries design intent. Each subject
+description encodes what the thing *does* in the game, because art that reads its function
+beats art that is merely pretty — a player must identify a shieldbearer at phone size in
+half a second.
+
+## SHARED SPEC — prepend to every prompt
+
+> A single isolated game asset for a stylised low-poly mobile tower-defence game.
+> Chibi proportions, roughly 2 to 2.5 heads tall, chunky simplified forms, oversized
+> readable details, no thin protruding geometry. Flat solid colours only - no gradients,
+> no surface texture, no painted highlights, no baked shadows or ambient occlusion; the
+> game lights the model itself. Plain neutral grey background, no scenery, no ground
+> shadow, no props other than the subject. Three-quarter view from clearly above, as
+> though from a camera 55 degrees above the horizon - the silhouette seen from above is
+> what matters most. Even neutral lighting. Clean bold silhouette that stays readable at
+> roughly 60 pixels tall on a phone screen.
+
+## SUBJECT blocks
+
+### Hero - the pieces of the composite
+
+| Asset | Subject block |
+|---|---|
+| **Horse** | A stocky chibi warhorse, side-on stance, short powerful legs, thick neck, no rider. Deep blue barding cloth `#3b5dc9` over a warm brown coat `#6b4a2b`. Broad flat back with a visible saddle, since a rider attaches there. Must read as a horse from directly above - emphasise the length of the back and the shape of head and neck. |
+| **Rider** | A chibi mounted archer, seated with legs apart as if astride a horse. Deep blue tunic `#3b5dc9`, simple leather straps. Empty hands - the bow is a separate asset. Confident upright posture, a commander rather than a soldier. |
+| **Bow (L1)** | A simple short wooden hunting bow, pale wood `#e8dcc0`, plain string, no ornament. Chunky and readable, not thin. |
+| **Bow (L3+)** | An ornate recurve war bow, double-curved limbs, dark wood with gold binding `#f6c945`. Clearly more powerful than a plain shortbow at a glance. |
+| **Quiver** | A leather quiver of arrows worn on the back, warm brown `#6b4a2b`, fletching visible above the rim. |
+| **Helm** | A chibi knight helm with a tall crest, steel grey `#8f8f96`, deep blue plume `#3b5dc9`. Oversized crest so it reads from above. |
+| **Cape** | A flowing short cape seen from behind, deep blue `#3b5dc9` with gold trim `#f6c945`, swept as if moving. |
+
+### Enemies - the design intent is the counter-play
+
+| Asset | Subject block |
+|---|---|
+| **Grunt** | A basic chibi foot soldier, the baseline enemy. Dull red `#c4452e` tunic, crude short weapon, plain rounded helm. Deliberately unremarkable - every other enemy is read against this one. |
+| **Runner** | A lean, lightly-armoured chibi skirmisher built for speed. Red `#c4452e`, minimal gear, forward-leaning posture, no shield, bare arms. Should look fragile and fast at a glance. |
+| **Brute** | A massive heavy chibi bruiser, roughly 1.4x the height of a basic soldier and far broader. Dark red `#c4452e`, heavy shoulder plate, huge two-handed club. Reads as slow and dangerous; it physically shoves the hero aside. |
+| **Shieldbearer** | A chibi soldier behind an enormous rectangular tower shield held forward, covering most of its body from the front. Steel grey shield `#8f8f96` with a red device `#c4452e`. **The shield must dominate the silhouette from the front and from above** - it is the whole point of the unit, which blocks damage from ahead of it. |
+| **Swarm** | A tiny scuttling creature, roughly a third the height of a soldier, appearing in packs. Simple rounded body, dark red `#c4452e`, minimal limbs, no weapon. Must read as a countable blob at very small size - this one renders rigid and is never animated, so pose it neutrally. |
+| **Wolf** | A lean chibi warg, low predatory stance, grey-brown fur with red harness `#c4452e`. Broad flat back for a small rider to attach. Should read as fast and unstoppable. |
+| **Looter** | A furtive chibi thief carrying a bulging sack over one shoulder. Muted red `#c4452e`, hood, hunched posture, glancing back as if fleeing with something stolen. Gold `#f6c945` spilling from the sack. |
+| **Warlord (boss)** | An enormous chibi warlord, roughly twice the height of a basic soldier, dominating the frame. Blackened armour with deep red `#c4452e` accents, tattered dark cape, heavy horned helm or crown, massive weapon. Should read instantly as the most dangerous thing on screen. |
+
+### Towers - four roles, four distinct silhouettes
+
+| Asset | Subject block |
+|---|---|
+| **Archer tower** | A slim wooden watchtower with an open railed platform and peaked roof, warm wood `#6b4a2b` on a grey stone base `#8f8f96`. Tall and narrow - the cheap reliable single-target tower. |
+| **Bombard tower** | A squat heavy stone emplacement with a short wide-mouthed mortar angled upward, grey stone `#8f8f96` with dark iron `#44464e`. Wide and low, obviously slow and powerful. |
+| **Frost spire** | A slender crystalline spire, pale blue-white ice over a stone base `#8f8f96`, faceted geometric crystal forms. Should read as magical and cold rather than mechanical - it slows rather than damages. |
+| **Mill** | A small windmill with four broad sails, wooden body `#6b4a2b`, thatched roof. Peaceful and civilian - it generates gold and never attacks. Sails should be a separate flat piece so they can spin. |
+
+### Structures and props
+
+| Asset | Subject block |
+|---|---|
+| **Gate** | A fortified stone gatehouse with a heavy timber portcullis between two squat round towers, grey stone `#8f8f96` and dark wood `#4a3018`, banners in deep blue `#3b5dc9`. This is what the player defends - it must look worth defending and read clearly as the goal from above. |
+| **Forge** | A small blacksmith's hut with a stone chimney and a glowing forge opening, wood `#6b4a2b` and stone `#8f8f96`, warm orange glow at the opening. Reads as somewhere you ride to and interact with. |
+| **Tree** | A stylised low-poly tree, chunky conical or rounded canopy in deep green `#37592c` on a short brown trunk `#5b4126`. Roadside dressing seen from above, no fine branches. |
+| **Rock** | A faceted low-poly boulder, angular flat planes, grey `#7c7c84`. Simple roadside dressing. |
+
+## 9. Priority order
+
+1. **Horse** - blocks the hero composite, and the hero is on screen constantly
+2. **Gate** - permanently visible, currently a procedural box
+3. **Wolf** - the Wolf Rider's mount
+4. **Swarm** - the one character-shaped asset AI does well, since it is never rigged
+5. Towers - currently generic Kenney pieces, functional but interchangeable-looking
+6. Hero progression props (quiver, helm, cape, recurve bow) - see `HERO-DESIGN.md` section 4
+7. Forge, trees, rocks - Kenney models already downloaded, just unwired
+

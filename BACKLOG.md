@@ -34,6 +34,10 @@ green and all four towers still appear in winning runs.
 **Then:** audio (the largest missing feel element — the game is silent), then biomes and
 more levels, which are cheap now that map lighting is schema data.
 
+**Character design:** `HERO-DESIGN.md` - the Horse Lord, incl. a proposed visual
+progression driven by bow level (props appearing at tiers; ~1hr of code, schema sketch
+included, not implemented). Naming unsettled: Ben has said "Horse King".
+
 **Making art with AI?** Read `ART-BRIEF.md` — copy-paste prompt blocks plus the hard
 conventions the renderer assumes (Y-up, facing +Z, origin at the feet, single merged
 mesh, one material, flat unlit albedo). Getting those wrong yields models that load but
