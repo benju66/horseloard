@@ -34,6 +34,11 @@ green and all four towers still appear in winning runs.
 **Then:** audio (the largest missing feel element — the game is silent), then biomes and
 more levels, which are cheap now that map lighting is schema data.
 
+**Making art with AI?** Read `ART-BRIEF.md` — copy-paste prompt blocks plus the hard
+conventions the renderer assumes (Y-up, facing +Z, origin at the feet, single merged
+mesh, one material, flat unlit albedo). Getting those wrong yields models that load but
+face backwards or cost 6x the draw calls.
+
 **Instruments — do not tune by feel:** `npm run bots` · `npm run balance` · `npm test`
 
 ---
