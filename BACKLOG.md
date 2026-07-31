@@ -11,8 +11,23 @@ must read as one family, M4 polish items are real, outside playtesting matters a
 DESIGN §3's "4 maps, single biome" v1 commitment now conflicts with wanting worlds and
 multiple levels — unresolved, settle it before large content work.
 
-**Agreed order:** (1) solo-carry fix, option C then A — see DESIGN §6 · (2) finish the
-migration tail · (3) biomes + more levels · (4) audio, and do not let it slip to last.
+**NEXT: finish the migration (MG.4 tail + MG.7).** Art generation is SHELVED as of
+2026-07-31 — `ART-BRIEF.md` and `HERO-DESIGN.md` are written and waiting, do not start
+asset work unless Ben reopens it.
+
+**Concrete next task — MG.4 tail, uses models already in the repo, no new art needed:**
+wire the gate, forge and props in `src/render/world.ts` to the Kenney `.glb` models
+already downloaded and ledgered under `public/models/kenney-castle/` and
+`kenney-nature/`. They are currently procedural boxes and cones. Roughly an hour, and the
+largest remaining visual upgrade — the gate is on screen constantly and every map carries
+20+ props. Load them through `ModelViewFactory` the way entity views already do.
+
+**Then MG.7 to close the migration:** on-device perf check at 40+ enemies (blob shadows
+are the measured lever: 822 -> 466 draws), then remove Phaser and merge to main — that
+last step is Ben's call, not Claude's.
+
+**Deferred behind the migration:** solo-carry fix (DESIGN section 6, option C then A),
+biomes + more levels, audio. Do not let audio slip to last.
 
 **State:** the Phaser → Three.js migration is functionally complete (MG.1–MG.6 done,
 MG.7 all but the merge). `/game3d.html` is the full playable game with real CC0 models.
