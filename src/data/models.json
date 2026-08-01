@@ -68,7 +68,7 @@
     {
       "id": "unit-hero",
       "base": "base-horse",
-      "file": "models/hero/horse-lord-t1.glb"
+      "file": "models/hero/horse-lord.glb"
     },
     {
       "id": "unit-grunt",

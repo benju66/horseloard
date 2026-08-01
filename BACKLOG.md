@@ -49,6 +49,14 @@ green and all four towers still appear in winning runs.
 **Then:** audio (the largest missing feel element — the game is silent), then biomes and
 more levels, which are cheap now that map lighting is schema data.
 
+**Hero tier skins: PARKED (Ben, 2026-07-31)** — "not really important for the
+game right now". The hero is one fused horse-and-rider mesh
+(`public/models/hero/horse-lord.glb`), procedurally animated by
+`src/render/mountAnimator.ts`; there is no rig and no per-tier swap. Note this
+forecloses `HERO-DESIGN.md`'s two-channel plan (rider tracking bow level, horse
+tracking Swift Steed rank) unless the model is later split into pieces — fused,
+those two channels multiply into 18 models instead of 9 parts.
+
 **Character design:** `HERO-DESIGN.md` - the Horse Lord, incl. a proposed visual
 progression driven by bow level (props appearing at tiers; ~1hr of code, schema sketch
 included, not implemented). Naming unsettled: Ben has said "Horse King".
