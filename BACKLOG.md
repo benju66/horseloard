@@ -40,8 +40,22 @@ The Frost Spire is the slow tower and should read cold; the palette has no ice
 colour. Slot choice is a design call, so it was left alone.
 
 **MG.7 on-device perf: PASSED** (Ben, 2026-07-31 — "everything works on mobile", with
-real glTF models loaded). Only the merge remains, and that is Ben's call. If a late-wave
-stutter ever appears, blob shadows are the measured lever: 822 -> 466 draws at 40 enemies.
+real glTF models loaded). If a late-wave stutter ever appears, blob shadows are the
+measured lever: 822 -> 466 draws at 40 enemies.
+
+**"Only the merge remains" was wrong** and is corrected here. `MIGRATION-3D.md` line 332
+also listed **endless mode entry**, which had never been built in the 3D shell. Done
+2026-07-31 — see that file for what it turned up. NOW only the merge remains:
+
+  1. remove Phaser — 1,208 KB of a 2,071 KB precache, 11 files still import it,
+     and `vite.config.ts` already documents the change (index.html becomes the 3D
+     build, game3d.html and the phaser chunk go, `start_url` returns to '/')
+  2. merge to main — Ben's call, the point of no easy return
+
+**Deploys already run.** Every push to `3d-migration` builds a Vercel preview; the URL
+bounces to a login because Deployment Protection is on. Production
+(`horse-lord.vercel.app`) is still the Phaser build from main, and `/game3d.html` 404s
+there. The Vercel MCP cannot help — `horse-lord` is not under the team it can see.
 
 **Deferred behind the migration:** solo-carry fix (DESIGN section 6, option C then A),
 biomes + more levels, audio. Do not let audio slip to last.

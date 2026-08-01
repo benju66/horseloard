@@ -378,6 +378,25 @@ measured lever** — dropping castShadow on characters alone takes 822 -> 466 dr
 446k -> 239k triangles, and Part A.1 prefers that look anyway. Nothing needs doing
 unless it does.
 
+**Endless mode entry: DONE 2026-07-31.** It was still listed as outstanding at MG.5 and
+had simply never been built in the 3D shell — `game3d.ts` hardcoded `endless: false`
+with no way to reach it, while the Phaser build had an ∞ button per cleared map. The
+map select now carries the same control, showing `best N` from `save.endlessBest`.
+
+Two things fell out of doing it:
+
+- **The wave set was being passed to `Simulation` by reference.** Endless appends
+  generated waves onto it as it runs, so enabling endless without cloning would have
+  left those waves permanently attached to the map and corrupted the next campaign
+  run. The Phaser build cloned it and said why; the 3D shell had dropped that. Now
+  cloned unconditionally.
+- **Endless had zero test coverage** — nothing in the engine, nothing anywhere. It is
+  wave-budget and economy math, both of which CLAUDE.md asks to be covered, and it is
+  the mode where a mistake is least visible. `src/engine/endless.test.ts` now covers
+  roster exclusion across the depth curve, hp/budget scaling, lane validity, that
+  endless never declares victory, and that milestone payouts pay only for newly
+  reached milestones without lowering the record.
+
 **Outstanding for MIGRATION EXIT:** remove Phaser and merge to main — deliberately left
 to Ben, since it is the point of no easy return.
 

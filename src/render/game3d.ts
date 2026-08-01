@@ -93,6 +93,8 @@ let instanced: InstancedEntities | null = null;
 let sim: Simulation | null = null;
 let abilityBar: AbilityBar | null = null;
 let activeMapId: string | null = null;
+/** Which mode the active run is in — endless scores by waves survived, not stars. */
+let activeEndless = false;
 let leaks = 0;
 let settled = false;
 
@@ -123,7 +125,7 @@ const host = {
   get save(): SaveData {
     return save;
   },
-  onPlay: (mapId: string) => startMap(mapId),
+  onPlay: (mapId: string, endless: boolean) => startMap(mapId, endless),
   onSaveChanged: (next: SaveData) => {
     save = next;
     void saves.save(save);
@@ -159,7 +161,7 @@ function releaseViews(): void {
   heroLastZ = undefined;
 }
 
-function startMap(mapId: string): void {
+function startMap(mapId: string, endless = false): void {
   mapSelect.hide();
   metaTree.hide();
   runOverlay.hide();
@@ -176,6 +178,7 @@ function startMap(mapId: string): void {
   );
 
   activeMapId = mapId;
+  activeEndless = endless;
   leaks = 0;
   settled = false;
   world = buildWorld(modded.map, scene, views);
@@ -185,12 +188,16 @@ function startMap(mapId: string): void {
   sim = new Simulation({
     enemies: data.enemies,
     map: modded.map,
-    waveSet: data.waveSets[mapId]!,
+    // Cloned, never shared. Endless appends generated waves onto the wave set
+    // as it runs, so handing over the loaded copy would leave those waves
+    // permanently attached to the map and corrupt the next campaign run.
+    waveSet: structuredClone(data.waveSets[mapId]!),
     hero: modded.hero,
     economy: modded.economy,
     towers: modded.towers,
     abilities: data.abilities,
     unlockedAbilityIds: modded.unlockedAbilityIds,
+    endless,
   });
   sim.enemySystem.onReachEnd.push(() => leaks++);
   flashUntil.clear();
@@ -241,7 +248,7 @@ function toMapSelect(): void {
 }
 
 runOverlay.onRestart = () => {
-  if (activeMapId) startMap(activeMapId);
+  if (activeMapId) startMap(activeMapId, activeEndless);
 };
 runOverlay.onExit = () => toMapSelect();
 startBtn.addEventListener('click', () => {
@@ -397,7 +404,7 @@ function settleIfNeeded(): void {
       victory: sim.phase === 'done',
       wavesCleared: sim.waveRunner.waveNumber,
       stars: sim.stars(),
-      endless: false,
+      endless: activeEndless,
     },
     data.economy,
   );

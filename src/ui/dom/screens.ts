@@ -13,7 +13,7 @@ import { canBuyRank, spentTokens, unlockedMapIds, type SaveData } from '../../en
 export interface ScreenHost {
   data: GameData;
   save: SaveData;
-  onPlay(mapId: string): void;
+  onPlay(mapId: string, endless: boolean): void;
   onSaveChanged(save: SaveData): void;
 }
 
@@ -79,7 +79,36 @@ export class MapSelectScreen {
       rating.textContent = open ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
 
       row.append(name, desc, rating);
-      if (open) row.addEventListener('click', () => this.host.onPlay(map.id));
+      if (open) row.addEventListener('click', () => this.host.onPlay(map.id, false));
+
+      // Endless unlocks per map once its campaign run is cleared — same rule the
+      // Phaser build used. A button cannot nest inside a button, so the row and
+      // the endless control are siblings in a flex pair rather than parent and
+      // child.
+      if (open && entry?.completed) {
+        const pair = document.createElement('div');
+        pair.className = 'map-pair';
+
+        const endless = document.createElement('button');
+        endless.className = 'map-endless';
+        endless.setAttribute('data-ui', '');
+        endless.title = 'Endless — waves never stop';
+
+        const symbol = document.createElement('div');
+        symbol.className = 'map-endless-mark';
+        symbol.textContent = '∞';
+        const best = save.endlessBest[map.id] ?? 0;
+        const label = document.createElement('div');
+        label.className = 'map-endless-best';
+        label.textContent = best > 0 ? `best ${best}` : 'endless';
+
+        endless.append(symbol, label);
+        endless.addEventListener('click', () => this.host.onPlay(map.id, true));
+        pair.append(row, endless);
+        list.append(pair);
+        continue;
+      }
+
       list.append(row);
     }
     this.root.append(list);
@@ -202,6 +231,15 @@ export function screensCss(): string {
   background: #24361f; border: 2px solid #59a844; color: #f5ead0;
   display: flex; flex-direction: column; gap: 3px;
 }
+.map-pair { display: flex; gap: 8px; align-items: stretch; }
+.map-pair .map-row { flex: 1; min-width: 0; }
+.map-endless {
+  flex: 0 0 62px; border-radius: 14px; pointer-events: auto; padding: 6px 4px;
+  background: #21384a; border: 2px solid #5f9fd4; color: #bfe0ff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.map-endless-mark { font: 400 26px Georgia, serif; line-height: 1; }
+.map-endless-best { font: 700 9px ui-monospace, monospace; opacity: .9; }
 .map-row[disabled], .node-row[disabled] { background: #1c2419; border-color: #333d30; color: #8a8f85; }
 .map-name, .node-name { font: 700 17px Georgia, serif; }
 .map-desc, .node-desc { font: 400 12px/1.35 sans-serif; opacity: .85; }
