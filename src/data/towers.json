@@ -5,7 +5,8 @@
       "behavior": "ballistic",
       "speed": 420,
       "spriteRef": "proj-arrow",
-      "hitSfxRef": "sfx-hit-light"
+      "hitSfxRef": "sfx-hit-light",
+      "ignoresArmor": false
     },
     {
       "id": "bomb",
@@ -13,7 +14,8 @@
       "speed": 260,
       "radius": 42,
       "spriteRef": "proj-bomb",
-      "hitSfxRef": "sfx-hit-heavy"
+      "hitSfxRef": "sfx-hit-heavy",
+      "ignoresArmor": true
     },
     {
       "id": "bomb-cluster",
@@ -27,7 +29,8 @@
         "spread": 34
       },
       "spriteRef": "proj-bomb",
-      "hitSfxRef": "sfx-hit-heavy"
+      "hitSfxRef": "sfx-hit-heavy",
+      "ignoresArmor": true
     },
     {
       "id": "bomb-concussion",
@@ -39,7 +42,8 @@
         "duration": 0.9
       },
       "spriteRef": "proj-bomb",
-      "hitSfxRef": "sfx-hit-heavy"
+      "hitSfxRef": "sfx-hit-heavy",
+      "ignoresArmor": true
     },
     {
       "id": "frost-aura",
@@ -50,7 +54,8 @@
         "factor": 0.55,
         "duration": 1.2
       },
-      "spriteRef": "fx-frost"
+      "spriteRef": "fx-frost",
+      "ignoresArmor": true
     },
     {
       "id": "frost-deep-freeze",
@@ -61,7 +66,8 @@
         "factor": 0,
         "duration": 1
       },
-      "spriteRef": "fx-frost"
+      "spriteRef": "fx-frost",
+      "ignoresArmor": true
     },
     {
       "id": "frost-brittle",
@@ -73,7 +79,8 @@
         "duration": 1.2
       },
       "vulnerability": 1.25,
-      "spriteRef": "fx-frost"
+      "spriteRef": "fx-frost",
+      "ignoresArmor": true
     }
   ],
   "towers": [

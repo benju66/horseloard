@@ -290,7 +290,7 @@ export class TowerSystem {
         if (e.config.flying && !targetsFlying) continue;
         if (dx * dx + dy * dy <= rSq) hits.push(e.id);
       }
-      for (const id of hits) this.enemies.applyDamage(id, damage); // auras ignore shield facing
+      for (const id of hits) this.enemies.applyDamage(id, damage, undefined, undefined, def.ignoresArmor); // auras ignore shield facing
     }
   }
 

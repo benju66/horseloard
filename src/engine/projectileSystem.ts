@@ -12,6 +12,12 @@ export interface ProjectileDef {
   radius?: number;
   stun?: SlowEffect;
   bomblets?: { count: number; damage: number; radius: number; spread: number };
+  /**
+   * Optional here, unlike on the schema: the hero builds a ProjectileDef in
+   * code rather than loading one, and his arrows are physical — so an absent
+   * flag has to mean "armor applies".
+   */
+  ignoresArmor?: boolean;
 }
 
 export interface ProjectileInstance {
@@ -28,6 +34,8 @@ export interface ProjectileInstance {
   damage: number;
   speed: number;
   aoeRadius: number; // 0 = single target
+  /** Copied off the def at spawn: armor does not reduce this hit. */
+  ignoresArmor: boolean;
   stun: SlowEffect | null;
   bomblets: { count: number; damage: number; radius: number; spread: number } | null;
   fromHero: boolean;
@@ -63,7 +71,7 @@ export class ProjectileSystem {
     if (!target) return;
 
     if (def.behavior === 'instant') {
-      this.enemies.applyDamage(targetId, damage, x, y);
+      this.enemies.applyDamage(targetId, damage, x, y, def.ignoresArmor ?? false);
       return;
     }
 
@@ -79,6 +87,7 @@ export class ProjectileSystem {
       damage: 0,
       speed: 0,
       aoeRadius: 0,
+      ignoresArmor: false,
       stun: null,
       bomblets: null,
       fromHero: false,
@@ -92,6 +101,7 @@ export class ProjectileSystem {
     p.damage = damage;
     p.speed = def.speed ?? 400;
     p.aoeRadius = def.behavior === 'aoe' ? (def.radius ?? 0) : 0;
+    p.ignoresArmor = def.ignoresArmor ?? false;
     p.stun = def.behavior === 'aoe' ? (def.stun ?? null) : null;
     p.bomblets = def.behavior === 'aoe' ? (def.bomblets ?? null) : null;
     p.fromHero = fromHero;
@@ -113,7 +123,7 @@ export class ProjectileSystem {
       const step = p.speed * dt;
       if (dist <= step + HIT_SLOP) {
         if (p.aoeRadius > 0) {
-          this.explode(p.targetX, p.targetY, p.aoeRadius, p.damage, p.stun);
+          this.explode(p.targetX, p.targetY, p.aoeRadius, p.damage, p.stun, p.ignoresArmor);
           if (p.bomblets) {
             for (let k = 0; k < p.bomblets.count; k++) {
               const angle = this.rng() * Math.PI * 2;
@@ -124,11 +134,12 @@ export class ProjectileSystem {
                 p.bomblets.radius,
                 p.bomblets.damage,
                 null,
+                p.ignoresArmor,
               );
             }
           }
         } else if (target) {
-          this.enemies.applyDamage(target.id, p.damage, p.x, p.y);
+          this.enemies.applyDamage(target.id, p.damage, p.x, p.y, p.ignoresArmor);
         }
         this.release(i, p);
       } else {
@@ -140,7 +151,14 @@ export class ProjectileSystem {
     }
   }
 
-  private explode(x: number, y: number, radius: number, damage: number, stun: SlowEffect | null): void {
+  private explode(
+    x: number,
+    y: number,
+    radius: number,
+    damage: number,
+    stun: SlowEffect | null,
+    ignoresArmor = false,
+  ): void {
     for (const fn of this.onExplosion) fn(x, y, radius);
     // Collect ids first — applyDamage swap-removes from the list we'd be iterating.
     const hits = this.aoeScratch;
@@ -153,7 +171,7 @@ export class ProjectileSystem {
     }
     for (const id of hits) {
       if (stun) this.enemies.applySlow(id, stun.factor, stun.duration);
-      this.enemies.applyDamage(id, damage); // blasts ignore shield facing
+      this.enemies.applyDamage(id, damage, undefined, undefined, ignoresArmor); // blasts ignore shield facing
     }
   }
 

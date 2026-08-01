@@ -11,7 +11,7 @@ export const TEST_HERO: Hero = {
   radius: 10,
   margins: { x: 16, top: 20, bottom: 20 },
   bow: {
-    projectile: { speed: 400, spriteRef: 'x' },
+    projectile: { speed: 400, spriteRef: 'x', ignoresArmor: true },
     levels: [
       { cost: 0, damage: 5, fireInterval: 0.5, range: 50 },
       { cost: 30, damage: 8, fireInterval: 0.4, range: 60 },
@@ -38,8 +38,8 @@ export const TEST_RNG = () => 0.5;
 export function makeTowersFile(extraTowers: Tower[] = []): TowersFile {
   return {
     projectiles: [
-      { id: 'test-arrow', behavior: 'ballistic', speed: 400, spriteRef: 'x' },
-      { id: 'test-bomb', behavior: 'aoe', speed: 300, radius: 30, spriteRef: 'x' },
+      { id: 'test-arrow', behavior: 'ballistic', ignoresArmor: false, speed: 400, spriteRef: 'x' },
+      { id: 'test-bomb', behavior: 'aoe', ignoresArmor: false, speed: 300, radius: 30, spriteRef: 'x' },
     ],
     towers: [
       {
@@ -79,6 +79,7 @@ export function makeTowersFile(extraTowers: Tower[] = []): TowersFile {
 
 export function makeEnemy(overrides: Partial<Enemy> & { id: string }): Enemy {
   return {
+    armor: 0,
     flying: false,
     name: overrides.id,
     hp: 10,

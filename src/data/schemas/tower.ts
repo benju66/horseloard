@@ -9,6 +9,15 @@ const projectileBase = {
   id: IdSchema,
   spriteRef: SpriteRefSchema,
   hitSfxRef: SfxRefSchema.optional(),
+  ignoresArmor: z
+    .boolean()
+    .default(false)
+    .describe(
+      'true = armor does not reduce this damage (DESIGN §6 option A). Explosive and ' +
+        'magic ignore armor; physical does not. Lives on the projectile rather than the ' +
+        'tower because damage is applied where the projectile lands, and a branch can ' +
+        'change the damage type without changing the tower.',
+    ),
 };
 
 /** A movement debuff: factor 0 = frozen/stunned, 0.5 = half speed. */

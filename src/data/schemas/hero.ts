@@ -31,6 +31,14 @@ export const HeroSchema = z.object({
       speed: z.number().positive(),
       spriteRef: SpriteRefSchema,
       hitSfxRef: SfxRefSchema.optional(),
+      ignoresArmor: z
+        .boolean()
+        .default(false)
+        .describe(
+          'whether the hero’s own shots bypass armor. Data, not a constant, because it ' +
+            'decides whether armor is a tower-composition lever or a flat tax on the ' +
+            'player’s baseline damage — see DESIGN §6 option A.',
+        ),
     }),
     levels: z.array(BowLevelSchema).min(1).describe('forge upgrade track; index 0 = starting bow'),
   }),

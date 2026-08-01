@@ -170,7 +170,7 @@ function auraTowersFile(): TowersFile {
   const base = makeTowersFile();
   base.projectiles.push({
     id: 'test-frost',
-    behavior: 'aura',
+    behavior: 'aura', ignoresArmor: false,
     radius: 80,
     tickInterval: 0.5,
     slow: { factor: 0.5, duration: 0.9 },
@@ -229,7 +229,7 @@ describe('cluster bomblets and concussion stun', () => {
     };
     file.projectiles.push({
       id: 'test-cluster',
-      behavior: 'aoe',
+      behavior: 'aoe', ignoresArmor: false,
       speed: 300,
       radius: 25,
       bomblets: { count: 4, damage: 6, radius: 25, spread: 30 },
@@ -249,7 +249,7 @@ describe('cluster bomblets and concussion stun', () => {
     const file = makeTowersFile();
     file.projectiles.push({
       id: 'test-stunbomb',
-      behavior: 'aoe',
+      behavior: 'aoe', ignoresArmor: false,
       speed: 300,
       radius: 30,
       stun: { factor: 0, duration: 0.8 },

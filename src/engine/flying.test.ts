@@ -26,8 +26,8 @@ function towers(auraInstead = false): TowersFile {
   const file = makeTowersFile();
   const base = file.towers[0]!;
   const proj = auraInstead
-    ? { id: 'pulse', behavior: 'aura' as const, radius: 200, tickInterval: 0.2, spriteRef: 'x' }
-    : { id: 'bolt', behavior: 'instant' as const, spriteRef: 'x' };
+    ? { id: 'pulse', behavior: 'aura' as const, ignoresArmor: false, radius: 200, tickInterval: 0.2, spriteRef: 'x' }
+    : { id: 'bolt', behavior: 'instant' as const, ignoresArmor: false, spriteRef: 'x' };
 
   const mk = (id: string, targetsFlying: boolean) => ({
     ...base,

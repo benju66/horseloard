@@ -24,6 +24,15 @@ export const EnemySchema = z.object({
     .optional()
     .describe('Shieldbearer: reduced damage from sources ahead of it — flank it or shoot it from behind'),
   ignoresSlows: z.boolean().optional().describe('Wolf Rider: immune to slows and freezes'),
+  armor: z
+    .number()
+    .min(0)
+    .max(0.9)
+    .default(0)
+    .describe(
+      'fraction of incoming damage removed, unless the source ignoresArmor. The counter ' +
+        'to single-target physical fire that is not positional — see DESIGN §6 option A.',
+    ),
   flying: z
     .boolean()
     .default(false)

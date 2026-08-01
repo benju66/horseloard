@@ -11,7 +11,8 @@
     "projectile": {
       "speed": 420,
       "spriteRef": "proj-arrow",
-      "hitSfxRef": "sfx-hit-light"
+      "hitSfxRef": "sfx-hit-light",
+      "ignoresArmor": true
     },
     "levels": [
       {

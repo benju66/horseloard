@@ -42,7 +42,8 @@
       "staggersHero": true,
       "eliteEligible": true,
       "spriteRef": "enemy-brute",
-      "model": "unit-brute"
+      "model": "unit-brute",
+      "armor": 0.45
     },
     {
       "id": "shieldbearer",

@@ -76,7 +76,11 @@ export class HeroSystem {
     this.maxX = map.world.width - config.margins.x;
     this.minY = config.margins.top;
     this.maxY = map.world.height - config.margins.bottom;
-    this.bowProjectile = { behavior: 'ballistic', speed: config.bow.projectile.speed };
+    this.bowProjectile = {
+      behavior: 'ballistic',
+      speed: config.bow.projectile.speed,
+      ignoresArmor: config.bow.projectile.ignoresArmor,
+    };
 
     // Per-enemy cooldowns must not leak entries: forget enemies when they die.
     enemies.onDeath.push((e) => {

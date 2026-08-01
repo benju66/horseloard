@@ -199,11 +199,21 @@ export class EnemySystem {
    * frontal-block enemies (Shieldbearer) can reduce damage from ahead —
    * omitting it means the hit ignores facing (auras, blasts).
    */
-  applyDamage(id: number, amount: number, sourceX?: number, sourceY?: number): boolean {
+  applyDamage(
+    id: number,
+    amount: number,
+    sourceX?: number,
+    sourceY?: number,
+    ignoresArmor = false,
+  ): boolean {
     const e = this.byId.get(id);
     if (!e) return false;
 
     let dealt = amount;
+    // Armor before the facing block, so the two stack multiplicatively rather
+    // than one masking the other: an armored shieldbearer hit from the front
+    // should be brutally hard, which is the point of having both counters.
+    if (!ignoresArmor && e.config.armor > 0) dealt *= 1 - e.config.armor;
     const block = e.config.frontalBlock;
     if (block && sourceX !== undefined && sourceY !== undefined) {
       const dx = sourceX - e.x;
