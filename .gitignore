@@ -6,3 +6,6 @@ coverage/
 .vercel/
 .DS_Store
 .playwright-mcp/
+
+# Local model inspection staging (large binaries, never shipped)
+public/models/_inspect/
