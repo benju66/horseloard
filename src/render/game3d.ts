@@ -111,6 +111,12 @@ let heroView: THREE.Object3D | undefined;
 let heroLastX: number | undefined;
 let heroLastZ: number | undefined;
 const mountAnim = new MountAnimator(UNIT_HEIGHT);
+/** Dev-only size probe — see where it is applied. Absent unless asked for. */
+const heroScaleOverride = (() => {
+  const raw = new URLSearchParams(location.search).get('heroScale');
+  const n = raw === null ? NaN : Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
+})();
 
 const host = {
   data,
@@ -197,7 +203,21 @@ function startMap(mapId: string): void {
 
   const heroModel = modded.hero.model;
   heroView = heroModel ? views.acquire(heroModel) : undefined;
-  if (heroView) entityGroup.add(heroView);
+  if (heroView) {
+    // ?heroScale=1.2 replaces the manifest scale for this load only. How big
+    // the hero should read against the roster is a judgement that can only be
+    // made by eye on a real device, and typing a URL is the one way to make
+    // that judgement on a phone without a rebuild.
+    //
+    // Divided by the manifest value so the number is absolute and directly
+    // comparable to models.json — ?heroScale=1.35 reproduces what ships.
+    // Multiplying instead would make the same URL mean different sizes as the
+    // manifest changed, which is exactly the confusion this is meant to avoid.
+    if (heroScaleOverride !== undefined && heroModel) {
+      heroView.scale.setScalar(heroScaleOverride / (views.scaleOf(heroModel) || 1));
+    }
+    entityGroup.add(heroView);
+  }
 
   hud.style.display = '';
   resize();
