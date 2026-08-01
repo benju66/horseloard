@@ -3,16 +3,14 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 /**
- * While the 3D migration is in flight this config ships BOTH builds:
- * `/` is the Phaser game, `/game3d.html` is the Three.js one. That is what
- * lets the 3D build be installed and judged under real PWA conditions —
- * standalone display, safe-area insets, offline, production bundle — none of
- * which `vite dev` reproduces.
+ * MG.7 collapsed the dual-build setup the migration ran on. `/` is the
+ * Three.js game; game3d.html, the phaser chunk and the branch-local start_url
+ * are all gone. Phaser was 1,208 KB of a 2,071 KB precache and the 3D build
+ * never touched a byte of it.
  *
- * MG.7 collapses this: index.html becomes the 3D build, game3d.html and the
- * phaser chunk both go away, and `start_url` returns to '/'.
+ * smoke3d.html and world3d.html survive as dev diagnostics. They are
+ * deliberately not build inputs — they have no business in the bundle.
  */
-const MIGRATION_START_URL = '/game3d.html';
 
 export default defineConfig({
   plugins: [
@@ -27,9 +25,7 @@ export default defineConfig({
         display: 'standalone',
         background_color: '#1a2618',
         theme_color: '#1a2618',
-        // Branch-local: an install from this build lands on the 3D game.
-        // MG.7 reverts this to '/'.
-        start_url: MIGRATION_START_URL,
+        start_url: '/',
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -43,21 +39,23 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,json,woff2}'],
-        // Phaser is a single large chunk; raise the precache ceiling above it.
+        // three is the largest chunk now, well under the 2 MB default, but a
+        // .glb roster grows over time — keep headroom rather than discover the
+        // ceiling as a silently unprecached asset.
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
       },
     }),
   ],
   build: {
-    chunkSizeWarningLimit: 1600,
+    // three is ~585 KB raw and irreducibly so; the 500 KB default would warn on
+    // every build and train the warning out of meaning anything. 700 still
+    // flags genuine bloat in the app chunk.
+    chunkSizeWarningLimit: 700,
     rollupOptions: {
-      // Both entry points during the migration. The smoke test is deliberately
-      // NOT here — it is a dev diagnostic and has no business in the bundle.
-      // Relative to project root — avoids needing @types/node here.
-      input: { main: 'index.html', game3d: 'game3d.html' },
       output: {
-        // Split the two engines so neither build pays for the other's weight.
-        manualChunks: { phaser: ['phaser'], three: ['three'] },
+        // three stays its own chunk: it is stable across releases, so a game
+        // code change does not invalidate 148 KB of cached vendor bundle.
+        manualChunks: { three: ['three'] },
       },
     },
   },

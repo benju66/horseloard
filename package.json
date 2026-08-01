@@ -17,7 +17,6 @@
     "asset:optimize": "node scripts/optimize-model.mjs"
   },
   "dependencies": {
-    "phaser": "^3.90.0",
     "three": "^0.185.1",
     "zod": "^4.0.0"
   },

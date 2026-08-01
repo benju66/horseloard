@@ -397,8 +397,31 @@ Two things fell out of doing it:
   endless never declares victory, and that milestone payouts pay only for newly
   reached milestones without lowering the record.
 
-**Outstanding for MIGRATION EXIT:** remove Phaser and merge to main — deliberately left
-to Ben, since it is the point of no easy return.
+**MIGRATION EXIT reached 2026-08-01.** Ben: "Do all of it." Phaser removed, branch
+merged to main.
+
+Removed: `src/main.ts`, `src/scenes/` (5 files), and the three superseded Phaser UI
+widgets whose DOM replacements live in `src/ui/dom/`. `game3d.html` became `index.html`;
+the dual-entry rollup input, the phaser manual chunk and the branch-local `start_url`
+all went with it.
+
+**Precache 2,071 KiB → 863 KiB — 58% smaller.** Phaser was 1,208 KB raw / 332 KB gzipped
+of a bundle that never called into it.
+
+Two things surfaced while verifying the production build, neither of them caused by the
+removal:
+
+- **A stale service worker served the old Phaser app.** The first production check
+  reported `window.Phaser` defined and zero DOM map rows; the bundle contained no
+  Phaser at all. A workbox precache from an earlier build on the same port was
+  answering every request. Worth knowing because **every existing PWA install has one**
+  — `registerType: 'autoUpdate'` means it self-heals, but the first load after deploy
+  can still serve the old app.
+- **11 doomed texture requests per boot.** The Kenney kits asked for the
+  `Textures/colormap.png` that was never downloaded. `scripts/strip-missing-texture.mjs`
+  now removes the dangling reference from the GLB JSON chunk directly — gltf-transform
+  cannot even open these files, because resolving that resource is part of reading them.
+  Console errors on a cold load: 16 → 0.
 
 **Kill criterion:** the Phaser branch is kept intact until MG.7 passes. If the migration stalls badly against the timebox Ben sets at MG.2 kickoff, fall back to the Phaser branch and ship 2D — a finished 2D game beats an unfinished 3D one. A migration that can't fail cleanly is the kind that kills solo projects.
 

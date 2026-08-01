@@ -1,101 +1,68 @@
 # BACKLOG.md — Horse Lord
 
-## ▶ START HERE (updated 2026-07-31)
+## ▶ START HERE (updated 2026-08-01)
 
-**Branch: `3d-migration`, 17 commits ahead of `main`, unmerged.** `main` is still the
-shipped Phaser 2D build. Read `MIGRATION-3D.md` too — it is authoritative for the
-render swap while that is in progress.
+**MIGRATION COMPLETE.** `main` is the Three.js build. Phaser is gone from the tree and
+the branch is merged. `MIGRATION-3D.md` is now history, not instructions — read it for
+context on why things are shaped the way they are.
 
-**SCOPE (changed 2026-07-31): PUBLISHABLE, not personal-only.** Audio is mandatory, art
-must read as one family, M4 polish items are real, outside playtesting matters again.
-DESIGN §3's "4 maps, single biome" v1 commitment now conflicts with wanting worlds and
-multiple levels — unresolved, settle it before large content work.
+**SCOPE: PUBLISHABLE, not personal-only.** Audio is mandatory, art must read as one
+family, M4 polish items are real, outside playtesting matters again. DESIGN §3's "4 maps,
+single biome" v1 commitment still conflicts with wanting worlds and multiple levels —
+unresolved, settle it before large content work.
 
-**NEXT: finish the migration (MG.4 tail + MG.7).** Art generation is SHELVED as of
-2026-07-31 — `ART-BRIEF.md` and `HERO-DESIGN.md` are written and waiting, do not start
-asset work unless Ben reopens it.
+**NEXT — the one open game problem:** archer and bombard each solo-carry maps 3–4. Root
+cause found: **nothing hard-counters the Archer** — every entry in DESIGN §6's Counters
+column is something an Archer can do, so no wave mixing will ever make you want a second
+tower. Full analysis and four ranked options are in **DESIGN §6 → "Open design problem"**.
+Agreed order: **(C)** make Shieldbearer's frontal block genuinely punishing — data only,
+zero engine work — then **(A)** damage types vs armor, which is how Kingdom Rush solves
+it. Success is measurable: `npm run bots` reports `solo-carriers 0` on crossroads and
+warlords-march while win-rate bands stay green and all four towers still appear in
+winning runs.
 
-**MG.4 tail: DONE 2026-07-31.** Gate and props now use the Kenney models; the forge
-stays procedural because no kit we ship contains a blacksmith.
+**Then:** audio (the largest missing feel element — the game is silent; do not let it
+slip to last), then biomes and more levels, which are cheap now that map lighting is
+schema data.
 
-**It uncovered a live bug worth knowing about.** All 11 Kenney Castle and
-Tower-Defense `.glb` files are raw Unity exports referencing an external
-`Textures/colormap.png` that was never downloaded. glTF falls back to
-baseColorFactor, which those exports leave pure white — so **every tower in the
-game had been rendering as a white blob**, and nobody had noticed. Fixed by
-repairing untextured-and-white materials to the manifest `tint`, which is the
-"recolour, don't re-texture" rule CLAUDE.md already asks for. The test is
-deliberately narrow: Kenney's Nature kit is also untextured but carries real
-material colours (`woodBark`, `leafsGreen`), and flattening those would have
-destroyed models that were fine.
+**Run it:** `npm run build && npm run preview -- --host` → `http://<lan-ip>:4173/`
+(production build for any fps judgement; dev understates it).
 
-**Still open on this:** the real `colormap.png` was never fetched. Palette repair
-makes each model one flat colour, which suits the style but loses the per-part
-variation the atlas would give (stone base + wood body + roof). Downloading the
-kits' texture is a one-file fix if that variation is wanted — Ben's call, since
-it means fetching an asset.
+**Deploys.** Pushes to `main` auto-deploy to `horse-lord.vercel.app`. Branch pushes get
+Vercel previews, but Deployment Protection is on so their URLs bounce to a login — turn
+it off in the dashboard or sign in on the device. The Vercel MCP cannot help: `horse-lord`
+is not under the team it can see (403 on everything).
 
-**Also noticed, not changed:** `build-frost` uses palette slot 4 (stone grey).
-The Frost Spire is the slow tower and should read cold; the palette has no ice
-colour. Slot choice is a design call, so it was left alone.
+**If a deploy looks stale, suspect the service worker before the build.** Every install
+carries a workbox precache; `registerType: 'autoUpdate'` self-heals, but the first load
+after a deploy can serve the previous app. This already caused one false alarm — see
+MIGRATION-3D's exit note.
 
-**MG.7 on-device perf: PASSED** (Ben, 2026-07-31 — "everything works on mobile", with
-real glTF models loaded). If a late-wave stutter ever appears, blob shadows are the
-measured lever: 822 -> 466 draws at 40 enemies.
+**Known cosmetic gaps, deliberately not fixed:**
+- `build-frost` uses palette slot 4 (stone grey). The Frost Spire is the slow tower and
+  should read cold; the palette has no ice colour. Adding one is a design call.
+- The hero is ~6–7 heads tall against `ART-BRIEF.md`'s 2–2.5. Prompt-level, not fixable
+  in post. Judge it beside a wave of skeletons on a phone before deciding it matters.
+- Kenney kits render one flat palette colour each — their texture atlas was never
+  downloaded. See ASSETS.md.
 
-**"Only the merge remains" was wrong** and is corrected here. `MIGRATION-3D.md` line 332
-also listed **endless mode entry**, which had never been built in the 3D shell. Done
-2026-07-31 — see that file for what it turned up. NOW only the merge remains:
+**Hero tier skins: PARKED** (Ben, 2026-07-31) — "not really important for the game right
+now". The hero is one fused horse-and-rider mesh (`public/models/hero/horse-lord.glb`),
+procedurally animated by `src/render/mountAnimator.ts`; no rig, no per-tier swap. This
+forecloses `HERO-DESIGN.md`'s two-channel plan (rider tracks bow level, horse tracks
+Swift Steed rank) unless the model is later split into pieces — fused, those channels
+multiply into 18 models instead of 9 parts.
 
-  1. remove Phaser — 1,208 KB of a 2,071 KB precache, 11 files still import it,
-     and `vite.config.ts` already documents the change (index.html becomes the 3D
-     build, game3d.html and the phaser chunk go, `start_url` returns to '/')
-  2. merge to main — Ben's call, the point of no easy return
+**Character design:** `HERO-DESIGN.md`. Naming unsettled: Ben has said "Horse King".
 
-**Deploys already run.** Every push to `3d-migration` builds a Vercel preview; the URL
-bounces to a login because Deployment Protection is on. Production
-(`horse-lord.vercel.app`) is still the Phaser build from main, and `/game3d.html` 404s
-there. The Vercel MCP cannot help — `horse-lord` is not under the team it can see.
-
-**Deferred behind the migration:** solo-carry fix (DESIGN section 6, option C then A),
-biomes + more levels, audio. Do not let audio slip to last.
-
-**State:** the Phaser → Three.js migration is functionally complete (MG.1–MG.6 done,
-MG.7 all but the merge). `/game3d.html` is the full playable game with real CC0 models.
-The engine, data schemas and save layer were never touched — that is why it was cheap.
-
-**Run it:** `npm run build && npm run preview -- --host` → `http://<lan-ip>:4173/game3d.html`
-(use the production build for any fps judgement; dev understates it).
-
-**Next task — the one open game problem:** archer and bombard each solo-carry maps 3–4.
-Root cause found: **nothing hard-counters the Archer** — every entry in DESIGN §6's
-Counters column is something an Archer can do, so no wave mixing will ever make you
-want a second tower. Full analysis and four ranked options are written up in
-**DESIGN §6 → "Open design problem"**. Recommended order: (C) make Shieldbearer's
-frontal block genuinely punishing — data only, zero engine work — then (A) damage types
-vs armor, which is how Kingdom Rush solves it. Success is measurable: `npm run bots`
-reports `solo-carriers 0` on crossroads and warlords-march while win-rate bands stay
-green and all four towers still appear in winning runs.
-
-**Then:** audio (the largest missing feel element — the game is silent), then biomes and
-more levels, which are cheap now that map lighting is schema data.
-
-**Hero tier skins: PARKED (Ben, 2026-07-31)** — "not really important for the
-game right now". The hero is one fused horse-and-rider mesh
-(`public/models/hero/horse-lord.glb`), procedurally animated by
-`src/render/mountAnimator.ts`; there is no rig and no per-tier swap. Note this
-forecloses `HERO-DESIGN.md`'s two-channel plan (rider tracking bow level, horse
-tracking Swift Steed rank) unless the model is later split into pieces — fused,
-those two channels multiply into 18 models instead of 9 parts.
-
-**Character design:** `HERO-DESIGN.md` - the Horse Lord, incl. a proposed visual
-progression driven by bow level (props appearing at tiers; ~1hr of code, schema sketch
-included, not implemented). Naming unsettled: Ben has said "Horse King".
-
-**Making art with AI?** Read `ART-BRIEF.md` — copy-paste prompt blocks plus the hard
+**Making art with AI?** Read `ART-BRIEF.md` — §10 has exact Meshy settings, plus the hard
 conventions the renderer assumes (Y-up, facing +Z, origin at the feet, single merged
-mesh, one material, flat unlit albedo). Getting those wrong yields models that load but
-face backwards or cost 6x the draw calls.
+mesh, flat unlit albedo). New models go through `scripts/optimize-character.mjs`
+(a raw Meshy export is ~435k triangles against a ~3k budget) and
+`scripts/inspect-model.mjs` before being wired up.
+
+**The hero's licence is UNCONFIRMED** and the project is aiming at release. Settle what
+Meshy's plan grants for commercial use and record it in ASSETS.md.
 
 **Instruments — do not tune by feel:** `npm run bots` · `npm run balance` · `npm test`
 

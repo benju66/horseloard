@@ -42,14 +42,23 @@ from ~40 MB to 2.7 MB with no visible change.
 | `public/models/kenney-castle/{gate,wall,tower-hexagon-*}.glb` (5) | Kenney "Castle Kit", kenney.nl/assets/castle-kit | CC0 | No |
 | `public/models/kenney-nature/{tree_*,rock_*,stump_old}.glb` (5) | Kenney "Nature Kit", kenney.nl/assets/nature-kit | CC0 | No |
 
-**Castle and Tower-Defense kits are missing their texture.** Both are Unity
+**Castle and Tower-Defense kits shipped without their texture.** Both are Unity
 exports referencing `Textures/colormap.png`, which was never downloaded with the
-`.glb` files. They load, but every material falls back to pure white. The
-renderer repairs this by substituting the manifest `tint` (see
-`ModelViewFactory.repairUntextured`), so they render in the game's own palette
-rather than Kenney's — one flat colour per model instead of the atlas's
-per-part variation. Fetching the real `colormap.png` from the kit downloads
-would restore that variation; nothing is broken without it.
+`.glb` files, so every material fell back to pure white. Two fixes, both in place:
+
+- The renderer substitutes the manifest `tint` for any untextured-and-white
+  material (`ModelViewFactory.repairUntextured`), so these render in the game's
+  own palette — one flat colour per model rather than the atlas's per-part
+  variation.
+- The dangling reference has been stripped from the files themselves
+  (`scripts/strip-missing-texture.mjs`), because the loader was still requesting
+  the missing PNG on every boot: 11 failed round trips and 16 console errors,
+  costly on a phone and misleading to anyone later debugging a real texture bug.
+
+Fetching the genuine `colormap.png` from the kit downloads would restore per-part
+colour; nothing is broken without it. Note the strip is now baked into the
+committed `.glb` files, so re-downloading a kit reintroduces the problem — run
+the script again if that happens.
 
 Kenney's Nature kit is unaffected: it was re-exported through glTF-Transform and
 carries real material colours.
