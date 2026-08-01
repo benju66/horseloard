@@ -11,7 +11,21 @@ family, M4 polish items are real, outside playtesting matters again. DESIGN §3'
 single biome" v1 commitment still conflicts with wanting worlds and multiple levels —
 unresolved, settle it before large content work.
 
-**Options C and B are DONE (2026-08-01); one map still fails.** crossroads now reports
+**SOLO-CARRY IS SOLVED (2026-08-01).** `npm run bots` reports ON TARGET for the first
+time: `solo-carriers 0` on crossroads and warlords-march, all four win-rate bands green,
+and tower balance improved on the way (forced-composition 100/100/55/10 → 60/85/80/5).
+All three counters were needed — C's frontal block and A's armor for archer, B's flyers
+for bombard — and none sufficed alone. **Read DESIGN §6's "RESOLVED" block before
+touching enemy or tower data**; it records why the hero's arrows must ignore armor, and
+three traps that cost real time.
+
+**NEXT: audio.** It is the largest missing feel element — the game is silent — and this
+file has twice warned not to let it slip to last. It has now slipped past the migration
+and the whole balance pass.
+
+**Superseded — the intermediate states:**
+
+**Options C and B were DONE (2026-08-01); one map still failed at that point.** crossroads now reports
 `solo-carriers 0` ✓ and all four maps are in band. warlords-march is at 40% with archer
 still carrying it. Archer solo went 100% → 95% (damage taken 1 → 27), bombard 100% → 90%
 (14 → 50). **Next lever is option A (damage types vs armor)** — read DESIGN §6's two

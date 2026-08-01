@@ -232,6 +232,47 @@ Three findings worth keeping:
 untried lever and is the natural next step, since armor is another archer counter and
 warlords has ~15 points of win-rate headroom to spend.
 
+#### RESOLVED 2026-08-01 — option A closed it
+
+`npm run bots` reports **ON TARGET**: `solo-carriers 0` on crossroads and
+warlords-march, every win-rate band green.
+
+| map | win | carriers |
+|---|---|---|
+| meadow-road | 100% ✓ | 3 (allowed) |
+| the-ford | 73% ✓ | 2 (allowed) |
+| crossroads | 60% ✓ | **0** ✓ |
+| warlords-march | 40% ✓ | **0** ✓ |
+
+Tower balance improved on the way rather than degrading, which was the clause worth
+protecting: forced-composition win rates were 100/100/55/10 and are now 60/85/80/5 —
+archer, bombard and frost within 25 points of each other.
+
+**What A added:** enemies gain `armor`, projectiles gain `ignoresArmor`. Explosive and
+magic bypass armor; physical does not. The Brute carries 0.45. Armor applies *before* the
+facing block, so the two counters stack multiplicatively rather than one masking the
+other.
+
+**The decision that made it work:** the hero's own arrows must ignore armor
+(`hero.bow.projectile.ignoresArmor`, in data). With them armor-affected, Brute armor at
+0.6 sent three maps out of band while barely denting solo-carry, and 0.15 was *worse than
+no armor at all*. The hero is the player's baseline damage, so armor on a common enemy is
+a flat tax on every composition rather than a lever on tower choice. Bypassing it makes
+armor a pure tower-composition question, which is the whole point of the mechanic.
+
+**All three counters were needed, and none sufficed alone:**
+
+| | counters | mechanism |
+|---|---|---|
+| C — frontal block | archer | positional; flank or use AoE |
+| B — flyers | **bombard** | ground-only towers cannot fire at all |
+| A — armor | archer | non-positional; explosive/magic bypass |
+
+Warlords-march needed its wave budget re-priced around them: brutes 50 → 22, ravens 24,
+shieldbearers 20 → 26, filler trimmed; 312 → 275 bodies. Proportionally more of what
+demands an answer and less of what merely walks — a better wave list, not just an easier
+one.
+
 **Success is measurable, not a feeling:** `npm run bots` must report `solo-carriers 0`
 on crossroads and warlords-march, while the win-rate bands in `DIFFICULTY_TARGETS`
 stay green and all four towers keep appearing in winning runs. The last clause matters —
