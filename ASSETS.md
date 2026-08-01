@@ -61,13 +61,22 @@ shipping. This is the one row in this file that is not settled.
 It replaced an earlier `Tier1_Rider` generation; the tier-skin system it was
 made for is parked (see `BACKLOG.md`), so this is simply *the* hero now.
 
-It still departs from `ART-BRIEF.md` in two ways, both prompt-level rather than
-pipeline-level: colour (monochrome brown, where the design calls for `#3b5dc9`
-blue as the whole faction-read system) and proportions (roughly 6–7 heads tall
-against the brief's 2–2.5). Neither is fixable in post without papering over
-the real cause. It is in the build so the proportion clash against the KayKit
-enemies can be judged on a real phone, which is the only place that judgement
-can honestly be made.
+**Colour: fine.** Ben confirmed on device 2026-07-31. An earlier note here
+called the hero monochrome brown and short of the `#3b5dc9` faction blue — that
+was formed against the previous `Tier1_Rider` generation and carried over to
+this model without being rechecked. It does not apply.
+
+**Proportions: still open.** Roughly 6–7 heads tall against the 2–2.5 that
+`ART-BRIEF.md` specifies. That is prompt-level, not fixable in post without
+papering over the cause, and whether it actually clashes with the KayKit
+enemies can only be judged on a real phone.
+
+**Scale is set in the manifest, not the model.** `unit-hero` carries
+`scale: 1.35`. `buildFromGltf` normalises every bounding box to `UNIT_HEIGHT`,
+which gives a fused horse-and-rider the same total height as a lone standing
+skeleton — the hero measured 30.0 against a grunt's 27.7 and a runner's 38.2
+before this was set. Use `?heroScale=N` to try other values on device without
+a rebuild; the number is absolute, so `?heroScale=1.35` is what ships.
 
 **Facing was established indirectly.** The browser pane was unavailable when it
 landed, so rather than eyeballing it, its vertex distribution was profiled in
