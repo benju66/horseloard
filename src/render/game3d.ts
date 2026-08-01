@@ -13,6 +13,7 @@ import { ModelViewFactory, UNIT_HEIGHT } from './entityViews';
 import { FxLayer } from './fx';
 import { InstancedEntities } from './instancedEntities';
 import { MountAnimator } from './mountAnimator';
+import { AudioManager } from '../audio/audioManager';
 import { buildWorld, simToWorld, type World } from './world';
 
 /**
@@ -64,6 +65,9 @@ style.textContent =
   background: rgba(46,120,120,.88); color: #f2ecdd; font: 700 16px ui-monospace, monospace;
   box-shadow: 0 4px 14px rgba(0,0,0,.4); }
 #startbtn[disabled] { opacity: .35; }
+#mutebtn { position: absolute; top: calc(env(safe-area-inset-top, 6px) + 34px); right: 10px;
+  pointer-events: auto; width: 40px; height: 40px; border-radius: 12px; border: 0;
+  background: rgba(20,30,24,.6); color: #f2ecdd; font-size: 17px; line-height: 1; }
 `;
 document.head.append(style);
 
@@ -78,6 +82,30 @@ startBtn.setAttribute('data-ui', '');
 startBtn.textContent = 'Start wave';
 hud.append(topbar, startBtn);
 overlay.append(hud);
+
+const audio = new AudioManager();
+// Browsers refuse to start an AudioContext outside a user gesture, and on iOS
+// one created eagerly stays suspended with no way back. Build it on first tap.
+for (const ev of ['pointerdown', 'keydown'] as const) {
+  window.addEventListener(ev, () => audio.unlock(), { passive: true });
+}
+
+const muteBtn = document.createElement('button');
+muteBtn.id = 'mutebtn';
+muteBtn.setAttribute('data-ui', '');
+const syncMute = (): void => {
+  const on = audio.preferences.sfx;
+  muteBtn.textContent = on ? '\u{1F50A}' : '\u{1F507}';
+  muteBtn.setAttribute('aria-label', on ? 'Mute sound' : 'Unmute sound');
+};
+muteBtn.addEventListener('click', () => {
+  audio.unlock();
+  audio.setPref('sfx', !audio.preferences.sfx);
+  syncMute();
+  if (audio.preferences.sfx) audio.play('upgrade');
+});
+syncMute();
+hud.append(muteBtn);
 
 const joystick = new DomJoystick(canvas, overlay);
 const bubbles = new BubbleLayer(hud);
@@ -208,6 +236,7 @@ function startMap(mapId: string, endless = false): void {
   simClock = 0;
   sim.enemySystem.onDamaged.push((e) => flashUntil.set(e.id, simClock + FLASH_SECONDS));
   fx.attach(sim);
+  attachAudio(sim);
 
   abilityBar?.destroy();
   abilityBar = new AbilityBar(sim, overlay);
@@ -256,7 +285,9 @@ runOverlay.onRestart = () => {
 };
 runOverlay.onExit = () => toMapSelect();
 startBtn.addEventListener('click', () => {
+  audio.unlock();
   if (!sim?.startNextWave()) return;
+  audio.play('wave-horn');
   // Announce special waves — the banner is what makes a Horde feel like one.
   const archetypeId = sim.waveRunner.currentWaveData?.archetypeId;
   if (!archetypeId) return;
@@ -399,16 +430,51 @@ function step(dt: number): void {
   }
 
   views.tick(dt * runOverlay.speed);
+  audio.frame();
   instanced?.update(sim, dt);
   fx.update(sim, world.camera, dt);
   renderer.render(scene, world.camera);
 }
 
 /** Persist the run exactly once when it resolves. */
+/**
+ * Sim events -> sounds. Render-side only: the sim fires the same events whether
+ * anything is listening, so audio can never affect what is true.
+ *
+ * Sound choice keys off mechanics (blast radius, damage size), never off
+ * content ids — the substrate rule applies here as much as anywhere, and a new
+ * enemy or tower should sound reasonable the day its JSON lands.
+ */
+function attachAudio(s: Simulation): void {
+  s.projectileSystem.onSpawn.push((p) => {
+    if (p.fromHero) audio.play('sfx-bow-release');
+    else if (p.aoeRadius <= 0) audio.play('sfx-bow-release', 0.88);
+  });
+  s.projectileSystem.onExplosion.push(() => audio.play('sfx-bombard'));
+  s.towerSystem.onAuraPulse.push(() => audio.play('sfx-frost'));
+
+  // Hit weight from the damage number rather than the enemy: a heavy hit is a
+  // heavy hit whoever takes it, and this needs no table to maintain.
+  s.enemySystem.onDamaged.push((_e, amount) => {
+    audio.play(amount >= 25 ? 'sfx-hit-heavy' : 'sfx-hit-light');
+  });
+  s.enemySystem.onDeath.push(() => audio.play('sfx-hit-heavy', 0.8));
+  s.enemySystem.onReachEnd.push(() => audio.play('gate-hit'));
+  s.enemySystem.onWarCry.push(() => audio.play('sfx-rally-horn', 0.75));
+
+  s.hero.onStagger.push(() => audio.play('sfx-hit-heavy', 0.7));
+  s.economy.onCollect.push(() => audio.playCoin());
+  s.towerSystem.onTowerBroken.push(() => audio.play('error'));
+  s.abilities.onCast.push((ability) => {
+    audio.play(ability.castSfxRef ?? 'sfx-charge');
+  });
+}
+
 function settleIfNeeded(): void {
   if (!sim || settled || !activeMapId) return;
   if (sim.phase !== 'done' && sim.phase !== 'defeat') return;
   settled = true;
+  audio.play(sim.phase === 'done' ? 'victory' : 'defeat');
   const result = settleRun(
     save,
     {
@@ -444,6 +510,14 @@ function syncHud(): void {
       x: ((projected.x + 1) / 2) * window.innerWidth,
       y: ((-projected.y + 1) / 2) * window.innerHeight,
     });
+  }
+  // Every bubble is a spend; one confirming thunk beats silence on a tap.
+  for (const a of actions) {
+    const run = a.run;
+    a.run = () => {
+      audio.play(a.enabled ? 'build' : 'error');
+      run();
+    };
   }
   bubbles.render(actions, bubbleScreens);
   abilityBar?.sync();
@@ -501,6 +575,7 @@ if (import.meta.env.DEV) {
       return heroView;
     },
     mountAnim,
+    audio,
     step,
     syncHud,
     joystick,

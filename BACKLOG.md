@@ -19,9 +19,22 @@ for bombard — and none sufficed alone. **Read DESIGN §6's "RESOLVED" block be
 touching enemy or tower data**; it records why the hero's arrows must ignore armor, and
 three traps that cost real time.
 
-**NEXT: audio.** It is the largest missing feel element — the game is silent — and this
-file has twice warned not to let it slip to last. It has now slipped past the migration
-and the whole balance pass.
+**AUDIO: SFX DONE (2026-08-01), music still missing.** 16 sounds, all synthesised in
+code (`src/audio/voices.ts`) rather than sampled — nothing to download, nothing to
+licence, no bundle weight, and every sound tunable by editing a number. The manifest seam
+means CC0 samples remain a drop-in replacement later if wanted.
+
+Wired to eleven sim events; sound choice keys off mechanics (blast radius, damage size),
+never off content ids, so a new tower or enemy sounds reasonable the day its JSON lands.
+Mute toggle in the HUD, persisted to localStorage — deliberately not the save file, since
+device preferences should not need a schema migration or sync between devices.
+
+**Still to do on audio:** DESIGN §12 also asks for **music** — one loop per phase
+(build-calm / wave-tension) with crossfade, plus a boss layer. The `musicBus` and its
+mute pref already exist and are wired; nothing feeds them. That is the remaining gap.
+
+**And nobody has heard any of it.** Every check so far is a measurement — rendered
+waveforms, event counts, throttle behaviour. Whether it sounds *good* is unanswered.
 
 **Superseded — the intermediate states:**
 
