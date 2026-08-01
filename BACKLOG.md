@@ -11,6 +11,15 @@ family, M4 polish items are real, outside playtesting matters again. DESIGN §3'
 single biome" v1 commitment still conflicts with wanting worlds and multiple levels —
 unresolved, settle it before large content work.
 
+**Options C and B are DONE (2026-08-01); one map still fails.** crossroads now reports
+`solo-carriers 0` ✓ and all four maps are in band. warlords-march is at 40% with archer
+still carrying it. Archer solo went 100% → 95% (damage taken 1 → 27), bombard 100% → 90%
+(14 → 50). **Next lever is option A (damage types vs armor)** — read DESIGN §6's two
+"Result of" blocks first; they record three traps, including that adding more of a
+counter can make a map worse on both axes at once.
+
+**Superseded note kept for context — option C alone:**
+
 **Option C is DONE (2026-08-01) and did not finish the job — read DESIGN §6's "Result of
 option C" before continuing.** Archer solo-carry 100% → 95%, crossroads carriers 2 → 1,
 all four maps still in band. Bombard is untouched at 100% and is now the blocker.

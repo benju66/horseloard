@@ -105,6 +105,10 @@ const seen = new Set<number>();
 /** enemy id → sim-time at which its hit flash expires. */
 const flashUntil = new Map<number, number>();
 const FLASH_SECONDS = 0.08;
+/** How high airborne enemies ride, in world units — about half a unit height. */
+const FLY_HEIGHT = 16;
+/** Wingbeat bob amplitude; the phase is offset per entity id so a flock is not synchronised. */
+const FLY_BOB = 2.4;
 let simClock = 0;
 const scratch = new THREE.Vector3();
 const projected = new THREE.Vector3();
@@ -302,7 +306,15 @@ function step(dt: number): void {
       enemyViews.set(e.id, entry);
     }
     simToWorld(map, e.x, e.y, scratch);
-    entry.object.position.set(scratch.x, 0, scratch.z);
+    // Airborne enemies ride above the ground plane, bobbing. This is not
+    // decoration: a ground-only tower simply cannot shoot them, and DESIGN §6
+    // warns that binary gates read as gotchas when the player cannot see why
+    // they lost. The altitude IS the explanation, so it has to be legible at a
+    // glance from a fixed overhead camera.
+    const lift = e.config.flying
+      ? FLY_HEIGHT + Math.sin(simClock * 4 + e.id) * FLY_BOB
+      : 0;
+    entry.object.position.set(scratch.x, lift, scratch.z);
     if (e.facingX !== 0 || e.facingY !== 0) entry.object.rotation.y = Math.atan2(e.facingX, e.facingY);
     entry.object.visible = true;
 

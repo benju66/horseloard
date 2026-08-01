@@ -197,6 +197,41 @@ says in as many words that the free-choice preference numbers are not evidence a
 tower strength, and that the `[solo carry]` table is the instrument that answers that.
 Nothing to fix; read the right table.
 
+#### Result of option B — flyers (measured 2026-08-01)
+
+Built: enemies gain `flying`, towers gain `targetsFlying` (default true). A ground-only
+tower cannot see a flyer at all and holds fire. **War Raven** added; Bombard opts out, as
+§5 always said it should. Ravens render ~16 units up with a wingbeat bob, because the
+altitude *is* the explanation for why a tower will not fire — without it this reads as
+the gotcha this section warned about.
+
+| | baseline | after C + B |
+|---|---|---|
+| crossroads | carriers 2, win 60% | **carriers 0**, win 53% |
+| warlords-march | carriers 2, win 33% | carriers 1, win 40% |
+| archer solo | 100%, damage 1 | **95%, damage 27** |
+| bombard solo | 100%, damage 14 | **90%, damage 50** |
+
+**Crossroads meets the goal. Warlords-march does not** — archer still wins every seed
+there.
+
+Three findings worth keeping:
+
+1. **Concentration beats sprinkling.** 24 ravens spread two-per-wave changed nothing; the
+   hero picks off stragglers while holding the ground line. The same 24 in three flocks of
+   eight broke both carriers. A counter must arrive faster than the hero can absorb it.
+2. **The hero shoots flyers, so no tower-level immunity is a hard counter on its own.**
+   Solo-carry always means "that tower *plus the hero*". Any future counter has to beat
+   the pair, not the tower.
+3. **More counter is not monotonically better.** Adding six shieldbearers to warlords made
+   it worse on both axes at once (40% → 20% win, carriers 1 → 2), because enemies the
+   archer cannot kill leak and siege, punishing every composition rather than the wrong
+   one. The same trap as option C's first attempt.
+
+**Still open:** archer on warlords-march. Option A (damage types vs armor) is the
+untried lever and is the natural next step, since armor is another archer counter and
+warlords has ~15 points of win-rate headroom to spend.
+
 **Success is measurable, not a feeling:** `npm run bots` must report `solo-carriers 0`
 on crossroads and warlords-march, while the win-rate bands in `DIFFICULTY_TARGETS`
 stay green and all four towers keep appearing in winning runs. The last clause matters —
