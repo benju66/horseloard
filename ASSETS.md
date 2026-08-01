@@ -42,6 +42,18 @@ from ~40 MB to 2.7 MB with no visible change.
 | `public/models/kenney-castle/{gate,wall,tower-hexagon-*}.glb` (5) | Kenney "Castle Kit", kenney.nl/assets/castle-kit | CC0 | No |
 | `public/models/kenney-nature/{tree_*,rock_*,stump_old}.glb` (5) | Kenney "Nature Kit", kenney.nl/assets/nature-kit | CC0 | No |
 
+**Castle and Tower-Defense kits are missing their texture.** Both are Unity
+exports referencing `Textures/colormap.png`, which was never downloaded with the
+`.glb` files. They load, but every material falls back to pure white. The
+renderer repairs this by substituting the manifest `tint` (see
+`ModelViewFactory.repairUntextured`), so they render in the game's own palette
+rather than Kenney's — one flat colour per model instead of the atlas's
+per-part variation. Fetching the real `colormap.png` from the kit downloads
+would restore that variation; nothing is broken without it.
+
+Kenney's Nature kit is unaffected: it was re-exported through glTF-Transform and
+carries real material colours.
+
 Each pack's own `License.txt` / `LICENSE.txt` ships alongside its models.
 
 ## AI-generated

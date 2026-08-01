@@ -157,6 +157,55 @@
       "file": "models/kaykit/Skeleton_Mage.glb"
     },
     {
+      "id": "world-gate",
+      "silhouette": "structure",
+      "tint": 4,
+      "file": "models/kenney-castle/gate.glb"
+    },
+    {
+      "id": "world-wall",
+      "silhouette": "structure",
+      "tint": 4,
+      "file": "models/kenney-castle/wall.glb"
+    },
+    {
+      "id": "world-tower",
+      "silhouette": "structure",
+      "tint": 5,
+      "file": "models/kenney-castle/tower-hexagon-base.glb"
+    },
+    {
+      "id": "world-tower-roof",
+      "silhouette": "structure",
+      "tint": 5,
+      "file": "models/kenney-castle/tower-hexagon-roof.glb"
+    },
+    {
+      "id": "world-tree",
+      "silhouette": "structure",
+      "file": "models/kenney-nature/tree_default.glb"
+    },
+    {
+      "id": "world-tree-pine",
+      "silhouette": "structure",
+      "file": "models/kenney-nature/tree_pineDefaultA.glb"
+    },
+    {
+      "id": "world-rock",
+      "silhouette": "structure",
+      "file": "models/kenney-nature/rock_largeA.glb"
+    },
+    {
+      "id": "world-rock-small",
+      "silhouette": "structure",
+      "file": "models/kenney-nature/rock_smallA.glb"
+    },
+    {
+      "id": "world-stump",
+      "silhouette": "structure",
+      "file": "models/kenney-nature/stump_old.glb"
+    },
+    {
       "id": "build-archer",
       "silhouette": "structure",
       "tint": 6,

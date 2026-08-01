@@ -15,12 +15,29 @@ multiple levels — unresolved, settle it before large content work.
 2026-07-31 — `ART-BRIEF.md` and `HERO-DESIGN.md` are written and waiting, do not start
 asset work unless Ben reopens it.
 
-**Concrete next task — MG.4 tail, uses models already in the repo, no new art needed:**
-wire the gate, forge and props in `src/render/world.ts` to the Kenney `.glb` models
-already downloaded and ledgered under `public/models/kenney-castle/` and
-`kenney-nature/`. They are currently procedural boxes and cones. Roughly an hour, and the
-largest remaining visual upgrade — the gate is on screen constantly and every map carries
-20+ props. Load them through `ModelViewFactory` the way entity views already do.
+**MG.4 tail: DONE 2026-07-31.** Gate and props now use the Kenney models; the forge
+stays procedural because no kit we ship contains a blacksmith.
+
+**It uncovered a live bug worth knowing about.** All 11 Kenney Castle and
+Tower-Defense `.glb` files are raw Unity exports referencing an external
+`Textures/colormap.png` that was never downloaded. glTF falls back to
+baseColorFactor, which those exports leave pure white — so **every tower in the
+game had been rendering as a white blob**, and nobody had noticed. Fixed by
+repairing untextured-and-white materials to the manifest `tint`, which is the
+"recolour, don't re-texture" rule CLAUDE.md already asks for. The test is
+deliberately narrow: Kenney's Nature kit is also untextured but carries real
+material colours (`woodBark`, `leafsGreen`), and flattening those would have
+destroyed models that were fine.
+
+**Still open on this:** the real `colormap.png` was never fetched. Palette repair
+makes each model one flat colour, which suits the style but loses the per-part
+variation the atlas would give (stone base + wood body + roof). Downloading the
+kits' texture is a one-file fix if that variation is wanted — Ben's call, since
+it means fetching an asset.
+
+**Also noticed, not changed:** `build-frost` uses palette slot 4 (stone grey).
+The Frost Spire is the slow tower and should read cold; the palette has no ice
+colour. Slot choice is a design call, so it was left alone.
 
 **MG.7 on-device perf: PASSED** (Ben, 2026-07-31 — "everything works on mobile", with
 real glTF models loaded). Only the merge remains, and that is Ben's call. If a late-wave

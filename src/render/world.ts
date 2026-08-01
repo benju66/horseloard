@@ -1,5 +1,7 @@
 import * as THREE from 'three';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { MapDef } from '../data/schemas';
+import type { ModelViewFactory } from './entityViews';
 
 /**
  * MG.3 — the map, in 3D, entirely from map JSON.
@@ -57,7 +59,7 @@ export interface World {
   dispose(): void;
 }
 
-export function buildWorld(map: MapDef, scene: THREE.Scene): World {
+export function buildWorld(map: MapDef, scene: THREE.Scene, views?: ModelViewFactory): World {
   const group = new THREE.Group();
   scene.add(group);
 
@@ -141,14 +143,17 @@ export function buildWorld(map: MapDef, scene: THREE.Scene): World {
     group.add(rim);
   }
 
-  // ─── Gate + forge placeholders (real models arrive at MG.4) ───
+  // ─── Gate + forge ───
+  // The gate takes a real model when one is loaded; the forge has no model in
+  // any kit we ship, so it stays built from primitives. Both fall back cleanly,
+  // which is what keeps `views` optional and the world renderable in tests.
 
-  group.add(buildGate(map, track));
+  group.add(buildGate(map, track, views));
   group.add(buildForge(map, track));
 
   // ─── Props: sparse, clustered at path edges, large negative space elsewhere ───
 
-  group.add(buildProps(map, track));
+  group.add(buildProps(map, track, views));
 
   // ─── Camera ───
 
@@ -333,9 +338,112 @@ function contentBounds(map: MapDef): THREE.Vector3[] {
 
 type Track = <T extends THREE.BufferGeometry | THREE.Material>(x: T) => T;
 
-function buildGate(map: MapDef, track: Track): THREE.Group {
+/** Local-space size of a source model, ignoring where its origin sits. */
+function modelSize(o: THREE.Object3D): THREE.Vector3 {
+  return new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3());
+}
+
+/**
+ * Compose the gatehouse from Castle-kit pieces: tower · wall · wall · gate ·
+ * wall · wall · tower.
+ *
+ * The kit has no gatehouse model — `gate.glb` is a single door panel 0.66 wide
+ * and 0.15 thick, meant to hang in an opening between wall segments. Scaling
+ * that one piece up to the gate's footprint is what produced a 1,100-unit
+ * tower of a door; the pieces have to be laid out instead.
+ *
+ * Every dimension is measured from the models rather than hardcoded, so a kit
+ * swap re-proportions itself. The whole assembly is then scaled to
+ * GATE_HALF_WIDTH — the footprint the camera's content bounds were fitted to,
+ * which is why width is the thing held fixed and height is allowed to follow.
+ */
+function buildGateFromKit(
+  map: MapDef,
+  p: THREE.Vector3,
+  views?: ModelViewFactory,
+): THREE.Group | undefined {
+  if (!views) return undefined;
+  const gateSrc = views.sourceScene('world-gate');
+  const wallSrc = views.sourceScene('world-wall');
+  const towerSrc = views.sourceScene('world-tower');
+  const roofSrc = views.sourceScene('world-tower-roof');
+  if (!gateSrc || !wallSrc || !towerSrc) return undefined;
+
+  const gateSize = modelSize(gateSrc);
+  const wallSize = modelSize(wallSrc);
+  const towerSize = modelSize(towerSrc);
+
+  // The door panel is authored broad along Z and thin along X, so it needs a
+  // quarter turn to span the opening rather than block the road.
+  const gateSpan = gateSize.z;
+  const WALLS_PER_SIDE = 2;
+  const totalKitWidth = towerSize.x * 2 + wallSize.x * WALLS_PER_SIDE * 2 + gateSpan;
+  const s = (GATE_HALF_WIDTH * 2) / totalKitWidth;
+
+  const g = new THREE.Group();
+  // Nine static pieces would be nine draw calls; merged by material they are
+  // two. Same rule as the props (CLAUDE.md #6) — the gatehouse never moves.
+  const buckets = new Map<THREE.Material, THREE.BufferGeometry[]>();
+  const place = (src: THREE.Object3D, kitX: number, kitY: number, yaw: number, tint: number) => {
+    const o = src.clone(true);
+    o.scale.setScalar(s);
+    o.rotation.y = yaw;
+    o.position.set(p.x + kitX * s, kitY * s, p.z);
+    views.repairUntextured(o, tint);
+    o.updateMatrixWorld(true);
+    o.traverse((n) => {
+      const mesh = n as THREE.Mesh;
+      if (!mesh.isMesh || !mesh.geometry) return;
+      const material = Array.isArray(mesh.material) ? mesh.material[0]! : mesh.material;
+      const geo = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
+      for (const name of Object.keys(geo.attributes)) {
+        if (name !== 'position' && name !== 'normal' && name !== 'uv') geo.deleteAttribute(name);
+      }
+      const bucket = buckets.get(material);
+      if (bucket) bucket.push(geo);
+      else buckets.set(material, [geo]);
+    });
+  };
+
+  // Walk outward from the centre so the pieces butt up against each other.
+  place(gateSrc, 0, 0, Math.PI / 2, 4);
+  let edge = gateSpan / 2;
+  for (let i = 0; i < WALLS_PER_SIDE; i++) {
+    const cx = edge + wallSize.x / 2;
+    place(wallSrc, cx, 0, 0, 4);
+    place(wallSrc, -cx, 0, 0, 4);
+    edge += wallSize.x;
+  }
+  const towerX = edge + towerSize.x / 2;
+  for (const sign of [1, -1]) {
+    place(towerSrc, sign * towerX, 0, 0, 5);
+    if (roofSrc) place(roofSrc, sign * towerX, towerSize.y, 0, 5);
+  }
+
+  for (const [material, geometries] of buckets) {
+    const merged = BufferGeometryUtils.mergeGeometries(geometries, false);
+    for (const geo of geometries) geo.dispose();
+    if (!merged) continue;
+    const mesh = new THREE.Mesh(merged, material);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    g.add(mesh);
+  }
+  return g;
+}
+
+function buildGate(map: MapDef, track: Track, views?: ModelViewFactory): THREE.Group {
   const g = new THREE.Group();
   const p = simToWorld(map, map.gate.position.x, map.gate.position.y);
+
+  const built = buildGateFromKit(map, p, views);
+  if (built) {
+    g.add(built);
+    return g;
+  }
+
+  // Fallback: primitives, so a missing model degrades to something placed
+  // correctly rather than to nothing.
   const stone = track(new THREE.MeshLambertMaterial({ color: '#8f8f96' }));
   const stoneDark = track(new THREE.MeshLambertMaterial({ color: '#6a6a72' }));
 
@@ -379,7 +487,43 @@ function buildForge(map: MapDef, track: Track): THREE.Group {
  * negative space elsewhere. Placement is derived from the lanes themselves and
  * seeded by map id, so a new map dresses itself and always the same way.
  */
-function buildProps(map: MapDef, track: Track): THREE.Group {
+/**
+ * One source mesh, flattened out of its glTF hierarchy: geometry plus the
+ * transform that positions it within the model, so a placement matrix can be
+ * composed on top without walking the tree again per instance.
+ */
+interface SourcePart {
+  geometry: THREE.BufferGeometry;
+  material: THREE.Material;
+  local: THREE.Matrix4;
+}
+
+function collectParts(root: THREE.Object3D): SourcePart[] {
+  const parts: SourcePart[] = [];
+  root.updateMatrixWorld(true);
+  root.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.geometry) return;
+    const material = Array.isArray(mesh.material) ? mesh.material[0]! : mesh.material;
+    parts.push({ geometry: mesh.geometry, material, local: mesh.matrixWorld.clone() });
+  });
+  return parts;
+}
+
+/**
+ * Prop kinds, as manifest ids with the weight each is drawn with and a size
+ * expressed in world units. Height rather than a raw scale factor, so a swapped
+ * kit with different authoring units still lands the same size on screen.
+ */
+const PROP_KINDS = [
+  { id: 'world-tree', weight: 0.4, height: 46 },
+  { id: 'world-tree-pine', weight: 0.28, height: 52 },
+  { id: 'world-rock', weight: 0.14, height: 13 },
+  { id: 'world-rock-small', weight: 0.1, height: 8 },
+  { id: 'world-stump', weight: 0.08, height: 11 },
+] as const;
+
+function buildProps(map: MapDef, track: Track, views?: ModelViewFactory): THREE.Group {
   const g = new THREE.Group();
   const rng = seededRng(hashString(map.id + ':props'));
 
@@ -389,6 +533,30 @@ function buildProps(map: MapDef, track: Track): THREE.Group {
   const trunkGeo = track(new THREE.CylinderGeometry(3, 4, 18, 6));
   const foliageGeo = track(new THREE.ConeGeometry(15, 34, 7));
   const rockGeo = track(new THREE.DodecahedronGeometry(8, 0));
+
+  // Resolve which prop models are actually available. Anything missing simply
+  // drops out of the weighted draw, so a partial kit still dresses the map.
+  const kinds = views
+    ? PROP_KINDS.flatMap((k) => {
+        const source = views.sourceScene(k.id);
+        if (!source) return [];
+        const box = new THREE.Box3().setFromObject(source);
+        const h = Math.max(1e-3, box.max.y - box.min.y);
+        return [{ ...k, parts: collectParts(source), scale: k.height / h, minY: box.min.y }];
+      })
+    : [];
+  const totalWeight = kinds.reduce((s, k) => s + k.weight, 0);
+
+  // Merge buckets, keyed by material. Twenty-odd props would otherwise be
+  // twenty-odd draw calls of ~150 triangles each — exactly the case CLAUDE.md
+  // #6 asks to be merged into shared static geometry.
+  const buckets = new Map<THREE.Material, THREE.BufferGeometry[]>();
+  const placement = new THREE.Matrix4();
+  const composed = new THREE.Matrix4();
+  const quat = new THREE.Quaternion();
+  const euler = new THREE.Euler();
+  const pos = new THREE.Vector3();
+  const scl = new THREE.Vector3();
 
   const CLUSTERS = 7;
   const PER_CLUSTER = 3;
@@ -420,7 +588,42 @@ function buildProps(map: MapDef, track: Track): THREE.Group {
       if (sx < 8 || sx > map.world.width - 8 || sy < 8 || sy > map.world.height - 8) continue;
       const p = simToWorld(map, sx, sy);
 
-      if (rng() < 0.72) {
+      if (kinds.length > 0) {
+        // Weighted draw over whatever models loaded.
+        let roll = rng() * totalWeight;
+        let kind = kinds[kinds.length - 1]!;
+        for (const k of kinds) {
+          roll -= k.weight;
+          if (roll <= 0) {
+            kind = k;
+            break;
+          }
+        }
+
+        const jitter = 0.78 + rng() * 0.44;
+        const s = kind.scale * jitter;
+        pos.set(p.x, -kind.minY * s, p.z);
+        // Yaw only. Trees tilted on X or Z read as damaged rather than varied,
+        // and rocks gain nothing from it at this camera angle.
+        euler.set(0, rng() * Math.PI * 2, 0);
+        quat.setFromEuler(euler);
+        scl.setScalar(s);
+        placement.compose(pos, quat, scl);
+
+        for (const part of kind.parts) {
+          composed.multiplyMatrices(placement, part.local);
+          const geo = part.geometry.clone().applyMatrix4(composed);
+          // Merging demands identical attribute sets; anything beyond these
+          // three is unused by the lighting model and would only cause the
+          // merge to fail on a kit that happens to carry extra channels.
+          for (const name of Object.keys(geo.attributes)) {
+            if (name !== 'position' && name !== 'normal' && name !== 'uv') geo.deleteAttribute(name);
+          }
+          const bucket = buckets.get(part.material);
+          if (bucket) bucket.push(geo);
+          else buckets.set(part.material, [geo]);
+        }
+      } else if (rng() < 0.72) {
         const scale = 0.7 + rng() * 0.6;
         const tr = new THREE.Mesh(trunkGeo, trunk);
         tr.position.set(p.x, 9 * scale, p.z);
@@ -444,6 +647,21 @@ function buildProps(map: MapDef, track: Track): THREE.Group {
         g.add(r);
       }
     }
+  }
+
+  // One draw call per distinct material, however many props were placed.
+  for (const [material, geometries] of buckets) {
+    const merged = BufferGeometryUtils.mergeGeometries(geometries, false);
+    for (const geo of geometries) geo.dispose();
+    if (!merged) continue;
+    const mesh = new THREE.Mesh(track(merged), material);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    // Props are scattered across the whole map, so a bounding sphere centred on
+    // any one of them is meaningless — without this the merged mesh culls as a
+    // unit and pops out of view at the frame edge.
+    mesh.frustumCulled = false;
+    g.add(mesh);
   }
   return g;
 }

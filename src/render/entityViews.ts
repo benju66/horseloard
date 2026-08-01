@@ -88,6 +88,21 @@ export class ModelViewFactory {
     );
   }
 
+  /**
+   * The raw loaded glTF scene behind a manifest id, or undefined if it has no
+   * file or failed to load.
+   *
+   * For static world dressing only. Views handed out by `acquire` are pooled
+   * and individually transformed, which is right for entities that spawn and
+   * die but wrong for twenty roadside trees that never move — CLAUDE.md #6 asks
+   * those to be merged into shared geometry, and merging needs the source, not
+   * a pooled instance. Callers must not mutate what they get back.
+   */
+  sourceScene(id: string): THREE.Object3D | undefined {
+    const def = this.def(id);
+    return def?.file ? this.loaded.get(def.file)?.scene : undefined;
+  }
+
   /** Advance every live view's animation. */
   tick(dt: number): void {
     for (const a of this.anims.values()) a.mixer.update(dt);
@@ -219,8 +234,10 @@ export class ModelViewFactory {
     root.scale.setScalar(norm);
     root.traverse((o) => {
       const mesh = o as THREE.Mesh;
-      if (mesh.isMesh) mesh.castShadow = true;
+      if (!mesh.isMesh) return;
+      mesh.castShadow = true;
     });
+    this.repairUntextured(root, def.tint);
     group.add(root);
 
     // Wire only the clips the manifest maps; a name that matches nothing is
@@ -238,6 +255,46 @@ export class ModelViewFactory {
 
     for (const prop of def.props) group.add(this.propMesh(def, prop));
     return group;
+  }
+
+  /**
+   * Swap in a palette material anywhere a model's own material is unusable.
+   * Public because static world dressing clones source scenes directly rather
+   * than going through `acquire`, and the repair has to reach those too.
+   */
+  repairUntextured(root: THREE.Object3D, tint: number | undefined): void {
+    root.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (mesh.isMesh && this.isUntextured(mesh.material)) mesh.material = this.material(tint);
+    });
+  }
+
+  /**
+   * True for a material that was relying on a texture which never arrived.
+   *
+   * The Kenney Castle and Tower-Defense kits are raw Unity exports whose single
+   * material points at an external `Textures/colormap.png` — a palette atlas
+   * that was never downloaded alongside the .glb files. glTF's fallback for a
+   * missing map is baseColorFactor, which those exports leave at pure white, so
+   * every tower in the game rendered as a white blob.
+   *
+   * The test has to be exactly this narrow. Kenney's Nature kit carries no
+   * texture either (it was re-exported through glTF-Transform), but its
+   * materials hold real colours — `woodBark`, `leafsGreen` — and flattening
+   * those to one tint would destroy models that are perfectly fine. Untextured
+   * *and* white is the signature of the broken case and nothing else.
+   *
+   * Recolouring rather than re-texturing is also what CLAUDE.md asks for, so
+   * the repair lands the models in the game's own palette instead of Kenney's.
+   */
+  private isUntextured(material: THREE.Material | THREE.Material[]): boolean {
+    const mats = Array.isArray(material) ? material : [material];
+    return mats.every((m) => {
+      const std = m as THREE.MeshStandardMaterial;
+      if (std.map) return false;
+      // getHex() is only meaningful on materials that have a colour at all.
+      return std.color !== undefined && std.color.getHex() === 0xffffff;
+    });
   }
 
   private silhouetteMesh(def: ModelDef): THREE.Object3D {

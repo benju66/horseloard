@@ -178,7 +178,7 @@ function startMap(mapId: string): void {
   activeMapId = mapId;
   leaks = 0;
   settled = false;
-  world = buildWorld(modded.map, scene);
+  world = buildWorld(modded.map, scene, views);
   fx = new FxLayer(scene, modded.map);
   instanced = new InstancedEntities(scene, modded.map, modded.map.camera.elevation);
 
