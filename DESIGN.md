@@ -153,6 +153,46 @@ units are a new entity type, not a projectile behaviour.*
 are what's missing. A is the industry-standard fix and cheap for what it buys. B and D
 are bigger swings worth taking only once C and A are proven insufficient.
 
+#### Result of option C (measured 2026-08-01)
+
+C was implemented and **works on Archer, but cannot finish the job.** Block widened to
+220° and deepened to 0.10×; Shieldbearer hp 55 → 38; twelve shieldbearers swapped to
+grunts on warlords-march.
+
+| | baseline | after C |
+|---|---|---|
+| archer solo-carry | 100%, damage taken 1 | **95%, damage taken 10** |
+| crossroads carriers | 2 | **1** (archer defeated) |
+| bombard solo-carry | 100% | **100% — unchanged** |
+
+Three things the measurement established, none of them obvious beforehand:
+
+1. **The engine already had the right asymmetry and needed no changes.** Projectile hits
+   pass a source position and are blocked; blasts and auras omit it and bypass. A hard
+   counter to single-target fire was already expressible in pure data.
+2. **An uncounterable enemy punishes every composition, not the wrong one.** The first
+   attempt kept hp at 55 and sent all four maps below their bands (warlords-march 33% →
+   0%), because a Shieldbearer the Archer cannot kill does not merely absorb dps — it
+   leaks and sieges the gate at 4 dps. Lowering hp is what makes the counter selective.
+3. **Shieldbearer density controls the archer counter and general difficulty at once**,
+   so on warlords-march the map is in-band *or* archer-free, not both: 32 shieldbearers
+   → 7% win rate, 26 → 13%, 20 → 33% with archer carrying again.
+
+**Option A will not finish it either.** A reduces physical damage by armor while
+explosive and magic ignore it — that is another Archer counter. **Nothing in A, B or C as
+written counters Bombard**, which solo-carries every map at 100% and is the more robust
+carrier of the two.
+
+**The designed answer to Bombard already exists and was never built.** §5's tower table
+specifies Bombard as "AoE, slow rate, **ground only**" — the flyer hook option B refers
+to. A flying enemy is the one thing an AoE ground mortar cannot answer at all. That makes
+the remaining order **A (finish Archer) + B's flyers (counter Bombard)**, not A alone.
+
+*Also noticed while measuring:* the bot valuation model picks Bombard in **0** runs out of
+265 while forced-Bombard wins 100% of maps. That is a scorer blind spot, not a balance
+fact — `combatValue` reads tower-level projectile data, and Bombard's splash lives on its
+branches. Worth fixing before trusting the tower-preference report for anything.
+
 **Success is measurable, not a feeling:** `npm run bots` must report `solo-carriers 0`
 on crossroads and warlords-march, while the win-rate bands in `DIFFICULTY_TARGETS`
 stay green and all four towers keep appearing in winning runs. The last clause matters —

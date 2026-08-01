@@ -11,6 +11,18 @@ family, M4 polish items are real, outside playtesting matters again. DESIGN §3'
 single biome" v1 commitment still conflicts with wanting worlds and multiple levels —
 unresolved, settle it before large content work.
 
+**Option C is DONE (2026-08-01) and did not finish the job — read DESIGN §6's "Result of
+option C" before continuing.** Archer solo-carry 100% → 95%, crossroads carriers 2 → 1,
+all four maps still in band. Bombard is untouched at 100% and is now the blocker.
+Remaining order is **A (finish Archer) + B's flyers (counter Bombard)** — §5 already
+specifies Bombard as "ground only", so the hook exists and was never built. B is engine
+work, not data, so it is a decision rather than a task.
+
+**Also worth fixing first:** the bot scorer picks Bombard in 0 of 265 runs while
+forced-Bombard wins 100%. `combatValue` in `src/engine/bots.ts` reads tower-level
+projectile data and Bombard's splash lives on its branches. The tower-preference report
+is not trustworthy until that is fixed.
+
 **NEXT — the one open game problem:** archer and bombard each solo-carry maps 3–4. Root
 cause found: **nothing hard-counters the Archer** — every entry in DESIGN §6's Counters
 column is something an Archer can do, so no wave mixing will ever make you want a second
