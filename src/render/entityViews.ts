@@ -19,7 +19,7 @@ import { PALETTE } from './palette';
  */
 
 /** Every silhouette is authored to this height, then `scale` is applied. */
-const UNIT_HEIGHT = 30;
+export const UNIT_HEIGHT = 30;
 
 /** Where props hang, as fractions of unit height. Per silhouette. */
 const SOCKETS: Record<string, Record<string, [number, number, number]>> = {

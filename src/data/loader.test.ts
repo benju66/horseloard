@@ -231,8 +231,14 @@ describe('cross-file references', () => {
   it('a model may omit its glTF file — placeholder geometry is a valid state', () => {
     // The whole roster must be buildable before any asset is sourced; this is
     // the contract that makes "system first, models later" safe.
-    const data = validateGameData(seed());
-    expect(data.models.length).toBeGreaterThan(0);
-    expect(data.models.every((m) => m.file === undefined)).toBe(true);
+    //
+    // Asserting that *every* model omits `file` was only ever true before the
+    // first real asset landed, and it silently became a tripwire on the art
+    // pass rather than a test of the contract. What actually matters is that a
+    // model without a file still validates — so state that directly.
+    const raw = seed();
+    (raw.models as any).models.push({ id: 'fileless-probe' });
+    const data = validateGameData(raw);
+    expect(data.models.find((m) => m.id === 'fileless-probe')?.file).toBeUndefined();
   });
 });

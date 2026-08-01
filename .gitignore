@@ -9,3 +9,7 @@ coverage/
 
 # Local model inspection staging (large binaries, never shipped)
 public/models/_inspect/
+
+# AI-model source files: large binaries, kept locally. Use Git LFS if these
+# should be versioned - a plain commit would put ~38 MB each into history.
+Art/

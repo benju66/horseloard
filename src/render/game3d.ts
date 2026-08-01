@@ -9,9 +9,10 @@ import { BubbleLayer, bubbleActions } from '../ui/dom/bubbles';
 import { DomJoystick } from '../ui/dom/joystick';
 import { RunOverlay } from '../ui/dom/runOverlay';
 import { MapSelectScreen, MetaTreeScreen, screensCss } from '../ui/dom/screens';
-import { ModelViewFactory } from './entityViews';
+import { ModelViewFactory, UNIT_HEIGHT } from './entityViews';
 import { FxLayer } from './fx';
 import { InstancedEntities } from './instancedEntities';
+import { MountAnimator } from './mountAnimator';
 import { buildWorld, simToWorld, type World } from './world';
 
 /**
@@ -106,6 +107,10 @@ let simClock = 0;
 const scratch = new THREE.Vector3();
 const projected = new THREE.Vector3();
 let heroView: THREE.Object3D | undefined;
+/** Previous frame's hero world position, for deriving speed. */
+let heroLastX: number | undefined;
+let heroLastZ: number | undefined;
+const mountAnim = new MountAnimator(UNIT_HEIGHT);
 
 const host = {
   data,
@@ -143,6 +148,9 @@ function releaseViews(): void {
     entityGroup.remove(heroView);
     heroView = undefined;
   }
+  mountAnim.reset();
+  heroLastX = undefined;
+  heroLastZ = undefined;
 }
 
 function startMap(mapId: string): void {
@@ -327,10 +335,27 @@ function step(dt: number): void {
   simToWorld(map, sim.hero.x, sim.hero.y, scratch);
   if (heroView) {
     heroView.position.set(scratch.x, 0, scratch.z);
-    // Face the true heading, not the sprite-mirror flag — see HeroSystem.
-    if (Math.hypot(sim.hero.headingX, sim.hero.headingY) > 0.01) {
-      heroView.rotation.y = Math.atan2(sim.hero.headingX, sim.hero.headingY);
-    }
+
+    // Speed from world-space travel rather than a sim field: it costs nothing,
+    // needs no engine change, and picks up the charge multiplier for free.
+    const travelled = heroLastX === undefined
+      ? 0
+      : Math.hypot(scratch.x - heroLastX, scratch.z - heroLastZ!);
+    heroLastX = scratch.x;
+    heroLastZ = scratch.z;
+    const heroSpeed = dt > 0 ? travelled / dt : 0;
+
+    // Face the true heading, not the sprite-mirror flag — see HeroSystem. The
+    // animator springs toward it rather than snapping, and layers gait bob,
+    // pitch and bank on top; a fused horse-and-rider mesh cannot be skinned, so
+    // all of its motion lives here.
+    mountAnim.update(
+      heroView,
+      dt,
+      sim.hero.headingX,
+      sim.hero.headingY,
+      heroSpeed,
+    );
     views.setState(heroView, sim.hero.moving ? 'walk' : 'idle');
   }
 
@@ -431,6 +456,12 @@ if (import.meta.env.DEV) {
     },
     views,
     renderer,
+    // Exposed for tuning mount motion — the constants in DEFAULT_MOUNT_MOTION
+    // are only judgeable in motion on a real device, not from a spec.
+    get heroView() {
+      return heroView;
+    },
+    mountAnim,
     step,
     syncHud,
     joystick,

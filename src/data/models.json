@@ -68,24 +68,7 @@
     {
       "id": "unit-hero",
       "base": "base-horse",
-      "tint": 6,
-      "props": [
-        {
-          "id": "hero-rider",
-          "socket": "mount",
-          "shape": "box",
-          "scale": 0.72,
-          "tint": 9,
-          "file": "models/kaykit/Knight.glb"
-        },
-        {
-          "id": "hero-bow",
-          "socket": "hand",
-          "shape": "cylinder",
-          "scale": 0.5,
-          "tint": 7
-        }
-      ]
+      "file": "models/hero/horse-lord-t1.glb"
     },
     {
       "id": "unit-grunt",
