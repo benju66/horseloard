@@ -117,7 +117,14 @@
         },
         {
           "enemyId": "shieldbearer",
-          "count": 3,
+          "count": 1,
+          "spacing": 2,
+          "laneId": "east",
+          "delay": 5
+        },
+        {
+          "enemyId": "grunt",
+          "count": 4,
           "spacing": 2,
           "laneId": "east",
           "delay": 5
@@ -189,7 +196,7 @@
       "entries": [
         {
           "enemyId": "shieldbearer",
-          "count": 6,
+          "count": 4,
           "spacing": 1.6,
           "laneId": "west",
           "delay": 0
@@ -214,6 +221,13 @@
           "spacing": 4,
           "laneId": "east",
           "delay": 7
+        },
+        {
+          "enemyId": "grunt",
+          "count": 4,
+          "spacing": 1.6,
+          "laneId": "west",
+          "delay": 0
         }
       ]
     },
@@ -289,7 +303,7 @@
         },
         {
           "enemyId": "shieldbearer",
-          "count": 6,
+          "count": 4,
           "spacing": 1.5,
           "laneId": "west",
           "delay": 1
@@ -300,6 +314,13 @@
           "spacing": 0.5,
           "laneId": "west",
           "delay": 6
+        },
+        {
+          "enemyId": "grunt",
+          "count": 4,
+          "spacing": 1.5,
+          "laneId": "west",
+          "delay": 1
         }
       ]
     },
@@ -316,7 +337,7 @@
       "entries": [
         {
           "enemyId": "shieldbearer",
-          "count": 6,
+          "count": 4,
           "spacing": 1.4,
           "laneId": "west",
           "delay": 0
@@ -330,7 +351,7 @@
         },
         {
           "enemyId": "shieldbearer",
-          "count": 4,
+          "count": 2,
           "spacing": 1.6,
           "laneId": "east",
           "delay": 2.5
@@ -341,6 +362,20 @@
           "spacing": 1.7,
           "laneId": "east",
           "delay": 4
+        },
+        {
+          "enemyId": "grunt",
+          "count": 4,
+          "spacing": 1.4,
+          "laneId": "west",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 4,
+          "spacing": 1.6,
+          "laneId": "east",
+          "delay": 2.5
         }
       ]
     },
@@ -397,7 +432,7 @@
         },
         {
           "enemyId": "shieldbearer",
-          "count": 4,
+          "count": 2,
           "spacing": 2.2,
           "laneId": "east",
           "delay": 0
@@ -422,6 +457,13 @@
           "spacing": 1.5,
           "laneId": "west",
           "delay": 20
+        },
+        {
+          "enemyId": "grunt",
+          "count": 4,
+          "spacing": 2.2,
+          "laneId": "east",
+          "delay": 0
         }
       ]
     }

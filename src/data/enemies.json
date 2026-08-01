@@ -47,7 +47,7 @@
     {
       "id": "shieldbearer",
       "name": "Shieldbearer",
-      "hp": 55,
+      "hp": 38,
       "speed": 34,
       "radius": 13,
       "coinValue": 8,
@@ -55,8 +55,8 @@
       "staggersHero": true,
       "eliteEligible": true,
       "frontalBlock": {
-        "arcDegrees": 150,
-        "multiplier": 0.25
+        "arcDegrees": 220,
+        "multiplier": 0.1
       },
       "spriteRef": "enemy-shieldbearer",
       "model": "unit-shieldbearer"
