@@ -18,10 +18,13 @@ Remaining order is **A (finish Archer) + B's flyers (counter Bombard)** — §5 
 specifies Bombard as "ground only", so the hook exists and was never built. B is engine
 work, not data, so it is a decision rather than a task.
 
-**Also worth fixing first:** the bot scorer picks Bombard in 0 of 265 runs while
-forced-Bombard wins 100%. `combatValue` in `src/engine/bots.ts` reads tower-level
-projectile data and Bombard's splash lives on its branches. The tower-preference report
-is not trustworthy until that is fixed.
+**Do not "fix" the bot tower-preference numbers.** Bombard is picked in 0 of 265 runs
+while forced-Bombard wins 100%, which looks like a bug and is not: `bots.ts` documents a
+CONTROL_TO_DPS sweep showing the greedy scorer flips between monocultures because it
+takes the best value-per-coin every time. Preference is not evidence about tower
+strength — the `[solo carry]` table is. (Claude asserted this was a blind spot on
+2026-08-01 and was wrong twice over: splash is on the tower, not the branches, and the
+behaviour was already investigated.)
 
 **NEXT — the one open game problem:** archer and bombard each solo-carry maps 3–4. Root
 cause found: **nothing hard-counters the Archer** — every entry in DESIGN §6's Counters

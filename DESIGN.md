@@ -189,9 +189,13 @@ to. A flying enemy is the one thing an AoE ground mortar cannot answer at all. T
 the remaining order **A (finish Archer) + B's flyers (counter Bombard)**, not A alone.
 
 *Also noticed while measuring:* the bot valuation model picks Bombard in **0** runs out of
-265 while forced-Bombard wins 100% of maps. That is a scorer blind spot, not a balance
-fact — `combatValue` reads tower-level projectile data, and Bombard's splash lives on its
-branches. Worth fixing before trusting the tower-preference report for anything.
+265 while forced-Bombard wins 100% of maps. **This is expected and already understood** —
+`bots.ts` documents a 22/32/40/60 sweep of `CONTROL_TO_DPS` showing the greedy scorer
+flips between monocultures rather than mixing (at 32 it builds only bombard, at 40 only
+frost), because it takes the single best value-per-coin every time. The file already
+says in as many words that the free-choice preference numbers are not evidence about
+tower strength, and that the `[solo carry]` table is the instrument that answers that.
+Nothing to fix; read the right table.
 
 **Success is measurable, not a feeling:** `npm run bots` must report `solo-carriers 0`
 on crossroads and warlords-march, while the win-rate bands in `DIFFICULTY_TARGETS`
