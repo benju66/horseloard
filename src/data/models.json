@@ -1,0 +1,233 @@
+{
+  "models": [
+    {
+      "id": "base-humanoid",
+      "silhouette": "humanoid",
+      "tint": 10,
+      "clips": {
+        "idle": "Idle",
+        "walk": "Running_A",
+        "attack": "1H_Melee_Attack_Chop",
+        "death": "Death_A",
+        "siege": "1H_Melee_Attack_Chop"
+      },
+      "file": "models/kaykit/Skeleton_Minion.glb"
+    },
+    {
+      "id": "base-large",
+      "silhouette": "humanoid",
+      "scale": 1.35,
+      "tint": 10,
+      "clips": {
+        "idle": "Idle",
+        "walk": "Running_A",
+        "attack": "1H_Melee_Attack_Chop",
+        "death": "Death_A",
+        "siege": "1H_Melee_Attack_Chop"
+      },
+      "file": "models/kaykit/Skeleton_Warrior.glb"
+    },
+    {
+      "id": "base-beast",
+      "silhouette": "beast",
+      "tint": 10,
+      "clips": {
+        "walk": "procedural",
+        "idle": "procedural"
+      }
+    },
+    {
+      "id": "base-mini",
+      "silhouette": "blob",
+      "scale": 0.6,
+      "tint": 10,
+      "instanced": true,
+      "clips": {
+        "walk": "procedural"
+      }
+    },
+    {
+      "id": "base-horse",
+      "silhouette": "mounted",
+      "tint": 6,
+      "clips": {
+        "walk": "procedural",
+        "idle": "procedural"
+      }
+    },
+    {
+      "id": "base-rider",
+      "silhouette": "humanoid",
+      "scale": 0.72,
+      "tint": 9,
+      "clips": {
+        "idle": "Idle"
+      },
+      "file": "models/kaykit/Knight.glb"
+    },
+    {
+      "id": "unit-hero",
+      "base": "base-horse",
+      "scale": 1.35,
+      "file": "models/hero/horse-lord.glb"
+    },
+    {
+      "id": "unit-grunt",
+      "base": "base-humanoid"
+    },
+    {
+      "id": "unit-runner",
+      "base": "base-humanoid",
+      "scale": 0.9,
+      "tint": 1,
+      "file": "models/kaykit/Skeleton_Rogue.glb"
+    },
+    {
+      "id": "unit-brute",
+      "base": "base-large",
+      "scale": 1.04
+    },
+    {
+      "id": "unit-shieldbearer",
+      "base": "base-humanoid",
+      "props": [
+        {
+          "id": "shield",
+          "socket": "hand",
+          "shape": "box",
+          "scale": 1.1,
+          "tint": 5
+        }
+      ]
+    },
+    {
+      "id": "unit-swarm",
+      "base": "base-mini"
+    },
+    {
+      "id": "unit-wolf-rider",
+      "base": "base-beast",
+      "props": [
+        {
+          "id": "wolf-rider-body",
+          "socket": "mount",
+          "shape": "box",
+          "scale": 0.6,
+          "tint": 10
+        }
+      ]
+    },
+    {
+      "id": "unit-looter",
+      "base": "base-humanoid",
+      "scale": 0.95,
+      "tint": 8,
+      "props": [
+        {
+          "id": "sack",
+          "socket": "back",
+          "shape": "sphere",
+          "scale": 0.55,
+          "tint": 6
+        }
+      ],
+      "file": "models/kaykit/Skeleton_Rogue.glb"
+    },
+    {
+      "id": "unit-warlord",
+      "base": "base-large",
+      "scale": 1.33,
+      "tint": 7,
+      "props": [
+        {
+          "id": "crown",
+          "socket": "head",
+          "shape": "cone",
+          "scale": 0.45,
+          "tint": 8
+        },
+        {
+          "id": "cape",
+          "socket": "back",
+          "shape": "box",
+          "scale": 0.9,
+          "tint": 5
+        }
+      ],
+      "file": "models/kaykit/Skeleton_Mage.glb"
+    },
+    {
+      "id": "world-gate",
+      "silhouette": "structure",
+      "tint": 4,
+      "file": "models/kenney-castle/gate.glb"
+    },
+    {
+      "id": "world-wall",
+      "silhouette": "structure",
+      "tint": 4,
+      "file": "models/kenney-castle/wall.glb"
+    },
+    {
+      "id": "world-tower",
+      "silhouette": "structure",
+      "tint": 5,
+      "file": "models/kenney-castle/tower-hexagon-base.glb"
+    },
+    {
+      "id": "world-tower-roof",
+      "silhouette": "structure",
+      "tint": 5,
+      "file": "models/kenney-castle/tower-hexagon-roof.glb"
+    },
+    {
+      "id": "world-tree",
+      "silhouette": "structure",
+      "file": "models/kenney-nature/tree_default.glb"
+    },
+    {
+      "id": "world-tree-pine",
+      "silhouette": "structure",
+      "file": "models/kenney-nature/tree_pineDefaultA.glb"
+    },
+    {
+      "id": "world-rock",
+      "silhouette": "structure",
+      "file": "models/kenney-nature/rock_largeA.glb"
+    },
+    {
+      "id": "world-rock-small",
+      "silhouette": "structure",
+      "file": "models/kenney-nature/rock_smallA.glb"
+    },
+    {
+      "id": "world-stump",
+      "silhouette": "structure",
+      "file": "models/kenney-nature/stump_old.glb"
+    },
+    {
+      "id": "build-archer",
+      "silhouette": "structure",
+      "tint": 6,
+      "file": "models/kenney-td/tower-round-build-a.glb"
+    },
+    {
+      "id": "build-bombard",
+      "silhouette": "structure",
+      "tint": 5,
+      "file": "models/kenney-td/tower-round-build-b.glb"
+    },
+    {
+      "id": "build-frost",
+      "silhouette": "structure",
+      "tint": 4,
+      "file": "models/kenney-td/tower-round-build-c.glb"
+    },
+    {
+      "id": "build-mill",
+      "silhouette": "structure",
+      "tint": 7,
+      "file": "models/kenney-td/tower-round-build-d.glb"
+    }
+  ]
+}

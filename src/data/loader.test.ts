@@ -8,6 +8,7 @@ import metatreeJson from './metatree.json';
 import heroJson from './hero.json';
 import economyJson from './economy.json';
 import archetypesJson from './archetypes.json';
+import modelsJson from './models.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
 import theFordMapJson from './maps/the-ford.json';
@@ -27,6 +28,7 @@ function seed(): RawGameData & Record<string, any> {
     hero: heroJson,
     economy: economyJson,
     archetypes: archetypesJson,
+    models: modelsJson,
     maps: {
       'maps/meadow-road.json': meadowRoadMapJson,
       'maps/the-ford.json': theFordMapJson,
@@ -199,5 +201,44 @@ describe('cross-file references', () => {
     const node = (raw.metatree as any).nodes.find((n: any) => n.effect.type === 'tower-stat');
     node.effect.towerId = 'tesla';
     expect(() => validateGameData(raw)).toThrow('unknown tower "tesla"');
+  });
+
+  it('enemy pointing at an unknown model', () => {
+    const raw = seed();
+    (raw.enemies as any).enemies[0].model = 'unit-griffin';
+    expect(() => validateGameData(raw)).toThrow('unknown model "unit-griffin"');
+  });
+
+  it('tower pointing at an unknown model', () => {
+    const raw = seed();
+    (raw.towers as any).towers[0].model = 'build-tesla';
+    expect(() => validateGameData(raw)).toThrow('unknown model "build-tesla"');
+  });
+
+  it('model deriving from a base that does not exist', () => {
+    const raw = seed();
+    (raw.models as any).models.push({ id: 'unit-ghost', base: 'base-phantom' });
+    expect(() => validateGameData(raw)).toThrow('unknown base model "base-phantom"');
+  });
+
+  it('model base chain that cycles', () => {
+    const raw = seed();
+    const models = (raw.models as any).models;
+    models.push({ id: 'loop-a', base: 'loop-b' }, { id: 'loop-b', base: 'loop-a' });
+    expect(() => validateGameData(raw)).toThrow('base chain cycles');
+  });
+
+  it('a model may omit its glTF file — placeholder geometry is a valid state', () => {
+    // The whole roster must be buildable before any asset is sourced; this is
+    // the contract that makes "system first, models later" safe.
+    //
+    // Asserting that *every* model omits `file` was only ever true before the
+    // first real asset landed, and it silently became a tripwire on the art
+    // pass rather than a test of the contract. What actually matters is that a
+    // model without a file still validates — so state that directly.
+    const raw = seed();
+    (raw.models as any).models.push({ id: 'fileless-probe' });
+    const data = validateGameData(raw);
+    expect(data.models.find((m) => m.id === 'fileless-probe')?.file).toBeUndefined();
   });
 });

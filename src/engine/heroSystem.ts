@@ -28,8 +28,19 @@ export class HeroSystem {
 
   x: number;
   y: number;
-  /** facing for the renderer: 1 = right, -1 = left */
+  /** horizontal mirror for a 2D sprite renderer: 1 = right, -1 = left */
   dir: 1 | -1 = 1;
+  /**
+   * True heading — the normalised direction the hero last actually travelled.
+   *
+   * `dir` cannot serve this purpose: it is a left/right mirror flag derived
+   * from horizontal input alone, so anything that steers by it can only ever
+   * go due-left or due-right. Charge did exactly that, which made steering up
+   * and charging send you sideways at full speed. Defaults to +y, the
+   * direction the lane runs.
+   */
+  headingX = 0;
+  headingY = 1;
   /** true while the player is actively steering (drives the gallop bob + trample) */
   moving = false;
   bowLevel = 1;
@@ -136,9 +147,11 @@ export class HeroSystem {
       let my = this.input.y;
       let m = Math.hypot(mx, my);
       if (this.charging && m <= INPUT_DEADZONE) {
-        // burst continues in the facing direction even with a loose stick
-        mx = this.dir;
-        my = 0;
+        // Burst continues along the true heading with a loose stick. This used
+        // to use `dir`, which is a left/right mirror flag — so charging after
+        // steering upward launched you sideways.
+        mx = this.headingX;
+        my = this.headingY;
         m = 1;
       }
       if (m > INPUT_DEADZONE) {
@@ -150,6 +163,8 @@ export class HeroSystem {
           this.config.moveSpeed * (this.charging ? this.charge!.speedMultiplier : 1);
         this.x += mx * speed * dt;
         this.y += my * speed * dt;
+        this.headingX = mx;
+        this.headingY = my;
         if (Math.abs(mx) > 0.1) this.dir = mx > 0 ? 1 : -1;
         this.moving = true;
       } else {

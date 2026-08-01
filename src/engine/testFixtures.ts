@@ -1,4 +1,5 @@
 import type { Economy, Enemy, Hero, MapDef, Tower, TowersFile } from '../data/schemas';
+import { MapCameraSchema, MapLightingSchema } from '../data/schemas';
 
 /**
  * Shared engine-test fixtures. Deliberately fake content — the engine must
@@ -113,5 +114,9 @@ export function makeMap(overrides?: {
     plots: [{ id: 'p1', position: { x: 10, y: 10 } }],
     gate: { position: { x: 0, y: 110 }, hp: 100, attackSlots: 5 },
     forge: { position: { x: 20, y: 20 } },
+    // Render-layer blocks: take the schema's own defaults rather than
+    // duplicating literals that would drift out of sync.
+    camera: MapCameraSchema.parse({}),
+    lighting: MapLightingSchema.parse({}),
   };
 }

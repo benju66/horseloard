@@ -6,9 +6,6 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#1a2618" />
-    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <title>Horse Lord</title>
     <style>
       * {
@@ -28,14 +25,21 @@
       #app {
         position: fixed;
         inset: 0;
+        display: block;
       }
-      #app canvas {
-        touch-action: none;
+      #overlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+      #overlay > * {
+        pointer-events: none;
       }
     </style>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <canvas id="app"></canvas>
+    <div id="overlay"></div>
+    <script type="module" src="/src/render/game3d.ts"></script>
   </body>
 </html>

@@ -1,5 +1,73 @@
 # BACKLOG.md — Horse Lord
 
+## ▶ START HERE (updated 2026-08-01)
+
+**MIGRATION COMPLETE.** `main` is the Three.js build. Phaser is gone from the tree and
+the branch is merged. `MIGRATION-3D.md` is now history, not instructions — read it for
+context on why things are shaped the way they are.
+
+**SCOPE: PUBLISHABLE, not personal-only.** Audio is mandatory, art must read as one
+family, M4 polish items are real, outside playtesting matters again. DESIGN §3's "4 maps,
+single biome" v1 commitment still conflicts with wanting worlds and multiple levels —
+unresolved, settle it before large content work.
+
+**NEXT — the one open game problem:** archer and bombard each solo-carry maps 3–4. Root
+cause found: **nothing hard-counters the Archer** — every entry in DESIGN §6's Counters
+column is something an Archer can do, so no wave mixing will ever make you want a second
+tower. Full analysis and four ranked options are in **DESIGN §6 → "Open design problem"**.
+Agreed order: **(C)** make Shieldbearer's frontal block genuinely punishing — data only,
+zero engine work — then **(A)** damage types vs armor, which is how Kingdom Rush solves
+it. Success is measurable: `npm run bots` reports `solo-carriers 0` on crossroads and
+warlords-march while win-rate bands stay green and all four towers still appear in
+winning runs.
+
+**Then:** audio (the largest missing feel element — the game is silent; do not let it
+slip to last), then biomes and more levels, which are cheap now that map lighting is
+schema data.
+
+**Run it:** `npm run build && npm run preview -- --host` → `http://<lan-ip>:4173/`
+(production build for any fps judgement; dev understates it).
+
+**Deploys.** Pushes to `main` auto-deploy to `horse-lord.vercel.app`. Branch pushes get
+Vercel previews, but Deployment Protection is on so their URLs bounce to a login — turn
+it off in the dashboard or sign in on the device. The Vercel MCP cannot help: `horse-lord`
+is not under the team it can see (403 on everything).
+
+**If a deploy looks stale, suspect the service worker before the build.** Every install
+carries a workbox precache; `registerType: 'autoUpdate'` self-heals, but the first load
+after a deploy can serve the previous app. This already caused one false alarm — see
+MIGRATION-3D's exit note.
+
+**Known cosmetic gaps, deliberately not fixed:**
+- `build-frost` uses palette slot 4 (stone grey). The Frost Spire is the slow tower and
+  should read cold; the palette has no ice colour. Adding one is a design call.
+- The hero is ~6–7 heads tall against `ART-BRIEF.md`'s 2–2.5. Prompt-level, not fixable
+  in post. Judge it beside a wave of skeletons on a phone before deciding it matters.
+- Kenney kits render one flat palette colour each — their texture atlas was never
+  downloaded. See ASSETS.md.
+
+**Hero tier skins: PARKED** (Ben, 2026-07-31) — "not really important for the game right
+now". The hero is one fused horse-and-rider mesh (`public/models/hero/horse-lord.glb`),
+procedurally animated by `src/render/mountAnimator.ts`; no rig, no per-tier swap. This
+forecloses `HERO-DESIGN.md`'s two-channel plan (rider tracks bow level, horse tracks
+Swift Steed rank) unless the model is later split into pieces — fused, those channels
+multiply into 18 models instead of 9 parts.
+
+**Character design:** `HERO-DESIGN.md`. Naming unsettled: Ben has said "Horse King".
+
+**Making art with AI?** Read `ART-BRIEF.md` — §10 has exact Meshy settings, plus the hard
+conventions the renderer assumes (Y-up, facing +Z, origin at the feet, single merged
+mesh, flat unlit albedo). New models go through `scripts/optimize-character.mjs`
+(a raw Meshy export is ~435k triangles against a ~3k budget) and
+`scripts/inspect-model.mjs` before being wired up.
+
+**The hero's licence is UNCONFIRMED** and the project is aiming at release. Settle what
+Meshy's plan grants for commercial use and record it in ASSETS.md.
+
+**Instruments — do not tune by feel:** `npm run bots` · `npm run balance` · `npm test`
+
+---
+
 Status legend: [ ] todo · [~] in progress · [x] done. Add a one-line "learned:" note under each completed task — this file is the project memory across sessions.
 
 ---
@@ -90,6 +158,17 @@ Plan and per-task tracking live in **MIGRATION-3D.md** (Part C) — that file is
 [x] Part B documentation amendments — DESIGN.md §9 (DOM overlay + ×1/×2 speed toggle), §10 (art plan replaced with low-poly 3D; the "one hard asset" problem is gone), §11 (stack + `/src/render` layout + model refs); CLAUDE.md stack, layout, and a new invariant #2: `/src/render` never contains game logic, `/src/engine` never imports `three`.
 [ ] MG.2 — branch + scaffold. **Blocked on Ben:** the timebox for the kill criterion is set at MG.2 kickoff and is still unchosen.
 **learned:** the migration is affordable because the substrate rule held — the audit found nothing to fix, which means MG.1 was closer to a formality than a gate. The decision with real consequences is MG.2. Suggested amendment to Part C: MG.2's smoke test should include ~40 animated meshes, not just a spinning cube — a cube proves the toolchain, but the thing that can actually kill this migration is 40 SkinnedMeshes at 60fps on a 2021 Android, and that should fail early while falling back is still cheap.
+
+## Open — abilities evaluation
+[x] **Charge only ran left or right** (Ben, 2026-07-30) — a real bug, not a design question. `HeroSystem.move()` continued a released-stick charge along `dir`, which is a left/right *sprite-mirror flag* derived from horizontal input only, never a heading. Steering up and charging launched the hero sideways at full speed. Added a true `headingX/headingY` pair; `dir` still exists for 2D sprite mirroring. **This bug is in the Phaser build too** — a mirrored sprite just made it easy to miss. 3 regression tests.
+[ ] **Charge doesn't make sense** (Ben, 2026-07-30, playing the 3D build). Parked deliberately: the 3D build has zero FX, so Charge currently changes sim state (speed burst, boosted trample, stagger immunity) with no visual whatsoever — it cannot be judged until MG.6 lands particles, camera kick and a speed read. If it still doesn't make sense with feedback, this is a DESIGN §4 pillar problem, not a tuning problem: Charge is the identity verb, and the three-ability loadout would want revisiting whole. See DESIGN §15.7.
+
+## Difficulty pass [1 of n]
+[x] Campaign difficulty curve (2026-07-31)
+**learned:** put a measurable target on "hard enough" before touching anything — `DIFFICULTY_TARGETS` in bots.harness.test.ts now reports actual vs intended per map, so tuning has a scoreboard instead of a vibe. Result: meadow-road 100% (target 90-100), the-ford 100→87% (70-95), crossroads 93→60% (45-75), warlords-march 67→33% (25-55). All four in band; there is now a curve where there was none.
+**economy hypothesis was WRONG, and worth remembering.** Bots were finishing runs with 337-978g spare, so gold plainly was not a constraint and DESIGN pillar 2 names economy pressure as *the* difficulty lever. Steepening the late cost curve (Lv3 +64%, branch +80%) made the campaign marginally EASIER — 93→100% on crossroads. Leftover gold is a symptom, not a cause: the bots simply do not need the towers the gold would buy. Reverted.
+**the curve is on a knife edge.** A coarse sweep found win rate collapsing 100% → 27% between hp×1.0 and hp×1.4. Final scaling is therefore small and per-map: the-ford hp×1.12/count×1.05, crossroads ×1.20/×1.08, warlords-march ×1.26/×1.10. Worth knowing that any future content change can flip a map from trivial to impossible without much warning.
+[ ] **Solo-carry still unsolved on maps 3-4.** Archer and bombard each still clear crossroads and warlords-march alone, so composition is still preference rather than decision. Frost dropped out of the carry list, consistent with it being the weakest carry all along. Wave composition is already varied (shieldbearers, swarms, wolf-riders all present and mixed), so more mixing is not obviously the answer — a maxed archer branch simply out-DPSes the counters. This may need a mechanical change rather than a data one, and that is a design conversation, not a tuning pass.
 
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.

@@ -48,6 +48,12 @@ export const EnemySchema = z.object({
     .optional()
     .describe('Warlord: knocks a tower down one level when it stomps past'),
   spriteRef: SpriteRefSchema,
+  /**
+   * Model manifest id (models.json). Optional during the 3D migration so the
+   * Phaser build keeps working off spriteRef; the renderer falls back to
+   * placeholder geometry when absent. Replaces spriteRef at MG.7.
+   */
+  model: IdSchema.optional(),
 });
 export type Enemy = z.infer<typeof EnemySchema>;
 

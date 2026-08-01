@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Model inspector</title>
+    <style>
+      body { margin: 0; background: #141d18; font: 12px system-ui; color: #cfe; }
+      #hud { position: fixed; top: 8px; left: 8px; z-index: 10; line-height: 1.6; }
+      #hud b { color: #f6c945; }
+    </style>
+  </head>
+  <body>
+    <div id="hud">loading…</div>
+    <script type="module">
+      import * as THREE from 'three';
+      import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+      // Four views of the same model: the game's own camera angle, plus front,
+      // side and top. Facing is impossible to read from bounds alone, so look at
+      // it from the axes the renderer actually cares about.
+      const file = new URLSearchParams(location.search).get('f')
+        ?? 'models/_inspect/Tier1_Rider.glb';
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(1);
+      document.body.appendChild(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color('#141d18');
+      scene.add(new THREE.HemisphereLight(0x6f9fc4, 0x243020, 2.2));
+      const sun = new THREE.DirectionalLight(0xffd9a0, 2.0);
+      sun.position.set(-3, 5, 4);
+      scene.add(sun);
+
+      const hud = document.getElementById('hud');
+
+      new GLTFLoader().load(
+        file,
+        (gltf) => {
+          const model = gltf.scene;
+          const box = new THREE.Box3().setFromObject(model);
+          const size = new THREE.Vector3();
+          const centre = new THREE.Vector3();
+          box.getSize(size);
+          box.getCenter(centre);
+
+          // Normalise exactly the way ModelViewFactory does — height to a fixed
+          // unit — so what shows here is what the game would show.
+          const H = 30;
+          const s = H / size.y;
+          model.scale.setScalar(s);
+          model.position.set(-centre.x * s, -box.min.y * s, -centre.z * s);
+
+          const holder = new THREE.Group();
+          holder.add(model);
+
+          // Ground plane + axis markers: +Z is the direction the game treats as
+          // "forward", so a model facing anywhere else walks backwards.
+          const grid = new THREE.GridHelper(H * 3, 12, 0x4a7a5a, 0x2a4a3a);
+          const zArrow = new THREE.ArrowHelper(
+            new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0.5, 0), H * 1.2, 0x44ff88, H * 0.2, H * 0.1,
+          );
+          const xArrow = new THREE.ArrowHelper(
+            new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0.5, 0), H * 0.9, 0xff4444, H * 0.15, H * 0.08,
+          );
+
+          const views = [
+            { name: 'game camera (55deg, 8deg yaw)', dir: [Math.sin(0.14) * 0.57, 0.82, Math.cos(0.14) * 0.57] },
+            { name: 'front (looking down -Z, sees the +Z face)', dir: [0, 0.08, 1] },
+            { name: 'side (+X)', dir: [1, 0.08, 0] },
+            { name: 'top', dir: [0, 1, 0.001] },
+          ];
+
+          // ?v=N renders one pane full-window, for a close look.
+          const only = new URLSearchParams(location.search).get('v');
+          const panes = only === null ? views : [views[Number(only)] ?? views[0]];
+          const cols = panes.length > 1 ? 2 : 1;
+          const rows = panes.length > 1 ? 2 : 1;
+          const W = Math.floor(window.innerWidth / cols);
+          const Hh = Math.floor(window.innerHeight / rows);
+          renderer.setScissorTest(true);
+
+          function draw() {
+            scene.clear();
+            scene.add(new THREE.HemisphereLight(0x6f9fc4, 0x243020, 2.2));
+            scene.add(sun);
+            scene.add(holder, grid, zArrow, xArrow);
+
+            panes.forEach((v, i) => {
+              const x = (i % cols) * W;
+              const y = (rows - 1) * Hh - Math.floor(i / cols) * Hh;
+              renderer.setViewport(x, y, W, Hh);
+              renderer.setScissor(x, y, W, Hh);
+              const aspect = W / Hh;
+              const half = H * 0.85;
+              const cam = new THREE.OrthographicCamera(-half * aspect, half * aspect, half, -half, 0.1, 500);
+              const d = new THREE.Vector3(...v.dir).normalize().multiplyScalar(120);
+              cam.position.copy(d).add(new THREE.Vector3(0, H * 0.45, 0));
+              cam.lookAt(0, H * 0.45, 0);
+              renderer.render(scene, cam);
+            });
+          }
+          draw();
+
+          let tris = 0;
+          model.traverse((o) => {
+            if (o.isMesh && o.geometry?.index) tris += o.geometry.index.count / 3;
+          });
+          hud.innerHTML =
+            `<b>${file.split('/').pop()}</b><br>` +
+            `raw size  X ${size.x.toFixed(3)}  Y ${size.y.toFixed(3)}  Z ${size.z.toFixed(3)}<br>` +
+            `triangles ${Math.round(tris).toLocaleString()}<br>` +
+            `animations ${gltf.animations.length}<br>` +
+            `<span style="color:#44ff88">green arrow = +Z = forward</span> &nbsp; ` +
+            `<span style="color:#ff8888">red = +X</span><br>` +
+            `panes: game cam | front | side | top`;
+          window.__ready = true;
+        },
+        undefined,
+        (err) => {
+          hud.textContent = 'LOAD FAILED: ' + err;
+          window.__ready = true;
+        },
+      );
+    </script>
+  </body>
+</html>

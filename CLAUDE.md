@@ -10,9 +10,9 @@ Mobile-first tower defense PWA. You are the commander on the field: riding, shoo
 - Vitest for engine-logic tests
 - Zod for runtime schema validation of all game data JSON
 
-M0–M3 shipped on Phaser 3. **MIGRATION-3D.md** is the plan for the render swap and
-is authoritative while it is in progress; the Phaser branch stays intact until its
-MG.7 parity gate passes.
+M0–M3 shipped on Phaser 3; the render layer moved to Three.js at MIGRATION EXIT
+(2026-08-01) and Phaser is gone from the tree. **MIGRATION-3D.md** is now a record of
+how that was done and what it cost — read it for context, not for instructions.
 
 ## Architecture rules (non-negotiable)
 

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SfxRefSchema, SpriteRefSchema } from './common';
+import { IdSchema, SfxRefSchema, SpriteRefSchema } from './common';
 
 /** One purchasable bow level at the forge. `cost` is coins to ENTER the level; level 1 costs 0 (starting kit). */
 export const BowLevelSchema = z.object({
@@ -15,6 +15,8 @@ export type BowLevel = z.infer<typeof BowLevelSchema>;
  * meta tree layers persistent modifiers on top of these bases (M3).
  */
 export const HeroSchema = z.object({
+  /** Model manifest id (models.json). See the note on EnemySchema.model. */
+  model: IdSchema.optional(),
   moveSpeed: z.number().positive().describe('world units per second'),
   radius: z.number().positive().describe('contact radius, world units'),
   margins: z

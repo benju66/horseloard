@@ -20,7 +20,12 @@
       "behavior": "aoe",
       "speed": 260,
       "radius": 30,
-      "bomblets": { "count": 3, "damage": 12, "radius": 26, "spread": 34 },
+      "bomblets": {
+        "count": 3,
+        "damage": 12,
+        "radius": 26,
+        "spread": 34
+      },
       "spriteRef": "proj-bomb",
       "hitSfxRef": "sfx-hit-heavy"
     },
@@ -29,7 +34,10 @@
       "behavior": "aoe",
       "speed": 260,
       "radius": 44,
-      "stun": { "factor": 0, "duration": 0.9 },
+      "stun": {
+        "factor": 0,
+        "duration": 0.9
+      },
       "spriteRef": "proj-bomb",
       "hitSfxRef": "sfx-hit-heavy"
     },
@@ -38,7 +46,10 @@
       "behavior": "aura",
       "radius": 95,
       "tickInterval": 0.8,
-      "slow": { "factor": 0.55, "duration": 1.2 },
+      "slow": {
+        "factor": 0.55,
+        "duration": 1.2
+      },
       "spriteRef": "fx-frost"
     },
     {
@@ -46,7 +57,10 @@
       "behavior": "aura",
       "radius": 95,
       "tickInterval": 2.4,
-      "slow": { "factor": 0, "duration": 1 },
+      "slow": {
+        "factor": 0,
+        "duration": 1
+      },
       "spriteRef": "fx-frost"
     },
     {
@@ -54,7 +68,10 @@
       "behavior": "aura",
       "radius": 105,
       "tickInterval": 0.8,
-      "slow": { "factor": 0.6, "duration": 1.2 },
+      "slow": {
+        "factor": 0.6,
+        "duration": 1.2
+      },
       "vulnerability": 1.25,
       "spriteRef": "fx-frost"
     }
@@ -69,9 +86,24 @@
       "spriteRef": "tower-archer",
       "fireSfxRef": "sfx-bow-release",
       "levels": [
-        { "cost": 25, "damage": 10, "range": 105, "fireInterval": 0.85 },
-        { "cost": 40, "damage": 16, "range": 115, "fireInterval": 0.72 },
-        { "cost": 70, "damage": 24, "range": 125, "fireInterval": 0.6 }
+        {
+          "cost": 25,
+          "damage": 10,
+          "range": 105,
+          "fireInterval": 0.85
+        },
+        {
+          "cost": 40,
+          "damage": 16,
+          "range": 115,
+          "fireInterval": 0.72
+        },
+        {
+          "cost": 70,
+          "damage": 24,
+          "range": 125,
+          "fireInterval": 0.6
+        }
       ],
       "branches": [
         {
@@ -83,7 +115,10 @@
             "damage": 48,
             "range": 200,
             "fireInterval": 0.9,
-            "crit": { "chance": 0.25, "multiplier": 2.5 }
+            "crit": {
+              "chance": 0.25,
+              "multiplier": 2.5
+            }
           }
         },
         {
@@ -91,9 +126,14 @@
           "name": "Rapid",
           "description": "Sheer fire rate — shreds swarms.",
           "cost": 110,
-          "stats": { "damage": 14, "range": 130, "fireInterval": 0.18 }
+          "stats": {
+            "damage": 14,
+            "range": 130,
+            "fireInterval": 0.18
+          }
         }
-      ]
+      ],
+      "model": "build-archer"
     },
     {
       "id": "bombard",
@@ -104,9 +144,24 @@
       "spriteRef": "tower-bombard",
       "fireSfxRef": "sfx-bombard",
       "levels": [
-        { "cost": 40, "damage": 16, "range": 115, "fireInterval": 1.7 },
-        { "cost": 55, "damage": 24, "range": 120, "fireInterval": 1.6 },
-        { "cost": 80, "damage": 34, "range": 125, "fireInterval": 1.5 }
+        {
+          "cost": 40,
+          "damage": 16,
+          "range": 115,
+          "fireInterval": 1.7
+        },
+        {
+          "cost": 55,
+          "damage": 24,
+          "range": 120,
+          "fireInterval": 1.6
+        },
+        {
+          "cost": 80,
+          "damage": 34,
+          "range": 125,
+          "fireInterval": 1.5
+        }
       ],
       "branches": [
         {
@@ -114,7 +169,11 @@
           "name": "Cluster",
           "description": "Shells split into bomblets across the lane.",
           "cost": 130,
-          "stats": { "damage": 30, "range": 130, "fireInterval": 1.5 },
+          "stats": {
+            "damage": 30,
+            "range": 130,
+            "fireInterval": 1.5
+          },
           "projectileId": "bomb-cluster"
         },
         {
@@ -122,10 +181,15 @@
           "name": "Concussion",
           "description": "Blasts stun everything they hit.",
           "cost": 130,
-          "stats": { "damage": 40, "range": 130, "fireInterval": 1.6 },
+          "stats": {
+            "damage": 40,
+            "range": 130,
+            "fireInterval": 1.6
+          },
           "projectileId": "bomb-concussion"
         }
-      ]
+      ],
+      "model": "build-bombard"
     },
     {
       "id": "frost-spire",
@@ -136,9 +200,24 @@
       "spriteRef": "tower-frost",
       "fireSfxRef": "sfx-frost",
       "levels": [
-        { "cost": 35, "damage": 3, "range": 95, "fireInterval": 0.8 },
-        { "cost": 45, "damage": 5, "range": 95, "fireInterval": 0.8 },
-        { "cost": 65, "damage": 8, "range": 95, "fireInterval": 0.8 }
+        {
+          "cost": 35,
+          "damage": 3,
+          "range": 95,
+          "fireInterval": 0.8
+        },
+        {
+          "cost": 45,
+          "damage": 5,
+          "range": 95,
+          "fireInterval": 0.8
+        },
+        {
+          "cost": 65,
+          "damage": 8,
+          "range": 95,
+          "fireInterval": 0.8
+        }
       ],
       "branches": [
         {
@@ -146,7 +225,11 @@
           "name": "Deep Freeze",
           "description": "Periodically freezes the field solid.",
           "cost": 120,
-          "stats": { "damage": 10, "range": 95, "fireInterval": 2.4 },
+          "stats": {
+            "damage": 10,
+            "range": 95,
+            "fireInterval": 2.4
+          },
           "projectileId": "frost-deep-freeze"
         },
         {
@@ -154,10 +237,15 @@
           "name": "Brittle",
           "description": "Chilled enemies take +25% damage from everything.",
           "cost": 120,
-          "stats": { "damage": 8, "range": 105, "fireInterval": 0.8 },
+          "stats": {
+            "damage": 8,
+            "range": 105,
+            "fireInterval": 0.8
+          },
           "projectileId": "frost-brittle"
         }
-      ]
+      ],
+      "model": "build-frost"
     },
     {
       "id": "mill",
@@ -167,9 +255,36 @@
       "projectileId": null,
       "spriteRef": "tower-mill",
       "levels": [
-        { "cost": 50, "damage": 0, "range": 60, "fireInterval": 1, "income": { "value": 4, "interval": 6 } },
-        { "cost": 60, "damage": 0, "range": 60, "fireInterval": 1, "income": { "value": 7, "interval": 6 } },
-        { "cost": 80, "damage": 0, "range": 60, "fireInterval": 1, "income": { "value": 10, "interval": 6 } }
+        {
+          "cost": 50,
+          "damage": 0,
+          "range": 60,
+          "fireInterval": 1,
+          "income": {
+            "value": 4,
+            "interval": 6
+          }
+        },
+        {
+          "cost": 60,
+          "damage": 0,
+          "range": 60,
+          "fireInterval": 1,
+          "income": {
+            "value": 7,
+            "interval": 6
+          }
+        },
+        {
+          "cost": 80,
+          "damage": 0,
+          "range": 60,
+          "fireInterval": 1,
+          "income": {
+            "value": 10,
+            "interval": 6
+          }
+        }
       ],
       "branches": [
         {
@@ -177,7 +292,15 @@
           "name": "Market",
           "description": "Serious money.",
           "cost": 120,
-          "stats": { "damage": 0, "range": 60, "fireInterval": 1, "income": { "value": 16, "interval": 6 } }
+          "stats": {
+            "damage": 0,
+            "range": 60,
+            "fireInterval": 1,
+            "income": {
+              "value": 16,
+              "interval": 6
+            }
+          }
         },
         {
           "id": "mill-beacon",
@@ -188,11 +311,18 @@
             "damage": 0,
             "range": 60,
             "fireInterval": 1,
-            "income": { "value": 10, "interval": 6 },
-            "towerAura": { "radius": 110, "damageMultiplier": 1.25 }
+            "income": {
+              "value": 10,
+              "interval": 6
+            },
+            "towerAura": {
+              "radius": 110,
+              "damageMultiplier": 1.25
+            }
           }
         }
-      ]
+      ],
+      "model": "build-mill"
     }
   ]
 }

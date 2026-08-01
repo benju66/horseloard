@@ -37,6 +37,14 @@ The tension that makes it work: your body can only be in one place. The economy 
 
 **Endless mode** unlocks per map after first clear. Reuses the map, procedurally escalates waves (composition weights + HP/speed multipliers), pays tokens at milestone waves (10/20/30…). This is the replay engine and costs almost nothing beyond the wave generator.
 
+> ⚠ **Unresolved as of 2026-07-31.** Ben has confirmed the goal is *publishable* and
+> wants distinct biomes/worlds with multiple levels each. That is in direct tension with
+> the v1 commitment below, which exists for a reason worth re-reading before overriding:
+> four maps took a full tuning pass to get into their difficulty bands, and the curve
+> collapses 100%→27% between hp ×1.0 and ×1.4. Adding maps is cheap; making them good is
+> not. Settle this explicitly — either revise the commitment with eyes open, or keep it
+> and treat extra worlds as post-v1 content drops.
+
 **v1 content commitment: 4 maps, single biome (grasslands), one boss.** Lean enough to ship, structured so maps 5–8 and a second biome are pure content drops. Rationale: better to tune 4 maps to publishable quality than spread across 8.
 
 ---
@@ -100,6 +108,56 @@ Launch roster of 7 + 1 boss, all data-driven off one EnemyEngine (same contract 
 | **Boss: Warlord** (map 4) | Slow, massive HP, periodically war-cries (speed buff to others), breaks one tower to Lv-1 on contact | Everything + focus fire; hero must kite |
 
 Shieldbearer and Looter are the two that make *hero position* a counter, not just damage math — they're the roster's pillar-1 enforcers.
+
+### ⚠ Open design problem: nothing hard-counters the Archer (found 2026-07-31)
+
+Measured with the bot harness: **Archer alone clears maps 3 and 4. So does Bombard.**
+Composition is therefore preference, not decision, and every level poses the same
+question — which is the thing that would make twenty levels feel like one.
+
+This is a design gap, not a tuning failure. Read the Counters column above: every
+entry is something an Archer can do. Rapid shreds Swarms and Runners; Sniper is the
+"raw DPS" that answers Wolf Riders; a tower placed beside a Shieldbearer simply
+bypasses its 150° arc. **No enemy in the roster is one an Archer cannot answer**, so
+no amount of wave mixing or HP scaling will make you want a second tower type. It has
+already been tried: composition on maps 3–4 is varied and Archer still carries.
+
+Every tower-defense game that keeps its roster relevant solves this with a *hard*
+counter — something a tower cannot do at all, rather than does slightly worse.
+
+**Option A — Damage types vs armor** (Kingdom Rush's solution, and the standard one).
+Enemies gain `armor`; towers gain a damage type. Physical (Archer) is reduced by
+armor; explosive (Bombard) and magic (Frost) ignore it. An armored enemy then hard-
+counters Archer without being immune to it. *Cost: an enemy field, a tower field, and
+one line where damage is applied.* Highest payoff per unit of work, and it maps
+cleanly onto the four towers we already have.
+
+**Option B — Binary immunities** (Bloons' solution). An enemy a tower literally cannot
+damage or even target: flying units, or a shield that only breaks to AoE. Note §5
+already describes Bombard as "ground only", which implies flyers were intended and
+never built — that hook is sitting unused. *Strongest effect, but binary gates can
+feel like gotchas and punish a player who cannot see why they lost.*
+
+**Option C — Make the positional counter real** (our own idea, currently too soft).
+Shieldbearer's frontal block is 0.25× over 150°. Widen the arc and deepen the
+reduction so a front-facing single-target tower is genuinely useless against it, and
+flanking or AoE becomes mandatory. *Cost: DATA ONLY, zero engine work* — the cheapest
+possible test of whether hard counters fix solo-carry, and it reinforces pillar 1
+because hero position becomes the answer.
+
+**Option D — Barracks** (§5's planned expansion tower). Blockers are a non-DPS answer,
+so they change the question rather than the numbers. *Cost: real engine work — friendly
+units are a new entity type, not a projectile behaviour.*
+
+**Recommended order: C, then A.** C is free and tests the hypothesis that hard counters
+are what's missing. A is the industry-standard fix and cheap for what it buys. B and D
+are bigger swings worth taking only once C and A are proven insufficient.
+
+**Success is measurable, not a feeling:** `npm run bots` must report `solo-carriers 0`
+on crossroads and warlords-march, while the win-rate bands in `DIFFICULTY_TARGETS`
+stay green and all four towers keep appearing in winning runs. The last clause matters —
+the towers are currently well balanced against each other, which is rare and worth not
+breaking on the way to fixing this.
 
 **Elite modifier:** any enemy can spawn crowned (~1 in 12, weighted up in later waves and endless): +150% HP, +100% coin drop, visible glow. One multiplier system on the existing roster — perceived variety doubles at near-zero cost.
 
@@ -260,3 +318,4 @@ Still parked, none blocking:
 4. **Co-op design** (long-term): hedged in architecture (§11), otherwise out of scope until v1 ships.
 5. **Second biome theme** for maps 5–8 (frost? desert?) — content drop, decide at M3.
 6. **Name.** "Horse Lord" is a working title.
+7. **Abilities need a real evaluation** (Ben, 2026-07-30, on the 3D build): *"charge doesn't make sense"*. This is not a small note — §4 makes Charge the **identity verb**: the horse as weapon, the thing that makes a new player's instinct to ride into enemies correct, and the escape that pairs with stagger. If it does not read as any of those, a pillar is wobbling and the whole three-ability loadout wants revisiting, not patching. Deliberately parked until the 3D build has FX (MG.6) — a Charge with no particles, camera kick or speed read is indistinguishable from a dead button, so it cannot be judged fairly yet. Re-evaluate on device once feedback exists, and treat the answer as a design decision rather than a tuning pass.

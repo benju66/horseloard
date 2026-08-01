@@ -18,6 +18,30 @@ import { BOTS, forcedComposition, runBot, type BotRunResult } from './bots';
  */
 const SEEDS = [11, 23, 42, 57, 88];
 
+/**
+ * The difficulty curve DESIGN §13 promises — "gentle map 1, honest challenge by
+ * map 4" — expressed as something measurable instead of a feeling.
+ *
+ * `winRate` is the band a competent bot should land in. 100% everywhere means
+ * the campaign has no curve; 0% means it is not a curve either, just a wall.
+ *
+ * `soloCarry` is the more interesting one: may a SINGLE tower type clear this
+ * map on its own? Map 1 yes — a new player picking one tower and doing fine is
+ * the point. By map 3 it should be no, because that is what makes composition a
+ * decision rather than a preference. This is the dial that protects tower
+ * balance while difficulty rises: raising enemy HP alone would just crown
+ * whichever tower has the highest dps.
+ */
+export const DIFFICULTY_TARGETS: Record<
+  string,
+  { winRate: [number, number]; soloCarry: boolean; intent: string }
+> = {
+  'meadow-road': { winRate: [90, 100], soloCarry: true, intent: 'nearly unloseable — it teaches' },
+  'the-ford': { winRate: [70, 95], soloCarry: true, intent: 'comfortable, but leaks punish' },
+  'crossroads': { winRate: [45, 75], soloCarry: false, intent: 'composition starts to matter' },
+  'warlords-march': { winRate: [25, 55], soloCarry: false, intent: 'honest challenge' },
+};
+
 function pct(n: number, of: number): string {
   return of === 0 ? '  –' : `${Math.round((n / of) * 100)}%`.padStart(4);
 }
@@ -71,6 +95,36 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     });
   }
 
+  /**
+   * Economy pressure is the lever DESIGN pillar 2 actually names — difficulty
+   * should come from it, never from twitch aiming. So measure whether gold is
+   * actually scarce: leftover gold at run's end, and how much of the map the
+   * player could afford to fill. Fully-funded boards mean plot and tower choice
+   * are not decisions, which is both an easiness problem AND the thing most
+   * likely to flatten tower balance if difficulty is raised by HP alone.
+   */
+  it('reports whether gold is actually scarce', () => {
+    const lines: string[] = [];
+    for (const mapId of Object.keys(data.maps)) {
+      const runs = BOTS.flatMap((f) => SEEDS.map((seed) => runBot(botData, mapId, f, seed)));
+      const avgLeft = runs.reduce((s, r) => s + r.goldLeft, 0) / runs.length;
+      const avgTowers = runs.reduce((s, r) => s + r.towers.length, 0) / runs.length;
+      const plots = data.maps[mapId]!.plots.length;
+      const maxed = runs.reduce(
+        (s, r) => s + r.towers.filter((t) => t.includes(':')).length,
+        0,
+      ) / runs.length;
+      lines.push(
+        `  ${mapId.padEnd(16)} leftover ${Math.round(avgLeft).toString().padStart(4)}g   ` +
+          `plots filled ${avgTowers.toFixed(1)}/${plots}   branched ${maxed.toFixed(1)}`,
+      );
+    }
+    console.log(
+      '\n[economy pressure]  leftover gold = slack; high leftover means build order is not a decision\n' +
+        lines.join('\n'),
+    );
+  });
+
   it('reports tower preference across every free-choice run', () => {
     const used = new Map<string, number>();
     for (const r of all) {
@@ -85,6 +139,49 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     });
     console.log(
       '\n[tower preference — what the valuation model LIKES, not what works]\n' +
+        lines.join('\n'),
+    );
+  });
+
+  /**
+   * The scoreboard. Actual difficulty against the intended curve, per map, so
+   * a tuning pass has a target instead of a vibe. Reports rather than asserts —
+   * this is an instrument for `npm run bots`, not a gate on `npm test`.
+   */
+  it('reports the difficulty curve against its target', () => {
+    const lines: string[] = [];
+    let failures = 0;
+
+    for (const mapId of Object.keys(data.maps)) {
+      const target = DIFFICULTY_TARGETS[mapId];
+      if (!target) {
+        lines.push(`  ${mapId.padEnd(16)} (no target set)`);
+        continue;
+      }
+
+      const runs = BOTS.flatMap((f) => SEEDS.map((seed) => runBot(botData, mapId, f, seed)));
+      const winRate = Math.round((runs.filter((r) => r.outcome === 'win').length / runs.length) * 100);
+      const [lo, hi] = target.winRate;
+      const winOk = winRate >= lo && winRate <= hi;
+
+      // Solo carry: does ANY single tower clear this map by itself?
+      const carriers = data.towers.towers.filter((t) => {
+        const solo = SEEDS.map((seed) => runBot(botData, mapId, forcedComposition(t.id), seed));
+        return solo.every((r) => r.outcome === 'win');
+      });
+      const soloOk = target.soloCarry ? true : carriers.length === 0;
+
+      if (!winOk || !soloOk) failures++;
+      lines.push(
+        `  ${mapId.padEnd(16)} win ${String(winRate).padStart(3)}% (want ${lo}-${hi}) ${winOk ? '✓' : '✗'}   ` +
+          `solo-carriers ${carriers.length}${target.soloCarry ? ' (allowed)' : ` (want 0) ${soloOk ? '✓' : '✗'}`}` +
+          `\n${' '.repeat(20)}${target.intent}` +
+          (carriers.length ? `\n${' '.repeat(20)}carried by: ${carriers.map((t) => t.id).join(', ')}` : ''),
+      );
+    }
+
+    console.log(
+      `\n[difficulty curve vs target]  ${failures === 0 ? 'ON TARGET' : `${failures} map(s) off target`}\n` +
         lines.join('\n'),
     );
   });

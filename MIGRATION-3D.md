@@ -124,28 +124,305 @@ a formality. The decision with real consequences is **MG.2**, where the timebox 
 the kill criterion get set. That number is Ben's to choose and is still unset.
 
 ### MG.2 — Branch + scaffold
-[ ] Branch `3d-migration`. Add three + types; remove nothing yet. Render smoke test: ortho camera, lights, palette-textured cube on a ground plane, on-device via LAN.
+[x] Branch `3d-migration`. Add three + types; remove nothing yet. Render smoke test: ortho camera, lights, palette-textured cube on a ground plane, on-device via LAN.
 **Accept:** 60fps spinning cube with shadow on your phone. (Trivial on purpose — proves toolchain + device loop.)
+**Amended:** the cube alone proves the toolchain but not the thing that can kill this migration, so the smoke test also carries a tappable crowd of animated shadow-casters (0 → 40 → 80 → 120). Fail early, while falling back is still free.
 
-### MG.3 — World render
-[ ] Ground plane with organic-edged path, plot markers, gate + forge placeholder meshes — all driven from map JSON. Camera block and lighting block (dusk model per Part A.1) added to map schema. Prop placement from map data (sparse, path-edge clusters).
+**Timebox (set 2026-07-30):** 8 working sessions to MG.7. Stall signal = MG.4 not done by session 5. Hard early gate = the on-device fps check below. Ben to override at will.
+
+#### MG.2 progress — desktop verification done, device check outstanding
+
+Branch `3d-migration` cut; `three` in dependencies, `@types/three` in devDependencies.
+Scaffold: `src/render/palette.ts` (the one-texture flat-palette workflow, generated
+in code so recolouring is a diff), `src/render/smoke.ts`, `smoke3d.html`. Dev-only —
+served at `/smoke3d.html`, not in the PWA build, and `src/` game code is untouched.
+
+Verified headlessly: module executes, WebGL2 context acquired, renderer sized,
+PCFSoft shadows on, **zero GL errors**, scene draws.
+
+**FINDING — draw calls scale at 2× per shadow-casting mesh** (one shadow-map pass,
+one main pass). Measured:
+
+| crowd | draw calls | triangles |
+|---|---|---|
+| 0 | 4 | 48 |
+| 40 | **84** | 1,008 |
+| 80 | 164 | 1,968 |
+| 120 | 244 | 2,928 |
+
+Part A budgets **~100 draw calls**; 40 animated casters alone consume 84 of them,
+before a single tower, projectile, coin, prop, gate or forge. The perf budget's
+"40+ animated enemies" and its "~100 draw calls" are in direct tension as written.
+
+This **promotes Part A.1's soft blob shadows from an aesthetic preference to a
+budget requirement**: blob shadows are geometry in the main pass, so they cost one
+call, not two — 40 casters drops from 84 calls to ~44 and the budget breathes again.
+Decide this at MG.3/MG.6 rather than carrying real shadow-map casters into MG.4.
+Triangle counts are trivial and not the constraint; draw calls are.
+
+#### MG.2 RESULT — 2026-07-30 · **PASS**
+
+**60 fps held through every step, including 120 animated casters / 240 draw calls**
+(Ben, on-device). The gate passed at three times the enemy count the perf budget
+asks for, and at 2.4× the documented draw-call budget.
+
+**This retracts the blob-shadow conclusion above.** That finding read 84 draw calls
+against Part A's "~100" and concluded shadow-map casters were unaffordable. The
+device disagrees: it renders 240 calls at 60fps without complaint, so the ~100
+figure was pessimistic, not a wall. Soft blob shadows stay a live option **on
+aesthetic grounds** (Part A.1 wants soft and subtle, and shadow-map casters look
+crisp), but they are no longer forced by the budget. Do not treat draw calls as the
+binding constraint on the strength of that earlier note.
+
+**What this does NOT prove — the real unknown moves to MG.4.** The crowd is
+12-triangle boxes: 2,928 triangles at 120 meshes. Real chibi models at the Part A.2
+budget of ≤3k tris each would be ~360,000 triangles at the same count — two orders
+of magnitude more, rendered twice (shadow pass + main pass) — plus per-bone skinning
+work that boxes do not pay at all. **The honest reading of this pass is that the
+toolchain, the device loop, draw-call volume, and transform churn are all fine. Mesh
+complexity and skinning are untested.** Re-run this gate with real rigged models the
+moment MG.4 has them, before the roster is built out on top of them.
+
+**Observed for MG.3 to fix** (cosmetic, expected — MG.2 was toolchain and perf only):
+camera framing pushes the lane spread off the right edge and the ground plane does
+not fill the portrait frame; the dusk lighting model is not reading — it looks flat
+rather than cool-ambient-with-a-warm-corridor, so the hemisphere light is doing too
+much of the work and the warm directional too little; the path stripe is invisible
+under the crowd.
+
+**Superseded — original outstanding instructions (kept for the record):**
+`npm run dev`, then open `http://192.168.4.30:5173/smoke3d.html` on the device
+(same LAN; IP will change between networks). Readout shows fps, caster count and
+draw calls; tap to cycle the crowd. Green ≥55fps, amber ≥40, red below.
+Record the fps at each step here. **If 40 casters can't hold 60fps, stop and
+reconsider before MG.3** — that is what this gate is for.
+
+**Honest limitation:** the crowd is plain `Mesh`, not `SkinnedMesh`. This measures
+draw calls, shadow cost and transform churn — not skinning. Real rigged models land
+at MG.4 and the number will move. A pass here means "not obviously doomed", not
+"budget met".
+
+### MG.3 — World render — DONE (Ben confirmed on device 2026-07-30)
+[x] Ground plane with organic-edged path, plot markers, gate + forge placeholder meshes — all driven from map JSON. Camera block and lighting block (dusk model per Part A.1) added to map schema. Prop placement from map data (sparse, path-edge clusters).
 **Accept:** the M0 map is recognizable in 3D with the dusk lighting mood; sim entities (headless) walk the path as debug markers.
 
-### MG.4 — Entity views + assets
-[ ] Execute the Part A.2 pipeline: model manifest schema (logical states → clips, `procedural` fallback), `npm run asset:add` helper, base models sourced + processed, hero composite (dedicated tuning session), enemy variant system (scale/tint/props), tower views per level, coin/projectile InstancedMesh pools, swarm rigid-instanced path.
+#### MG.3 progress — mechanically verified, look needs Ben's eye
+
+`/world3d.html?map=<id>` renders any map from its JSON with a **real `Simulation`**
+ticking behind it. Nothing in the render layer moves anything: the sim owns every
+position, the renderer reads and places boxes. Markers tracked `aliveCount` exactly
+at every sample across a full multi-wave run (16→16, 12→12, 17→17), waves advanced,
+and the gate took leak damage — the seam holds under load, not just at boot.
+
+Schema gained `camera` and `lighting` blocks (`MapCameraSchema`, `MapLightingSchema`).
+Both fully defaulted, so **all four shipped maps validate with zero edits**.
+
+| map | lanes | plots | frustum | playfield fill | clipped | draws |
+|---|---|---|---|---|---|---|
+| meadow-road | 1 | 6 | 987 | 0.69 | no | 112 |
+| the-ford | 2 | 7 | 1067 | 0.72 | no | 98 |
+| crossroads | 2 | 8 | 1083 | 0.97 | no | 121 |
+| warlords-march | 2 | 8 | 1117 | 0.66 | no | 121 |
+
+**FINDING — camera yaw is expensive on portrait maps, and it caused the MG.2
+framing bug.** Measured on meadow-road at 19.5:9: the map's corners projected to
+±1.666 NDC at the original yaw of 20° — overflowing the frame by 67%. Yaw swings a
+tall map's diagonal across the short screen axis, so the required frustum grows
+fast: 0° needs 969, 6° needs 1151, 20° needs 1433. Elevation barely matters; width
+is the binding axis throughout. **Default yaw dropped 20° → 8°**, and the schema now
+says so, because "slight yaw" turns out to be load-bearing rather than stylistic.
+
+**Camera now auto-fits per device.** `frustumHeight` became *optional*: omit it and
+the camera solves the tightest framing that still shows the whole playfield at the
+current viewport aspect, re-solved on every resize. That handles unknown phone
+aspects properly instead of hard-coding one. Fitting to **content** (lanes, plots,
+gate, forge) rather than the world rectangle recovered 18% zoom on meadow-road
+(1209 → 987) — the world corners are empty grass and framing them wastes the zoom
+that chibi-scale readability needs. Props are deliberately excluded from the fit;
+letting the outermost ones crop at the frame edge reads as intentional.
+
+**Outstanding — needs your eyes, not a number.** The acceptance criterion is
+"recognizable, with the dusk lighting mood", which no headless check can answer.
+`npm run dev` → `http://192.168.4.30:5173/world3d.html` (append `?map=the-ford`,
+`?map=crossroads`, `?map=warlords-march`). The map plays itself. Specifically worth
+judging: does the warm path corridor read as the brightest region against the cool
+terrain, or is it still flat as it was at MG.2; is the 8° yaw enough depth cue or
+does it want more (it costs zoom); does the organic path edge read as a worn track
+or as a wobbly stroke.
+
+### MG.4 — Entity views + assets — MOSTLY DONE; tail listed below
+[~] Execute the Part A.2 pipeline: model manifest schema (logical states → clips, `procedural` fallback), `npm run asset:add` helper, base models sourced + processed, hero composite (dedicated tuning session), enemy variant system (scale/tint/props), tower views per level, coin/projectile InstancedMesh pools, swarm rigid-instanced path.
 **Accept:** full M0 roster visible and animated per A.2; proportion gate passed on-device; substrate test still passes (fake tower #5 via JSON incl. model ref, zero engine edits).
 
+#### MG.4 progress — the system, on placeholders (assets outstanding)
+
+Decision (Ben, 2026-07-30): **build the system first, source models later.** The
+manifest makes a missing glTF a valid state, so the whole roster is playable before
+a single asset exists and each real model swaps in as a data edit. Placeholders are
+deliberately crude primitives — impossible to mistake for finished art, so they
+cannot quietly become the shipped look.
+
+**Done:**
+- `src/data/schemas/model.ts` — the manifest. Logical states (`idle`/`walk`/`attack`/
+  `death`/`siege`/`stagger`) → clip names, with `procedural` as a first-class value.
+  Every clip optional: a model shipping only a walk cycle is usable day one.
+- **Variant system** — `base` chains with scale composing multiplicatively, tint by
+  palette slot, and props attached at sockets (`head`/`hand`/`back`/`mount`/`root`).
+  The A.2 table is now data: verified resolving to grunt 1.0, runner 0.9, brute 1.40,
+  warlord 1.80 + crown + cape, swarm 0.6 + `instanced: true`.
+- `src/data/models.json` — 6 base models covering the full roster plus 4 tower entries.
+- Loader validation: unknown model refs and **cyclic base chains** both fail loudly at
+  boot with the path and the known-ids list. A cycle would otherwise hang the resolver
+  at render time, which is a miserable place to find it. 5 new loader tests.
+- `model` added (optional) to enemy, tower and hero schemas **alongside** `spriteRef`,
+  so the Phaser build keeps working until MG.7 removes it.
+- `src/render/entityViews.ts` — pooled per model id; enemies spawn and die constantly
+  and a mesh tree per spawn is exactly the churn CLAUDE.md #6 forbids. Verified views
+  tracking `aliveCount` 1:1 across a full run with 6 distinct variants on screen.
+- **Substrate guard extended** to model and prop ids — it now polices the newest
+  content surface automatically, and the engine still names none of it.
+
+**Remaining tail (2026-07-31), all small:**
+- Models missing: the **horse** (hero mount — Quaternius is behind Google Drive, manual
+  download), a **wolf** for Wolf Rider, and something for the **swarm**. Those three
+  render as placeholder geometry; the other six enemy types and all four towers use
+  real glTF.
+- **Gate, forge and props are still procedural boxes and cones in `world.ts`.** The
+  Kenney Castle and Nature models are downloaded, ledgered and sitting unused. Wiring
+  them is roughly an hour and is the largest remaining visual upgrade — the gate is on
+  screen constantly and every map carries 20+ props.
+- Tower views do not vary per level (level currently reads as height only).
+
+**Originally outstanding, now largely superseded:**
+- glTF loading, `npm run asset:add` (gltf-transform pipeline), hero composite tuning,
+  and the **proportion gate** all need real models — Ben's step per A.2.
+- Tower views per level, and the swarm instanced path: `isInstanced()` reports it
+  correctly but the renderer does not yet take that branch, so swarms currently draw
+  as individual meshes. Both are code, not assets — next session.
+- The perf re-test with real rigged models (see MG.2 result) is still the open risk.
+
 ### MG.5 — DOM UI overlay
-[ ] Joystick, HUD, start-wave, speed toggle (x1/x2 via sim tick multiplier, persisted in settings), results → DOM. World-anchored bubbles/HP bars/damage numbers via projection helper.
+[x] Joystick, HUD, start-wave, speed toggle (x1/x2 via sim tick multiplier, persisted in settings), results → DOM. World-anchored bubbles/HP bars/damage numbers via projection helper.
 **Accept:** on-device: full interaction parity with the Phaser build plus working 2x speed; bubbles track entities under camera projection correctly.
 
-### MG.6 — FX + decals
-[ ] Per-unit team rings (red enemies / blue hero), range/targeting ring decals, soft unit shadows, pooled particle bursts (kill, coin, ability), stagger shove feedback, gate siege visual state.
+#### MG.5 complete — 2026-07-30
+
+Joystick (feel ported verbatim: 55px throw, 24px knob), HUD, contextual bubbles
+with the tuned reach constants, ability bar built from the roster, start-wave with
+early-start bonus, x1/x2 speed toggle, results screen, restart, map select with
+linear unlocks and stars, meta tree with free respec, and IndexedDB persistence.
+
+Verified headlessly end to end: a losing run on meadow-road paid **5 tokens**
+(defeat pays per wave — a failed run is progress, DESIGN §7), recorded
+`bestWavesCleared: 5`, and map select showed the new balance. Buying Swift Steed
+to rank 2 (+10 move speed per rank) moved the hero from **150 → 170 units/sec** in
+the next run — so the meta tree genuinely reaches the sim, still as a pure data
+transform applied before the Simulation exists.
+
+**Bug found and fixed on the way (engine, not render):** Charge only ever ran
+left or right. `HeroSystem` continued a released-stick charge along `dir`, a
+left/right *sprite-mirror flag*, never a heading — steering up and charging sent
+the hero sideways at full speed. Added a true heading; `dir` stays for 2D
+mirroring. **This bug is in the Phaser build too**; a mirrored sprite hid it.
+That is the migration paying for itself: 3D has no mirror to hide behind.
+
+MG.6 landed early as a side effect (team rings, range decals, particles, camera
+kick) — see the FX commit.
+
+**Outstanding for MG.7:** endless mode entry, on-device perf profile with the
+full roster, then remove Phaser and merge.
+
+### MG.6 — FX + decals — DONE (landed early, out of order)
+[x] Per-unit team rings (red enemies / blue hero), range/targeting ring decals, soft unit shadows, pooled particle bursts (kill, coin, ability), stagger shove feedback, gate siege visual state.
 **Accept:** the gate-siege moment (brutes battering, ride back, Charge, repair) reads clearly in 3D; factions readable at a glance from rings alone.
 
-### MG.7 — Parity + performance gate
-[ ] Full run parity with the Phaser build. Profile on-device: 40+ enemies, shadows, 60fps. Remove Phaser dependency; merge to main.
+### MG.7 — Parity + performance gate — on-device PASS; only the merge remains
+[~] Full run parity with the Phaser build. Profile on-device: 40+ enemies, shadows, 60fps. Remove Phaser dependency; merge to main.
 **Accept — MIGRATION EXIT:** M0 exit criteria re-met in 3D. Then resume M1 (The Ford vertical slice) with art/audio/juice tasks interpreted for 3D.
+#### MG.7 progress — parity closed, perf measured, merge is Ben's call
+
+**Parity audit against GameScene found seven gaps**, all now closed: coins (the
+worst — pillar 1 is the loot line and it was invisible), projectiles, enemy HP
+bars, elite rings, supply chests with draining timers, the looter carried-gold
+marker, special-wave banners, and hit flash. Coins/projectiles/bars/rings all
+ride InstancedMesh: 181 coins measured at **zero** extra draw calls.
+
+**Measured at the budget condition** (desktop; the fps number must come from a
+phone):
+
+| alive | coins | draw calls | triangles |
+|---|---|---|---|
+| 40 | 60 | 384 | 97,906 |
+| 60 | 120 | 509 | 100,142 |
+| 80 | 180 | 639 | 102,526 |
+
+Draws scale ~6.3 per enemy, because a placeholder unit is a Group of 2–3 meshes
+and every one of them casts a shadow (shadow pass + main pass). MG.2 proved 240
+draws at 60fps on-device; 384 is 60% beyond what was tested, so **the 40-enemy
+case is genuinely unverified on hardware.**
+
+**The encouraging part:** real glTF characters are typically ONE skinned mesh,
+so they should cost ~2 draws each instead of ~6 — the placeholders are *worse*
+than the real thing on this axis. If the on-device number disappoints, the
+cheap lever is blob shadows (halves every caster) before anything drastic.
+Triangles barely move with coin count, confirming the instancing; the bulk is
+props and plot geometry.
+
+**ON-DEVICE: PASS (Ben, 2026-07-31) — "everything works on mobile."** Reported after
+real glTF models landed, so this covers the ~9-mesh-per-character cost, not the cheap
+placeholders. Desktop measured 822 draw calls / 446k triangles at 40 enemies.
+
+*Precision note:* Ben's report was general rather than a specific reading at 40+
+simultaneous enemies. If a late-wave stutter ever shows up, **blob shadows are the
+measured lever** — dropping castShadow on characters alone takes 822 -> 466 draws and
+446k -> 239k triangles, and Part A.1 prefers that look anyway. Nothing needs doing
+unless it does.
+
+**Endless mode entry: DONE 2026-07-31.** It was still listed as outstanding at MG.5 and
+had simply never been built in the 3D shell — `game3d.ts` hardcoded `endless: false`
+with no way to reach it, while the Phaser build had an ∞ button per cleared map. The
+map select now carries the same control, showing `best N` from `save.endlessBest`.
+
+Two things fell out of doing it:
+
+- **The wave set was being passed to `Simulation` by reference.** Endless appends
+  generated waves onto it as it runs, so enabling endless without cloning would have
+  left those waves permanently attached to the map and corrupted the next campaign
+  run. The Phaser build cloned it and said why; the 3D shell had dropped that. Now
+  cloned unconditionally.
+- **Endless had zero test coverage** — nothing in the engine, nothing anywhere. It is
+  wave-budget and economy math, both of which CLAUDE.md asks to be covered, and it is
+  the mode where a mistake is least visible. `src/engine/endless.test.ts` now covers
+  roster exclusion across the depth curve, hp/budget scaling, lane validity, that
+  endless never declares victory, and that milestone payouts pay only for newly
+  reached milestones without lowering the record.
+
+**MIGRATION EXIT reached 2026-08-01.** Ben: "Do all of it." Phaser removed, branch
+merged to main.
+
+Removed: `src/main.ts`, `src/scenes/` (5 files), and the three superseded Phaser UI
+widgets whose DOM replacements live in `src/ui/dom/`. `game3d.html` became `index.html`;
+the dual-entry rollup input, the phaser manual chunk and the branch-local `start_url`
+all went with it.
+
+**Precache 2,071 KiB → 863 KiB — 58% smaller.** Phaser was 1,208 KB raw / 332 KB gzipped
+of a bundle that never called into it.
+
+Two things surfaced while verifying the production build, neither of them caused by the
+removal:
+
+- **A stale service worker served the old Phaser app.** The first production check
+  reported `window.Phaser` defined and zero DOM map rows; the bundle contained no
+  Phaser at all. A workbox precache from an earlier build on the same port was
+  answering every request. Worth knowing because **every existing PWA install has one**
+  — `registerType: 'autoUpdate'` means it self-heals, but the first load after deploy
+  can still serve the old app.
+- **11 doomed texture requests per boot.** The Kenney kits asked for the
+  `Textures/colormap.png` that was never downloaded. `scripts/strip-missing-texture.mjs`
+  now removes the dangling reference from the GLB JSON chunk directly — gltf-transform
+  cannot even open these files, because resolving that resource is part of reading them.
+  Console errors on a cold load: 16 → 0.
+
 **Kill criterion:** the Phaser branch is kept intact until MG.7 passes. If the migration stalls badly against the timebox Ben sets at MG.2 kickoff, fall back to the Phaser branch and ship 2D — a finished 2D game beats an unfinished 3D one. A migration that can't fail cleanly is the kind that kills solo projects.
 
 ## Part D — Kickoff prompt (paste into Claude Code)

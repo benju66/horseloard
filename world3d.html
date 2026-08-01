@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Horse Lord — MG.3 world render</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        background: #131c11;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      #app {
+        position: fixed;
+        inset: 0;
+        display: block;
+      }
+      #readout {
+        position: fixed;
+        top: env(safe-area-inset-top, 8px);
+        left: 0;
+        right: 0;
+        text-align: center;
+        padding: 10px;
+        font: 600 15px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: #8fe36a;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="app"></canvas>
+    <div id="readout">starting…</div>
+    <script type="module" src="/src/render/worldPreview.ts"></script>
+  </body>
+</html>

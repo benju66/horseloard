@@ -13,13 +13,16 @@
     "icons": "node scripts/generate-icons.mjs",
     "sprites": "python scripts/generate-hero-sprites.py",
     "balance": "vitest run --mode balance src/engine/balance.harness.test.ts",
-    "bots": "vitest run --mode balance src/engine/bots.harness.test.ts"
+    "bots": "vitest run --mode balance src/engine/bots.harness.test.ts",
+    "asset:optimize": "node scripts/optimize-model.mjs"
   },
   "dependencies": {
-    "phaser": "^3.90.0",
+    "three": "^0.185.1",
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "^4.4.2",
+    "@types/three": "^0.185.1",
     "typescript": "^5.6.0",
     "vite": "^7.0.0",
     "vite-plugin-pwa": "^1.0.0",
