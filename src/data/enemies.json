@@ -89,6 +89,20 @@
       "model": "unit-wolf-rider"
     },
     {
+      "id": "raven",
+      "name": "War Raven",
+      "hp": 26,
+      "speed": 82,
+      "radius": 10,
+      "coinValue": 7,
+      "siegeDps": 3,
+      "staggersHero": true,
+      "eliteEligible": true,
+      "flying": true,
+      "spriteRef": "enemy-swarm",
+      "model": "unit-raven"
+    },
+    {
       "id": "looter",
       "name": "Looter",
       "hp": 25,

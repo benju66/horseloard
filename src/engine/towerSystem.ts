@@ -242,18 +242,18 @@ export class TowerSystem {
         }
       }
 
+      const tower = this.towersById.get(plot.towerId)!;
       const def = this.projectileDef(plot);
       if (def?.behavior === 'aura') {
-        this.tickAura(plot, stats, def, dt);
+        this.tickAura(plot, stats, def, dt, tower.targetsFlying);
         continue;
       }
 
-      const tower = this.towersById.get(plot.towerId)!;
       if (tower.targeting === 'none') continue;
       plot.cooldown -= dt;
       if (plot.cooldown > 0) continue;
       if (!def || stats.damage <= 0) continue;
-      const target = this.acquire(tower.targeting, plot.x, plot.y, stats.range);
+      const target = this.acquire(tower.targeting, plot.x, plot.y, stats.range, tower.targetsFlying);
       if (!target) continue;
       this.projectiles.spawn(plot.x, plot.y - 26, target.id, this.rollDamage(plot, stats), def, false);
       plot.cooldown = this.buffedInterval(stats.fireInterval);
@@ -265,6 +265,7 @@ export class TowerSystem {
     stats: TowerStats,
     def: Extract<Projectile, { behavior: 'aura' }>,
     dt: number,
+    targetsFlying: boolean,
   ): void {
     plot.cooldown -= dt;
     if (plot.cooldown > 0) return;
@@ -277,6 +278,7 @@ export class TowerSystem {
       const dx = e.x - plot.x;
       const dy = e.y - plot.y;
       if (dx * dx + dy * dy > rSq) continue;
+      if (e.config.flying && !targetsFlying) continue;
       if (def.slow) this.enemies.applySlow(e.id, def.slow.factor, def.slow.duration, def.vulnerability ?? 1);
     }
     if (damage > 0) {
@@ -285,6 +287,7 @@ export class TowerSystem {
       for (const e of this.enemies.enemies) {
         const dx = e.x - plot.x;
         const dy = e.y - plot.y;
+        if (e.config.flying && !targetsFlying) continue;
         if (dx * dx + dy * dy <= rSq) hits.push(e.id);
       }
       for (const id of hits) this.enemies.applyDamage(id, damage); // auras ignore shield facing
@@ -318,11 +321,21 @@ export class TowerSystem {
     return tower.projectileId;
   }
 
-  private acquire(mode: TargetingMode, x: number, y: number, range: number): EnemyInstance | null {
+  private acquire(
+    mode: TargetingMode,
+    x: number,
+    y: number,
+    range: number,
+    targetsFlying: boolean,
+  ): EnemyInstance | null {
     const rangeSq = range * range;
     let best: EnemyInstance | null = null;
     let bestScore = Infinity;
     for (const e of this.enemies.enemies) {
+      // A ground-only tower cannot even see an airborne enemy, so it holds fire
+      // rather than wasting its shot — the point of a hard counter is that the
+      // tower has no answer, not a worse one.
+      if (e.config.flying && !targetsFlying) continue;
       const dx = e.x - x;
       const dy = e.y - y;
       const dSq = dx * dx + dy * dy;

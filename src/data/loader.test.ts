@@ -48,7 +48,7 @@ describe('seed data', () => {
   it('validates clean', () => {
     const data = validateGameData(seed());
     expect(data.towers.towers.map((t) => t.id)).toEqual(['archer', 'bombard', 'frost-spire', 'mill']);
-    expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute', 'shieldbearer', 'swarm', 'wolf-rider', 'looter', 'warlord']);
+    expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute', 'shieldbearer', 'swarm', 'wolf-rider', 'raven', 'looter', 'warlord']);
     expect(data.abilities.map((a) => a.id)).toEqual(['charge', 'volley', 'rally-horn']);
     expect(Object.keys(data.maps).sort()).toEqual(['crossroads', 'meadow-road', 'the-ford', 'warlords-march']);
     expect(data.waveSets['meadow-road']?.waves).toHaveLength(8);

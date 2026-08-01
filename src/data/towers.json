@@ -124,7 +124,7 @@
         {
           "id": "archer-rapid",
           "name": "Rapid",
-          "description": "Sheer fire rate — shreds swarms.",
+          "description": "Sheer fire rate \u2014 shreds swarms.",
           "cost": 110,
           "stats": {
             "damage": 14,
@@ -189,7 +189,8 @@
           "projectileId": "bomb-concussion"
         }
       ],
-      "model": "build-bombard"
+      "model": "build-bombard",
+      "targetsFlying": false
     },
     {
       "id": "frost-spire",
@@ -250,7 +251,7 @@
     {
       "id": "mill",
       "name": "Mill",
-      "description": "No attack. Drops coins beside itself — ride by to collect.",
+      "description": "No attack. Drops coins beside itself \u2014 ride by to collect.",
       "targeting": "none",
       "projectileId": null,
       "spriteRef": "tower-mill",

@@ -24,6 +24,13 @@ export const EnemySchema = z.object({
     .optional()
     .describe('Shieldbearer: reduced damage from sources ahead of it — flank it or shoot it from behind'),
   ignoresSlows: z.boolean().optional().describe('Wolf Rider: immune to slows and freezes'),
+  flying: z
+    .boolean()
+    .default(false)
+    .describe(
+      'airborne: towers with targetsFlying=false cannot shoot it at all (DESIGN §6 option B). ' +
+        'The one hard counter a ground-only AoE tower has no answer to.',
+    ),
   lootsCoins: z
     .object({
       detectRadius: z.number().positive(),

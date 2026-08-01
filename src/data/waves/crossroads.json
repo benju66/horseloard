@@ -103,10 +103,17 @@
         },
         {
           "enemyId": "grunt",
-          "count": 6,
+          "count": 3,
           "spacing": 0.7,
           "laneId": "north",
           "delay": 3
+        },
+        {
+          "enemyId": "raven",
+          "count": 9,
+          "spacing": 0.35,
+          "laneId": "north",
+          "delay": 2.0
         }
       ]
     },
@@ -189,7 +196,7 @@
         },
         {
           "enemyId": "runner",
-          "count": 6,
+          "count": 3,
           "spacing": 0.9,
           "laneId": "west",
           "delay": 3
@@ -200,6 +207,13 @@
           "spacing": 6,
           "laneId": "west",
           "delay": 6
+        },
+        {
+          "enemyId": "raven",
+          "count": 9,
+          "spacing": 0.35,
+          "laneId": "north",
+          "delay": 2.0
         }
       ]
     },
@@ -301,6 +315,13 @@
           "spacing": 0.15,
           "laneId": "west",
           "delay": 6
+        },
+        {
+          "enemyId": "raven",
+          "count": 9,
+          "spacing": 0.35,
+          "laneId": "north",
+          "delay": 2.0
         }
       ]
     },

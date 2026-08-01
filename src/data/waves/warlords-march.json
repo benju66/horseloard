@@ -137,7 +137,7 @@
       "entries": [
         {
           "enemyId": "swarm",
-          "count": 9,
+          "count": 1,
           "spacing": 0.15,
           "laneId": "west",
           "delay": 0
@@ -162,6 +162,13 @@
           "spacing": 0.15,
           "laneId": "east",
           "delay": 6
+        },
+        {
+          "enemyId": "raven",
+          "count": 8,
+          "spacing": 0.35,
+          "laneId": "west",
+          "delay": 2.0
         }
       ]
     },
@@ -284,10 +291,17 @@
         },
         {
           "enemyId": "swarm",
-          "count": 9,
+          "count": 1,
           "spacing": 0.15,
           "laneId": "east",
           "delay": 6
+        },
+        {
+          "enemyId": "raven",
+          "count": 8,
+          "spacing": 0.35,
+          "laneId": "west",
+          "delay": 2.0
         }
       ]
     },
@@ -446,7 +460,7 @@
         },
         {
           "enemyId": "grunt",
-          "count": 9,
+          "count": 1,
           "spacing": 0.8,
           "laneId": "west",
           "delay": 8
@@ -464,6 +478,13 @@
           "spacing": 2.2,
           "laneId": "east",
           "delay": 0
+        },
+        {
+          "enemyId": "raven",
+          "count": 8,
+          "spacing": 0.35,
+          "laneId": "east",
+          "delay": 2.0
         }
       ]
     }

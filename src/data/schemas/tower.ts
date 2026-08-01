@@ -111,6 +111,13 @@ export const TowerSchema = z.object({
   description: z.string().min(1),
   targeting: TargetingModeSchema,
   projectileId: IdSchema.nullable().describe('null only for non-attacking towers (targeting "none")'),
+  targetsFlying: z
+    .boolean()
+    .default(true)
+    .describe(
+      'false = this tower cannot engage airborne enemies at all. Defaults true so adding ' +
+        'the field does not silently ground the existing roster; a tower opts out.',
+    ),
   levels: z
     .array(TowerLevelSchema)
     .length(3)

@@ -105,6 +105,12 @@
       "base": "base-mini"
     },
     {
+      "id": "unit-raven",
+      "base": "base-mini",
+      "scale": 1.1,
+      "tint": 10
+    },
+    {
       "id": "unit-wolf-rider",
       "base": "base-beast",
       "props": [

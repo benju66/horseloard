@@ -47,6 +47,7 @@ export function makeTowersFile(extraTowers: Tower[] = []): TowersFile {
         name: 'Bolt Tower',
         description: 'test',
         targeting: 'nearest',
+        targetsFlying: true,
         projectileId: 'test-arrow',
         spriteRef: 'x',
         levels: [
@@ -78,6 +79,7 @@ export function makeTowersFile(extraTowers: Tower[] = []): TowersFile {
 
 export function makeEnemy(overrides: Partial<Enemy> & { id: string }): Enemy {
   return {
+    flying: false,
     name: overrides.id,
     hp: 10,
     speed: 10,
