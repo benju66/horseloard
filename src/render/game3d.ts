@@ -237,6 +237,9 @@ function startMap(mapId: string, endless = false): void {
   sim.enemySystem.onDamaged.push((e) => flashUntil.set(e.id, simClock + FLASH_SECONDS));
   fx.attach(sim);
   attachAudio(sim);
+  audio.startMusic();
+  audio.setMusicPhase('calm');
+  audio.setMusicBoss(false);
 
   abilityBar?.destroy();
   abilityBar = new AbilityBar(sim, overlay);
@@ -264,6 +267,7 @@ function startMap(mapId: string, endless = false): void {
 }
 
 function toMapSelect(): void {
+  audio.stopMusic();
   releaseViews();
   world?.dispose();
   fx?.dispose();
@@ -431,6 +435,11 @@ function step(dt: number): void {
 
   views.tick(dt * runOverlay.speed);
   audio.frame();
+  // Score follows the sim. Boss presence is read as "something with a war cry
+  // is alive" — a mechanic, not a content id, so a future boss lights it up
+  // without touching this file.
+  audio.setMusicPhase(sim.phase === 'wave' ? 'tension' : 'calm');
+  audio.setMusicBoss(sim.enemySystem.enemies.some((e) => e.config.warCry !== undefined));
   instanced?.update(sim, dt);
   fx.update(sim, world.camera, dt);
   renderer.render(scene, world.camera);

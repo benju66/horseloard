@@ -1,3 +1,4 @@
+import { MusicDirector, type MusicPhase } from './music';
 import { VOICES } from './voices';
 
 /**
@@ -57,6 +58,13 @@ export class AudioManager {
   /** Coin streaks walk the pitch up; reset when the streak lapses. */
   private streak = 0;
   private streakUntil = 0;
+  private music: MusicDirector | null = null;
+  /** Held across an unlock: the score can be asked for before the context exists. */
+  private pendingMusic: { phase: MusicPhase; boss: boolean; playing: boolean } = {
+    phase: 'calm',
+    boss: false,
+    playing: false,
+  };
 
   constructor() {
     try {
@@ -123,6 +131,31 @@ export class AudioManager {
     this.master = master;
     this.sfxBus = sfxBus;
     this.musicBus = musicBus;
+    this.music = new MusicDirector(ctx, musicBus);
+    // A run can start before the first tap — replay whatever was asked for.
+    this.music.setPhase(this.pendingMusic.phase);
+    this.music.setBoss(this.pendingMusic.boss);
+    if (this.pendingMusic.playing) this.music.start();
+  }
+
+  startMusic(): void {
+    this.pendingMusic.playing = true;
+    this.music?.start();
+  }
+
+  stopMusic(): void {
+    this.pendingMusic.playing = false;
+    this.music?.stop();
+  }
+
+  setMusicPhase(phase: MusicPhase): void {
+    this.pendingMusic.phase = phase;
+    this.music?.setPhase(phase);
+  }
+
+  setMusicBoss(present: boolean): void {
+    this.pendingMusic.boss = present;
+    this.music?.setBoss(present);
   }
 
   /** Call once per rendered frame; expires a lapsed coin streak. */
@@ -161,6 +194,8 @@ export class AudioManager {
   }
 
   dispose(): void {
+    this.music?.stop();
+    this.music = null;
     void this.ctx?.close();
     this.ctx = null;
     this.master = null;

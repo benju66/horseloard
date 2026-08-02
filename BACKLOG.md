@@ -29,9 +29,14 @@ never off content ids, so a new tower or enemy sounds reasonable the day its JSO
 Mute toggle in the HUD, persisted to localStorage — deliberately not the save file, since
 device preferences should not need a schema migration or sync between devices.
 
-**Still to do on audio:** DESIGN §12 also asks for **music** — one loop per phase
-(build-calm / wave-tension) with crossfade, plus a boss layer. The `musicBus` and its
-mute pref already exist and are wired; nothing feeds them. That is the remaining gap.
+**Music: DONE 2026-08-01.** Generative, layered over one shared clock rather than
+separate loops — a crossfade between two loops has to cut mid-phrase or wait for a bar
+boundary, and phase changes here happen whenever the player taps Start. Layers
+(pad/pulse/lead/boss) ramp their gains instead, so harmony never lurches and a transition
+can land anywhere. Boss layer keys off "something with a war cry is alive", a mechanic
+rather than a content id.
+
+**AUDIO IS COMPLETE against DESIGN §12.** Still unheard by a human.
 
 **And nobody has heard any of it.** Every check so far is a measurement — rendered
 waveforms, event counts, throttle behaviour. Whether it sounds *good* is unanswered.
