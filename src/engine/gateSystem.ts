@@ -137,18 +137,23 @@ export class GateSystem {
   }
 
   /**
-   * Raise maximum capacity and grant the same amount as current HP.
+   * Change maximum capacity, moving current HP by the same amount.
    *
-   * Granting the HP matters: a reinforcement that only raised the ceiling would
-   * read as *nothing happening* on a gate that is already damaged, which is the
-   * exact moment a player would choose it. It is not a repair — `totalDamageTaken`
-   * is untouched, so this cannot buy back stars (DESIGN: stars score on damage
-   * taken, never on HP remaining).
+   * Moving the HP matters in both directions. A reinforcement that only raised
+   * the ceiling would read as *nothing happening* on a damaged gate — the exact
+   * moment a player would choose it. And a perk that trades capacity away has
+   * to actually cost something now, not merely lower a cap the gate is already
+   * below.
+   *
+   * Never a repair: `totalDamageTaken` is untouched, so this cannot buy back
+   * stars (DESIGN — stars score on damage taken, never HP remaining). And never
+   * lethal: a draft choice must not end a run on the spot, so HP floors at 1
+   * and the gate can only fall to enemies.
    */
-  reinforce(amount: number): void {
-    if (amount <= 0 || this.destroyed) return;
-    this.maxHp += amount;
-    this.hp += amount;
+  adjustCapacity(delta: number): void {
+    if (delta === 0 || this.destroyed) return;
+    this.maxHp = Math.max(1, this.maxHp + delta);
+    this.hp = Math.max(1, Math.min(this.maxHp, this.hp + delta));
   }
 
   /** Restore HP (already paid for). Returns the amount actually restored. */

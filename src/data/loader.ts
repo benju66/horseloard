@@ -194,17 +194,19 @@ export function validateGameData(raw: RawGameData): GameData {
   // in a draft, be chosen, and do nothing — the worst kind of silent failure,
   // because it reads as the perk being weak rather than broken.
   perks.perks.forEach((perk, i) => {
-    const effect = perk.effect;
-    if (effect.type === 'tower-stat' && effect.towerId !== null && !towerIds.has(effect.towerId)) {
-      errors.push(
-        `perks.json → perks.${i}.effect.towerId: unknown tower "${effect.towerId}" (known: ${[...towerIds].join(', ')})`,
-      );
-    }
-    if (effect.type === 'unlock-ability' && !abilityIds.has(effect.abilityId)) {
-      errors.push(
-        `perks.json → perks.${i}.effect.abilityId: unknown ability "${effect.abilityId}" (known: ${[...abilityIds].join(', ')})`,
-      );
-    }
+    perk.effects.forEach((effect, j) => {
+      const towerScoped = effect.type === 'tower-stat' || effect.type === 'tower-grant';
+      if (towerScoped && effect.towerId !== null && !towerIds.has(effect.towerId)) {
+        errors.push(
+          `perks.json → perks.${i}.effects.${j}.towerId: unknown tower "${effect.towerId}" (known: ${[...towerIds].join(', ')})`,
+        );
+      }
+      if (effect.type === 'unlock-ability' && !abilityIds.has(effect.abilityId)) {
+        errors.push(
+          `perks.json → perks.${i}.effects.${j}.abilityId: unknown ability "${effect.abilityId}" (known: ${[...abilityIds].join(', ')})`,
+        );
+      }
+    });
   });
 
   // Model refs are optional during the migration, but a ref that IS given must

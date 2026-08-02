@@ -124,18 +124,16 @@ export class PerkSystem {
     const stacks = this.stacksOf(perkId);
     if (stacks >= perk.maxStacks) return false;
 
-    const fx = perk.effect;
     // The gate is the one stat a system copies instead of reading, so it is
-    // routed rather than written. Measured as a delta so 'add' and 'multiply'
-    // both work without this file knowing which was used.
-    if (fx.type === 'kingdom-stat' && fx.stat === 'gateMaxHp') {
-      const before = this.data.map.gate.hp;
-      applyEffectInPlace(this.data, fx, 1);
-      const delta = this.data.map.gate.hp - before;
-      for (const fn of this.onGateMaxHpChanged) fn(delta);
-    } else {
-      applyEffectInPlace(this.data, fx, 1);
-    }
+    // routed rather than written. Measured as a delta across the whole perk so
+    // 'add' and 'multiply' both work — and so a perk that trades gate capacity
+    // away reports a negative delta without this file knowing which effect did
+    // it. Summed once, after every effect lands, because a single perk may
+    // touch the gate more than once.
+    const gateBefore = this.data.map.gate.hp;
+    for (const fx of perk.effects) applyEffectInPlace(this.data, fx, 1);
+    const gateDelta = this.data.map.gate.hp - gateBefore;
+    if (gateDelta !== 0) for (const fn of this.onGateMaxHpChanged) fn(gateDelta);
 
     this.taken.set(perkId, stacks + 1);
     this.offer = null;

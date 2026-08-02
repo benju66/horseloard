@@ -16,7 +16,15 @@ import { BOTS, forcedComposition, forcedPerk, runBot, type BotRunResult } from '
  *
  * On-demand (headless playtest, not a test): `npm run bots`
  */
-const SEEDS = [11, 23, 42, 57, 88];
+/**
+ * Twelve, not five. A five-seed sweep of enemy scaling on warlords-march
+ * returned 47% → 33% → 47% → 53% across monotonically rising difficulty — the
+ * ordering was noise, and ±13pp of it. Every tuning decision made against five
+ * seeds was being made against sampling error, including the "knife edge"
+ * recorded in the 2026-07-31 difficulty pass. Runs are cheap and headless; the
+ * confidence is worth far more than the seconds.
+ */
+const SEEDS = [11, 23, 42, 57, 88, 101, 137, 199, 233, 271, 313, 359];
 
 /**
  * The difficulty curve DESIGN §13 promises — "gentle map 1, honest challenge by
@@ -63,6 +71,12 @@ function summarize(runs: readonly BotRunResult[]): string {
 
 describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
   const data = loadGameData();
+  /**
+   * The reference configuration is **drafting on**, because that is the shipped
+   * game. It was off when the draft landed, which meant every headline number
+   * here described a game nobody would play — and the difficulty targets below
+   * were being compared against it.
+   */
   const botData = {
     towers: data.towers,
     enemies: data.enemies,
@@ -71,7 +85,10 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     economy: data.economy,
     maps: data.maps,
     waveSets: data.waveSets,
+    perks: data.perks,
   };
+  /** Drafting off, kept only as the comparison arm of the draft-impact probe. */
+  const noDraftData = { ...botData, perks: undefined };
 
   const all: BotRunResult[] = [];
 
@@ -216,18 +233,15 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
   /**
    * The in-run draft (DESIGN §15.1), measured rather than felt.
    *
-   * `botData` above deliberately omits the perk pool, so every number before
-   * this point is the pre-draft baseline and the difficulty targets stay
-   * comparable. These two probes are the whole reason the draft was built on
-   * the injected rng.
+   * Everything above measures the shipped game, drafting included. These two
+   * probes isolate the draft's own contribution, and they are the whole reason
+   * it was built on the injected rng.
    */
-  const draftData = { ...botData, perks: data.perks };
-
   it('reports what drafting does to the difficulty curve', { timeout: 60_000 }, () => {
     const lines: string[] = [];
     for (const mapId of Object.keys(data.maps)) {
-      const off = BOTS.flatMap((f) => SEEDS.map((s) => runBot(botData, mapId, f, s)));
-      const on = BOTS.flatMap((f) => SEEDS.map((s) => runBot(draftData, mapId, f, s)));
+      const off = BOTS.flatMap((f) => SEEDS.map((s) => runBot(noDraftData, mapId, f, s)));
+      const on = BOTS.flatMap((f) => SEEDS.map((s) => runBot(botData, mapId, f, s)));
       const rate = (runs: BotRunResult[]) => (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100;
       const delta = rate(on) - rate(off);
       const target = DIFFICULTY_TARGETS[mapId];
@@ -264,7 +278,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
       const runs: BotRunResult[] = [];
       for (const mapId of hardMaps) {
         for (const f of BOTS) {
-          for (const seed of SEEDS) runs.push(runBot(draftData, mapId, forcedPerk(f, perk.id), seed));
+          for (const seed of SEEDS) runs.push(runBot(botData, mapId, forcedPerk(f, perk.id), seed));
         }
       }
       const wins = runs.filter((r) => r.outcome === 'win');
