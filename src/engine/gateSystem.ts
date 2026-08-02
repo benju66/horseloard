@@ -19,7 +19,13 @@ interface Assignment {
  */
 export class GateSystem {
   hp: number;
-  readonly maxHp: number;
+  /**
+   * Not `readonly`: an in-run draft can reinforce the gate. Everywhere else
+   * this is still write-once — `reinforce()` is the only sanctioned mutation,
+   * and it exists because this is the one balance number a system *copies* at
+   * construction rather than reading live from its config.
+   */
+  maxHp: number;
   /** cumulative damage received this run — repairs do not reduce it */
   totalDamageTaken = 0;
 
@@ -128,6 +134,21 @@ export class GateSystem {
       this.destroyed = true;
       for (const fn of this.onDestroyed) fn();
     }
+  }
+
+  /**
+   * Raise maximum capacity and grant the same amount as current HP.
+   *
+   * Granting the HP matters: a reinforcement that only raised the ceiling would
+   * read as *nothing happening* on a gate that is already damaged, which is the
+   * exact moment a player would choose it. It is not a repair — `totalDamageTaken`
+   * is untouched, so this cannot buy back stars (DESIGN: stars score on damage
+   * taken, never on HP remaining).
+   */
+  reinforce(amount: number): void {
+    if (amount <= 0 || this.destroyed) return;
+    this.maxHp += amount;
+    this.hp += amount;
   }
 
   /** Restore HP (already paid for). Returns the amount actually restored. */

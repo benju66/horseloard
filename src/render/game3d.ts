@@ -7,6 +7,7 @@ import { Simulation } from '../engine/simulation';
 import { AbilityBar } from '../ui/dom/abilityBar';
 import { BubbleLayer, bubbleActions } from '../ui/dom/bubbles';
 import { DomJoystick } from '../ui/dom/joystick';
+import { DraftOverlay } from '../ui/dom/draftOverlay';
 import { RunOverlay } from '../ui/dom/runOverlay';
 import { MapSelectScreen, MetaTreeScreen, screensCss } from '../ui/dom/screens';
 import { ModelViewFactory, UNIT_HEIGHT } from './entityViews';
@@ -62,6 +63,7 @@ style.textContent =
   BubbleLayer.css() +
   AbilityBar.css() +
   RunOverlay.css() +
+  DraftOverlay.css() +
   screensCss() +
   `
 #hud { position: fixed; inset: 0; pointer-events: none;
@@ -136,6 +138,7 @@ hud.append(muteBtn);
 const joystick = new DomJoystick(canvas, overlay);
 const bubbles = new BubbleLayer(hud);
 const runOverlay = new RunOverlay(overlay);
+const draftOverlay = new DraftOverlay(overlay);
 const bubbleScreens: Array<{ x: number; y: number }> = [];
 
 // ─── Run state ───
@@ -255,6 +258,9 @@ function startMap(mapId: string, endless = false): void {
     towers: modded.towers,
     abilities: data.abilities,
     unlockedAbilityIds: modded.unlockedAbilityIds,
+    // Cloned like the wave set: PerkSystem mutates balance data in place, and
+    // the loaded pool is shared across every run of the session.
+    perks: structuredClone(data.perks),
     endless,
   });
   sim.enemySystem.onReachEnd.push(() => leaks++);
@@ -562,6 +568,7 @@ function syncHud(): void {
   }
   bubbles.render(actions, bubbleScreens);
   abilityBar?.sync();
+  draftOverlay.sync(sim);
   settleIfNeeded();
   runOverlay.sync(sim, leaks);
 }

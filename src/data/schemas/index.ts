@@ -7,6 +7,7 @@ export * from './tower';
 export * from './enemy';
 export * from './ability';
 export * from './map';
+export * from './perk';
 export * from './wave';
 export * from './metatree';
 export * from './hero';

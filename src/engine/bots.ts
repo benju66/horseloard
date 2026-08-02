@@ -4,6 +4,8 @@ import type {
   Economy,
   Hero,
   MapDef,
+  Perk,
+  PerksFile,
   Projectile,
   TowerStats,
   TowersFile,
@@ -362,6 +364,12 @@ export interface BotPolicy {
   spend(sim: Simulation): void;
   /** Every tick while a wave is running. */
   steer(sim: Simulation): void;
+  /**
+   * Choose from a pending draft. Optional — omitted means "take the first
+   * card", which is already a weighted random pick because the offer was dealt
+   * by weighted sampling. Return null to decline.
+   */
+  pickPerk?(offer: readonly Perk[], sim: Simulation): string | null;
 }
 
 export type BotFactory = (towers: TowersFile, map: MapDef) => BotPolicy;
@@ -514,6 +522,36 @@ export function forcedComposition(towerId: string): BotFactory {
   });
 }
 
+/**
+ * Wrap any bot so it always takes one named perk when the draft offers it.
+ *
+ * The same argument as `forcedComposition`, and the project already paid to
+ * learn it: a free-choice bot only tells you what it *happened* to be dealt and
+ * chose, so a perk that correlates with wins might be strong, or might simply
+ * be common. BACKLOG records the tower version of this mistake — "the
+ * preference column is not evidence about tower strength". Forcing the pick
+ * takes chance out of the loop: if a perk swings the win rate on its own, that
+ * shows up directly.
+ *
+ * Falls through to the wrapped bot's own choice when the perk is not on offer,
+ * so a run still drafts normally rather than stalling.
+ */
+export function forcedPerk(inner: BotFactory, perkId: string): BotFactory {
+  return (towers, map) => {
+    const policy = inner(towers, map);
+    return {
+      ...policy,
+      name: `${policy.name}+${perkId}`,
+      spend: (sim) => policy.spend(sim),
+      steer: (sim) => policy.steer(sim),
+      pickPerk: (offer, sim) => {
+        if (offer.some((p) => p.id === perkId)) return perkId;
+        return policy.pickPerk?.(offer, sim) ?? offer[0]?.id ?? null;
+      },
+    };
+  };
+}
+
 // ─── Runner ───
 
 export interface BotRunResult {
@@ -533,6 +571,8 @@ export interface BotRunResult {
   bowLevel: number;
   /** tower ids standing at the end — reported as data, to spot dead weight */
   towers: string[];
+  /** perks drafted this run as "id xN" — the measurement the draft exists for */
+  perks: string[];
 }
 
 /** The LCG the balance harness uses — same seed, same run, forever. */
@@ -547,6 +587,8 @@ export function makeRng(seed: number): () => number {
 /** Everything a bot run needs — the validated-data subset, no loader dependency. */
 export interface BotGameData {
   towers: TowersFile;
+  /** in-run draft pool; omit to run with drafting off (the pre-perk baseline) */
+  perks?: PerksFile;
   enemies: EnemiesFile;
   abilities: readonly Ability[];
   hero: Hero;
@@ -581,6 +623,7 @@ export function runBot(
       // Bots play the late-game loadout: everything unlocked. We're measuring
       // the skill ceiling, not the meta-tree ramp.
       unlockedAbilityIds: abilities.map((a) => a.id),
+      perks: data.perks,
     },
     makeRng(seed),
   );
@@ -614,6 +657,16 @@ export function runBot(
       outcome = 'win';
       break;
     }
+
+    // Draft, if the wave clear dealt one. Taking the first card is already a
+    // weighted random pick — the offer was dealt by weighted sampling from the
+    // sim's own seeded rng, so this stays reproducible without a second stream.
+    const offer = sim.perks?.offer;
+    if (offer && offer.length > 0) {
+      const choice = bot.pickPerk ? bot.pickPerk(offer, sim) : offer[0]!.id;
+      if (choice) sim.perks!.take(choice);
+      else sim.perks!.skip();
+    }
   }
 
   const cleared =
@@ -639,5 +692,8 @@ export function runBot(
     towers: sim.towerSystem.plots
       .filter((p) => p.towerId !== null)
       .map((p) => `${p.towerId}${p.branchId ? ':' + p.branchId : '@L' + p.level}`),
+    perks: (sim.perks?.takenPerks ?? []).map(
+      ({ perk, stacks }) => `${perk.id}${stacks > 1 ? ' x' + stacks : ''}`,
+    ),
   };
 }
