@@ -4,13 +4,13 @@
       "id": "charge",
       "name": "Charge",
       "description": "A galloping burst — trample through enemies, damaging and slowing them.",
-      "cooldown": 12,
+      "cooldown": 11,
       "unlockedByDefault": true,
       "effect": {
         "type": "charge",
         "duration": 1,
         "speedMultiplier": 2.2,
-        "damage": 15,
+        "damage": 30,
         "slowMultiplier": 0.5,
         "slowDuration": 1.5
       },
@@ -21,12 +21,12 @@
       "id": "volley",
       "name": "Volley",
       "description": "Arrow rain at your position — delete the clump you rode into.",
-      "cooldown": 18,
+      "cooldown": 14,
       "unlockedByDefault": false,
       "effect": {
         "type": "aoe-damage",
-        "damage": 35,
-        "radius": 90
+        "damage": 90,
+        "radius": 100
       },
       "iconRef": "icon-volley",
       "castSfxRef": "sfx-volley"
@@ -34,16 +34,62 @@
     {
       "id": "rally-horn",
       "name": "Rally Horn",
-      "description": "All towers fire 50% faster for 6 seconds.",
-      "cooldown": 30,
+      "description": "All towers loose 80% faster for 8 seconds.",
+      "cooldown": 26,
       "unlockedByDefault": false,
       "effect": {
         "type": "tower-rate-buff",
-        "rateMultiplier": 1.5,
-        "duration": 6
+        "rateMultiplier": 1.8,
+        "duration": 8
       },
       "iconRef": "icon-rally-horn",
       "castSfxRef": "sfx-rally-horn"
+    },
+    {
+      "id": "rapid-fire",
+      "name": "Rapid Fire",
+      "description": "Draw and loose without pause — for a moment.",
+      "cooldown": 16,
+      "unlockedByDefault": false,
+      "effect": {
+        "type": "hero-buff",
+        "stat": "bowFireRate",
+        "multiplier": 2.6,
+        "duration": 5
+      },
+      "iconRef": "icon-rapid-fire",
+      "castSfxRef": "sfx-bow-release"
+    },
+    {
+      "id": "heavy-shaft",
+      "name": "Heavy Shaft",
+      "description": "One heavy arrow, straight down the road, through everything in its way.",
+      "cooldown": 13,
+      "unlockedByDefault": false,
+      "effect": {
+        "type": "pierce-shot",
+        "damage": 120,
+        "range": 260,
+        "halfWidth": 18
+      },
+      "iconRef": "icon-heavy-shaft",
+      "castSfxRef": "sfx-bow-release"
+    },
+    {
+      "id": "caltrops",
+      "name": "Caltrops",
+      "description": "Scatter iron across the road. Whatever crosses it bleeds and crawls.",
+      "cooldown": 18,
+      "unlockedByDefault": false,
+      "effect": {
+        "type": "ground-zone",
+        "radius": 78,
+        "duration": 9,
+        "damagePerSecond": 14,
+        "slowMultiplier": 0.55
+      },
+      "iconRef": "icon-caltrops",
+      "castSfxRef": "sfx-caltrops"
     }
   ]
 }

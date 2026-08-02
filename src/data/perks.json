@@ -329,6 +329,107 @@
       "weight": 0.7
     },
     {
+      "id": "perk-quiver-drills",
+      "name": "Quiver Drills",
+      "description": "Learn to draw and loose without pause. Unlocks Rapid Fire.",
+      "effects": [
+        {
+          "type": "unlock-ability",
+          "abilityId": "rapid-fire"
+        }
+      ],
+      "maxStacks": 1,
+      "weight": 1
+    },
+    {
+      "id": "perk-bodkin-point",
+      "name": "Bodkin Point",
+      "description": "A shaft heavy enough to run a column through. Unlocks Heavy Shaft.",
+      "effects": [
+        {
+          "type": "unlock-ability",
+          "abilityId": "heavy-shaft"
+        }
+      ],
+      "maxStacks": 1,
+      "weight": 1
+    },
+    {
+      "id": "perk-road-iron",
+      "name": "Road Iron",
+      "description": "Carry caltrops in the saddlebags. Unlocks Caltrops.",
+      "effects": [
+        {
+          "type": "unlock-ability",
+          "abilityId": "caltrops"
+        }
+      ],
+      "maxStacks": 1,
+      "weight": 1
+    },
+    {
+      "id": "perk-practised-hands",
+      "name": "Practised Hands",
+      "description": "Every ability comes back to you sooner.",
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": null,
+          "stat": "cooldown",
+          "perRank": 0.87,
+          "mode": "multiply"
+        }
+      ],
+      "maxStacks": 3,
+      "weight": 0.95
+    },
+    {
+      "id": "perk-warhorse-shoes",
+      "name": "Warhorse Shoes",
+      "description": "Charge hits far harder, and takes longer to come round again.",
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "charge",
+          "stat": "damage",
+          "perRank": 1.6,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "charge",
+          "stat": "cooldown",
+          "perRank": 1.15,
+          "mode": "multiply"
+        }
+      ],
+      "maxStacks": 2,
+      "weight": 0.9
+    },
+    {
+      "id": "perk-arrow-storm",
+      "name": "Arrow Storm",
+      "description": "Volley falls heavier over wider ground.",
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "volley",
+          "stat": "damage",
+          "perRank": 1.3,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "volley",
+          "stat": "radius",
+          "perRank": 1.12,
+          "mode": "multiply"
+        }
+      ],
+      "maxStacks": 2,
+      "weight": 0.75
+    },
+    {
       "id": "perk-swift-mount",
       "name": "Swift Mount",
       "description": "Cover the field faster — more lanes, more loot, more often.",

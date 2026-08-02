@@ -35,6 +35,33 @@ const ABILITIES: Ability[] = [
     iconRef: 'x',
   },
   {
+    id: 'rapid-fire',
+    name: 'Rapid Fire',
+    description: 'x',
+    cooldown: 16,
+    unlockedByDefault: false,
+    effect: { type: 'hero-buff', stat: 'bowFireRate', multiplier: 3, duration: 2 },
+    iconRef: 'x',
+  },
+  {
+    id: 'heavy-shaft',
+    name: 'Heavy Shaft',
+    description: 'x',
+    cooldown: 13,
+    unlockedByDefault: false,
+    effect: { type: 'pierce-shot', damage: 60, range: 200, halfWidth: 15 },
+    iconRef: 'x',
+  },
+  {
+    id: 'caltrops',
+    name: 'Caltrops',
+    description: 'x',
+    cooldown: 18,
+    unlockedByDefault: false,
+    effect: { type: 'ground-zone', radius: 60, duration: 2.2, damagePerSecond: 20, slowMultiplier: 0.5 },
+    iconRef: 'x',
+  },
+  {
     id: 'rally-horn',
     name: 'Rally Horn',
     description: 'x',
@@ -349,6 +376,150 @@ describe('abilities', () => {
     advanceSeconds(sim, 18.1);
     expect(sim.castAbility('volley')).toBe(true);
     expect(e.hp).toBe(30);
+  });
+
+  /**
+   * The two effects that carry TRIANGLE.md §B.3: hero power on a cooldown
+   * rather than on the bow. What matters in both is that the power *expires* —
+   * a buff that outlived its duration, or a shot that hit outside its corridor,
+   * would quietly restore the sustain the whole design removes.
+   */
+  it('rapid fire multiplies bow rate, then expires', () => {
+    const sim = new Simulation(m1Fixture({ unlocked: ['rapid-fire'] }), TEST_RNG);
+    sim.enemySystem.spawn('walker', 'main', 1); // (20,20)
+    sim.hero.x = 20;
+    sim.hero.y = 60; // 40 away — inside the fixture bow range of 50
+    let shots = 0;
+    sim.projectileSystem.onSpawn.push(() => shots++);
+
+    advanceSeconds(sim, 2);
+    const unbuffed = shots;
+
+    expect(sim.castAbility('rapid-fire')).toBe(true);
+    expect(sim.hero.buffFactor('bowFireRate')).toBe(3);
+    advanceSeconds(sim, 2);
+    const buffed = shots - unbuffed;
+    expect(buffed).toBeGreaterThan(unbuffed * 2); // ×3 rate, allowing for cooldown phase
+
+    // And it lets go: the factor returns to 1 and the rate comes back down.
+    advanceSeconds(sim, 0.1);
+    expect(sim.hero.buffFactor('bowFireRate')).toBe(1);
+    const before = shots;
+    advanceSeconds(sim, 2);
+    expect(shots - before).toBeLessThanOrEqual(unbuffed + 1);
+  });
+
+  it('re-casting a buff refreshes rather than stacking', () => {
+    const sim = new Simulation(m1Fixture({ unlocked: ['rapid-fire'] }), TEST_RNG);
+    sim.castAbility('rapid-fire');
+    advanceSeconds(sim, 1);
+    sim.abilities.getSlot('rapid-fire')!.cooldownRemaining = 0;
+    sim.castAbility('rapid-fire');
+    // Stacking would compound into exactly the sustain a cooldown exists to cap.
+    expect(sim.hero.buffFactor('bowFireRate')).toBe(3);
+  });
+
+  it('heavy shaft hits everything in the corridor ahead and nothing outside it', () => {
+    const sim = new Simulation(m1Fixture({ unlocked: ['heavy-shaft'] }), TEST_RNG);
+    const inLine = sim.enemySystem.spawn('walker', 'main', 1);
+    sim.hero.x = 20;
+    sim.hero.y = 100;
+    sim.hero.headingX = 0;
+    sim.hero.headingY = -1; // facing the enemy at (20,20)
+
+    expect(sim.castAbility('heavy-shaft')).toBe(true);
+    expect(inLine.hp).toBe(40); // 100 - 60
+
+    // Facing away: same enemy, same distance, no hit — the segment test is what
+    // stops this being a free 360° nuke.
+    sim.abilities.getSlot('heavy-shaft')!.cooldownRemaining = 0;
+    sim.hero.headingY = 1;
+    sim.castAbility('heavy-shaft');
+    expect(inLine.hp).toBe(40);
+  });
+
+  /**
+   * Caltrops is the one hero tool that keeps working after the cast, so the
+   * things worth pinning are that it pulses instead of nuking, that it slows
+   * only what is actually standing in it, and that it stops existing when its
+   * duration runs out. A zone that outlived its timer would be permanent free
+   * damage — sustain by the back door.
+   */
+  it('a ground zone pulses damage and slows what stands in it', () => {
+    const sim = new Simulation(m1Fixture({ unlocked: ['caltrops'] }), TEST_RNG);
+    const e = sim.enemySystem.spawn('walker', 'main', 1); // (20,20)
+    sim.hero.x = 20;
+    sim.hero.y = 20;
+
+    expect(sim.castAbility('caltrops')).toBe(true);
+    expect(sim.zones.zones).toHaveLength(1);
+    expect(e.hp).toBe(100); // nothing on the cast itself — it is not a nuke
+
+    // Ride off. The patch stays where it was dropped, which is the whole point,
+    // and it also takes the hero's bow out of range so the only damage the
+    // enemy takes from here is the zone's.
+    sim.hero.y = 400;
+
+    advanceSeconds(sim, 0.6); // one pulse: 20 dps × 0.5s
+    expect(e.hp).toBeCloseTo(90, 5);
+    expect(e.slowFactor).toBe(0.5);
+
+    advanceSeconds(sim, 1); // pulses at 1.0s and 1.5s
+    expect(e.hp).toBeCloseTo(70, 5);
+
+    advanceSeconds(sim, 0.8); // the 2.0s pulse lands, then the 2.2s duration is spent
+    expect(e.hp).toBeCloseTo(60, 5);
+    expect(sim.zones.zones).toHaveLength(0);
+
+    // Expired: no further pulses, and the slow lapses on its own.
+    advanceSeconds(sim, 1);
+    expect(e.hp).toBeCloseTo(60, 5);
+    expect(e.slowFactor).toBe(1);
+  });
+
+  it('a ground zone ignores what never enters it', () => {
+    const sim = new Simulation(m1Fixture({ unlocked: ['caltrops'] }), TEST_RNG);
+    const e = sim.enemySystem.spawn('walker', 'main', 1); // (20,20)
+    sim.hero.x = 20;
+    sim.hero.y = 120; // 100 away, zone radius 60
+
+    sim.castAbility('caltrops');
+    advanceSeconds(sim, 2);
+    expect(e.hp).toBe(100);
+    expect(e.slowFactor).toBe(1);
+  });
+
+  /**
+   * The equip cap is the hero's damage ceiling (abilities.json `equipSlots`).
+   * A cooldown bounds one ability; only this bounds the sum of them, which is
+   * what keeps a roster of burst tools from adding up to sustain.
+   */
+  it('carries only as many abilities as there are equip slots', () => {
+    const sim = new Simulation(
+      { ...m1Fixture({ unlocked: ['volley', 'rapid-fire', 'heavy-shaft'] }), equipSlots: 2 },
+      TEST_RNG,
+    );
+    // Charge is unlockedByDefault and comes first in the roster; volley fills
+    // the second slot; the rest are turned away.
+    expect(sim.abilities.slots.filter((s) => s.unlocked).map((s) => s.ability.id)).toEqual([
+      'charge',
+      'volley',
+    ]);
+    expect(sim.abilities.hasFreeSlot).toBe(false);
+    expect(sim.abilities.unlock('caltrops')).toBe(false);
+    expect(sim.castAbility('caltrops')).toBe(false);
+  });
+
+  it('an unlock lands in a free slot and is ready at once', () => {
+    const sim = new Simulation({ ...m1Fixture(), equipSlots: 2 }, TEST_RNG);
+    expect(sim.abilities.equippedCount).toBe(1); // charge only
+
+    expect(sim.abilities.unlock('caltrops')).toBe(true);
+    expect(sim.abilities.getSlot('caltrops')!.cooldownRemaining).toBe(0);
+    // Re-granting an ability already carried buys nothing and must not be
+    // reported as a slot filled.
+    expect(sim.abilities.unlock('caltrops')).toBe(false);
+    expect(sim.abilities.equippedCount).toBe(2);
   });
 
   it('rally horn speeds up tower fire for its duration', () => {

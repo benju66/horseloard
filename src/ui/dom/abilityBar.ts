@@ -8,6 +8,11 @@ import type { Simulation } from '../../engine/simulation';
  * Content-agnostic: buttons are built from whatever `sim.abilities.slots`
  * contains, labelled from the ability's own `name`. A fourth ability appears
  * here the day its JSON lands, with no edit to this file.
+ *
+ * A button exists for every ability and is *hidden* while locked, rather than
+ * the bar only building the unlocked ones. Abilities are drafted mid-run now
+ * (TRIANGLE.md §B.6), so a bar fixed at construction would hand a player a card
+ * that unlocks nothing they can press.
  */
 
 interface Slot {
@@ -31,10 +36,10 @@ export class AbilityBar {
     layer.append(wrap);
 
     for (const slot of sim.abilities.slots) {
-      if (!slot.unlocked) continue;
       const button = document.createElement('button');
       button.className = 'ability';
       button.setAttribute('data-ui', '');
+      if (!slot.unlocked) button.style.display = 'none';
 
       const sweep = document.createElement('div');
       sweep.className = 'ability-cd';
@@ -73,6 +78,11 @@ export class AbilityBar {
     for (const s of this.slots) {
       const slot = this.sim.abilities.getSlot(s.abilityId);
       if (!slot) continue;
+      // Hidden rather than removed: a draft can unlock this mid-run, and
+      // `display` is the one property that costs nothing to flip every frame.
+      const shown = slot.unlocked ? '' : 'none';
+      if (s.button.style.display !== shown) s.button.style.display = shown;
+      if (!slot.unlocked) continue;
       const cooling = slot.cooldownRemaining > 0;
       const frac = cooling ? slot.cooldownRemaining / slot.ability.cooldown : 0;
       // Height of the dark sweep = fraction of cooldown remaining.

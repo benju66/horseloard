@@ -10,6 +10,9 @@ export interface HeroInput {
   y: number;
 }
 
+/** Hero stats a timed ability buff may multiply. Mirrors the ability schema. */
+export type HeroBuffStat = 'bowDamage' | 'bowFireRate' | 'moveSpeed';
+
 /**
  * The commander on the field. Cannot die; heavies shove and briefly stagger
  * instead (DESIGN §4). Consumes hero.json — no balance constants live here.
@@ -53,6 +56,17 @@ export class HeroSystem {
   private readonly trampleReadyAt = new Map<number, number>();
   private readonly staggerReadyAt = new Map<number, number>();
   private readonly bowProjectile: ProjectileDef;
+
+  /**
+   * Timed multipliers from `hero-buff` abilities, keyed by the stat they touch.
+   *
+   * Read at the moment of use rather than baked in, so a buff that expires
+   * mid-draw simply stops applying. This is where the hero's burst shape lives:
+   * a multiplier that only exists for `duration` out of every `cooldown` has a
+   * hard ceiling on sustained output (TRIANGLE.md §B.3), which is precisely
+   * what the bow curve did not.
+   */
+  private readonly buffs = new Map<HeroBuffStat, { multiplier: number; remaining: number }>();
 
   /** Charge ability: gallop burst, boosted trample, stagger immunity (the escape tool). */
   private chargeRemaining = 0;
@@ -113,6 +127,30 @@ export class HeroSystem {
     return this.config.bow.levels[this.bowLevel - 1]!;
   }
 
+  /** Current multiplier on a buffable stat; 1 when nothing is active. */
+  buffFactor(stat: HeroBuffStat): number {
+    return this.buffs.get(stat)?.multiplier ?? 1;
+  }
+
+  /** Seconds left on a buff, 0 when inactive — the HUD reads this. */
+  buffRemaining(stat: HeroBuffStat): number {
+    return this.buffs.get(stat)?.remaining ?? 0;
+  }
+
+  /**
+   * Apply a timed buff. Re-casting refreshes rather than stacking: stacking
+   * would let a short cooldown compound into the sustain this whole design is
+   * built to prevent.
+   */
+  applyBuff(stat: HeroBuffStat, multiplier: number, duration: number): void {
+    const existing = this.buffs.get(stat);
+    if (existing && existing.multiplier >= multiplier) {
+      existing.remaining = Math.max(existing.remaining, duration);
+      return;
+    }
+    this.buffs.set(stat, { multiplier, remaining: duration });
+  }
+
   get maxBowLevel(): number {
     return this.config.bow.levels.length;
   }
@@ -130,6 +168,10 @@ export class HeroSystem {
 
   tick(dt: number): void {
     this.time += dt;
+    for (const [stat, buff] of this.buffs) {
+      buff.remaining -= dt;
+      if (buff.remaining <= 0) this.buffs.delete(stat);
+    }
     if (this.chargeRemaining > 0) {
       this.chargeRemaining -= dt;
       if (this.chargeRemaining < 1e-9) this.chargeRemaining = 0;
@@ -164,7 +206,9 @@ export class HeroSystem {
           my /= m;
         }
         const speed =
-          this.config.moveSpeed * (this.charging ? this.charge!.speedMultiplier : 1);
+          this.config.moveSpeed *
+          this.buffFactor('moveSpeed') *
+          (this.charging ? this.charge!.speedMultiplier : 1);
         this.x += mx * speed * dt;
         this.y += my * speed * dt;
         this.headingX = mx;
@@ -225,11 +269,11 @@ export class HeroSystem {
       this.x,
       this.y + BOW_MUZZLE_OFFSET_Y,
       target.id,
-      stats.damage,
+      stats.damage * this.buffFactor('bowDamage'),
       this.bowProjectile,
       true,
     );
-    this.fireCooldown = stats.fireInterval;
+    this.fireCooldown = stats.fireInterval / this.buffFactor('bowFireRate');
   }
 
   private nearestEnemyWithin(range: number): EnemyInstance | null {

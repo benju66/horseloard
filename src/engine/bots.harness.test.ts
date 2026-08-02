@@ -95,6 +95,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     towers: data.towers,
     enemies: data.enemies,
     abilities: data.abilities,
+    equipSlots: data.equipSlots,
     hero: data.hero,
     economy: data.economy,
     maps: data.maps,
@@ -179,7 +180,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * a tuning pass has a target instead of a vibe. Reports rather than asserts —
    * this is an instrument for `npm run bots`, not a gate on `npm test`.
    */
-  it('reports the difficulty curve against its target', () => {
+  it('reports the difficulty curve against its target', { timeout: 60_000 }, () => {
     const lines: string[] = [];
     let failures = 0;
 
@@ -339,7 +340,8 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     console.log(
       '\n[draft impact — free-choice picks, all bots × all seeds]\n' +
         lines.join('\n') +
-        '\n  A large positive Δ means drafting flattened the curve that was just tuned.',
+        '\n  Δ now measures the draft AND the abilities it unlocks — the off arm is a hero\n' +
+        '  carrying only Charge, which is nobody\'s game. Read the on column, not Δ.',
     );
   });
 

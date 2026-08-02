@@ -39,6 +39,13 @@ export class PerkSystem {
 
   /** Fired when a gate-capacity perk lands, because GateSystem owns that number. */
   readonly onGateMaxHpChanged: Array<(delta: number) => void> = [];
+  /**
+   * Fired when a perk grants an ability. `applyEffectInPlace` cannot do this
+   * itself — an unlock is a decision for a system, not a number to mutate — so
+   * the return value has to be routed, and was being dropped on the floor
+   * before abilities became draftable.
+   */
+  readonly onUnlockAbility: Array<(abilityId: string) => void> = [];
   /** Fired on every pick — the renderer uses it for feedback, the harness for logging. */
   readonly onTaken: Array<(perk: Perk, stacks: number) => void> = [];
 
@@ -65,8 +72,21 @@ export class PerkSystem {
     return out;
   }
 
+  /**
+   * Veto a card that would do nothing if taken. Set by the owner of whatever
+   * the card would act on — the Simulation vetoes an ability unlock once the
+   * bar is full, because the equip cap is enforced in AbilitySystem and this
+   * file must not learn about it.
+   *
+   * Content-agnostic: a predicate, not a rule. PerkSystem still knows only
+   * weights, stacks and offers.
+   */
+  isOfferable: ((perk: Perk) => boolean) | null = null;
+
   private eligible(): Perk[] {
-    return this.pool.filter((p) => this.stacksOf(p.id) < p.maxStacks);
+    return this.pool.filter(
+      (p) => this.stacksOf(p.id) < p.maxStacks && (this.isOfferable?.(p) ?? true),
+    );
   }
 
   /**
@@ -131,7 +151,10 @@ export class PerkSystem {
     // it. Summed once, after every effect lands, because a single perk may
     // touch the gate more than once.
     const gateBefore = this.data.map.gate.hp;
-    for (const fx of perk.effects) applyEffectInPlace(this.data, fx, 1);
+    for (const fx of perk.effects) {
+      const { unlockAbilityId } = applyEffectInPlace(this.data, fx, 1);
+      if (unlockAbilityId) for (const fn of this.onUnlockAbility) fn(unlockAbilityId);
+    }
     const gateDelta = this.data.map.gate.hp - gateBefore;
     if (gateDelta !== 0) for (const fn of this.onGateMaxHpChanged) fn(gateDelta);
 

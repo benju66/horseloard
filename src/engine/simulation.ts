@@ -11,6 +11,7 @@ import { GateSystem } from './gateSystem';
 import { AbilitySystem } from './abilitySystem';
 import { LooterSystem } from './looterSystem';
 import { PerkSystem } from './perkSystem';
+import { ZoneSystem } from './zoneSystem';
 import { generateEndlessWave } from './endless';
 
 /** Fixed simulation timestep. Rendering framerate is unrelated (CLAUDE.md #2). */
@@ -30,6 +31,8 @@ export interface SimData {
   abilities?: readonly Ability[];
   /** ability ids force-unlocked beyond unlockedByDefault (meta-tree flags, M3) */
   unlockedAbilityIds?: readonly string[];
+  /** how many abilities may be carried at once; defaults to the schema's 3 */
+  equipSlots?: number;
   /** endless mode: waves generate forever, victory never comes */
   endless?: boolean;
   /** in-run draft pool; omitted = no drafting (engine tests, legacy callers) */
@@ -62,6 +65,8 @@ export class Simulation {
   readonly towerSystem: TowerSystem;
   readonly gate: GateSystem;
   readonly abilities: AbilitySystem;
+  /** Ground hazards the hero leaves behind — the only friendly thing that is not a unit or a tower. */
+  readonly zones: ZoneSystem;
   readonly looters: LooterSystem;
   /** The in-run draft, or null when this run has no perk pool. */
   readonly perks: PerkSystem | null;
@@ -101,6 +106,7 @@ export class Simulation {
       economy: structuredClone(input.economy),
       towers: structuredClone(input.towers),
       map: structuredClone(input.map),
+      abilities: structuredClone(input.abilities ?? []),
     };
 
     this.endless = data.endless ?? false;
@@ -128,12 +134,15 @@ export class Simulation {
       this.projectileSystem,
       rng,
     );
+    this.zones = new ZoneSystem(this.enemySystem, this.ids);
     this.abilities = new AbilitySystem(
       data.abilities ?? [],
       data.unlockedAbilityIds ?? [],
       this.enemySystem,
       this.hero,
       this.towerSystem,
+      this.zones,
+      data.equipSlots,
     );
 
     this.looters = new LooterSystem(this.enemySystem, this.economy, this.lanes);
@@ -146,7 +155,13 @@ export class Simulation {
     this.perks = data.perks
       ? new PerkSystem(
           data.perks,
-          { hero: data.hero, economy: data.economy, towers: data.towers, map: data.map },
+          {
+            hero: data.hero,
+            economy: data.economy,
+            towers: data.towers,
+            map: data.map,
+            abilities: data.abilities as Ability[],
+          },
           rng,
         )
       : null;
@@ -163,6 +178,23 @@ export class Simulation {
     // GateSystem copies hp into maxHp at construction rather than reading its
     // config live, so a reinforcement perk has to be routed here.
     this.perks?.onGateMaxHpChanged.push((delta) => this.gate.adjustCapacity(delta));
+    // Drafted abilities. TRIANGLE.md §B.6: the draft *is* the ability tree, so
+    // `unlock-ability` has to actually reach the AbilitySystem.
+    this.perks?.onUnlockAbility.push((id) => this.abilities.unlock(id));
+    // ...and must stop being offered once it could not land. AbilitySystem owns
+    // the equip cap; PerkSystem owns the offer; this is the only place that
+    // knows both, which is why the veto is wired here rather than living in
+    // either of them.
+    if (this.perks) {
+      this.perks.isOfferable = (perk) => {
+        for (const fx of perk.effects) {
+          if (fx.type !== 'unlock-ability') continue;
+          const slot = this.abilities.getSlot(fx.abilityId);
+          if (!slot || slot.unlocked || !this.abilities.hasFreeSlot) return false;
+        }
+        return true;
+      };
+    }
 
     // Kills drop coins where the enemy died — the loot line is the gameplay.
     // Elites pay double (enemies.json elite.coinMultiplier).
@@ -212,6 +244,7 @@ export class Simulation {
     this.towerSystem.tick(SIM_DT);
     this.hero.tick(SIM_DT);
     this.abilities.tick(SIM_DT);
+    this.zones.tick(SIM_DT); // hazards persist across phases, like besiegers
     this.projectileSystem.tick(SIM_DT);
     this.economy.tick(SIM_DT, this.hero.x, this.hero.y, this.phase === 'wave');
 

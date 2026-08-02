@@ -36,6 +36,15 @@ crossroads and +19pp on warlords-march, which means every tower measurement take
 2026-08-02 is suspect. **Tower strength versus hero strength is the actual work**, so
 MG5.3 is now "hero becomes burst" and the barracks follows it.
 
+**MG5.3 shipped and the hero is no longer a pillar on its own** (2026-08-02): hero-only
+now clears **42/0/0/0%** where it cleared 100/83/8/42%. The cap that did it is not the
+cooldown — it is the **equip limit** of three abilities, because damage-per-minute sums
+over the whole loadout and a cooldown only bounds one term. Fixing the bot to respect it
+(no more force-unlocking the roster) put the reference **in band on all four maps for
+the first time** — 97/75/53/28 against 90-100/70-95/45-75/25-55 — so the MG5.2 note
+above predicting a wave-budget re-tune at MG5.8 was reading an instrument error as a
+design problem. **Towers are still not a pillar (0-8%); that is MG5.4's job.**
+
 The armor / flyer / frontal-block counters all stay as texture. DESIGN §6's "RESOLVED"
 block is still worth reading for *why* counter-tuning cannot hold against a progression
 system, and for three traps that cost real time.
@@ -310,7 +319,10 @@ Full plan in **TRIANGLE.md** (authoritative). Per-task acceptance criteria live 
 **and income still is not the constraint.** With the fixed bot, across 45/80/110 starting gold on all four maps, towers-only wins **0%** everywhere and clears 1-2 waves. Tower count barely moves, because a coverage-aware bot buys fewer, better-placed towers. So MG5.1's diagnosis was half right: the 1-tower-0-kills observation was real, but the implied fix would not have helped. **Towers are simply weak relative to the wave budget once hero damage is removed** — that is the whole finding.
 **learned:** economy parameters change bot *behaviour*, which re-rolls the entire run trajectory, so cross-config win rates are not controlled comparisons. Trust within-config observations over across-config deltas. And when a sweep produces an impossible ordering, suspect the instrument before the game — that is twice now (five-seed noise, and this).
 **consequence:** tower-strength-vs-hero-strength is the real work, so **MG5.3 becomes "hero becomes burst"** and the barracks moves to MG5.4. Also: with a competent bot the campaign now measures *easier* than intended (crossroads 78% vs a 45-75 band, warlords 72% vs 25-55). The bands are design intent and must not move to flatter the instrument — fold the re-tune into MG5.8.
-[ ] **MG5.3 — Hero becomes burst (PROMOTED — the real constraint).** Flatten the bow curve, move hero power into cooldown-gated abilities, add ability-upgrade perks. **Accept:** heroOnly loses maps 3-4, and the towersOnly:heroOnly gap narrows from its current ~10:1.
+[x] **MG5.3 — Hero becomes burst** (2026-08-02). Bow curve flattened (27.4 → 65.7 dps over six levels, was 27.4 → 152.0). Three new abilities — Rapid Fire (`hero-buff`), Heavy Shaft (`pierce-shot`), Caltrops (`ground-zone`, on a new `ZoneSystem`). New `ability-stat` effect type for upgrade perks; `unlock-ability` finally routed through to `AbilitySystem`. **Pillar probe: towers-only 8/0/0/0, hero-only 42/0/0/0, reference 97/75/53/28.** Accept criterion met.
+**a cooldown caps one ability; nothing capped the sum of them.** Adding three draftable abilities put hero-only *back up* to 33% on crossroads and 58% on warlords — a pillar that had just been driven to 0% on both. Damage-per-minute is `Σ burst/cooldown` over everything equipped, so a growing roster is a sustain engine built out of burst parts. Fixed with an **equip cap** (`abilities.json` `equipSlots: 3`) — which DESIGN §4 had always specified and nothing had ever enforced. This is the structural cap, not the cooldown.
+**the bot was measuring a loadout no player can assemble.** It force-unlocked the whole roster on wave 1, which the equip cap made impossible; it now starts with Charge and drafts the rest, like a real run. That change alone moved the reference from 100/100/97/100 to 97/75/53/28 — **in band on all four maps for the first time**, with no wave budget touched. The MG5.2 note above predicting a re-tune at MG5.8 was reading an instrument error as a design problem.
+**learned:** that is three times now that a suspicious number was the harness, not the game (five-seed noise, the coverage-blind valuation, and this). A bot shortcut taken for convenience — "unlock everything, we're measuring the ceiling" — silently became a lie about the game the moment unlocks became a mechanic. Bot shortcuts need re-reading every time the thing they shortcut changes.
 [ ] **MG5.4 — Barracks + soldiers.** `ArmySystem`, enemy `blocked` state, `barracks` tower, instanced soldier rendering. The pillar that makes the triangle exist; sequenced second because everything after it is tuned against a two-legged stool otherwise. Biggest engine piece in M5 — friendly units are a new entity type, not a projectile behaviour.
 [ ] **MG5.5 — XP and levels drive the draft.** `XpSystem`, enemy `xpValue`, curve in economy.json, ~25-35 levels per map, `everyNWaves` removed. Kills → XP means riding out to fight *is* progression, which finally wires pillar 1 to the reward loop.
 [ ] **MG5.6 — Perk families + offer rule.** Five families (Hero/Towers/Army/Economy/Keep); one factor per perk; every offer = 1 hero + 1 tower-or-army + 1 wildcard. Replaces per-perk tuning with a structural guarantee — no accidental pure-hero build, no all-dead offers.

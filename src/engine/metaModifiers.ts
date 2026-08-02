@@ -1,10 +1,25 @@
-import type { Economy, Hero, MapDef, MetaEffect, MetaNode, TowersFile } from '../data/schemas';
+import type {
+  Ability,
+  Economy,
+  Hero,
+  MapDef,
+  MetaEffect,
+  MetaNode,
+  TowersFile,
+} from '../data/schemas';
 
 export interface ModifiableData {
   hero: Hero;
   economy: Economy;
   towers: TowersFile;
   map: MapDef;
+  /**
+   * The ability roster is balance data like everything else here, because
+   * ability upgrades are drafted (TRIANGLE.md §B.6). `AbilitySystem` holds these
+   * objects by reference and reads `cooldown` and `effect` at cast time, so a
+   * write here is live on the next cast.
+   */
+  abilities: Ability[];
 }
 
 const apply = (base: number, perRank: number, mode: 'add' | 'multiply', rank: number): number =>
@@ -79,6 +94,24 @@ export function applyEffectInPlace(
         for (const level of tower.levels) level.cost = Math.max(1, Math.round(apply(level.cost, fx.perRank, fx.mode, rank)));
         for (const b of tower.branches) b.cost = Math.max(1, Math.round(apply(b.cost, fx.perRank, fx.mode, rank)));
       }
+    }
+  } else if (fx.type === 'ability-stat') {
+    for (const ability of data.abilities) {
+      if (fx.abilityId !== null && ability.id !== fx.abilityId) continue;
+      if (fx.stat === 'cooldown') {
+        // Floored rather than allowed to reach zero: a burst pillar with no
+        // cooldown is a sustain pillar, which is the exact failure this whole
+        // milestone exists to undo (TRIANGLE.md §B.3).
+        ability.cooldown = Math.max(1, apply(ability.cooldown, fx.perRank, fx.mode, rank));
+        continue;
+      }
+      // Effect fields are per-variant. `loader.ts` has already rejected a perk
+      // naming a stat its target ability does not carry, so a miss here can
+      // only be the `abilityId: null` case sweeping past an ability that
+      // legitimately has no such number.
+      const e = ability.effect as Record<string, unknown>;
+      const current = e[fx.stat];
+      if (typeof current === 'number') e[fx.stat] = apply(current, fx.perRank, fx.mode, rank);
     }
   } else if (fx.type === 'tower-grant') {
     for (const tower of data.towers.towers) {
