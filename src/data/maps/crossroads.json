@@ -38,5 +38,22 @@
     { "id": "west-yard", "position": { "x": 140, "y": 620 } }
   ],
   "gate": { "position": { "x": 210, "y": 715 }, "hp": 110, "attackSlots": 5 },
-  "forge": { "position": { "x": 345, "y": 655 } }
+  "forge": { "position": { "x": 345, "y": 655 } },
+  "lighting": {
+    "sunAzimuth": -52,
+    "day": {
+      "groundTint": "#7d8a3f",
+      "pathTint": "#d6bc84",
+      "sunColor": "#ffdfa4",
+      "background": "#a8c39c",
+      "fogColor": "#cbd3a8"
+    },
+    "night": {
+      "groundTint": "#3f4438",
+      "pathTint": "#8d8570",
+      "skyColor": "#46567e",
+      "background": "#1b2028",
+      "fogColor": "#20242c"
+    }
+  }
 }

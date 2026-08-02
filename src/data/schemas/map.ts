@@ -31,23 +31,123 @@ export const MapCameraSchema = z.object({
 export type MapCamera = z.infer<typeof MapCameraSchema>;
 
 /**
- * The dusk lighting model (Part A.1): cool desaturated ambient over the terrain,
- * warm light pooled on the path corridor, so lighting *is* the readability
- * system. Per-map so biome 2 is a lighting preset before it is new models.
+ * One lighting condition. The game holds two — day and night — and crossfades
+ * between them on the build/wave boundary.
+ *
+ * Terrain albedo lives in the preset alongside the light, which is not
+ * physically honest — grass does not change colour after dark. It is here
+ * because a single Lambert term cannot reproduce what moonlight actually does
+ * to colour: multiplying a blue key into green grass yields *dark green*, never
+ * blue, so a night built only from lights lands on "dusk" and stops there.
+ * Shifting the albedo too is the stylisation that buys the missing hue.
+ *
+ * Spelled as a factory rather than one schema with overrides so each preset
+ * carries its *own* defaults. A map that sets a single night field would
+ * otherwise inherit day values for every field it left alone, and silently get
+ * a bright night.
+ */
+function lightPreset(d: {
+  skyColor: string;
+  groundColor: string;
+  ambientIntensity: number;
+  sunColor: string;
+  sunIntensity: number;
+  sunElevation: number;
+  background: string;
+  fogColor: string;
+  fogDensity: number;
+  groundTint: string;
+  pathTint: string;
+}) {
+  return z.object({
+    groundTint: HexColorSchema.default(d.groundTint),
+    pathTint: HexColorSchema.default(d.pathTint).describe('the worn corridor'),
+    skyColor: HexColorSchema.default(d.skyColor).describe('ambient from above'),
+    groundColor: HexColorSchema.default(d.groundColor).describe('bounce from below'),
+    ambientIntensity: z.number().nonnegative().default(d.ambientIntensity),
+    sunColor: HexColorSchema.default(d.sunColor).describe('key light'),
+    sunIntensity: z.number().nonnegative().default(d.sunIntensity),
+    sunElevation: z
+      .number()
+      .min(5)
+      .max(89)
+      .default(d.sunElevation)
+      .describe(
+        'degrees above the horizon. Low is the whole look: shadow length is ' +
+          'height/tan(elevation), so a raking sun is what turns flat-shaded ' +
+          'geometry into a readable diorama. Raising it flattens the scene.',
+      ),
+    background: HexColorSchema.default(d.background).describe('beyond the play area'),
+    fogColor: HexColorSchema.default(d.fogColor),
+    fogDensity: z
+      .number()
+      .min(0)
+      .max(1)
+      .default(d.fogDensity)
+      .describe(
+        'depth haze, as a fraction of the map reach. 0 disables it. Under a ' +
+          'fixed high camera the far edge of the map is genuinely further away ' +
+          'than the near edge, so this reads as aerial perspective rather than ' +
+          'as murk.',
+      ),
+  });
+}
+
+/** Warm, low, long-shadowed. The build phase. */
+export const DayLightSchema = lightPreset({
+  skyColor: '#c6dff2',
+  groundColor: '#5f7042',
+  ambientIntensity: 1.2,
+  sunColor: '#ffe9c2',
+  sunIntensity: 2.3,
+  sunElevation: 26,
+  background: '#9fc4d8',
+  fogColor: '#bcd6e0',
+  fogDensity: 0.35,
+  groundTint: '#4a7c3a',
+  pathTint: '#c9a86a',
+});
+
+/**
+ * Cold, blue, low-contrast. The wave.
+ *
+ * Dark enough to be a different time of day, bright enough to fight in — the
+ * failure mode is a night nobody can read, and a phone at half brightness in
+ * daylight is the real viewing condition, not a monitor in a dim room.
+ */
+export const NightLightSchema = lightPreset({
+  skyColor: '#3a5c96',
+  groundColor: '#161f30',
+  ambientIntensity: 0.98,
+  sunColor: '#a8c0e8',
+  sunIntensity: 1.4,
+  sunElevation: 46,
+  background: '#16233a',
+  fogColor: '#1a2740',
+  fogDensity: 0.45,
+  groundTint: '#33544f',
+  pathTint: '#8a8172',
+});
+
+/**
+ * Per-map mood. Biome 2 should be a lighting preset before it is new models —
+ * that is the cheapest lever in the whole renderer, and the one that most
+ * changes how a map feels.
  */
 export const MapLightingSchema = z.object({
-  skyColor: HexColorSchema.default('#6f9fc4').describe('cool ambient from above'),
-  groundColor: HexColorSchema.default('#243020').describe('cooler bounce from below'),
-  ambientIntensity: z.number().nonnegative().default(0.75),
-  sunColor: HexColorSchema.default('#ffd9a0').describe('warm key light'),
-  sunIntensity: z.number().nonnegative().default(2.2),
-  sunAzimuth: z.number().default(-38).describe('degrees around the vertical axis'),
-  sunElevation: z.number().min(5).max(89).default(50).describe('degrees above the horizon'),
-  background: HexColorSchema.default('#141d18').describe('beyond the play area'),
-  groundTint: HexColorSchema.default('#3f6b32'),
-  pathTint: HexColorSchema.default('#c9a86a').describe('the warm corridor — brightest region'),
+  sunAzimuth: z
+    .number()
+    .default(-38)
+    .describe(
+      'degrees around the vertical axis. Shared by both presets on purpose: ' +
+        'shadows sweeping sideways on the build→wave transition reads as the ' +
+        'map rotating, not as night falling.',
+    ),
+  day: DayLightSchema.prefault({}),
+  night: NightLightSchema.prefault({}),
 });
 export type MapLighting = z.infer<typeof MapLightingSchema>;
+export type LightPreset = z.infer<typeof DayLightSchema>;
 
 /** A lane is a waypoint polyline; enemies track distance-along-lane (multi-lane capable from day one). */
 export const LaneSchema = z.object({

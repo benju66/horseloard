@@ -1,6 +1,6 @@
 # MIGRATION-3D.md — Horse Lord render layer: Phaser 2D → Three.js low-poly 3D
 
-**Decision:** Adopt stylized low-poly 3D (Kingshot-class mobile look) as the game's visual identity. Render layer swaps from Phaser to Three.js. **The simulation, data schemas, economy, gate system, wave runner, and save layer do not change** — this migration is only possible cheaply because of the substrate rule, and it must not violate that rule on the way through.
+**Decision:** Adopt stylized low-poly 3D as the game's visual identity. Render layer swaps from Phaser to Three.js. *(The look was specified as "Kingshot-class" at the time; that reference was withdrawn on 2026-08-02 in favour of Thronefall — see Part A.1's supersession note and `DESIGN.md` §10. The engine decision below is unaffected.)* **The simulation, data schemas, economy, gate system, wave runner, and save layer do not change** — this migration is only possible cheaply because of the substrate rule, and it must not violate that rule on the way through.
 
 **Engine choice:** Three.js (not Unity). Unity WebGL is incompatible with the PWA goals: 20MB+ bundles, poor mobile-browser performance, opaque builds. Three.js is web-native, tree-shakeable, and delivers the target aesthetic — low-poly + ortho camera + one shadow-casting light is its bread and butter.
 
@@ -20,6 +20,28 @@
 - **Performance:** 60fps on ~2021 mid-range Android with 40+ animated enemies, shadows on. Tools: `InstancedMesh` for coins/projectiles/swarm enemies, merged static geometry for terrain props, draw-call budget ~100, object pools as before. Test on device from the first render task.
 
 ## Part A.1 — Reference frame breakdown (Kingshot combat screenshot)
+
+> **SUPERSEDED 2026-08-02 — historical record, not instructions.**
+>
+> This section derived an art direction from a single Kingshot combat frame, and
+> the game's north star is Thronefall. The two are close to opposite: Kingshot's
+> units are *2D painted sprites billboarded over a 3D environment* — every copy
+> of a unit is pixel-identical across the frame, with baked outlines, baked rim
+> light and a painted ellipse for a shadow — whereas Thronefall is flat-shaded 3D
+> whose polish comes from lighting and composition. Building to A.1 produced
+> rules that fight the actual target.
+>
+> **Withdrawn:** chibi 2–2.5 heads and oversized weapons; per-unit team rings as
+> the faction read; "shadows soft and subtle, not crisp shadow maps"; the dusk
+> corridor lighting model. See `DESIGN.md` §10 for what replaced them.
+>
+> **Still stands:** the roster-as-variants strategy in A.2, the animation
+> manifest, the family/proportion gate, the performance budget, and the speed
+> toggle. Those were never Kingshot-specific.
+>
+> Kept rather than deleted because it records *why* the codebase looks the way it
+> does — the map lighting schema, the ground rings in `fx.ts` and the model
+> manifest's tint field all trace to this section.
 
 Concrete refinements from the reference, overriding Part A where they conflict:
 

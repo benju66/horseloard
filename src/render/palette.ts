@@ -24,6 +24,13 @@ export const PALETTE = [
   '#3b5dc9', // hero blue
   '#c4452e', // enemy red
   '#e8b88a', // skin
+  // Faction shades. Under flat shading a unit *is* its colour, so weight has to
+  // come from the palette: heavier and more dangerous reads darker, fragile and
+  // fast reads lighter. Appended rather than inserted — slots are referenced by
+  // index from models.json, so renumbering would silently recolour the roster.
+  '#8e2f20', // enemy red dark — brutes, swarms, the heavy end
+  '#e0673f', // enemy red light — runners
+  '#3d3646', // blackened — the warlord, flyers
 ] as const;
 
 const SWATCH_PX = 16;

@@ -47,7 +47,7 @@ exports referencing `Textures/colormap.png`, which was never downloaded with the
 `.glb` files, so every material fell back to pure white. Two fixes, both in place:
 
 - The renderer substitutes the manifest `tint` for any untextured-and-white
-  material (`ModelViewFactory.repairUntextured`), so these render in the game's
+  material (`ModelViewFactory.applyPalette`), so these render in the game's
   own palette — one flat colour per model rather than the atlas's per-part
   variation.
 - The dangling reference has been stripped from the files themselves
@@ -60,8 +60,30 @@ colour; nothing is broken without it. Note the strip is now baked into the
 committed `.glb` files, so re-downloading a kit reintroduces the problem — run
 the script again if that happens.
 
-Kenney's Nature kit is unaffected: it was re-exported through glTF-Transform and
-carries real material colours.
+**The Nature kit lost its colour the same way, and it was not obvious.** This
+file previously recorded it as "unaffected — carries real material colours".
+It does not. It went through the same texture-stripping, but instead of leaving
+white it kept whatever `baseColorFactor` happened to be in the material:
+`leafsGreen` was teal `(0.161, 0.788, 0.671)` and `woodBark` was salmon. Those
+are not white, so the renderer's white-repair path deliberately skipped them —
+and because the props were separately collapsed to a two-unit blob at the map
+origin by a quantisation bug, nobody ever saw the colours to notice.
+
+Fixed by rewriting the factors in the files, keeping the trunk/foliage split that
+flattening to a single manifest tint would have destroyed:
+
+```
+node scripts/retint-model.mjs public/models/kenney-nature/tree_default.glb      woodBark=#5b4126 leafsGreen=#37592c
+node scripts/retint-model.mjs public/models/kenney-nature/tree_pineDefaultA.glb woodBarkDark=#4a3018 leafsDark=#2c4a24
+node scripts/retint-model.mjs public/models/kenney-nature/rock_largeA.glb       dirt=#7c7c84 grass=#4a7c3a
+node scripts/retint-model.mjs public/models/kenney-nature/rock_smallA.glb       dirt=#7c7c84 grass=#4a7c3a
+node scripts/retint-model.mjs public/models/kenney-nature/stump_old.glb         woodBark=#5b4126
+```
+
+These are the game's palette colours, not Kenney's originals — the shipped
+`.glb` files are modified. Re-downloading the kit reintroduces the junk factors;
+re-run the commands above if that happens. CC0 permits modification without
+attribution, so the licence row is unchanged.
 
 Each pack's own `License.txt` / `LICENSE.txt` ships alongside its models.
 

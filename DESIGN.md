@@ -346,15 +346,77 @@ Portrait orientation, one-handed playable if abilities are ignored. Safe-area in
 
 ## 10. Art Plan
 
-**Stylized low-poly 3D** (Kingshot-class mobile look), rendered with Three.js. Full specification in `MIGRATION-3D.md` Parts A and A.1; the essentials:
+**Flat-shaded low-poly 3D, Thronefall-class**, rendered with Three.js. The whole
+of the art direction is in this section; `ART-BRIEF.md` is how to produce against
+it.
 
-**Look.** Fixed orthographic camera, high angle, portrait framing — no player camera control in v1. Dusk lighting: cool desaturated ambient over the terrain, warm light pooled on the path corridor, so lighting *is* the readability system. Flat palette texturing (one small gradient texture serves every model), no PBR. Soft blob shadows, not crisp shadow maps. Per-unit team rings under every unit — red enemies, blue hero — as the faction read at chibi scale. Sparse props clustered at path edges, ~15–25 per map, large negative space elsewhere.
+> **The north star is Thronefall, and it was not always.** Through the 3D
+> migration this section named *Kingshot* — a dense, painted, 2D-sprites-over-3D
+> mobile look — and `MIGRATION-3D.md` Part A.1 derived a whole spec from one of
+> its combat frames. That is a different genre and very nearly the opposite art
+> direction, and building to it produced rules that actively fight the game we
+> want: chibi proportions with oversized weapons, per-unit team rings, soft blob
+> shadows, painted detail carrying the read. Those rules are withdrawn. A.1 is
+> retained only as a record of what was decided and when.
 
-**Characters.** Chibi proportions, ~2–2.5 heads tall, chunky silhouettes, oversized weapons. ~6 base models stretched across the whole roster by composition, scale, and tint — a Runner is a Grunt at 0.9×, a Warlord is the large base at 1.8× with crown and cape props. Never source a unique model when a variant works.
+**The bet.** Thronefall's polish is *lighting, palette and composition* — not
+asset detail. Its units are small, simple, near-featureless solids. That is the
+cheapest possible art direction to execute well and the most expensive to
+execute badly, because with no texture to hide behind, everything rests on light
+and silhouette. It also happens to be the direction that suits a web PWA on a
+mid-range Android: untextured single-material meshes are small to download,
+trivial to share materials across, and cheap to draw.
 
-**Phase A (build everything on free CC0).** Kenney, Quaternius, and KayKit glTF packs are the backbone; pick one pack family per category so proportions stay consistent. The mounted hero is a composite — rider mesh parented to horse mesh — which also gives mount/dismount for free later. The old "one hard asset" problem is gone with it: directional horse-and-rider animation was the rarest thing in free *sprite* packs and is a non-issue with a real rig.
+**Look.**
 
-**Proportion gate.** Every character must read as one family. When evaluating a pack, drop one model next to the hero at gameplay zoom on-device — if proportions clash, reject the pack, don't mix. If no CC0 family hits the target across the roster, that discovery is the Phase B trigger.
+- Fixed orthographic camera, high angle, portrait framing — no player camera
+  control in v1.
+- **A raking key light.** Sun elevation in the low twenties, shadows crisp
+  (`PCFShadowMap`), long, and clearly attached to their caster. Shadow length is
+  `height / tan(elevation)`, and those long shadows are the main thing giving
+  flat-shaded geometry its form. Soft blob shadows are explicitly rejected — they
+  were a Kingshot rule and they throw away the effect.
+- **Tone mapping is mandatory** (`NeutralToneMapping`). Untone-mapped, a key
+  light strong enough to model the geometry clips lit faces to flat white.
+  Neutral rather than ACES: ACES desaturates as it rolls off, and here the
+  palette is doing the work a texture normally would.
+- **Depth fog**, ranged relative to the camera distance rather than the origin —
+  an ortho camera sits far back, and fog anchored at zero washes the whole frame
+  uniformly instead of grading it.
+- **Day builds, night defends.** Two lighting presets per map, crossfaded on the
+  build↔wave boundary the sim already exposes. This is the signature, it is
+  nearly free, and it makes the build phase feel like a different activity.
+- **Colour is the faction read.** Not rings under units — the unit *is* its
+  colour. Enemies red, hero blue, heavier things darker, faster things lighter.
+- Sparse props clustered at path edges, large negative space elsewhere.
+
+**Palette discipline.** Few colours in frame, and a distinct pair of day/night
+presets per map — biome 2 should be a lighting preset before it is a single new
+model. Terrain albedo shifts between presets as well as the light, which is not
+physically honest and is necessary anyway: multiplying a blue key into green
+grass yields dark green, never blue, so a night built only from lights stops at
+"dusk".
+
+**Characters.** Simple, solid, readable by silhouette and colour. Not chibi —
+chibi came from Kingshot and brings faces, oversized weapons and painted detail
+that this direction has no way to light. Prefer **one mesh, one material** per
+unit: the current modular CC0 characters cost ~19.5 draw calls each (measured,
+40 enemies ≈ 846 draws), and a single-mesh unit is ~1.
+
+**Phase A (what is on the tree now).** CC0 KayKit / Kenney packs, recoloured flat
+by the manifest `tint`. This is a placeholder that reads correctly rather than a
+shipped look — the enemies are literally skeletons and the towers are Kenney's
+*construction scaffold* stage.
+
+**Phase B (the real roster).** Purpose-built flat-shaded single-mesh models.
+This direction is authorable in a way the Kingshot one never was: solid forms
+with no texture are within reach of one person in Blender, and they fix the draw
+call budget at the same time. Because all model refs live in the data configs, it
+stays a reskin, not a refactor.
+
+**Family gate.** Every character must read as one family. Drop a new model next
+to the hero at gameplay zoom on-device; if it clashes, reject it rather than
+mixing. Mixed proportions are the most obvious tell of assembled-from-packs art.
 
 **License ledger from day one:** an `ASSETS.md` in the repo recording source, license, and attribution requirement for every model and sound as it's added. Retrofitting attribution before publishing is misery; maintaining it is one line per asset.
 

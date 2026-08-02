@@ -82,8 +82,23 @@ export const ModelDefSchema = z.object({
   file: z.string().min(1).optional(),
   /** Applied after height normalisation, so variants are expressed in ratios. */
   scale: z.number().positive().default(1),
-  /** Palette slot (see src/render/palette.ts) — recolour, don't re-texture. */
+  /**
+   * Palette slot (see src/render/palette.ts) — recolour, don't re-texture.
+   *
+   * Authoritative: a model that declares a tint renders flat in that colour,
+   * whatever materials its glTF shipped with. That is the faction read (enemies
+   * red, hero blue) and it is also the art direction — units are solid colour
+   * under a hard key light, so the palette *is* the character paint.
+   */
   tint: z.number().int().min(0).optional(),
+  /**
+   * Opt out of palette recolouring and keep the glTF's own materials.
+   *
+   * For hand-authored models whose colours were chosen deliberately — the hero
+   * being the case that matters, since flattening a bespoke blue-and-gold rider
+   * to one palette slot is a downgrade, not a correction.
+   */
+  keepMaterials: z.boolean().default(false),
   clips: ClipMapSchema,
   props: z.array(ModelPropSchema).prefault([]),
   /**
@@ -153,6 +168,7 @@ export function resolveModel(models: readonly ModelDef[], id: string): ModelDef 
   for (const link of chain.slice(1)) {
     out.file = link.file ?? out.file;
     out.tint = link.tint ?? out.tint;
+    out.keepMaterials = link.keepMaterials || out.keepMaterials;
     out.silhouette = link.silhouette;
     out.instanced = link.instanced || out.instanced;
     // Scale composes down the chain: a 1.4x brute of a 1.0x base is 1.4x.

@@ -14,6 +14,13 @@ M0–M3 shipped on Phaser 3; the render layer moved to Three.js at MIGRATION EXI
 (2026-08-01) and Phaser is gone from the tree. **MIGRATION-3D.md** is now a record of
 how that was done and what it cost — read it for context, not for instructions.
 
+**Art north star: Thronefall.** Flat-shaded low-poly 3D; the polish is lighting,
+palette and composition, not asset detail. Full direction in DESIGN.md §10, production
+guidance in ART-BRIEF.md. Until 2026-08-02 the docs named *Kingshot* instead — a
+painted-2D-sprite look that is close to the opposite — so treat any surviving reference
+to chibi proportions, oversized weapons, team rings or soft blob shadows as withdrawn.
+MIGRATION-3D.md Part A.1 is superseded in full.
+
 ## Architecture rules (non-negotiable)
 
 1. **Substrate rule.** `/src/engine` never imports specific game content. Engines consume schemas; all balance and content lives in `/src/data/*.json`. If an engine file ever references "archer" or "brute" by name, that's a bug. Adding tower #5 must be a JSON entry + assets, zero engine changes. Enforced by `src/engine/substrate.test.ts` — it scans every engine source for content ids and fails with the file and line.

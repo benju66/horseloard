@@ -37,7 +37,17 @@ const saves = new SaveManager();
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, PIXEL_RATIO_CAP));
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// PCFSoft is deprecated in three r185 and silently downgrades to PCF anyway.
+// Asking for PCF outright is also the look we want: shadows from a raking sun
+// are the main thing giving flat-shaded geometry its form, and a soft blob
+// under every unit throws that away.
+renderer.shadowMap.type = THREE.PCFShadowMap;
+// Without tone mapping the renderer clips anything above 1.0 straight to white,
+// which is why a 2.6-intensity key light flattened lit faces into paper. Neutral
+// rather than ACESFilmic on purpose: ACES desaturates as it rolls off, and this
+// palette is doing the work that a texture usually would.
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
 const views = new ModelViewFactory(data.models);
@@ -448,6 +458,11 @@ function step(dt: number): void {
     );
     views.setState(heroView, sim.hero.moving ? 'walk' : 'idle');
   }
+
+  // Day builds, night defends. The sim already draws this line — it is the same
+  // signal the score keys off — so the cycle costs one call and stays honest
+  // about what it means rather than running on a timer of its own.
+  world.setDaylight(sim.phase === 'wave' ? 0 : 1, dt);
 
   views.tick(dt * runOverlay.speed);
   audio.frame();
