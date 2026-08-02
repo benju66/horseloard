@@ -2,6 +2,13 @@
 
 Mobile-first tower defense PWA. You are the commander on the field: riding, shooting, looting, building. Full spec in **DESIGN.md** — read §1 (pillars), §11 (architecture), and the section relevant to the current task before writing code. The design doc is the source of truth for game rules; this file is the source of truth for how we build.
 
+**Currently pivoting (M5).** The game is becoming a roguelite build game on a tower-defence
+spine — Vampire Survivors progression, Thronefall hero and day/night, TD structure.
+**TRIANGLE.md is authoritative for M5** and outranks DESIGN.md where they disagree; read it
+before touching balance, perks, abilities or waves. Its core rule, which supersedes the old
+"no single tower carries" invariant: **towers supply rate, the army supplies exposure, the
+hero supplies burst — no single pillar may clear a map alone, and any two together must.**
+
 ## Stack
 
 - Three.js + TypeScript (strict) + Vite — render layer is stylized low-poly 3D
@@ -34,7 +41,8 @@ MIGRATION-3D.md Part A.1 is superseded in full.
 
 ```
 /src/engine     TowerEngine, EnemyEngine, ProjectileSystem, WaveRunner,
-                EconomySystem, GateSystem, PerkSystem, SaveManager  (generic, tested)
+                EconomySystem, GateSystem, PerkSystem, ArmySystem, XpSystem,
+                SaveManager  (generic, tested)
 /src/data       towers.json, enemies.json, abilities.json, metatree.json, perks.json,
                 maps/*.json, waves/*.json  (+ /src/data/schemas/*.ts — Zod)
 /src/render     scene, camera, lights, entity views, decals, fx (never game logic)
@@ -48,12 +56,14 @@ MIGRATION-3D.md Part A.1 is superseded in full.
 ASSETS.md       license ledger — one line per model/sound: source, license,
                 attribution. Update in the same commit that adds the asset.
 DESIGN.md       the spec
+TRIANGLE.md     the M5 three-pillar rebalance — authoritative while in progress
 MIGRATION-3D.md the Phaser → Three.js render swap; authoritative while in progress
 BACKLOG.md      milestones and tasks with acceptance criteria
 ```
 
 ## Game-rule invariants (from DESIGN.md, enforced in code review)
 
+- **No single pillar clears a map alone; any two together must.** Towers = rate (sustained, position-locked), army = exposure (blocks the road, barely damages), hero = burst (cooldown-gated, mobile). This replaces the retired "no single tower carries" rule — see TRIANGLE.md Part A for why counter-tuning could never hold it.
 - Leaks never despawn: walker → besieger state change at path end, gate slots cap ~5, overflow queues. No exceptions, including the boss.
 - Stars score on damage *taken*, never HP remaining (repair must not buy stars).
 - Hero cannot die; only heavy enemies stagger (shove + ~0.4s control loss, per-enemy cooldown).

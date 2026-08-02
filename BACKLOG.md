@@ -273,6 +273,21 @@ Plan and per-task tracking live in **MIGRATION-3D.md** (Part C) — that file is
 [ ] **Does drafting make composition a decision?** Still the question the feature exists to answer, and still needs a human. The numbers say runs now diverge in *power* and cost something; whether they diverge in *play* is a phone-and-thumbs question.
 [ ] **Perks are not saved.** They are run state and vanish on reload, which is correct today because runs are not resumable. If run-resume ever lands, `PerkSystem.takenPerks` is what has to persist — and per CLAUDE.md #5 it must go in the save as taken ids, never as the mutated balance numbers, which are derived.
 
+## M5 — The three-pillar rebalance  ← CURRENT
+Full plan in **TRIANGLE.md** (authoritative). Per-task acceptance criteria live there; this is the tracking view.
+
+**The decision in one line:** towers supply *rate*, the army supplies *exposure*, the hero supplies *burst* — no single pillar may clear a map alone, and any two together must. Four measured attempts to hold "no single tower carries" all came undone because towers and the hero produce the same resource, and two systems producing the same resource are substitutes forever. Retired and replaced.
+
+[ ] **MG5.1 — Measure where we stand (GO/NO-GO).** `towersOnly` / `heroOnly` / `armyOnly` bot policies, a harness probe per pillar, `DIFFICULTY_TARGETS.soloCarry` → `maxSinglePillarWinRate`. No content changes. **Nobody has ever measured whether hero-only clears map 3** — do that before changing anything.
+[ ] **MG5.2 — Barracks + soldiers.** `ArmySystem`, enemy `blocked` state, `barracks` tower, instanced soldier rendering. The pillar that makes the triangle exist; sequenced second because everything after it is tuned against a two-legged stool otherwise. Biggest engine piece in M5 — friendly units are a new entity type, not a projectile behaviour.
+[ ] **MG5.3 — Hero becomes burst.** Bow curve flattened; power moves into cooldown-gated abilities (Rapid Fire, Heavy Shaft, area denial); ability-upgrade perks. This is the structural cap on hero throughput.
+[ ] **MG5.4 — XP and levels drive the draft.** `XpSystem`, enemy `xpValue`, curve in economy.json, ~25-35 levels per map, `everyNWaves` removed. Kills → XP means riding out to fight *is* progression, which finally wires pillar 1 to the reward loop.
+[ ] **MG5.5 — Perk families + offer rule.** Five families (Hero/Towers/Army/Economy/Keep); one factor per perk; every offer = 1 hero + 1 tower-or-army + 1 wildcard. Replaces per-perk tuning with a structural guarantee — no accidental pure-hero build, no all-dead offers.
+[ ] **MG5.6 — Meta tree becomes unlocks, not stats.** Removes the double-dip where meta and perks multiply the same numbers. First real save migration.
+[ ] **MG5.7 — Rebalance the campaign against the triangle.** Re-price wave budgets; retire `soloCarry`; adopt the no-single-pillar invariant.
+
+**Exit:** every map in its win band; no pillar clears maps 3-4 alone; every tower *and* the barracks appear in winning runs; runs measurably diverge across seeds; validated on a real phone.
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 
