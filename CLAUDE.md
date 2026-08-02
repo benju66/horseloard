@@ -34,8 +34,8 @@ MIGRATION-3D.md Part A.1 is superseded in full.
 
 ```
 /src/engine     TowerEngine, EnemyEngine, ProjectileSystem, WaveRunner,
-                EconomySystem, GateSystem, SaveManager  (generic, tested)
-/src/data       towers.json, enemies.json, abilities.json, metatree.json,
+                EconomySystem, GateSystem, PerkSystem, SaveManager  (generic, tested)
+/src/data       towers.json, enemies.json, abilities.json, metatree.json, perks.json,
                 maps/*.json, waves/*.json  (+ /src/data/schemas/*.ts — Zod)
 /src/render     scene, camera, lights, entity views, decals, fx (never game logic)
 /src/entities   thin classes binding configs to models

@@ -494,7 +494,7 @@ Resolved as of v0.3: hero damage (stagger, no death), tower selling (70%), start
 
 Still parked, none blocking:
 
-1. **In-run draft choices** (survivor-style pick-1-of-3 on wave clears): v2 candidate if runs feel samey after M2 playtests.
+1. ~~**In-run draft choices** (survivor-style pick-1-of-3 on wave clears): v2 candidate if runs feel samey after M2 playtests.~~ **SHIPPED 2026-08-02.** The trigger fired, and from two directions at once: this note said "if runs feel samey", and the bot harness independently measured tower composition as *preference rather than decision* (BACKLOG, "Solo-carry still unsolved on maps 3-4"), which is the same finding stated in numbers. A perk is a meta-tree node applied mid-run — same `MetaEffect` vocabulary, same arithmetic, one implementation — so a new perk is a `perks.json` entry and nothing else. Drafts are **additive** to gold, bow levels and tower upgrades rather than replacing any of them; whether drafting should eventually absorb bow levels (currently just a gold sink) is a live question, and keeping it additive means answering it later is a data change. **Open: it flattens the difficulty curve** — crossroads went 60% → 93% against a 45-75% target. The dial is `everyNWaves` in `perks.json`; the alternative is re-tuning enemy scaling now that players compound power within a run.
 2. **Player-set tower targeting** (first/strong/near): v2 depth add for strategists.
 3. **Monetization:** none assumed. If publishing broadly ever means monetizing, cosmetics-only; the meta tree must never be purchasable or the design collapses.
 4. **Co-op design** (long-term): hedged in architecture (§11), otherwise out of scope until v1 ships.

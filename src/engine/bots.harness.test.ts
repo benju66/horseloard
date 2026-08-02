@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest';
 import { loadGameData } from '../data/loader';
-import { BOTS, forcedComposition, runBot, type BotRunResult } from './bots';
+import { BOTS, forcedComposition, forcedPerk, runBot, type BotRunResult } from './bots';
 
 /**
  * The active-play matrix: every bot × every map × N seeds.
@@ -211,5 +211,73 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
       );
     }
     console.log('\n[solo carry — forced composition, all maps × all seeds]\n' + lines.join('\n'));
+  });
+
+  /**
+   * The in-run draft (DESIGN §15.1), measured rather than felt.
+   *
+   * `botData` above deliberately omits the perk pool, so every number before
+   * this point is the pre-draft baseline and the difficulty targets stay
+   * comparable. These two probes are the whole reason the draft was built on
+   * the injected rng.
+   */
+  const draftData = { ...botData, perks: data.perks };
+
+  it('reports what drafting does to the difficulty curve', { timeout: 60_000 }, () => {
+    const lines: string[] = [];
+    for (const mapId of Object.keys(data.maps)) {
+      const off = BOTS.flatMap((f) => SEEDS.map((s) => runBot(botData, mapId, f, s)));
+      const on = BOTS.flatMap((f) => SEEDS.map((s) => runBot(draftData, mapId, f, s)));
+      const rate = (runs: BotRunResult[]) => (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100;
+      const delta = rate(on) - rate(off);
+      const target = DIFFICULTY_TARGETS[mapId];
+      const inBand = target ? rate(on) >= target.winRate[0] && rate(on) <= target.winRate[1] : true;
+      lines.push(
+        `  ${mapId.padEnd(16)} off ${pct(off.filter((r) => r.outcome === 'win').length, off.length)}  ` +
+          `on ${pct(on.filter((r) => r.outcome === 'win').length, on.length)}  ` +
+          `Δ ${(delta >= 0 ? '+' : '') + delta.toFixed(0)}pp` +
+          (target && !inBand ? `   ← outside target ${target.winRate[0]}-${target.winRate[1]}%` : ''),
+      );
+    }
+    console.log(
+      '\n[draft impact — free-choice picks, all bots × all seeds]\n' +
+        lines.join('\n') +
+        '\n  A large positive Δ means drafting flattened the curve that was just tuned.',
+    );
+  });
+
+  /**
+   * Per-perk strength, forced. Free-choice picks cannot answer this — the
+   * project already learned that for towers, and BACKLOG says so outright:
+   * "the preference column is not evidence about tower strength". A perk that
+   * shows up in winning runs might be strong, or might simply be dealt often.
+   */
+  it('reports whether any single perk swings the campaign', { timeout: 120_000 }, () => {
+    const lines: string[] = [];
+    // Maps 3-4 only: the easy maps win regardless, so a perk's effect is
+    // invisible there. The interesting question is whether a perk rescues a map
+    // that is supposed to be hard.
+    const hardMaps = Object.keys(data.maps).filter(
+      (m) => (DIFFICULTY_TARGETS[m]?.winRate[1] ?? 100) <= 75,
+    );
+    for (const perk of data.perks.perks) {
+      const runs: BotRunResult[] = [];
+      for (const mapId of hardMaps) {
+        for (const f of BOTS) {
+          for (const seed of SEEDS) runs.push(runBot(draftData, mapId, forcedPerk(f, perk.id), seed));
+        }
+      }
+      const wins = runs.filter((r) => r.outcome === 'win');
+      lines.push(
+        `  ${perk.id.padEnd(24)} win ${pct(wins.length, runs.length)}  ` +
+          `waves ${(runs.reduce((s, r) => s + r.wavesCleared, 0) / runs.length).toFixed(1)}`,
+      );
+    }
+    console.log(
+      `\n[perk strength — forced pick, maps ${hardMaps.join(' + ')} × all bots × all seeds]\n` +
+        lines.join('\n') +
+        '\n  Compare against the draft-on row for these maps above. A perk well clear\n' +
+        '  of the rest is carrying runs on its own.',
+    );
   });
 });

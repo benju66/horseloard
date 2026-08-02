@@ -8,6 +8,7 @@ import {
   MapSchema,
   MetaTreeFileSchema,
   ModelsFileSchema,
+  PerksFileSchema,
   TowersFileSchema,
   WaveSetSchema,
   type AbilitiesFile,
@@ -18,6 +19,7 @@ import {
   type MapDef,
   type MetaTreeFile,
   type ModelsFile,
+  type PerksFile,
   type TowersFile,
   type WaveSet,
 } from './schemas';
@@ -30,6 +32,7 @@ import heroJson from './hero.json';
 import economyJson from './economy.json';
 import archetypesJson from './archetypes.json';
 import modelsJson from './models.json';
+import perksJson from './perks.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
 import theFordMapJson from './maps/the-ford.json';
@@ -50,6 +53,8 @@ export interface GameData {
   archetypes: ArchetypesFile['archetypes'];
   /** Render-layer manifest: logical states -> clips, and the variant roster. */
   models: ModelsFile['models'];
+  /** In-run draft pool (DESIGN §15.1). */
+  perks: PerksFile;
   /** keyed by map id */
   maps: Record<string, MapDef>;
   /** keyed by map id */
@@ -87,6 +92,7 @@ export interface RawGameData {
   economy: unknown;
   archetypes: unknown;
   models: unknown;
+  perks: unknown;
   /** file path (for messages) → raw content */
   maps: Record<string, unknown>;
   /** file path (for messages) → raw content */
@@ -107,6 +113,7 @@ export function validateGameData(raw: RawGameData): GameData {
   const economy = validateFile(EconomySchema, raw.economy, 'economy.json');
   const archetypesFile = validateFile(ArchetypesFileSchema, raw.archetypes, 'archetypes.json');
   const modelsFile = validateFile(ModelsFileSchema, raw.models, 'models.json');
+  const perks = validateFile(PerksFileSchema, raw.perks, 'perks.json');
 
   const maps: Record<string, MapDef> = {};
   for (const [file, content] of Object.entries(raw.maps)) {
@@ -182,6 +189,24 @@ export function validateGameData(raw: RawGameData): GameData {
     }
   });
 
+  // Perks carry the same effect vocabulary as meta nodes, so they need the same
+  // reference check. A perk aimed at a misspelled tower would validate, appear
+  // in a draft, be chosen, and do nothing — the worst kind of silent failure,
+  // because it reads as the perk being weak rather than broken.
+  perks.perks.forEach((perk, i) => {
+    const effect = perk.effect;
+    if (effect.type === 'tower-stat' && effect.towerId !== null && !towerIds.has(effect.towerId)) {
+      errors.push(
+        `perks.json → perks.${i}.effect.towerId: unknown tower "${effect.towerId}" (known: ${[...towerIds].join(', ')})`,
+      );
+    }
+    if (effect.type === 'unlock-ability' && !abilityIds.has(effect.abilityId)) {
+      errors.push(
+        `perks.json → perks.${i}.effect.abilityId: unknown ability "${effect.abilityId}" (known: ${[...abilityIds].join(', ')})`,
+      );
+    }
+  });
+
   // Model refs are optional during the migration, but a ref that IS given must
   // resolve — a typo'd model would otherwise degrade silently to placeholder
   // geometry and look like an art gap rather than a bug.
@@ -213,6 +238,7 @@ export function validateGameData(raw: RawGameData): GameData {
     economy,
     archetypes: archetypesFile.archetypes,
     models: modelsFile.models,
+    perks,
     maps,
     waveSets,
   };
@@ -229,6 +255,7 @@ export function loadGameData(): GameData {
     economy: economyJson,
     archetypes: archetypesJson,
     models: modelsJson,
+    perks: perksJson,
     maps: {
       'maps/meadow-road.json': meadowRoadMapJson,
       'maps/the-ford.json': theFordMapJson,

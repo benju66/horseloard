@@ -1,4 +1,4 @@
-import type { Ability, Economy, EnemiesFile, Hero, MapDef, TowersFile, WaveSet } from '../data/schemas';
+import type { Ability, Economy, EnemiesFile, Hero, MapDef, PerksFile, TowersFile, WaveSet } from '../data/schemas';
 import { IdGenerator } from './ids';
 import { buildLanePaths, type LanePath } from './path';
 import { EnemySystem } from './enemySystem';
@@ -10,6 +10,7 @@ import { TowerSystem } from './towerSystem';
 import { GateSystem } from './gateSystem';
 import { AbilitySystem } from './abilitySystem';
 import { LooterSystem } from './looterSystem';
+import { PerkSystem } from './perkSystem';
 import { generateEndlessWave } from './endless';
 
 /** Fixed simulation timestep. Rendering framerate is unrelated (CLAUDE.md #2). */
@@ -31,6 +32,8 @@ export interface SimData {
   unlockedAbilityIds?: readonly string[];
   /** endless mode: waves generate forever, victory never comes */
   endless?: boolean;
+  /** in-run draft pool; omitted = no drafting (engine tests, legacy callers) */
+  perks?: PerksFile;
 }
 
 /**
@@ -60,6 +63,10 @@ export class Simulation {
   readonly gate: GateSystem;
   readonly abilities: AbilitySystem;
   readonly looters: LooterSystem;
+  /** The in-run draft, or null when this run has no perk pool. */
+  readonly perks: PerkSystem | null;
+  /** Wave clears between drafts — the feature's difficulty dial, from perks.json. */
+  private readonly perkCadence: number;
   readonly endless: boolean;
   private readonly enemiesFile: EnemiesFile;
   private readonly mapDef: MapDef;
@@ -74,7 +81,28 @@ export class Simulation {
   buildElapsed = 0;
   private accumulator = 0;
 
-  constructor(data: SimData, rng: () => number = Math.random) {
+  constructor(input: SimData, rng: () => number = Math.random) {
+    // The sim owns its balance data outright.
+    //
+    // Every system holds its config by reference and reads it live, which is
+    // what lets the in-run draft change the game mid-run by writing to these
+    // objects. That same property makes sharing them across runs a data leak:
+    // the bot harness passes one `loadGameData()` result into hundreds of runs,
+    // and without this clone a perk taken in run 1 was still in force in run
+    // 300 — measured as the harness reporting 100% win rates on maps tuned to
+    // 60% and 40%.
+    //
+    // The game never hit it because `applyMetaModifiers` already clones before
+    // building a Simulation, but that was incidental protection, not a
+    // guarantee. Owning the data here makes it one.
+    const data: SimData = {
+      ...input,
+      hero: structuredClone(input.hero),
+      economy: structuredClone(input.economy),
+      towers: structuredClone(input.towers),
+      map: structuredClone(input.map),
+    };
+
     this.endless = data.endless ?? false;
     this.enemiesFile = data.enemies;
     this.mapDef = data.map;
@@ -110,6 +138,19 @@ export class Simulation {
 
     this.looters = new LooterSystem(this.enemySystem, this.economy, this.lanes);
 
+    // The draft mutates the very config objects the systems above hold by
+    // reference, so it is built from the same `data` and needs no plumbing to
+    // reach them. Off entirely when no pool is supplied, which keeps every
+    // existing engine test and the legacy call sites untouched.
+    this.perkCadence = data.perks?.everyNWaves ?? 1;
+    this.perks = data.perks
+      ? new PerkSystem(
+          data.perks,
+          { hero: data.hero, economy: data.economy, towers: data.towers, map: data.map },
+          rng,
+        )
+      : null;
+
     // Mills drop coins beside themselves — map safety converted into economy.
     this.towerSystem.onIncome.push((x, y, value) => {
       this.economy.spawnCoins(x, y, value);
@@ -119,6 +160,9 @@ export class Simulation {
     this.gate.onDestroyed.push(() => {
       this.phase = 'defeat';
     });
+    // GateSystem copies hp into maxHp at construction rather than reading its
+    // config live, so a reinforcement perk has to be routed here.
+    this.perks?.onGateMaxHpChanged.push((delta) => this.gate.reinforce(delta));
 
     // Kills drop coins where the enemy died — the loot line is the gameplay.
     // Elites pay double (enemies.json elite.coinMultiplier).
@@ -191,6 +235,18 @@ export class Simulation {
     this.economy.sweep();
     this.phase = nextPhase;
     this.buildElapsed = 0;
+
+    // Deal the draft rather than introducing a 'draft' phase. Two reasons: the
+    // phase enum is consumed well beyond the engine — the renderer's day/night
+    // cycle keys off `phase === 'wave'` and the score keys off the same line —
+    // so a fifth value would silently change how the game *looks*; and the sim
+    // must never block on a UI decision. The offer simply sits in hand through
+    // the build phase, and a player who ignores it loses nothing.
+    //
+    // Not on victory: a draft handed out after the last wave buys nothing.
+    if (nextPhase === 'build' && this.waveRunner.waveNumber % this.perkCadence === 0) {
+      this.perks?.deal();
+    }
   }
 
   /**

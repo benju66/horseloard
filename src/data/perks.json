@@ -1,0 +1,125 @@
+{
+  "offerSize": 3,
+  "perks": [
+    {
+      "id": "perk-longbow",
+      "name": "Longbow",
+      "description": "Your arrows reach further from the saddle.",
+      "effect": { "type": "hero-stat", "stat": "bowRange", "perRank": 1.14, "mode": "multiply" },
+      "maxStacks": 3,
+      "weight": 1
+    },
+    {
+      "id": "perk-heavy-draw",
+      "name": "Heavy Draw",
+      "description": "Slower to loose, but each shaft bites deeper.",
+      "effect": { "type": "hero-stat", "stat": "bowDamage", "perRank": 1.2, "mode": "multiply" },
+      "maxStacks": 4,
+      "weight": 1.2
+    },
+    {
+      "id": "perk-quick-nock",
+      "name": "Quick Nock",
+      "description": "Arrow after arrow, without thinking about it.",
+      "effect": { "type": "hero-stat", "stat": "bowFireRate", "perRank": 1.13, "mode": "multiply" },
+      "maxStacks": 4,
+      "weight": 1.2
+    },
+    {
+      "id": "perk-warhorse",
+      "name": "Warhorse",
+      "description": "The horse is the weapon. Riding through them hurts more.",
+      "effect": { "type": "hero-stat", "stat": "trampleDamage", "perRank": 1.35, "mode": "multiply" },
+      "maxStacks": 3,
+      "weight": 1
+    },
+    {
+      "id": "perk-sure-seat",
+      "name": "Sure Seat",
+      "description": "Heavy blows rock you less, and you recover faster.",
+      "effect": { "type": "hero-stat", "stat": "staggerResist", "perRank": 1.3, "mode": "multiply" },
+      "maxStacks": 2,
+      "weight": 0.8
+    },
+    {
+      "id": "perk-swift-mount",
+      "name": "Swift Mount",
+      "description": "Cover the field faster — more lanes, more loot, more often.",
+      "effect": { "type": "hero-stat", "stat": "moveSpeed", "perRank": 1.1, "mode": "multiply" },
+      "maxStacks": 3,
+      "weight": 1
+    },
+    {
+      "id": "perk-fletchers-contract",
+      "name": "Fletcher's Contract",
+      "description": "Archer towers loose faster along the whole line.",
+      "effect": { "type": "tower-stat", "towerId": "archer", "stat": "fireRate", "perRank": 1.16, "mode": "multiply" },
+      "maxStacks": 3,
+      "weight": 1
+    },
+    {
+      "id": "perk-powder-cache",
+      "name": "Powder Cache",
+      "description": "Bombards hit markedly harder.",
+      "effect": { "type": "tower-stat", "towerId": "bombard", "stat": "damage", "perRank": 1.24, "mode": "multiply" },
+      "maxStacks": 3,
+      "weight": 1
+    },
+    {
+      "id": "perk-deep-winter",
+      "name": "Deep Winter",
+      "description": "Frost spires hold a wider circle of ground.",
+      "effect": { "type": "tower-stat", "towerId": "frost-spire", "stat": "range", "perRank": 1.18, "mode": "multiply" },
+      "maxStacks": 3,
+      "weight": 1
+    },
+    {
+      "id": "perk-masons-favour",
+      "name": "Mason's Favour",
+      "description": "Every tower costs less to raise and to upgrade.",
+      "effect": { "type": "tower-stat", "towerId": null, "stat": "cost", "perRank": 0.88, "mode": "multiply" },
+      "maxStacks": 3,
+      "weight": 0.9
+    },
+    {
+      "id": "perk-long-watch",
+      "name": "Long Watch",
+      "description": "Every tower sees further.",
+      "effect": { "type": "tower-stat", "towerId": null, "stat": "range", "perRank": 1.1, "mode": "multiply" },
+      "maxStacks": 2,
+      "weight": 0.8
+    },
+    {
+      "id": "perk-reinforced-gate",
+      "name": "Reinforced Gate",
+      "description": "The keep can take more before it breaks.",
+      "effect": { "type": "kingdom-stat", "stat": "gateMaxHp", "perRank": 25, "mode": "add" },
+      "maxStacks": 4,
+      "weight": 1
+    },
+    {
+      "id": "perk-scavengers-eye",
+      "name": "Scavenger's Eye",
+      "description": "Coins fly to you from further away.",
+      "effect": { "type": "kingdom-stat", "stat": "coinMagnetRadius", "perRank": 1.3, "mode": "multiply" },
+      "maxStacks": 3,
+      "weight": 0.9
+    },
+    {
+      "id": "perk-slow-rot",
+      "name": "Slow Rot",
+      "description": "Dropped coins linger longer before they are lost.",
+      "effect": { "type": "kingdom-stat", "stat": "coinExpiryTime", "perRank": 1.35, "mode": "multiply" },
+      "maxStacks": 2,
+      "weight": 0.7
+    },
+    {
+      "id": "perk-standing-stones",
+      "name": "Standing Stones",
+      "description": "Repairs to the gate cost far less.",
+      "effect": { "type": "kingdom-stat", "stat": "repairCost", "perRank": 0.75, "mode": "multiply" },
+      "maxStacks": 2,
+      "weight": 0.7
+    }
+  ]
+}
