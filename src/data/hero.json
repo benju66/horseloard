@@ -22,33 +22,33 @@
         "range": 137
       },
       {
-        "cost": 30,
-        "damage": 18,
-        "fireInterval": 0.43,
+        "cost": 25,
+        "damage": 15,
+        "fireInterval": 0.45,
         "range": 146
       },
       {
-        "cost": 58,
-        "damage": 23,
-        "fireInterval": 0.385,
+        "cost": 45,
+        "damage": 17,
+        "fireInterval": 0.425,
         "range": 155
       },
       {
-        "cost": 86,
-        "damage": 28,
-        "fireInterval": 0.34,
+        "cost": 70,
+        "damage": 19,
+        "fireInterval": 0.4,
         "range": 164
       },
       {
-        "cost": 114,
-        "damage": 33,
-        "fireInterval": 0.295,
+        "cost": 95,
+        "damage": 21,
+        "fireInterval": 0.375,
         "range": 173
       },
       {
-        "cost": 142,
-        "damage": 38,
-        "fireInterval": 0.25,
+        "cost": 120,
+        "damage": 23,
+        "fireInterval": 0.35,
         "range": 182
       }
     ]

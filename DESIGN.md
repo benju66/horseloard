@@ -75,6 +75,21 @@ Design rule: abilities are position-dependent (cast at/from the hero), reinforci
 > The meta tree gates which abilities are *eligible* to appear; the draft decides which
 > you actually get. Launch set grows to include Rapid Fire, Heavy Shaft, Muster and an
 > area-denial ability.
+>
+> **Amended 2026-08-02 (MG5.3 shipped).** The cooldown ceiling above is real but it is
+> not the cap — it bounds *one* ability, while hero damage-per-minute is the sum over
+> everything equipped. Three more draftable abilities put hero-only back to 33% and 58%
+> on maps 3–4 after it had just been driven to 0%. **The cap is the three-slot loadout**,
+> which this section always specified and nothing had ever enforced; it now lives in
+> `abilities.json` as `equipSlots` and `AbilitySystem.unlock` refuses past it. That is
+> what makes the roster safe to grow: a tenth ability changes which three you carry,
+> never how many.
+>
+> Shipped set: Charge, Volley, Rally Horn, **Rapid Fire** (a timed bow-rate buff),
+> **Heavy Shaft** (one arrow through a corridor along the hero's facing), **Caltrops**
+> (a persistent patch that damages and slows — area denial is *exposure*, so it is the
+> hero's contribution to the army's factor without replacing it). Muster arrives with the
+> barracks in MG5.4.
 
 **Trample (passive).** Riding through enemies at speed deals small contact damage with an internal cooldown per enemy. Makes the horse feel physical; upgradable in the meta tree.
 

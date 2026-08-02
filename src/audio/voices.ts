@@ -133,6 +133,14 @@ export const VOICES: Record<string, Voice> = {
     }
   },
 
+  'sfx-caltrops': (c, o, t, p) => {
+    // A handful of iron hitting dirt: bright scatter, no tone. Deliberately
+    // unlike the bow sounds — this ability leaves something behind rather than
+    // hitting something now, and the ear should be able to tell.
+    hiss(c, o, t, { type: 'highpass', freq: 2600 * p, decay: 0.22, peak: 0.13 });
+    hiss(c, o, t + 0.05, { type: 'highpass', freq: 3400 * p, decay: 0.3, peak: 0.08 });
+  },
+
   // ─── Economy and building ───
   coin: (c, o, t, p) => {
     tone(c, o, t, { type: 'triangle', from: 1180 * p, decay: 0.09, peak: 0.12 });

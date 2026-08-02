@@ -233,7 +233,13 @@ function startMap(mapId: string, endless = false): void {
 
   // The meta tree rewrites copies of the balance data before the sim exists.
   const modded = applyMetaModifiers(
-    { hero: data.hero, economy: data.economy, towers: data.towers, map: data.maps[mapId]! },
+    {
+      hero: data.hero,
+      economy: data.economy,
+      towers: data.towers,
+      map: data.maps[mapId]!,
+      abilities: data.abilities,
+    },
     data.metaTree,
     save.meta.ranks,
   );
@@ -256,8 +262,9 @@ function startMap(mapId: string, endless = false): void {
     hero: modded.hero,
     economy: modded.economy,
     towers: modded.towers,
-    abilities: data.abilities,
+    abilities: modded.abilities,
     unlockedAbilityIds: modded.unlockedAbilityIds,
+    equipSlots: data.equipSlots,
     // Cloned like the wave set: PerkSystem mutates balance data in place, and
     // the loaded pool is shared across every run of the session.
     perks: structuredClone(data.perks),

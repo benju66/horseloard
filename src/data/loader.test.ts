@@ -51,7 +51,14 @@ describe('seed data', () => {
     const data = validateGameData(seed());
     expect(data.towers.towers.map((t) => t.id)).toEqual(['archer', 'bombard', 'frost-spire', 'mill']);
     expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute', 'shieldbearer', 'swarm', 'wolf-rider', 'raven', 'looter', 'warlord']);
-    expect(data.abilities.map((a) => a.id)).toEqual(['charge', 'volley', 'rally-horn']);
+    expect(data.abilities.map((a) => a.id)).toEqual([
+      'charge',
+      'volley',
+      'rally-horn',
+      'rapid-fire',
+      'heavy-shaft',
+      'caltrops',
+    ]);
     expect(Object.keys(data.maps).sort()).toEqual(['crossroads', 'meadow-road', 'the-ford', 'warlords-march']);
     expect(data.waveSets['meadow-road']?.waves).toHaveLength(8);
     expect(data.waveSets['the-ford']?.waves).toHaveLength(10);
@@ -196,6 +203,51 @@ describe('cross-file references', () => {
     const node = (raw.metatree as any).nodes.find((n: any) => n.effect.type === 'unlock-ability');
     node.effect.abilityId = 'meteor';
     expect(() => validateGameData(raw)).toThrow('unknown ability "meteor"');
+  });
+
+  /**
+   * An upgrade card naming a stat its target has not got would validate, be
+   * drafted and change nothing — indistinguishable from a weak perk. These
+   * three make that a boot failure instead.
+   */
+  it('ability-stat pointing at an unknown ability', () => {
+    const raw = seed();
+    (raw.perks as any).perks.push({
+      id: 'perk-ghost-ability',
+      name: 'Ghost',
+      description: 'x',
+      effects: [{ type: 'ability-stat', abilityId: 'meteor', stat: 'cooldown', perRank: 0.9, mode: 'multiply' }],
+      maxStacks: 1,
+      weight: 1,
+    });
+    expect(() => validateGameData(raw)).toThrow('unknown ability "meteor"');
+  });
+
+  it('ability-stat naming a stat the ability has not got', () => {
+    const raw = seed();
+    (raw.perks as any).perks.push({
+      id: 'perk-wrong-stat',
+      name: 'Wrong',
+      description: 'x',
+      // Heavy Shaft is a line, not a circle — it has no radius.
+      effects: [{ type: 'ability-stat', abilityId: 'heavy-shaft', stat: 'radius', perRank: 1.2, mode: 'multiply' }],
+      maxStacks: 1,
+      weight: 1,
+    });
+    expect(() => validateGameData(raw)).toThrow('ability "heavy-shaft" has no "radius"');
+  });
+
+  it('a broad ability-stat is fine as long as some ability carries the stat', () => {
+    const raw = seed();
+    (raw.perks as any).perks.push({
+      id: 'perk-broad',
+      name: 'Broad',
+      description: 'x',
+      effects: [{ type: 'ability-stat', abilityId: null, stat: 'radius', perRank: 1.2, mode: 'multiply' }],
+      maxStacks: 1,
+      weight: 1,
+    });
+    expect(() => validateGameData(raw)).not.toThrow();
   });
 
   it('tower-stat node pointing at an unknown tower', () => {

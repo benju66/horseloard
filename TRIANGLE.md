@@ -103,6 +103,19 @@ never answer *everything, continuously*, which is the towers' job.
 
 It also happens to be the most fun version. Abilities are what people remember.
 
+**A cooldown alone is not the cap — MG5.3 measured that.** Damage-per-minute for one
+ability is bounded by `burst / cooldown`, but the hero's total is the *sum over
+everything equipped*, so a roster that grows without a limit is a sustain engine
+assembled out of burst parts. The moment three more abilities became draftable, hero-only
+climbed back to **33% on crossroads and 58% on warlords-march** — a pillar that had just
+been driven to 0% on both.
+
+So the cap is **the equip limit, not the cooldown**: `abilities.json` carries
+`equipSlots` (3, which DESIGN §4 had always said and nothing had ever enforced), and
+`AbilitySystem.unlock` refuses past it. This is what makes the ability roster safe to
+grow — a tenth ability changes *which three* you carry, never how many. It is also the
+better game: a full bar makes a fourth unlock a real trade rather than a free add.
+
 ### B.4 XP and levels drive the draft
 
 Kills grant XP. XP levels the hero. **Every level deals a draft.** This replaces
@@ -138,7 +151,16 @@ awkward.
 ### B.6 Abilities come from the draft, not a new tree
 
 `unlock-ability` is **already** in the effect vocabulary and already applied. So an
-ability is simply a card you can draft.
+ability is simply a card you can draft. (It was in the vocabulary but its return value
+was being dropped on the floor — MG5.3 routed it through `PerkSystem.onUnlockAbility` to
+`AbilitySystem.unlock`, which is what made this true rather than nearly-true.)
+
+Upgrades needed a new effect type, `ability-stat`, scoping `cooldown`/`damage`/`radius`/
+`duration`/`range` to one ability or to all of them. `loader.ts` rejects a card naming a
+stat its target has not got, because an upgrade that silently does nothing reads as a
+weak perk rather than a broken one. An unlock card stops being offered once its ability
+is carried or the bar is full — `PerkSystem.isOfferable`, a predicate the Simulation
+supplies, since AbilitySystem owns the cap and PerkSystem owns the offer.
 
 - **Meta tree (between runs)** → which abilities and perks are *eligible to appear*.
 - **Draft (in run)** → which you actually get, plus upgrades to them.
@@ -327,12 +349,34 @@ measurement comes first.
   setting. No economy change shipped. The bot fix alone moved the reference +14pp on
   crossroads and +19pp on warlords-march, so every prior tower measurement is suspect.
 
-### M5.3 — Hero becomes burst (PROMOTED — the real constraint)
-- [ ] Re-shape the bow curve so base damage scales slowly.
-- [ ] Move hero power into abilities; add Rapid Fire, Heavy Shaft, area denial.
-- [ ] Ability upgrade perks ("Volley fires twice", "Charge burns the ground").
-- **Accept:** `heroOnly` loses maps 3–4; the gap between `towersOnly` and `heroOnly`
-  narrows from its current ~10:1.
+### M5.3 — Hero becomes burst (PROMOTED — the real constraint) — ✅ DONE 2026-08-02
+- [x] Re-shape the bow curve so base damage scales slowly: 27.4 → 65.7 dps across six
+      levels, where it was 27.4 → 152.0.
+- [x] Move hero power into abilities. **Rapid Fire** (`hero-buff`), **Heavy Shaft**
+      (`pierce-shot`, a corridor along the hero's facing), **Caltrops** (`ground-zone`,
+      the area denial — a new `ZoneSystem` owns persistent ground hazards).
+- [x] Ability upgrade perks, via a new `ability-stat` effect: Practised Hands, Warhorse
+      Shoes, Arrow Storm, plus three unlock cards.
+- [x] **The equip cap** — not in the original plan, and the thing that actually made the
+      criterion hold. See B.3.
+- **Result.** Pillar probe, 12 seeds × all bots:
+
+  | map | towers only | hero only | both |
+  |---|---|---|---|
+  | meadow-road | 8% | 42% | 97% |
+  | the-ford | 0% | 0% | 75% |
+  | crossroads | 0% | 0% | 53% |
+  | warlords-march | 0% | 0% | 28% |
+
+  `heroOnly` loses maps 3–4 outright, and map 2. The towers-only:hero-only gap on the
+  one map where either wins is 5:1, down from the ~10:1 (0% vs 100%) that opened M5.
+
+  The reference arm landed **in band on all four maps for the first time** (want
+  90–100 / 70–95 / 45–75 / 25–55) without a single wave budget being touched. That is
+  not tuning arriving early — it is the harness finally measuring a loadout a player
+  can actually assemble: the bot used to force-unlock the entire roster on wave 1, which
+  the equip cap made impossible, so it now starts with Charge and drafts the rest.
+  Towers are still not a pillar; that is MG5.4's job, not a tuning problem.
 
 ### M5.4 — Barracks and soldiers
 - [ ] `ArmySystem` in `/src/engine`: soldier entities, rally points, respawn timers.

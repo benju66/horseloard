@@ -370,6 +370,37 @@ function castReady(sim: Simulation, opts: { chargeWhenMoving: boolean }): void {
       case 'tower-rate-buff':
         if (sim.enemySystem.aliveCount >= BUFF_MIN_ENEMIES) sim.castAbility(slot.ability.id);
         break;
+      case 'hero-buff':
+        // A fire-rate window with nothing in bow range is a wasted cooldown, so
+        // spend it only when there is something to shoot. Movement buffs are
+        // worth having whenever the rider is actually moving.
+        if (
+          effect.stat === 'moveSpeed'
+            ? sim.hero.moving
+            : countWithin(sim, sim.hero.x, sim.hero.y, sim.hero.bowStats.range) > 0
+        ) {
+          sim.castAbility(slot.ability.id);
+        }
+        break;
+      case 'pierce-shot':
+        // Worth a cooldown only when the corridor actually contains bodies.
+        // Approximated by the count inside its reach — the exact corridor test
+        // lives in AbilitySystem, and duplicating it here would be a second
+        // copy of a rule to keep in sync.
+        if (countWithin(sim, sim.hero.x, sim.hero.y, effect.range) >= CLUSTER_MIN_TARGETS) {
+          sim.castAbility(slot.ability.id);
+        }
+        break;
+      case 'ground-zone':
+        // A patch under the hero's own feet is only worth it when the road is
+        // busy: the bot has no notion of "where they will be", so it settles
+        // for "where they already are". A human plays it better, which means
+        // the harness under-reports this ability rather than over-reports it —
+        // the safe direction for a balance instrument.
+        if (countWithin(sim, sim.hero.x, sim.hero.y, effect.radius) >= CLUSTER_MIN_TARGETS) {
+          sim.castAbility(slot.ability.id);
+        }
+        break;
       case 'charge':
         // The identity verb: ride through bodies, and the escape from a shove.
         if (sim.hero.staggered || (opts.chargeWhenMoving && sim.hero.moving)) {
@@ -679,6 +710,8 @@ export interface BotGameData {
   perks?: PerksFile;
   enemies: EnemiesFile;
   abilities: readonly Ability[];
+  /** how many abilities may be carried at once; defaults to the schema's 3 */
+  equipSlots?: number;
   hero: Hero;
   economy: Economy;
   maps: Record<string, MapDef>;
@@ -708,9 +741,16 @@ export function runBot(
       economy: data.economy,
       towers: data.towers,
       abilities,
-      // Bots play the late-game loadout: everything unlocked. We're measuring
-      // the skill ceiling, not the meta-tree ramp.
-      unlockedAbilityIds: abilities.map((a) => a.id),
+      equipSlots: data.equipSlots,
+      // Bots start with the default loadout and fill the rest from the draft,
+      // which is how a run actually plays now (TRIANGLE.md §B.6).
+      //
+      // They used to force-unlock the whole roster on the grounds that we were
+      // measuring the skill ceiling rather than the meta-tree ramp. That stopped
+      // being true the day abilities became draftable and the bar gained an
+      // equip cap: force-unlocking filled every slot on wave 1, which made every
+      // ability-unlock card a dead draw and quietly measured a loadout no player
+      // can assemble.
       perks: data.perks,
     },
     makeRng(seed),

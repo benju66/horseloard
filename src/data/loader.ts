@@ -47,6 +47,8 @@ export interface GameData {
   towers: TowersFile;
   enemies: EnemiesFile;
   abilities: AbilitiesFile['abilities'];
+  /** How many abilities the hero may carry at once — the burst-pillar cap (DESIGN §4). */
+  equipSlots: number;
   metaTree: MetaTreeFile['nodes'];
   hero: Hero;
   economy: Economy;
@@ -128,6 +130,52 @@ export function validateGameData(raw: RawGameData): GameData {
   const towerIds = new Set(towers.towers.map((t) => t.id));
   const abilityIds = new Set(abilitiesFile.abilities.map((a) => a.id));
 
+  /**
+   * Which `ability-stat` keys a given ability actually carries. `cooldown` is
+   * on every ability; the rest live on the effect variant, so Volley has a
+   * radius and Heavy Shaft does not.
+   *
+   * Needed because an upgrade card naming a stat its target lacks would
+   * validate, be drafted, and change nothing — reading as a weak perk rather
+   * than a broken one, which is the failure mode this whole block exists to
+   * prevent.
+   */
+  const abilityStats = new Map<string, Set<string>>();
+  for (const a of abilitiesFile.abilities) {
+    const stats = new Set<string>(['cooldown']);
+    for (const [k, v] of Object.entries(a.effect)) {
+      if (k !== 'type' && typeof v === 'number') stats.add(k);
+    }
+    abilityStats.set(a.id, stats);
+  }
+  /** Empty when the stat is on no ability at all — the `abilityId: null` failure. */
+  const abilitiesWithStat = (stat: string): string[] =>
+    [...abilityStats].filter(([, s]) => s.has(stat)).map(([id]) => id);
+
+  const checkAbilityStat = (
+    file: string,
+    path: string,
+    abilityId: string | null,
+    stat: string,
+  ): void => {
+    if (abilityId === null) {
+      if (abilitiesWithStat(stat).length === 0) {
+        errors.push(`${file} → ${path}.stat: no ability has a "${stat}" — this effect is dead`);
+      }
+      return;
+    }
+    const stats = abilityStats.get(abilityId);
+    if (!stats) {
+      errors.push(
+        `${file} → ${path}.abilityId: unknown ability "${abilityId}" (known: ${[...abilityIds].join(', ')})`,
+      );
+    } else if (!stats.has(stat)) {
+      errors.push(
+        `${file} → ${path}.stat: ability "${abilityId}" has no "${stat}" (has: ${[...stats].join(', ')})`,
+      );
+    }
+  };
+
   for (const [file, content] of Object.entries(raw.waveSets)) {
     const waveSet = validateFile(WaveSetSchema, content, file);
     const map = maps[waveSet.mapId];
@@ -187,6 +235,9 @@ export function validateGameData(raw: RawGameData): GameData {
         `metatree.json → nodes.${i}.effect.towerId: unknown tower "${effect.towerId}" (known: ${[...towerIds].join(', ')})`,
       );
     }
+    if (effect.type === 'ability-stat') {
+      checkAbilityStat('metatree.json', `nodes.${i}.effect`, effect.abilityId, effect.stat);
+    }
   });
 
   // Perks carry the same effect vocabulary as meta nodes, so they need the same
@@ -205,6 +256,9 @@ export function validateGameData(raw: RawGameData): GameData {
         errors.push(
           `perks.json → perks.${i}.effects.${j}.abilityId: unknown ability "${effect.abilityId}" (known: ${[...abilityIds].join(', ')})`,
         );
+      }
+      if (effect.type === 'ability-stat') {
+        checkAbilityStat('perks.json', `perks.${i}.effects.${j}`, effect.abilityId, effect.stat);
       }
     });
   });
@@ -235,6 +289,7 @@ export function validateGameData(raw: RawGameData): GameData {
     towers,
     enemies,
     abilities: abilitiesFile.abilities,
+    equipSlots: abilitiesFile.equipSlots,
     metaTree: metaTreeFile.nodes,
     hero,
     economy,

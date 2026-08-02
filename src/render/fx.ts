@@ -155,6 +155,7 @@ export class FxLayer {
   private readonly enemyRings: RingPool;
   private readonly heroRing: RingPool;
   private readonly rangeRings: RingPool;
+  private readonly zoneRings: RingPool;
   private readonly bursts: BurstPool;
   private readonly map: MapDef;
   private readonly scratch = new THREE.Vector3();
@@ -169,6 +170,10 @@ export class FxLayer {
     this.enemyRings = new RingPool(scene, 13, '#c4452e', 0.5);
     this.heroRing = new RingPool(scene, 17, '#5b8bff', 0.62);
     this.rangeRings = new RingPool(scene, 1, '#ffffff', 0.14);
+    // Unit radius, scaled per zone — a hazard has to read as *ground you do not
+    // want to be standing on*, so it is a harder, warmer ring than the
+    // build-phase range decals, and unlike them it shows during the wave.
+    this.zoneRings = new RingPool(scene, 1, '#e2743a', 0.42);
     this.bursts = new BurstPool(scene);
   }
 
@@ -246,6 +251,13 @@ export class FxLayer {
     }
     this.rangeRings.end();
 
+    this.zoneRings.begin();
+    for (const zone of sim.zones.zones) {
+      simToWorld(this.map, zone.x, zone.y, this.scratch);
+      this.zoneRings.place(this.scratch.x, this.scratch.z, zone.radius);
+    }
+    this.zoneRings.end();
+
     this.bursts.tick(dt);
 
     if (this.shake > 0.001) {
@@ -265,6 +277,7 @@ export class FxLayer {
     this.enemyRings.dispose();
     this.heroRing.dispose();
     this.rangeRings.dispose();
+    this.zoneRings.dispose();
     this.bursts.dispose();
   }
 }

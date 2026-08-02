@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PerksFileSchema, type PerksFile } from '../data/schemas';
+import { PerksFileSchema, type Ability, type PerksFile } from '../data/schemas';
 import { PerkSystem } from './perkSystem';
 import type { ModifiableData } from './metaModifiers';
 import { TEST_ECONOMY, TEST_HERO, makeMap, makeTowersFile } from './testFixtures';
@@ -12,12 +12,35 @@ import { TEST_ECONOMY, TEST_HERO, makeMap, makeTowersFile } from './testFixtures
  * waves — without it the harness would be sampling noise.
  */
 
+/** Two abilities with different effect shapes, so `abilityId: null` has something to miss. */
+const ABILITIES: Ability[] = [
+  {
+    id: 'rain',
+    name: 'Rain',
+    description: 'rain',
+    cooldown: 20,
+    unlockedByDefault: true,
+    effect: { type: 'aoe-damage', damage: 40, radius: 100 },
+    iconRef: 'icon-rain',
+  },
+  {
+    id: 'quick',
+    name: 'Quick',
+    description: 'quick',
+    cooldown: 10,
+    unlockedByDefault: false,
+    effect: { type: 'hero-buff', stat: 'bowFireRate', multiplier: 2, duration: 4 },
+    iconRef: 'icon-quick',
+  },
+];
+
 function data(): ModifiableData {
   return structuredClone({
     hero: TEST_HERO,
     economy: TEST_ECONOMY,
     towers: makeTowersFile(),
     map: makeMap(),
+    abilities: ABILITIES,
   });
 }
 
@@ -304,6 +327,128 @@ describe('tradeoffs and grants', () => {
     );
     for (let i = 0; i < 3; i++) drawAndTake(sys, 'oath');
     expect(d.towers.towers[0]!.levels[0]!.crit!.chance).toBe(1);
+  });
+});
+
+/**
+ * TRIANGLE.md §B.6 — the draft *is* the ability tree. That only holds if an
+ * unlock reaches a system rather than being written to a number, and if an
+ * upgrade card reaches the ability the player actually has.
+ */
+describe('ability cards', () => {
+  function drawAndTake(sys: PerkSystem, id: string): boolean {
+    let guard = 0;
+    do {
+      sys.deal();
+    } while (!sys.offer?.some((p) => p.id === id) && guard++ < 400);
+    return sys.take(id);
+  }
+
+  it('routes an unlock out instead of mutating data, because an unlock is a decision', () => {
+    const d = data();
+    const sys = new PerkSystem(
+      pool([
+        {
+          id: 'learn',
+          name: 'Learn',
+          description: 'unlocks quick',
+          effects: [{ type: 'unlock-ability', abilityId: 'quick' }],
+          maxStacks: 1,
+          weight: 1,
+        },
+      ]),
+      d,
+      seededRng(61),
+    );
+    const unlocked: string[] = [];
+    sys.onUnlockAbility.push((id) => unlocked.push(id));
+
+    expect(drawAndTake(sys, 'learn')).toBe(true);
+    expect(unlocked).toEqual(['quick']);
+    // The roster itself is untouched — AbilitySystem owns what is available.
+    expect(d.abilities.find((a) => a.id === 'quick')!.unlockedByDefault).toBe(false);
+  });
+
+  it('scales one ability without touching the others', () => {
+    const d = data();
+    const sys = new PerkSystem(
+      pool([
+        {
+          id: 'storm',
+          name: 'Storm',
+          description: 'bigger rain',
+          effects: [
+            { type: 'ability-stat', abilityId: 'rain', stat: 'damage', perRank: 1.5, mode: 'multiply' },
+            { type: 'ability-stat', abilityId: 'rain', stat: 'radius', perRank: 1.2, mode: 'multiply' },
+          ],
+          maxStacks: 1,
+          weight: 1,
+        },
+      ]),
+      d,
+      seededRng(62),
+    );
+
+    expect(drawAndTake(sys, 'storm')).toBe(true);
+    const rain = d.abilities[0]!.effect as { damage: number; radius: number };
+    expect(rain.damage).toBeCloseTo(60);
+    expect(rain.radius).toBeCloseTo(120);
+    expect(d.abilities[1]!.cooldown).toBe(10); // untouched
+  });
+
+  it('sweeps cooldown across every ability, and never to zero', () => {
+    const d = data();
+    const sys = new PerkSystem(
+      pool([
+        {
+          id: 'hands',
+          name: 'Hands',
+          description: 'faster recharge',
+          effects: [
+            { type: 'ability-stat', abilityId: null, stat: 'cooldown', perRank: 0.5, mode: 'multiply' },
+          ],
+          maxStacks: 6,
+          weight: 1,
+        },
+      ]),
+      d,
+      seededRng(63),
+    );
+
+    expect(drawAndTake(sys, 'hands')).toBe(true);
+    expect(d.abilities[0]!.cooldown).toBeCloseTo(10);
+    expect(d.abilities[1]!.cooldown).toBeCloseTo(5);
+
+    // Halving six times would reach 0.15s. The floor is what keeps a burst
+    // pillar from quietly becoming a sustain one.
+    for (let i = 0; i < 5; i++) drawAndTake(sys, 'hands');
+    expect(d.abilities[0]!.cooldown).toBe(1);
+    expect(d.abilities[1]!.cooldown).toBe(1);
+  });
+
+  it('leaves an ability alone when a broad sweep names a stat it has not got', () => {
+    const d = data();
+    const sys = new PerkSystem(
+      pool([
+        {
+          id: 'wide',
+          name: 'Wide',
+          description: 'bigger radius everywhere',
+          effects: [
+            { type: 'ability-stat', abilityId: null, stat: 'radius', perRank: 1.5, mode: 'multiply' },
+          ],
+          maxStacks: 1,
+          weight: 1,
+        },
+      ]),
+      d,
+      seededRng(64),
+    );
+
+    expect(drawAndTake(sys, 'wide')).toBe(true);
+    expect((d.abilities[0]!.effect as { radius: number }).radius).toBeCloseTo(150);
+    // 'quick' is a hero-buff and has no radius — it must not sprout one.
+    expect(d.abilities[1]!.effect).not.toHaveProperty('radius');
   });
 });
 
