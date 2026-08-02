@@ -68,7 +68,7 @@
     {
       "id": "unit-hero",
       "base": "base-horse",
-      "scale": 2.0,
+      "scale": 1.5,
       "file": "models/hero/horse-lord.glb"
     },
     {
@@ -106,9 +106,9 @@
     },
     {
       "id": "unit-raven",
-      "base": "base-mini",
-      "scale": 1.1,
-      "tint": 10
+      "scale": 1.25,
+      "tint": 10,
+      "silhouette": "flyer"
     },
     {
       "id": "unit-wolf-rider",

@@ -93,7 +93,7 @@ export const ModelDefSchema = z.object({
   instanced: z.boolean().default(false),
   /** Placeholder silhouette hint until a real model lands. */
   silhouette: z
-    .enum(['humanoid', 'beast', 'mounted', 'structure', 'blob'])
+    .enum(['humanoid', 'beast', 'mounted', 'structure', 'blob', 'flyer'])
     .default('humanoid'),
 });
 export type ModelDef = z.infer<typeof ModelDefSchema>;

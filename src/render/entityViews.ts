@@ -18,8 +18,27 @@ import { PALETTE } from './palette';
  * exists to prevent.
  */
 
-/** Every silhouette is authored to this height, then `scale` is applied. */
-export const UNIT_HEIGHT = 30;
+/**
+ * Every silhouette is authored to this height, then `scale` is applied.
+ *
+ * Measured on a 390x844 phone: a map is 780 world units tall against 844
+ * pixels, so the camera renders at roughly one unit per pixel and this number
+ * is very nearly the on-screen pixel height of a character. At 30 a grunt was
+ * ~23px, against ART-BRIEF's "must read at roughly 60 pixels tall on a phone".
+ * The whole roster was about a third of the size the art was briefed for.
+ *
+ * `?unitScale=N` multiplies it for one load, so the final value can be chosen
+ * by looking at a phone instead of by argument. Purely cosmetic: the sim uses
+ * its own radii, so nothing here can change what is true.
+ */
+const BASE_UNIT_HEIGHT = 40;
+const UNIT_SCALE_OVERRIDE = (() => {
+  if (typeof location === 'undefined') return 1;
+  const raw = new URLSearchParams(location.search).get('unitScale');
+  const n = raw === null ? NaN : Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+})();
+export const UNIT_HEIGHT = BASE_UNIT_HEIGHT * UNIT_SCALE_OVERRIDE;
 
 /** Where props hang, as fractions of unit height. Per silhouette. */
 const SOCKETS: Record<string, Record<string, [number, number, number]>> = {
@@ -331,6 +350,29 @@ export class ModelViewFactory {
         base.castShadow = true;
         base.receiveShadow = true;
         g.add(base);
+        break;
+      }
+      case 'flyer': {
+        // Placeholder until real art lands, but a deliberate one: a flyer is
+        // the only enemy a ground-only tower cannot touch, so the player has
+        // to be able to tell at a glance that it is airborne. A sphere cannot
+        // do that. Body plus swept wings reads as a bird even at ~25px, which
+        // is the size these actually render at.
+        const body = new THREE.Mesh(this.track(new THREE.SphereGeometry(h * 0.17, 7, 5)), mat);
+        body.position.y = h * 0.2;
+        body.castShadow = true;
+        g.add(body);
+        const wing = this.track(new THREE.BoxGeometry(h * 0.42, h * 0.045, h * 0.16));
+        for (const side of [-1, 1]) {
+          const w = new THREE.Mesh(wing, mat);
+          w.position.set(side * h * 0.26, h * 0.24, -h * 0.02);
+          w.rotation.z = side * -0.32;
+          w.castShadow = true;
+          g.add(w);
+        }
+        const tail = new THREE.Mesh(this.track(new THREE.BoxGeometry(h * 0.1, h * 0.04, h * 0.22)), mat);
+        tail.position.set(0, h * 0.21, -h * 0.2);
+        g.add(tail);
         break;
       }
       case 'blob': {
