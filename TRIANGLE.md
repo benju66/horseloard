@@ -226,6 +226,69 @@ payments, mills, or a base tithe. Only then can a non-hero pillar stand up.
 
 ---
 
+## Part A.2 — MG5.2 result: income is not the constraint, and the bot was lying
+
+MG5.1 concluded "towers cannot bootstrap, so fix the economy". Tested, and the
+conclusion was **half right**. The 1-tower-0-kills observation was real; the implied
+fix was not.
+
+### The instrument was wrong first
+
+Sweeping starting gold produced an impossible result: **more money, worse defence.**
+
+| warlords-march, towers-only | towers built | waves cleared |
+|---|---|---|
+| 45 starting gold | 3.8 | 2.4 |
+| 110 starting gold | 2.0 | 1.0 |
+
+That is not a game truth. The bot ranks *plots* by lane coverage but decides *build vs
+upgrade* on raw value-per-coin, which has no notion of covering new road — so once the
+obvious plots are taken, an upgrade always out-scores a fourth tower. Handed more gold
+it stacked a corner and left the map unwatched.
+
+Fixed by scoring a new build against the lane it watches that **nothing already
+watches** (`marginalCoverage`), discounted to `OVERLAP_FLOOR` when it fully overlaps.
+The effect on the bots' play, at the unchanged economy:
+
+| | before | after |
+|---|---|---|
+| crossroads reference | 64% | **78%** |
+| warlords-march reference | 53% | **72%** |
+
+**The bots were meaningfully bad at using towers, which is the half of the game we were
+trying to measure.** Every tower number taken before this is suspect.
+
+### With a competent bot, income still does not make towers a pillar
+
+Across 45 / 80 / 110 starting gold, on every map, **towers-only wins 0%** and clears
+1–2 waves. Tower count barely moves, because the coverage-aware bot buys fewer,
+better-placed towers and banks the rest.
+
+So the binding constraint is not funding. **It is that towers are simply weak relative
+to the wave budget once hero damage is removed** — which is the MG5.1 finding restated
+without the economic explanation. No economy change is shipped: there is no evidence for
+one, and a balance change on weak evidence is how the last four attempts went wrong.
+
+### Consequences
+
+1. **Re-sequenced again.** Tower strength versus hero strength is the real work, so
+   *hero becomes burst* moves ahead of the barracks. The army still cannot be measured
+   until it exists, but it is no longer blocked on an economy fix that would not have
+   helped.
+2. **The difficulty bands now read easy.** With the fixed bot, crossroads measures 78%
+   against a 45–75 band and warlords-march 72% against 25–55. The bands are design
+   intent and should not move to flatter the instrument — but the campaign is easier
+   than intended for a player who places towers well. Fold into MG5.8.
+3. **Starting gold at 45 buys exactly one tower before wave 1.** Poor for a tower
+   defence on feel grounds, but there is no measured case for changing it, and feel is
+   a phone-and-thumbs question. Left open deliberately.
+
+**Method note:** economy parameters change bot *behaviour*, which re-rolls the entire
+run trajectory — so cross-config win rates are not controlled comparisons. Trust
+within-config observations (1 tower, 0 kills) over across-config deltas.
+
+---
+
 ## Part C — DESIGN.md amendments to apply
 
 1. **§5 Towers** — add **Barracks** as a fifth launch tower (it was listed as a
@@ -256,18 +319,22 @@ measurement comes first.
   (42–100%), and the economy is downstream of hero kills so towers cannot bootstrap.
   Re-sequenced the rest of M5 accordingly.
 
-### M5.2 — Kill-independent income (NEW — promoted by the MG5.1 result)
-- [ ] A share of run gold that arrives without kills: wave-clear payments re-priced,
-      a starting mill or base tithe, or both. Tune so a towers-only run can build a
-      second tower without the hero landing a hit.
-- [ ] Re-measure the pillar probe: towers-only must reach a *sensible* number of towers
-      and non-zero kills before any conclusion about tower strength means anything.
-- **Accept:** towers-only builds ≥3 towers on every map and clears more than one wave.
-  It should still *lose* — but it must lose to insufficiency, not to bankruptcy.
-- **Why first:** the barracks costs gold too. Building it before this would produce a
-  third hero-funded system rather than a third pillar.
+### M5.2 — Kill-independent income — ✅ CLOSED 2026-08-02, negative result
+- [x] Fixed the instrument: the bot's build-vs-upgrade decision now scores the lane a
+      tower watches that nothing already watches (`marginalCoverage`).
+- [x] Swept starting gold 45/80/110 and wave-clear payments across all four maps.
+- **Result: see Part A.2.** Income is not the constraint — towers-only wins 0% at every
+  setting. No economy change shipped. The bot fix alone moved the reference +14pp on
+  crossroads and +19pp on warlords-march, so every prior tower measurement is suspect.
 
-### M5.3 — Barracks and soldiers
+### M5.3 — Hero becomes burst (PROMOTED — the real constraint)
+- [ ] Re-shape the bow curve so base damage scales slowly.
+- [ ] Move hero power into abilities; add Rapid Fire, Heavy Shaft, area denial.
+- [ ] Ability upgrade perks ("Volley fires twice", "Charge burns the ground").
+- **Accept:** `heroOnly` loses maps 3–4; the gap between `towersOnly` and `heroOnly`
+  narrows from its current ~10:1.
+
+### M5.4 — Barracks and soldiers
 - [ ] `ArmySystem` in `/src/engine`: soldier entities, rally points, respawn timers.
 - [ ] Enemies gain a `blocked` state — stopped and fighting, not walking.
 - [ ] `barracks` tower in `towers.json`; soldiers are data-driven (count, hp, damage,
@@ -276,12 +343,6 @@ measurement comes first.
 - **Accept:** an enemy that meets a soldier stops advancing; killing the soldier
   resumes it; `armyOnly` loses every map; towers + army beats towers alone on the same
   wave budget.
-
-### M5.4 — Hero becomes burst
-- [ ] Re-shape the bow curve so base damage scales slowly.
-- [ ] Move hero power into abilities; add Rapid Fire, Heavy Shaft, area denial.
-- [ ] Ability upgrade perks ("Volley fires twice", "Charge burns the ground").
-- **Accept:** `heroOnly` loses maps 3–4 at every draft outcome the bots can reach.
 
 ### M5.5 — XP and levels
 - [ ] `XpSystem`; enemies gain `xpValue`; curve in `economy.json`.

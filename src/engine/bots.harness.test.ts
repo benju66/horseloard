@@ -264,10 +264,15 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
         // "insufficient" and "starved" are different diagnoses with different fixes.
         const towers = (runs.reduce((s, r) => s + r.towers.length, 0) / runs.length).toFixed(1);
         const kills = Math.round(runs.reduce((s, r) => s + r.kills, 0) / runs.length);
+        // Gold left and bow level answer "was money the constraint?" — a pillar
+        // sitting on unspent gold is limited by something other than income.
+        const gold = Math.round(runs.reduce((s, r) => s + r.goldLeft, 0) / runs.length);
+        const bow = (runs.reduce((s, r) => s + r.bowLevel, 0) / runs.length).toFixed(1);
         row.push(
           `      ${label.padEnd(18)} win ${String(win).padStart(3)}%  ` +
             `waves ${waves.padStart(4)}/${runs[0]!.totalWaves}  dmg ${String(dmg).padStart(4)}  ` +
-            `towers ${towers.padStart(4)}  kills ${String(kills).padStart(3)}` +
+            `towers ${towers.padStart(4)}  kills ${String(kills).padStart(3)}  ` +
+            `gold ${String(gold).padStart(4)}  bow L${bow}` +
             (over ? '   ← pillar is sufficient alone' : ''),
         );
       }
