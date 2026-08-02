@@ -36,7 +36,25 @@ boundary, and phase changes here happen whenever the player taps Start. Layers
 can land anywhere. Boss layer keys off "something with a war cry is alive", a mechanic
 rather than a content id.
 
-**AUDIO IS COMPLETE against DESIGN §12.** Still unheard by a human.
+**AUDIO IS COMPLETE against DESIGN §12** — but Ben reported **no sound on device**
+(2026-08-01). Cause not established. The mute button now has three states so it is
+diagnosable from a phone: speaker = running, crossed speaker = muted, low speaker on a
+RED background = wants sound but the context is not running. No icon at all means a
+stale service-worker cache, which is the prime suspect since the audio shipped after
+Ben had already installed the PWA.
+
+**SCALE, from on-device play (2026-08-01).** Ben: the hero was "too small to tell any
+detail". Measured on 390x844: he was 34px against ART-BRIEF's stated 60px target, and
+the whole roster was undersized with him — a grunt at 23px. `UNIT_HEIGHT` 30 → 40 and
+the hero's multiplier dropped 2.0 → 1.5 to hold him exactly where he is being judged.
+Now hero 51px, grunt 32px, brute 65px, warlord 84px, on a path 58px wide.
+
+Both are dial-able from a phone without a deploy, which is how the final numbers should
+be chosen: `?heroScale=N` (absolute) and `?unitScale=N` (multiplies UNIT_HEIGHT).
+Purely cosmetic — `npm run bots` still reports ON TARGET, which is the proof.
+
+**The raven is still a placeholder** (procedural `flyer` silhouette, no model). It is
+the one asset genuinely missing under any plan — see ART-BRIEF §10 for Meshy settings.
 
 **And nobody has heard any of it.** Every check so far is a measurement — rendered
 waveforms, event counts, throttle behaviour. Whether it sounds *good* is unanswered.
