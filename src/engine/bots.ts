@@ -12,7 +12,7 @@ import type {
   WaveSet,
 } from '../data/schemas';
 import type { EnemyInstance } from './enemySystem';
-import { plotCoverage, sampleLanes, type LaneSample } from './coverage';
+import { marginalCoverage, plotCoverage, sampleLanes, type LaneSample, type Watcher } from './coverage';
 import { SIM_DT, Simulation } from './simulation';
 import type { PlotState } from './towerSystem';
 
@@ -209,6 +209,14 @@ interface Purchase {
  * upgrade and branch all compete on the same axis, so the bot naturally
  * stops upgrading a maxed line and starts a new tower when that pays better.
  */
+/**
+ * How much a new build is discounted when it only re-watches road that is
+ * already watched. A fully-overlapping tower still adds damage where it stands,
+ * so it keeps most of its value — it just stops being worth as much as one that
+ * opens new ground.
+ */
+const OVERLAP_FLOOR = 0.45;
+
 function affordablePurchases(
   sim: Simulation,
   file: TowersFile,
@@ -216,10 +224,21 @@ function affordablePurchases(
   maxTowers: number,
   /** when set, the bot may only ever build this tower — the forced-composition probe */
   onlyTowerId: string | null,
+  samples: readonly LaneSample[],
 ): Purchase[] {
   const out: Purchase[] = [];
   const built = sim.towerSystem.plots.filter((p) => p.towerId !== null).length;
   const v = valuation(sim, file);
+
+  // What the standing towers already watch. Recomputed per spend pass rather
+  // than cached: a tower bought earlier in the same pass changes what the next
+  // one is worth, which is exactly the effect this is here to capture.
+  const watchers: Watcher[] = [];
+  for (const p of sim.towerSystem.plots) {
+    if (p.towerId === null) continue;
+    const stats = sim.towerSystem.stats(p);
+    if (stats) watchers.push({ x: p.x, y: p.y, reach: stats.range });
+  }
 
   for (const plot of plots) {
     if (plot.towerId === null) {
@@ -229,7 +248,12 @@ function affordablePurchases(
         const cost = sim.towerSystem.buildCost(tower.id);
         const level1 = tower.levels[0];
         if (cost === null || !level1 || cost > sim.gold) continue;
-        const gain = totalValue(level1, projectileById(file, tower.projectileId), plot, v);
+        // Breadth counts. Without this the greedy scorer stacks a corner and
+        // leaves the rest of the road unwatched — measurably worse, and worse
+        // the richer it gets.
+        const { fresh, total } = marginalCoverage(samples, watchers, plot.x, plot.y, level1.range);
+        const breadth = total > 0 ? OVERLAP_FLOOR + (1 - OVERLAP_FLOOR) * (fresh / total) : OVERLAP_FLOOR;
+        const gain = totalValue(level1, projectileById(file, tower.projectileId), plot, v) * breadth;
         out.push({
           efficiency: gain / cost,
           buy: () => sim.buildTower(plot.plotId, tower.id),
@@ -439,6 +463,7 @@ function makePolicy(plan: Plan): BotFactory {
             ranked,
             plan.maxTowers,
             plan.onlyTowerId ?? null,
+            samples,
           );
           if (options.length === 0) continue;
           options.sort((a, b) => b.efficiency - a.efficiency);

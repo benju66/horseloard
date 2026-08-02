@@ -26,8 +26,15 @@ rate, the army supplies exposure, the hero supplies burst.
 alone clear **0-8%** of maps while the hero alone clears **100/83/8/42%**, matching or
 beating the full reference on maps 1-2. And towers cannot bootstrap — on two maps the
 towers-only arm builds 1 tower and gets 0 kills, because coins come from kills and the
-hero does the killing. **Kill-independent income (MG5.2) now comes before the barracks**;
-a pillar funded by another pillar can never be independent of it.
+hero does the killing.
+
+**MG5.2 tested the implied fix and it failed** (2026-08-02): income is *not* the
+constraint. Towers-only wins 0% at every starting-gold setting. It also exposed a real
+blind spot in the bots — they had no notion of covering *new* road, so a richer bot
+built **fewer** towers and stacked a corner. Fixing that moved the reference +14pp on
+crossroads and +19pp on warlords-march, which means every tower measurement taken before
+2026-08-02 is suspect. **Tower strength versus hero strength is the actual work**, so
+MG5.3 is now "hero becomes burst" and the barracks follows it.
 
 The armor / flyer / frontal-block counters all stay as texture. DESIGN §6's "RESOLVED"
 block is still worth reading for *why* counter-tuning cannot hold against a progression
@@ -297,9 +304,14 @@ Full plan in **TRIANGLE.md** (authoritative). Per-task acceptance criteria live 
 **the hero's only real limit is simultaneity.** The one map it cannot solo is crossroads (8%) — the two-lane map. Nothing else in the game imposes a "be in two places" constraint.
 **and the deeper one: towers cannot bootstrap.** On the-ford and crossroads the towers-only arm builds **1.0 towers and gets 0 kills**. Starting gold buys one tower, that tower cannot kill wave 1 alone, no coins drop, nothing is ever built again. Coins come from kills and the hero does the killing, so *towers are funded by the hero* — a pillar funded by another pillar can never be independent of it. This invalidated the original M5 order: the barracks costs gold too, so building it next would have produced a third hero-funded system rather than a third pillar.
 **learned:** "insufficient" and "starved" are different diagnoses with different fixes, and a win-rate column alone cannot tell them apart. Reporting towers-built and kills alongside the win rate is what made this visible — worth doing on every future probe.
-[ ] **MG5.2 — Kill-independent income (NEW, promoted by the MG5.1 result).** A meaningful share of run gold must arrive without anything dying — re-priced wave-clear payments, a starting mill, or a base tithe. **Accept:** towers-only builds ≥3 towers on every map and clears more than one wave; it should still lose, but to insufficiency rather than bankruptcy.
-[ ] **MG5.3 — Barracks + soldiers.** `ArmySystem`, enemy `blocked` state, `barracks` tower, instanced soldier rendering. The pillar that makes the triangle exist; sequenced second because everything after it is tuned against a two-legged stool otherwise. Biggest engine piece in M5 — friendly units are a new entity type, not a projectile behaviour.
-[ ] **MG5.4 — Hero becomes burst.** Bow curve flattened; power moves into cooldown-gated abilities (Rapid Fire, Heavy Shaft, area denial); ability-upgrade perks. This is the structural cap on hero throughput.
+[x] **MG5.2 — Kill-independent income** (2026-08-02) — **closed as a negative result. No economy change shipped.**
+**the instrument was wrong before the economy was.** Sweeping starting gold produced an impossible result: on warlords-march, towers-only went from 3.8 towers / 2.4 waves at 45 gold to **2.0 towers / 1.0 waves at 110 gold**. More money, worse defence. The bot ranks *plots* by lane coverage but decides *build vs upgrade* on raw value-per-coin, which has no notion of covering new road — so once the obvious plots are taken an upgrade always out-scores a fourth tower, and a rich bot stacks a corner and leaves the map unwatched. Fixed by scoring a new build against the lane it watches that nothing already watches (`marginalCoverage` in coverage.ts, `OVERLAP_FLOOR` discount when it fully overlaps).
+**the bots were meaningfully bad at the half of the game we were trying to measure.** At the unchanged economy the fix moved the reference **crossroads 64% → 78%** and **warlords-march 53% → 72%**. Every tower measurement taken before this is suspect, including some recorded above.
+**and income still is not the constraint.** With the fixed bot, across 45/80/110 starting gold on all four maps, towers-only wins **0%** everywhere and clears 1-2 waves. Tower count barely moves, because a coverage-aware bot buys fewer, better-placed towers. So MG5.1's diagnosis was half right: the 1-tower-0-kills observation was real, but the implied fix would not have helped. **Towers are simply weak relative to the wave budget once hero damage is removed** — that is the whole finding.
+**learned:** economy parameters change bot *behaviour*, which re-rolls the entire run trajectory, so cross-config win rates are not controlled comparisons. Trust within-config observations over across-config deltas. And when a sweep produces an impossible ordering, suspect the instrument before the game — that is twice now (five-seed noise, and this).
+**consequence:** tower-strength-vs-hero-strength is the real work, so **MG5.3 becomes "hero becomes burst"** and the barracks moves to MG5.4. Also: with a competent bot the campaign now measures *easier* than intended (crossroads 78% vs a 45-75 band, warlords 72% vs 25-55). The bands are design intent and must not move to flatter the instrument — fold the re-tune into MG5.8.
+[ ] **MG5.3 — Hero becomes burst (PROMOTED — the real constraint).** Flatten the bow curve, move hero power into cooldown-gated abilities, add ability-upgrade perks. **Accept:** heroOnly loses maps 3-4, and the towersOnly:heroOnly gap narrows from its current ~10:1.
+[ ] **MG5.4 — Barracks + soldiers.** `ArmySystem`, enemy `blocked` state, `barracks` tower, instanced soldier rendering. The pillar that makes the triangle exist; sequenced second because everything after it is tuned against a two-legged stool otherwise. Biggest engine piece in M5 — friendly units are a new entity type, not a projectile behaviour.
 [ ] **MG5.5 — XP and levels drive the draft.** `XpSystem`, enemy `xpValue`, curve in economy.json, ~25-35 levels per map, `everyNWaves` removed. Kills → XP means riding out to fight *is* progression, which finally wires pillar 1 to the reward loop.
 [ ] **MG5.6 — Perk families + offer rule.** Five families (Hero/Towers/Army/Economy/Keep); one factor per perk; every offer = 1 hero + 1 tower-or-army + 1 wildcard. Replaces per-perk tuning with a structural guarantee — no accidental pure-hero build, no all-dead offers.
 [ ] **MG5.7 — Meta tree becomes unlocks, not stats.** Removes the double-dip where meta and perks multiply the same numbers. First real save migration.

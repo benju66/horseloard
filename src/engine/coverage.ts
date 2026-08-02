@@ -49,3 +49,51 @@ export function plotCoverage(
   }
   return covered;
 }
+
+/** A circle of road watched by something already standing. */
+export interface Watcher {
+  x: number;
+  y: number;
+  reach: number;
+}
+
+/**
+ * Lane length a new tower would watch that *nothing already watches*, and the
+ * total it would watch. The ratio is how much breadth a build actually buys.
+ *
+ * This exists because a value model built on raw range cannot tell a tower that
+ * opens new road from a fourth tower stacked on the same corner — and that blind
+ * spot is measurable. Handed more starting gold, a greedy bot scoring only
+ * value-per-coin went from 3.8 towers to 2.0 on warlords-march and from clearing
+ * 2.4 waves to 1.0: **more money, worse defence.** It was buying upgrades on a
+ * cluster instead of covering the map, because an upgrade's raw efficiency beats
+ * a new tower's once the obvious plots are taken.
+ */
+export function marginalCoverage(
+  samples: readonly LaneSample[],
+  watchers: readonly Watcher[],
+  px: number,
+  py: number,
+  reach: number,
+): { fresh: number; total: number } {
+  let fresh = 0;
+  let total = 0;
+  const rSq = reach * reach;
+  for (const p of samples) {
+    const dx = p.x - px;
+    const dy = p.y - py;
+    if (dx * dx + dy * dy > rSq) continue;
+    total += p.dl;
+    let seen = false;
+    for (const w of watchers) {
+      const wx = p.x - w.x;
+      const wy = p.y - w.y;
+      if (wx * wx + wy * wy <= w.reach * w.reach) {
+        seen = true;
+        break;
+      }
+    }
+    if (!seen) fresh += p.dl;
+  }
+  return { fresh, total };
+}
