@@ -67,6 +67,15 @@ The tension that makes it work: your body can only be in one place. The economy 
 
 Design rule: abilities are position-dependent (cast at/from the hero), reinforcing pillar 1. No global "tap the screen anywhere" spells — that's the genre default we're deliberately not doing.
 
+> **Revised 2026-08-02 (TRIANGLE.md §B.3, §B.6).** Abilities become the hero's *main*
+> power rather than a garnish on the bow, and they are **drafted in-run** rather than
+> equipped from a fixed loadout. The bow stays deliberately modest and scales slowly.
+> This is structural, not flavour: a cooldown puts a hard ceiling on hero damage-per-minute
+> that no multiplier can lift, which is what stops the hero substituting for the towers.
+> The meta tree gates which abilities are *eligible* to appear; the draft decides which
+> you actually get. Launch set grows to include Rapid Fire, Heavy Shaft, Muster and an
+> area-denial ability.
+
 **Trample (passive).** Riding through enemies at speed deals small contact damage with an internal cooldown per enemy. Makes the horse feel physical; upgradable in the meta tree.
 
 ---
@@ -86,7 +95,7 @@ The Mill is the strategist's tower: it converts map safety into economy, and it'
 
 **Selling:** any tower can be sold for a 70% refund (ride to it, sell option in the bubble). Repositioning mid-map is legitimate strategy — tearing down an Archer to fund a Frost Spire where the Raid wave is coming is exactly the read the wave preview enables.
 
-**Extensibility contract:** a tower is a JSON config (id, cost curve, stats per level, projectile def, targeting mode, branch defs, sprite refs, sfx refs) consumed by one TowerEngine. Targeting modes (nearest / first / strongest / none) and projectile behaviors (ballistic, instant, AoE, aura) are the small enum set the engine implements. Tower #5 (e.g., a Ballista with pierce, or a Tesla chain-lightning) is a config + assets, zero engine work, and slots straight into the meta tree as an unlock. First planned expansion tower: **Barracks** — rallies soldier blockers onto the path (Kingdom Rush lineage), deepening the fortress identity. Post-launch, not v1.
+**Extensibility contract:** a tower is a JSON config (id, cost curve, stats per level, projectile def, targeting mode, branch defs, sprite refs, sfx refs) consumed by one TowerEngine. Targeting modes (nearest / first / strongest / none) and projectile behaviors (ballistic, instant, AoE, aura) are the small enum set the engine implements. Tower #5 (e.g., a Ballista with pierce, or a Tesla chain-lightning) is a config + assets, zero engine work, and slots straight into the meta tree as an unlock. **Barracks is now a launch tower, not an expansion** (promoted 2026-08-02, TRIANGLE.md §B.2): it rallies soldier blockers onto the path, and blocking is the one resource neither towers nor the hero produce. Soldiers deal little damage on purpose — they buy *exposure*, which multiplies every tower's output.
 
 **Courtyard structure policy: exactly two — Gate and Forge.** Horse upgrades fold into the forge and meta tree rather than a separate Stable; every additional structure splits the same coin sink and dilutes the build decision instead of deepening it. Explicit non-goals inherited from the genre: town-building/resource chains, gacha or merge heroes, energy timers, tap-anywhere global spells, and free-form tower placement — fixed plots are load-bearing for authorable difficulty.
 
@@ -108,6 +117,19 @@ Launch roster of 7 + 1 boss, all data-driven off one EnemyEngine (same contract 
 | **Boss: Warlord** (map 4) | Slow, massive HP, periodically war-cries (speed buff to others), breaks one tower to Lv-1 on contact | Everything + focus fire; hero must kite |
 
 Shieldbearer and Looter are the two that make *hero position* a counter, not just damage math — they're the roster's pillar-1 enforcers.
+
+### ⚠ HISTORICAL from here to the end of §6 — superseded 2026-08-02 by TRIANGLE.md
+
+> Everything below is the record of four measured attempts to stop one *tower* carrying
+> maps 3-4. They worked, and then in-run drafting undid them, because towers and the hero
+> both produce damage and two systems producing the same resource are always substitutes.
+> The invariant "no single tower carries" is **retired**. It is replaced by "no single
+> *pillar* — towers, army, hero — clears a map alone, and any two together must."
+>
+> The counters described below (frontal block, flyers, armor) all **stay in the game**.
+> They are good texture and they still shape which tower you want. They are simply no
+> longer load-bearing for balance. Read this section for why counter-tuning cannot hold
+> against a progression system, which is a lesson worth keeping.
 
 ### ⚠ Open design problem: nothing hard-counters the Archer (found 2026-07-31)
 
@@ -494,7 +516,7 @@ Resolved as of v0.3: hero damage (stagger, no death), tower selling (70%), start
 
 Still parked, none blocking:
 
-1. ~~**In-run draft choices** (survivor-style pick-1-of-3 on wave clears): v2 candidate if runs feel samey after M2 playtests.~~ **SHIPPED 2026-08-02.** The trigger fired, and from two directions at once: this note said "if runs feel samey", and the bot harness independently measured tower composition as *preference rather than decision* (BACKLOG, "Solo-carry still unsolved on maps 3-4"), which is the same finding stated in numbers. A perk is a meta-tree node applied mid-run — same `MetaEffect` vocabulary, same arithmetic, one implementation — so a new perk is a `perks.json` entry and nothing else. Drafts are **additive** to gold, bow levels and tower upgrades rather than replacing any of them; whether drafting should eventually absorb bow levels (currently just a gold sink) is a live question, and keeping it additive means answering it later is a data change. **Pool rewritten 2026-08-02, and the curve re-tuned against it.** The first pool was 15 pure upgrades, which reproduced precisely the problem drafting was built to solve — a pick-1-of-3 of three free gifts is a preference, not a decision. Perks now carry a *list* of effects so a card can cost something, and a `tower-grant` effect exposes the latent `crit`/`towerAura`/`income` mechanics so a perk can change what a tower *does* rather than only how much. All four maps sit inside their target bands with drafting on, which is now the harness's reference configuration. **Still open: drafting regressed solo-carry** — crossroads and warlords-march went from 0 single-tower carriers to 2 and 1, because a tower perk that buffs everything buffs a monoculture just as well as a mix. Enemy scaling cannot fix that (it hits both equally); more tower-specific perks can, so a monoculture finds most tower cards dead.
+1. ~~**In-run draft choices** (survivor-style pick-1-of-3 on wave clears): v2 candidate if runs feel samey after M2 playtests.~~ **SHIPPED 2026-08-02.** The trigger fired, and from two directions at once: this note said "if runs feel samey", and the bot harness independently measured tower composition as *preference rather than decision* (BACKLOG, "Solo-carry still unsolved on maps 3-4"), which is the same finding stated in numbers. A perk is a meta-tree node applied mid-run — same `MetaEffect` vocabulary, same arithmetic, one implementation — so a new perk is a `perks.json` entry and nothing else. Drafts are **additive** to gold, bow levels and tower upgrades rather than replacing any of them; whether drafting should eventually absorb bow levels (currently just a gold sink) is a live question, and keeping it additive means answering it later is a data change. **Pool rewritten 2026-08-02, and the curve re-tuned against it.** The first pool was 15 pure upgrades, which reproduced precisely the problem drafting was built to solve — a pick-1-of-3 of three free gifts is a preference, not a decision. Perks now carry a *list* of effects so a card can cost something, and a `tower-grant` effect exposes the latent `crit`/`towerAura`/`income` mechanics so a perk can change what a tower *does* rather than only how much. All four maps sit inside their target bands with drafting on, which is now the harness's reference configuration. **Superseded 2026-08-02 by TRIANGLE.md** — the solo-carry regression below was the symptom that exposed the substitution problem, and is resolved by retiring the invariant rather than by tuning. Recorded for the reasoning: **drafting regressed solo-carry** — crossroads and warlords-march went from 0 single-tower carriers to 2 and 1, because a tower perk that buffs everything buffs a monoculture just as well as a mix. Enemy scaling cannot fix that (it hits both equally); more tower-specific perks can, so a monoculture finds most tower cards dead.
 2. **Player-set tower targeting** (first/strong/near): v2 depth add for strategists.
 3. **Monetization:** none assumed. If publishing broadly ever means monetizing, cosmetics-only; the meta tree must never be purchasable or the design collapses.
 4. **Co-op design** (long-term): hedged in architecture (§11), otherwise out of scope until v1 ships.
