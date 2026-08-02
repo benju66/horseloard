@@ -68,7 +68,7 @@
     {
       "id": "unit-hero",
       "base": "base-horse",
-      "scale": 1.35,
+      "scale": 2.0,
       "file": "models/hero/horse-lord.glb"
     },
     {

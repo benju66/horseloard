@@ -79,6 +79,20 @@ export class AudioManager {
     return { ...this.prefs };
   }
 
+  /**
+   * What the audio graph is actually doing, for the HUD indicator.
+   *
+   * 'silent' is the one that matters: the user wants sound and the context is
+   * missing or suspended. Mobile has several ways to land there — an iOS silent
+   * switch, an autoplay policy that did not accept the gesture, a tab restored
+   * from background — and without an indicator all of them present identically
+   * as "the game has no sound", which is undiagnosable from a phone.
+   */
+  get status(): 'off' | 'running' | 'silent' {
+    if (!this.prefs.sfx) return 'off';
+    return this.ctx?.state === 'running' ? 'running' : 'silent';
+  }
+
   setPref(key: keyof AudioPrefs, on: boolean): void {
     this.prefs[key] = on;
     try {
@@ -100,7 +114,9 @@ export class AudioManager {
    */
   unlock(): void {
     if (this.ctx) {
-      if (this.ctx.state === 'suspended') void this.ctx.resume();
+      // Resume on every gesture, not just the first. A context can be suspended
+      // again by the OS at any point — backgrounding the app is the common one.
+      if (this.ctx.state !== 'running') void this.ctx.resume();
       return;
     }
     const Ctor: typeof AudioContext | undefined =
@@ -126,6 +142,10 @@ export class AudioManager {
     sfxBus.connect(master);
     musicBus.connect(master);
     master.connect(limiter).connect(ctx.destination);
+
+    // Safari in particular can hand back a context that is born suspended even
+    // inside a gesture; ask once immediately rather than waiting for the next tap.
+    if (ctx.state !== 'running') void ctx.resume();
 
     this.ctx = ctx;
     this.master = master;

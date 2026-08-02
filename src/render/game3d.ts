@@ -68,6 +68,7 @@ style.textContent =
 #mutebtn { position: absolute; top: calc(env(safe-area-inset-top, 6px) + 34px); right: 10px;
   pointer-events: auto; width: 40px; height: 40px; border-radius: 12px; border: 0;
   background: rgba(20,30,24,.6); color: #f2ecdd; font-size: 17px; line-height: 1; }
+#mutebtn[data-state="silent"] { background: rgba(150,60,30,.75); }
 `;
 document.head.append(style);
 
@@ -86,17 +87,32 @@ overlay.append(hud);
 const audio = new AudioManager();
 // Browsers refuse to start an AudioContext outside a user gesture, and on iOS
 // one created eagerly stays suspended with no way back. Build it on first tap.
-for (const ev of ['pointerdown', 'keydown'] as const) {
-  window.addEventListener(ev, () => audio.unlock(), { passive: true });
+for (const ev of ['pointerdown', 'touchend', 'keydown'] as const) {
+  window.addEventListener(ev, () => {
+    audio.unlock();
+    syncMute();
+  }, { passive: true });
 }
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    audio.unlock();
+    syncMute();
+  }
+});
 
 const muteBtn = document.createElement('button');
 muteBtn.id = 'mutebtn';
 muteBtn.setAttribute('data-ui', '');
 const syncMute = (): void => {
-  const on = audio.preferences.sfx;
-  muteBtn.textContent = on ? '\u{1F50A}' : '\u{1F507}';
-  muteBtn.setAttribute('aria-label', on ? 'Mute sound' : 'Unmute sound');
+  // Three states, not two. "Wants sound but the context is not running" has to
+  // look different from "muted", or a phone with no audio is undiagnosable.
+  const status = audio.status;
+  muteBtn.textContent = status === 'running' ? '\u{1F50A}' : status === 'off' ? '\u{1F507}' : '\u{1F508}';
+  muteBtn.dataset.state = status;
+  muteBtn.setAttribute(
+    'aria-label',
+    status === 'running' ? 'Mute sound' : status === 'off' ? 'Unmute sound' : 'Sound blocked — tap to retry',
+  );
 };
 muteBtn.addEventListener('click', () => {
   audio.unlock();
@@ -435,6 +451,7 @@ function step(dt: number): void {
 
   views.tick(dt * runOverlay.speed);
   audio.frame();
+  if (Math.floor(simClock * 2) % 2 === 0) syncMute();
   // Score follows the sim. Boss presence is read as "something with a war cry
   // is alive" — a mechanic, not a content id, so a future boss lights it up
   // without touching this file.
