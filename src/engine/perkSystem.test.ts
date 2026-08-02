@@ -27,10 +27,10 @@ function pool(extra: unknown[] = [], rest: Record<string, unknown> = {}): PerksF
     offerSize: 3,
     ...rest,
     perks: [
-      { id: 'a', name: 'A', description: 'a', effect: { type: 'hero-stat', stat: 'moveSpeed', perRank: 1.1, mode: 'multiply' }, maxStacks: 2 },
-      { id: 'b', name: 'B', description: 'b', effect: { type: 'hero-stat', stat: 'bowDamage', perRank: 5, mode: 'add' }, maxStacks: 3 },
-      { id: 'c', name: 'C', description: 'c', effect: { type: 'kingdom-stat', stat: 'coinMagnetRadius', perRank: 2, mode: 'multiply' }, maxStacks: 1 },
-      { id: 'd', name: 'D', description: 'd', effect: { type: 'tower-stat', towerId: null, stat: 'damage', perRank: 1.5, mode: 'multiply' }, maxStacks: 1 },
+      { id: 'a', name: 'A', description: 'a', effects: [{ type: 'hero-stat', stat: 'moveSpeed', perRank: 1.1, mode: 'multiply' }], maxStacks: 2 },
+      { id: 'b', name: 'B', description: 'b', effects: [{ type: 'hero-stat', stat: 'bowDamage', perRank: 5, mode: 'add' }], maxStacks: 3 },
+      { id: 'c', name: 'C', description: 'c', effects: [{ type: 'kingdom-stat', stat: 'coinMagnetRadius', perRank: 2, mode: 'multiply' }], maxStacks: 1 },
+      { id: 'd', name: 'D', description: 'd', effects: [{ type: 'tower-stat', towerId: null, stat: 'damage', perRank: 1.5, mode: 'multiply' }], maxStacks: 1 },
       ...extra,
     ],
   });
@@ -159,7 +159,7 @@ describe('taking', () => {
         id: 'gate',
         name: 'Gate',
         description: 'g',
-        effect: { type: 'kingdom-stat', stat: 'gateMaxHp', perRank: 25, mode: 'add' },
+        effects: [{ type: 'kingdom-stat', stat: 'gateMaxHp', perRank: 25, mode: 'add' }],
         maxStacks: 1,
         weight: 1,
       },
@@ -175,6 +175,135 @@ describe('taking', () => {
     sys.take('gate');
 
     expect(deltas).toEqual([25]);
+  });
+});
+
+/**
+ * Tradeoffs and grants are the whole reason the pool was rewritten: a card that
+ * only ever gives is a preference, not a decision. These cover the two shapes
+ * that make a pick cost something or change a rule.
+ */
+describe('tradeoffs and grants', () => {
+  /** Deal until `id` is on the table, then take it. */
+  function drawAndTake(sys: PerkSystem, id: string): boolean {
+    let guard = 0;
+    do {
+      sys.deal();
+    } while (!sys.offer?.some((p) => p.id === id) && guard++ < 400);
+    return sys.take(id);
+  }
+
+  it('applies every effect of a perk, upside and downside together', () => {
+    const d = data();
+    const beforeDamage = d.hero.bow.levels[0]!.damage;
+    const beforeInterval = d.hero.bow.levels[0]!.fireInterval;
+
+    const sys = new PerkSystem(
+      pool([
+        {
+          id: 'trade',
+          name: 'Trade',
+          description: 'harder, slower',
+          effects: [
+            { type: 'hero-stat', stat: 'bowDamage', perRank: 1.5, mode: 'multiply' },
+            { type: 'hero-stat', stat: 'bowFireRate', perRank: 0.8, mode: 'multiply' },
+          ],
+          maxStacks: 1,
+          weight: 1,
+        },
+      ]),
+      d,
+      seededRng(21),
+    );
+
+    expect(drawAndTake(sys, 'trade')).toBe(true);
+    expect(d.hero.bow.levels[0]!.damage).toBeCloseTo(beforeDamage * 1.5);
+    // fireRate < 1 lengthens the interval — the cost has to actually land.
+    expect(d.hero.bow.levels[0]!.fireInterval).toBeCloseTo(beforeInterval / 0.8);
+  });
+
+  it('reports a negative gate delta when a perk trades capacity away', () => {
+    const d = data();
+    const sys = new PerkSystem(
+      pool([
+        {
+          id: 'strip',
+          name: 'Strip',
+          description: 'cheap towers, weaker keep',
+          effects: [
+            { type: 'tower-stat', towerId: null, stat: 'cost', perRank: 0.8, mode: 'multiply' },
+            { type: 'kingdom-stat', stat: 'gateMaxHp', perRank: -20, mode: 'add' },
+          ],
+          maxStacks: 1,
+          weight: 1,
+        },
+      ]),
+      d,
+      seededRng(33),
+    );
+    const deltas: number[] = [];
+    sys.onGateMaxHpChanged.push((delta) => deltas.push(delta));
+
+    expect(drawAndTake(sys, 'strip')).toBe(true);
+    expect(deltas).toEqual([-20]);
+  });
+
+  it('grants a mechanic a tower did not ship with', () => {
+    const d = data();
+    // Nothing in the fixture roster crits to begin with.
+    expect(d.towers.towers.every((t) => t.levels.every((l) => l.crit === undefined))).toBe(true);
+
+    const sys = new PerkSystem(
+      pool([
+        {
+          id: 'oath',
+          name: 'Oath',
+          description: 'towers can crit',
+          effects: [
+            { type: 'tower-grant', towerId: null, grant: { kind: 'crit', chance: 0.25, multiplier: 2 } },
+          ],
+          maxStacks: 2,
+          weight: 1,
+        },
+      ]),
+      d,
+      seededRng(44),
+    );
+
+    expect(drawAndTake(sys, 'oath')).toBe(true);
+    for (const tower of d.towers.towers) {
+      for (const level of tower.levels) {
+        expect(level.crit).toEqual({ chance: 0.25, multiplier: 2 });
+      }
+    }
+
+    // A second stack accumulates chance but must not compound the multiplier.
+    expect(drawAndTake(sys, 'oath')).toBe(true);
+    const first = d.towers.towers[0]!.levels[0]!;
+    expect(first.crit!.chance).toBeCloseTo(0.5);
+    expect(first.crit!.multiplier).toBe(2);
+  });
+
+  it('caps granted crit chance at certainty however many stacks land', () => {
+    const d = data();
+    const sys = new PerkSystem(
+      pool([
+        {
+          id: 'oath',
+          name: 'Oath',
+          description: 'towers can crit',
+          effects: [
+            { type: 'tower-grant', towerId: null, grant: { kind: 'crit', chance: 0.6, multiplier: 2 } },
+          ],
+          maxStacks: 3,
+          weight: 1,
+        },
+      ]),
+      d,
+      seededRng(55),
+    );
+    for (let i = 0; i < 3; i++) drawAndTake(sys, 'oath');
+    expect(d.towers.towers[0]!.levels[0]!.crit!.chance).toBe(1);
   });
 });
 

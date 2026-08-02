@@ -162,7 +162,7 @@ export class Simulation {
     });
     // GateSystem copies hp into maxHp at construction rather than reading its
     // config live, so a reinforcement perk has to be routed here.
-    this.perks?.onGateMaxHpChanged.push((delta) => this.gate.reinforce(delta));
+    this.perks?.onGateMaxHpChanged.push((delta) => this.gate.adjustCapacity(delta));
 
     // Kills drop coins where the enemy died — the loot line is the gameplay.
     // Elites pay double (enemies.json elite.coinMultiplier).

@@ -59,6 +59,12 @@ export function applyEffectInPlace(
     else if (fx.stat === 'repairCost') eco.repair.costPerHp = apply(eco.repair.costPerHp, fx.perRank, fx.mode, rank);
     else if (fx.stat === 'coinMagnetRadius') eco.coins.magnetRadius = apply(eco.coins.magnetRadius, fx.perRank, fx.mode, rank);
     else if (fx.stat === 'coinExpiryTime') eco.coins.expirySeconds = apply(eco.coins.expirySeconds, fx.perRank, fx.mode, rank);
+    else if (fx.stat === 'waveClearBonus') {
+      // Both halves together — the muster payment is one idea to a player, and
+      // scaling only the flat part would quietly stop mattering by wave 10.
+      eco.waveClearBonus.base = Math.max(0, Math.round(apply(eco.waveClearBonus.base, fx.perRank, fx.mode, rank)));
+      eco.waveClearBonus.perWave = Math.max(0, apply(eco.waveClearBonus.perWave, fx.perRank, fx.mode, rank));
+    }
     // wavePreviewDetail: UI concern, not a sim number — handled by scenes when the preview lands
   } else if (fx.type === 'tower-stat') {
     for (const tower of data.towers.towers) {
@@ -72,6 +78,36 @@ export function applyEffectInPlace(
       if (fx.stat === 'cost') {
         for (const level of tower.levels) level.cost = Math.max(1, Math.round(apply(level.cost, fx.perRank, fx.mode, rank)));
         for (const b of tower.branches) b.cost = Math.max(1, Math.round(apply(b.cost, fx.perRank, fx.mode, rank)));
+      }
+    }
+  } else if (fx.type === 'tower-grant') {
+    for (const tower of data.towers.towers) {
+      if (fx.towerId !== null && tower.id !== fx.towerId) continue;
+      // Branch stats are alternative end-states of the same tower, so a grant
+      // has to reach them too or the perk silently stops working the moment a
+      // player branches.
+      const stats = [...tower.levels, ...tower.branches.map((b) => b.stats)];
+      for (const st of stats) {
+        const g = fx.grant;
+        if (g.kind === 'crit') {
+          // Chance accumulates and caps; multiplier takes the better of the
+          // two rather than compounding, so stacking grants cannot run away.
+          const chance = Math.min(1, (st.crit?.chance ?? 0) + g.chance * rank);
+          st.crit = { chance, multiplier: Math.max(st.crit?.multiplier ?? 1, g.multiplier) };
+        } else if (g.kind === 'aura') {
+          st.towerAura = {
+            radius: Math.max(st.towerAura?.radius ?? 0, g.radius),
+            // Aura multipliers compose, because two beacons should stack.
+            damageMultiplier: (st.towerAura?.damageMultiplier ?? 1) * Math.pow(g.damageMultiplier, rank),
+          };
+        } else {
+          // Income: more coins per drop, never a faster drop, so granting it
+          // broadly cannot outpace the coin pool or the sweep.
+          st.income = {
+            value: (st.income?.value ?? 0) + g.value * rank,
+            interval: st.income?.interval ?? g.interval,
+          };
+        }
       }
     }
   }

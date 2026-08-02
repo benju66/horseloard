@@ -2,7 +2,7 @@
   "mapId": "warlords-march",
   "waves": [
     {
-      "hpMultiplier": 1.525,
+      "hpMultiplier": 1.647,
       "entries": [
         {
           "enemyId": "grunt",
@@ -21,7 +21,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.802,
+      "hpMultiplier": 1.9462,
       "entries": [
         {
           "enemyId": "runner",
@@ -40,7 +40,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.079,
+      "hpMultiplier": 2.2453,
       "entries": [
         {
           "enemyId": "swarm",
@@ -66,7 +66,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.425,
+      "hpMultiplier": 2.619,
       "entries": [
         {
           "enemyId": "wolf-rider",
@@ -92,7 +92,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.772,
+      "hpMultiplier": 2.9938,
       "supplyDrop": {
         "delay": 5,
         "x": 370,
@@ -132,7 +132,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.119,
+      "hpMultiplier": 3.3685,
       "archetypeId": "horde",
       "entries": [
         {
@@ -173,7 +173,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.465,
+      "hpMultiplier": 3.7422,
       "entries": [
         {
           "enemyId": "brute",
@@ -206,7 +206,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.881,
+      "hpMultiplier": 4.1915,
       "entries": [
         {
           "enemyId": "shieldbearer",
@@ -253,7 +253,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.297,
+      "hpMultiplier": 4.6408,
       "archetypeId": "raid",
       "supplyDrop": {
         "delay": 8,
@@ -287,7 +287,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.712,
+      "hpMultiplier": 5.089,
       "entries": [
         {
           "enemyId": "brute",
@@ -355,7 +355,7 @@
       ]
     },
     {
-      "hpMultiplier": 5.128,
+      "hpMultiplier": 5.5382,
       "entries": [
         {
           "enemyId": "wolf-rider",
@@ -388,7 +388,7 @@
       ]
     },
     {
-      "hpMultiplier": 5.544,
+      "hpMultiplier": 5.9875,
       "archetypeId": "war-party",
       "supplyDrop": {
         "delay": 10,
@@ -478,7 +478,7 @@
       ]
     },
     {
-      "hpMultiplier": 5.96,
+      "hpMultiplier": 6.4368,
       "entries": [
         {
           "enemyId": "brute",
@@ -539,7 +539,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.218,
+      "hpMultiplier": 2.3954,
       "archetypeId": "war-party",
       "entries": [
         {

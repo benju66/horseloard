@@ -19,6 +19,7 @@ export const KingdomStatSchema = z.enum([
   'repairCost',
   'coinMagnetRadius',
   'coinExpiryTime',
+  'waveClearBonus',
   'wavePreviewDetail',
 ]);
 export const TowerStatKeySchema = z.enum(['damage', 'range', 'fireRate', 'cost']);
@@ -36,6 +37,39 @@ export const MetaEffectSchema = z.discriminatedUnion('type', [
     towerId: IdSchema.nullable().describe('null = applies to all towers'),
     stat: TowerStatKeySchema,
     ...statModFields,
+  }),
+  /**
+   * Give towers a mechanic they did not have, rather than scaling one they did.
+   *
+   * `crit`, `towerAura` and `income` are all optional on TowerStats and read
+   * per-plot by TowerSystem, so granting one to a tower that shipped without it
+   * changes what that tower *does* — the only effect type here that is a rule
+   * change rather than a number. Granting to a tower that already has the
+   * mechanic adds to it instead.
+   *
+   * This exists because a pool of pure stat multipliers makes a draft a
+   * preference, not a decision (DESIGN §15.1).
+   */
+  z.object({
+    type: z.literal('tower-grant'),
+    towerId: IdSchema.nullable().describe('null = applies to all towers'),
+    grant: z.discriminatedUnion('kind', [
+      z.object({
+        kind: z.literal('crit'),
+        chance: z.number().gt(0).lte(1),
+        multiplier: z.number().gt(1),
+      }),
+      z.object({
+        kind: z.literal('aura'),
+        radius: z.number().positive(),
+        damageMultiplier: z.number().gt(1),
+      }),
+      z.object({
+        kind: z.literal('income'),
+        value: z.number().int().positive(),
+        interval: z.number().positive().describe('seconds between coin drops'),
+      }),
+    ]),
   }),
   z.object({ type: z.literal('unlock-ability'), abilityId: IdSchema }),
   z.object({ type: z.literal('unlock-tower'), towerId: IdSchema }),

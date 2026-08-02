@@ -37,7 +37,17 @@ export const PerkSchema = z.object({
   id: IdSchema,
   name: z.string().min(1),
   description: z.string().min(1).describe('shown on the draft card — say what it does, in the fiction'),
-  effect: MetaEffectSchema,
+  /**
+   * Applied together as one pick. **A list, not a single effect, because a
+   * card that only ever gives is not a choice.**
+   *
+   * The first pool shipped one effect per perk and every one of them was a
+   * free upgrade — which reproduced exactly the problem drafting was built to
+   * solve, the one the bot harness had already named for towers: preference
+   * rather than decision. Pairing a gain with a cost is what turns a pick-1-of-3
+   * into a decision, and it needs nothing more than this being an array.
+   */
+  effects: z.array(MetaEffectSchema).min(1),
   /**
    * How many times this perk may be taken in one run. Each stack applies one
    * more rank of the effect.
@@ -77,24 +87,25 @@ export const PerksFileSchema = z
       }
       seen.add(p.id);
 
-      const fx = p.effect;
-      if (fx.type === 'kingdom-stat' || fx.type === 'hero-stat' || fx.type === 'tower-stat') {
-        const why = NOT_MID_RUN[fx.stat];
-        if (why) {
+      p.effects.forEach((fx, j) => {
+        if (fx.type === 'kingdom-stat' || fx.type === 'hero-stat' || fx.type === 'tower-stat') {
+          const why = NOT_MID_RUN[fx.stat];
+          if (why) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['perks', i, 'effects', j, 'stat'],
+              message: `"${fx.stat}" cannot be a perk: ${why}`,
+            });
+          }
+        }
+        if (fx.type === 'unlock-tower') {
           ctx.addIssue({
             code: 'custom',
-            path: ['perks', i, 'effect', 'stat'],
-            message: `"${fx.stat}" cannot be a perk: ${why}`,
+            path: ['perks', i, 'effects', j, 'type'],
+            message: 'unlock-tower is reserved and unimplemented; all towers ship unlocked',
           });
         }
-      }
-      if (fx.type === 'unlock-tower') {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['perks', i, 'effect', 'type'],
-          message: 'unlock-tower is reserved and unimplemented; all towers ship unlocked',
-        });
-      }
+      });
     });
 
     // A draft that cannot fill its own offer on the first wave is a
