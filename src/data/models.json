@@ -17,7 +17,7 @@
       "id": "base-large",
       "silhouette": "humanoid",
       "scale": 1.35,
-      "tint": 10,
+      "tint": 12,
       "clips": {
         "idle": "Idle",
         "walk": "Running_A",
@@ -30,7 +30,7 @@
     {
       "id": "base-beast",
       "silhouette": "beast",
-      "tint": 10,
+      "tint": 12,
       "clips": {
         "walk": "procedural",
         "idle": "procedural"
@@ -40,7 +40,7 @@
       "id": "base-mini",
       "silhouette": "blob",
       "scale": 0.6,
-      "tint": 10,
+      "tint": 12,
       "instanced": true,
       "clips": {
         "walk": "procedural"
@@ -69,7 +69,8 @@
       "id": "unit-hero",
       "base": "base-horse",
       "scale": 1.5,
-      "file": "models/hero/horse-lord.glb"
+      "file": "models/hero/horse-lord.glb",
+      "keepMaterials": true
     },
     {
       "id": "unit-grunt",
@@ -79,7 +80,7 @@
       "id": "unit-runner",
       "base": "base-humanoid",
       "scale": 0.9,
-      "tint": 1,
+      "tint": 13,
       "file": "models/kaykit/Skeleton_Rogue.glb"
     },
     {
@@ -107,7 +108,7 @@
     {
       "id": "unit-raven",
       "scale": 1.25,
-      "tint": 10,
+      "tint": 14,
       "silhouette": "flyer"
     },
     {
@@ -127,14 +128,14 @@
       "id": "unit-looter",
       "base": "base-humanoid",
       "scale": 0.95,
-      "tint": 8,
+      "tint": 10,
       "props": [
         {
           "id": "sack",
           "socket": "back",
           "shape": "sphere",
           "scale": 0.55,
-          "tint": 6
+          "tint": 8
         }
       ],
       "file": "models/kaykit/Skeleton_Rogue.glb"
@@ -143,7 +144,7 @@
       "id": "unit-warlord",
       "base": "base-large",
       "scale": 1.33,
-      "tint": 7,
+      "tint": 14,
       "props": [
         {
           "id": "crown",

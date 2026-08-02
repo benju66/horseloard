@@ -256,7 +256,7 @@ export class ModelViewFactory {
       if (!mesh.isMesh) return;
       mesh.castShadow = true;
     });
-    this.repairUntextured(root, def.tint);
+    this.applyPalette(root, def.tint, def.keepMaterials);
     group.add(root);
 
     // Wire only the clips the manifest maps; a name that matches nothing is
@@ -277,14 +277,32 @@ export class ModelViewFactory {
   }
 
   /**
-   * Swap in a palette material anywhere a model's own material is unusable.
+   * Resolve a model's materials against the palette.
+   *
+   * Three cases, in order:
+   *
+   * - `keepMaterials` — leave the glTF alone. Hand-authored art whose colours
+   *   were chosen on purpose.
+   * - a declared `tint` — every mesh takes that flat palette material. This is
+   *   the faction read, and it is why it overrides a perfectly valid texture:
+   *   the CC0 character packs ship their own colourways (KayKit skeletons are
+   *   bone-white), and a roster assembled from packs has no faction colour at
+   *   all unless the game asserts one. Recolouring is also far cheaper than
+   *   re-texturing and collapses the roster onto a handful of shared materials.
+   * - neither — repair only the broken-white case (see isUntextured), leaving
+   *   kits that carry real colours, like the Nature props, untouched.
+   *
    * Public because static world dressing clones source scenes directly rather
-   * than going through `acquire`, and the repair has to reach those too.
+   * than going through `acquire`, and has to reach those too.
    */
-  repairUntextured(root: THREE.Object3D, tint: number | undefined): void {
+  applyPalette(root: THREE.Object3D, tint: number | undefined, keepMaterials = false): void {
+    if (keepMaterials) return;
+    const forced = tint === undefined ? undefined : this.material(tint);
     root.traverse((o) => {
       const mesh = o as THREE.Mesh;
-      if (mesh.isMesh && this.isUntextured(mesh.material)) mesh.material = this.material(tint);
+      if (!mesh.isMesh) return;
+      if (forced) mesh.material = forced;
+      else if (this.isUntextured(mesh.material)) mesh.material = this.material(tint);
     });
   }
 

@@ -159,5 +159,24 @@
       "x": 75,
       "y": 680
     }
+  },
+  "lighting": {
+    "sunAzimuth": -24,
+    "day": {
+      "groundTint": "#3f7a5c",
+      "pathTint": "#b9a884",
+      "sunColor": "#f4f0d2",
+      "background": "#8fc0c6",
+      "fogColor": "#b4d2d4",
+      "fogDensity": 0.5
+    },
+    "night": {
+      "groundTint": "#25514f",
+      "pathTint": "#7a7f78",
+      "skyColor": "#2f6a86",
+      "background": "#0f2530",
+      "fogColor": "#153039",
+      "fogDensity": 0.62
+    }
   }
 }

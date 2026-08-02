@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import type { MapDef } from '../data/schemas';
+import type { LightPreset, MapDef } from '../data/schemas';
 import type { ModelViewFactory } from './entityViews';
 
 /**
@@ -49,6 +49,9 @@ const GATE_HALF_WIDTH = 92; // wall half-width plus the corner towers' radius
 const GATE_HALF_DEPTH = 22;
 const FORGE_HALF = 26;
 
+/** How long a full day↔night crossfade takes, in seconds. */
+const DAYLIGHT_FADE_SECONDS = 2.2;
+
 export interface World {
   readonly group: THREE.Group;
   readonly camera: THREE.OrthographicCamera;
@@ -56,7 +59,46 @@ export interface World {
   readonly map: MapDef;
   /** Call on viewport change. */
   resize(width: number, height: number): void;
+  /**
+   * Drive the day/night cycle. `target` is 1 for day, 0 for night; the world
+   * eases toward it so the build→wave transition reads as dusk falling rather
+   * than as a light switch. Call every frame.
+   */
+  setDaylight(target: number, dt: number): void;
+  /** Current eased position, 1 = full day. */
+  readonly daylight: number;
   dispose(): void;
+}
+
+/** Everything the crossfade has to touch, resolved once per preset. */
+interface ResolvedLight {
+  sky: THREE.Color;
+  ground: THREE.Color;
+  ambient: number;
+  sun: THREE.Color;
+  sunIntensity: number;
+  sunElevation: number;
+  background: THREE.Color;
+  fog: THREE.Color;
+  fogDensity: number;
+  groundTint: THREE.Color;
+  pathTint: THREE.Color;
+}
+
+function resolveLight(p: LightPreset): ResolvedLight {
+  return {
+    groundTint: new THREE.Color(p.groundTint),
+    pathTint: new THREE.Color(p.pathTint),
+    sky: new THREE.Color(p.skyColor),
+    ground: new THREE.Color(p.groundColor),
+    ambient: p.ambientIntensity,
+    sun: new THREE.Color(p.sunColor),
+    sunIntensity: p.sunIntensity,
+    sunElevation: p.sunElevation,
+    background: new THREE.Color(p.background),
+    fog: new THREE.Color(p.fogColor),
+    fogDensity: p.fogDensity,
+  };
 }
 
 export function buildWorld(map: MapDef, scene: THREE.Scene, views?: ModelViewFactory): World {
@@ -70,41 +112,105 @@ export function buildWorld(map: MapDef, scene: THREE.Scene, views?: ModelViewFac
   };
 
   const light = map.lighting;
-  scene.background = new THREE.Color(light.background);
+  const dayLight = resolveLight(light.day);
+  const nightLight = resolveLight(light.night);
+  const reach = Math.max(map.world.width, map.world.height);
+  const az = (light.sunAzimuth * Math.PI) / 180;
+  // How far back the ortho camera sits. Shared with the fog, which has to be
+  // expressed relative to it — see applyDaylight.
+  const camDistance = reach * 1.5;
 
-  // ─── Dusk lighting: cool ambient over the terrain, warm key on the corridor ───
+  // ─── Light: one key, one fill, and the fog that gives the frame depth ───
 
-  const hemi = new THREE.HemisphereLight(light.skyColor, light.groundColor, light.ambientIntensity);
+  const hemi = new THREE.HemisphereLight(dayLight.sky, dayLight.ground, dayLight.ambient);
   group.add(hemi);
 
-  const sun = new THREE.DirectionalLight(light.sunColor, light.sunIntensity);
-  const az = (light.sunAzimuth * Math.PI) / 180;
-  const el = (light.sunElevation * Math.PI) / 180;
-  const reach = Math.max(map.world.width, map.world.height);
-  sun.position.set(
-    Math.cos(el) * Math.sin(az) * reach,
-    Math.sin(el) * reach,
-    Math.cos(el) * Math.cos(az) * reach,
-  );
+  const sun = new THREE.DirectionalLight(dayLight.sun, dayLight.sunIntensity);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   const shadowCam = sun.shadow.camera;
-  shadowCam.left = -reach * 0.6;
-  shadowCam.right = reach * 0.6;
-  shadowCam.top = reach * 0.6;
-  shadowCam.bottom = -reach * 0.6;
+  // Wide enough for the shadows a raking sun throws, not just for the casters.
+  // At 26° a 52-unit pine lays a ~107-unit shadow, and the map half-diagonal is
+  // already 443 on a 420x780 board — 0.6 clipped them off at the frame edge.
+  shadowCam.left = -reach * 0.78;
+  shadowCam.right = reach * 0.78;
+  shadowCam.top = reach * 0.78;
+  shadowCam.bottom = -reach * 0.78;
   shadowCam.near = 1;
-  shadowCam.far = reach * 2.5;
-  sun.shadow.bias = -0.0012;
-  sun.shadow.normalBias = 1.5;
+  shadowCam.far = reach * 3;
+  // Tuned for a low sun: the old normalBias of 1.5 was set against a 50°
+  // key and detaches shadows from their casters once the sun rakes.
+  sun.shadow.bias = -0.0006;
+  sun.shadow.normalBias = 0.7;
   group.add(sun);
   group.add(sun.target);
 
+  scene.background = new THREE.Color().copy(dayLight.background);
+  scene.fog = new THREE.Fog(dayLight.fog.getHex(), 1, 2);
+
+  /** Position the key from an elevation, holding the shared azimuth. */
+  function aimSun(elevationDeg: number): void {
+    const el = (elevationDeg * Math.PI) / 180;
+    sun.position.set(
+      Math.cos(el) * Math.sin(az) * reach,
+      Math.sin(el) * reach,
+      Math.cos(el) * Math.cos(az) * reach,
+    );
+  }
+
+  let daylight = 1;
+  const scratchColor = new THREE.Color();
+
+  /**
+   * Apply the crossfade. Colours lerp in place; nothing here allocates, because
+   * this runs every frame.
+   */
+  function applyDaylight(): void {
+    const t = daylight;
+    const a = nightLight;
+    const b = dayLight;
+    hemi.color.lerpColors(a.sky, b.sky, t);
+    hemi.groundColor.lerpColors(a.ground, b.ground, t);
+    hemi.intensity = a.ambient + (b.ambient - a.ambient) * t;
+    sun.color.lerpColors(a.sun, b.sun, t);
+    sun.intensity = a.sunIntensity + (b.sunIntensity - a.sunIntensity) * t;
+    aimSun(a.sunElevation + (b.sunElevation - a.sunElevation) * t);
+
+    scratchColor.lerpColors(a.background, b.background, t);
+    (scene.background as THREE.Color).copy(scratchColor);
+
+    // Terrain albedo shifts with the light — see the schema's note on why a
+    // night built from lights alone can only ever land on "dusk". Declared
+    // later in this function; only ever read from here, after construction.
+    groundMat.color.lerpColors(a.groundTint, b.groundTint, t);
+    pathMat.color.lerpColors(a.pathTint, b.pathTint, t);
+
+    const fog = scene.fog as THREE.Fog;
+    scratchColor.lerpColors(a.fog, b.fog, t);
+    fog.color.copy(scratchColor);
+    // Fog is view-space depth, and an orthographic camera sits a long way back —
+    // so the range has to be anchored to the camera distance, not to the origin.
+    // Anchored at 0 the *entire* playfield sits deep in the gradient and the
+    // frame washes out uniformly, which is haze rather than depth.
+    const density = a.fogDensity + (b.fogDensity - a.fogDensity) * t;
+    if (density <= 0) {
+      fog.near = camDistance * 100;
+      fog.far = camDistance * 200;
+    } else {
+      fog.near = camDistance - reach * 0.55;
+      fog.far = camDistance + (reach * 1.2) / density;
+    }
+  }
+
   // ─── Ground ───
 
-  const groundMat = track(new THREE.MeshLambertMaterial({ color: light.groundTint }));
+  const groundMat = track(new THREE.MeshLambertMaterial({ color: dayLight.groundTint }));
+  // Oversized so its edge never enters frame. At 1.6x the far edge showed as a
+  // hard horizon line across the top of a portrait viewport — with no sky or
+  // water behind it that reads as a hole, not as a horizon. Fog swallows the
+  // extra distance, so the only cost is two triangles.
   const ground = new THREE.Mesh(
-    track(new THREE.PlaneGeometry(map.world.width * 1.6, map.world.height * 1.6)),
+    track(new THREE.PlaneGeometry(map.world.width * 3, map.world.height * 3)),
     groundMat,
   );
   ground.rotation.x = -Math.PI / 2;
@@ -114,7 +220,7 @@ export function buildWorld(map: MapDef, scene: THREE.Scene, views?: ModelViewFac
   // ─── Path: an organic ribbon per lane, edges wandering, never a uniform stroke ───
 
   const pathMat = track(
-    new THREE.MeshLambertMaterial({ color: light.pathTint, polygonOffset: true, polygonOffsetFactor: -1 }),
+    new THREE.MeshLambertMaterial({ color: dayLight.pathTint, polygonOffset: true, polygonOffsetFactor: -1 }),
   );
   for (const lane of map.lanes) {
     const geo = track(buildPathRibbon(map, lane.waypoints, hashString(map.id + lane.id)));
@@ -171,11 +277,10 @@ export function buildWorld(map: MapDef, scene: THREE.Scene, views?: ModelViewFac
       );
   const camEl = (cam.elevation * Math.PI) / 180;
   const camYaw = (cam.yaw * Math.PI) / 180;
-  const dist = reach * 1.5;
   camera.position.set(
-    target.x + Math.cos(camEl) * Math.sin(camYaw) * dist,
-    Math.sin(camEl) * dist,
-    target.z + Math.cos(camEl) * Math.cos(camYaw) * dist,
+    target.x + Math.cos(camEl) * Math.sin(camYaw) * camDistance,
+    Math.sin(camEl) * camDistance,
+    target.z + Math.cos(camEl) * Math.cos(camYaw) * camDistance,
   );
   camera.lookAt(target);
   sun.target.position.copy(target);
@@ -215,13 +320,30 @@ export function buildWorld(map: MapDef, scene: THREE.Scene, views?: ModelViewFac
     apply(worst > 0 ? (PROBE * worst) / 0.94 : PROBE);
   }
 
+  applyDaylight();
+
   return {
     group,
     camera,
     map,
     resize,
+    get daylight() {
+      return daylight;
+    },
+    setDaylight(targetLevel: number, dt: number) {
+      const clamped = Math.min(1, Math.max(0, targetLevel));
+      // Exponential ease, framerate-independent. A linear ramp reads as a
+      // dimmer being turned; this settles the way light actually goes.
+      const k = 1 - Math.exp(-dt / (DAYLIGHT_FADE_SECONDS / 3));
+      const next = daylight + (clamped - daylight) * k;
+      // Snap once the remaining difference stops being visible, so the fade
+      // ends instead of asymptoting and re-applying colours forever.
+      daylight = Math.abs(clamped - next) < 0.001 ? clamped : next;
+      applyDaylight();
+    },
     dispose() {
       scene.remove(group);
+      scene.fog = null;
       for (const d of disposables) d.dispose();
     },
   };
@@ -277,14 +399,27 @@ function buildPathRibbon(
 
     if (i > 0) {
       const a = (i - 1) * 2;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      // Counter-clockwise seen from above. Ribs emit left-then-right while the
+      // strip advances along the lane, so the naive order (a, a+1, a+2) winds
+      // clockwise and every normal comes out -Y: the road is then backface
+      // culled under FrontSide, and lit black under DoubleSide because three
+      // flips normals on back-facing fragments. It is direction-independent —
+      // the perpendicular rotates with the tangent, so the cross product is
+      // -Y for *every* lane heading, and reversing here is always correct.
+      indices.push(a + 2, a + 1, a, a + 2, a + 3, a + 1);
     }
   }
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geo.setIndex(indices);
-  geo.computeVertexNormals();
+  // The ribbon is planar at PATH_Y, so its normals are known rather than
+  // derived. Stating them beats computeVertexNormals(): repeated waypoints
+  // produce zero-area triangles whose computed normal is NaN, and one NaN
+  // vertex blanks the whole draw.
+  const normals = new Float32Array(positions.length);
+  for (let i = 1; i < normals.length; i += 3) normals[i] = 1;
+  geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
   return geo;
 }
 
@@ -343,6 +478,50 @@ function modelSize(o: THREE.Object3D): THREE.Vector3 {
   return new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3());
 }
 
+/** Attributes the lighting model actually consumes; everything else is dropped. */
+const MERGE_ATTRIBUTES = ['position', 'normal', 'uv'] as const;
+
+/**
+ * Clone a source primitive into world space, ready to merge.
+ *
+ * The dequantise step is load-bearing. `npm run asset:optimize` runs
+ * gltf-transform with `--compress quantize`, so the Nature kit ships
+ * `KHR_mesh_quantization` with i16-normalised POSITION and NORMAL: real
+ * coordinates are recovered by dividing by 32767, and the model's true size
+ * lives in the node transform. Baking a world matrix straight into that
+ * attribute writes values in the hundreds back into a normalised int16 slot,
+ * where they saturate — every prop on the map collapsed into a two-unit blob
+ * at the origin, which read as "the props never placed" rather than as a
+ * corrupted attribute. Widening to Float32 first is the whole fix.
+ *
+ * The Castle kit is unquantised (plain f32), which is why the gatehouse
+ * survived the same code path and hid the bug for as long as it did.
+ */
+function bakeGeometry(geometry: THREE.BufferGeometry, matrix: THREE.Matrix4): THREE.BufferGeometry {
+  const geo = geometry.clone();
+  for (const name of MERGE_ATTRIBUTES) {
+    const attr = geo.getAttribute(name);
+    if (!attr) continue;
+    if (attr.array instanceof Float32Array && !attr.normalized) continue;
+    // getComponent() denormalises, so this reads true values whatever the
+    // source storage was — including interleaved attributes.
+    const widened = new Float32Array(attr.count * attr.itemSize);
+    for (let i = 0; i < attr.count; i++) {
+      for (let c = 0; c < attr.itemSize; c++) {
+        widened[i * attr.itemSize + c] = attr.getComponent(i, c);
+      }
+    }
+    geo.setAttribute(name, new THREE.BufferAttribute(widened, attr.itemSize));
+  }
+  geo.applyMatrix4(matrix);
+  // mergeGeometries demands identical attribute sets across the batch; a kit
+  // carrying extra channels would otherwise fail the merge outright.
+  for (const name of Object.keys(geo.attributes)) {
+    if (!MERGE_ATTRIBUTES.includes(name as (typeof MERGE_ATTRIBUTES)[number])) geo.deleteAttribute(name);
+  }
+  return geo;
+}
+
 /**
  * Compose the gatehouse from Castle-kit pieces: tower · wall · wall · gate ·
  * wall · wall · tower.
@@ -389,16 +568,13 @@ function buildGateFromKit(
     o.scale.setScalar(s);
     o.rotation.y = yaw;
     o.position.set(p.x + kitX * s, kitY * s, p.z);
-    views.repairUntextured(o, tint);
+    views.applyPalette(o, tint);
     o.updateMatrixWorld(true);
     o.traverse((n) => {
       const mesh = n as THREE.Mesh;
       if (!mesh.isMesh || !mesh.geometry) return;
       const material = Array.isArray(mesh.material) ? mesh.material[0]! : mesh.material;
-      const geo = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
-      for (const name of Object.keys(geo.attributes)) {
-        if (name !== 'position' && name !== 'normal' && name !== 'uv') geo.deleteAttribute(name);
-      }
+      const geo = bakeGeometry(mesh.geometry, mesh.matrixWorld);
       const bucket = buckets.get(material);
       if (bucket) bucket.push(geo);
       else buckets.set(material, [geo]);
@@ -612,13 +788,7 @@ function buildProps(map: MapDef, track: Track, views?: ModelViewFactory): THREE.
 
         for (const part of kind.parts) {
           composed.multiplyMatrices(placement, part.local);
-          const geo = part.geometry.clone().applyMatrix4(composed);
-          // Merging demands identical attribute sets; anything beyond these
-          // three is unused by the lighting model and would only cause the
-          // merge to fail on a kit that happens to carry extra channels.
-          for (const name of Object.keys(geo.attributes)) {
-            if (name !== 'position' && name !== 'normal' && name !== 'uv') geo.deleteAttribute(name);
-          }
+          const geo = bakeGeometry(part.geometry, composed);
           const bucket = buckets.get(part.material);
           if (bucket) bucket.push(geo);
           else buckets.set(part.material, [geo]);

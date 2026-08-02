@@ -42,5 +42,24 @@
     { "id": "last-stand", "position": { "x": 210, "y": 600 } }
   ],
   "gate": { "position": { "x": 210, "y": 715 }, "hp": 120, "attackSlots": 6 },
-  "forge": { "position": { "x": 75, "y": 660 } }
+  "forge": { "position": { "x": 75, "y": 660 } },
+  "lighting": {
+    "sunAzimuth": -66,
+    "day": {
+      "groundTint": "#6b6a4a",
+      "pathTint": "#a89878",
+      "sunColor": "#ffd39a",
+      "sunElevation": 22,
+      "background": "#b09a86",
+      "fogColor": "#c4b09a"
+    },
+    "night": {
+      "groundTint": "#332f3a",
+      "pathTint": "#615767",
+      "skyColor": "#5a4570",
+      "sunColor": "#a892bc",
+      "background": "#1e1526",
+      "fogColor": "#241a2c"
+    }
+  }
 }
