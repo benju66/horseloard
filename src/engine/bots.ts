@@ -387,6 +387,12 @@ interface Plan {
   chargeWhenMoving: boolean;
   /** restrict every build to this tower id — null = free choice */
   onlyTowerId?: string | null;
+  /**
+   * Cast abilities at all. Off for the towers-only pillar probe: Volley and
+   * Charge are hero damage, and the probe has to isolate the pillar rather than
+   * measure "towers plus a hero who still nukes things".
+   */
+  castAbilities?: boolean;
 }
 
 /**
@@ -446,7 +452,7 @@ function makePolicy(plan: Plan): BotFactory {
         const besieger = nearestBesieger(sim);
         if (besieger) {
           seek(sim, besieger.x, besieger.y);
-          castReady(sim, { chargeWhenMoving: plan.chargeWhenMoving });
+          if (plan.castAbilities !== false) castReady(sim, { chargeWhenMoving: plan.chargeWhenMoving });
           return;
         }
 
@@ -461,7 +467,7 @@ function makePolicy(plan: Plan): BotFactory {
           if (coin) seek(sim, coin.x, coin.y);
           else seek(sim, gate.x, gate.y);
         }
-        castReady(sim, { chargeWhenMoving: plan.chargeWhenMoving });
+        if (plan.castAbilities !== false) castReady(sim, { chargeWhenMoving: plan.chargeWhenMoving });
       },
     };
   };
@@ -536,6 +542,63 @@ export function forcedComposition(towerId: string): BotFactory {
  * Falls through to the wrapped bot's own choice when the perk is not on offer,
  * so a run still drafts normally rather than stalling.
  */
+// ─── Pillar probes (TRIANGLE.md MG5.1) ───
+//
+// The invariant these exist to measure: no single pillar clears a map alone,
+// and any two together must. "No single *tower* carries" is retired — towers
+// and the hero both produce damage, and two systems producing the same
+// resource are substitutes forever, which is why four rounds of counter-tuning
+// each worked and then came undone.
+//
+// Each probe removes one pillar's contribution while leaving the others' inputs
+// intact, so a failure means "this pillar is insufficient" rather than "this
+// bot was starved".
+
+/**
+ * Towers only: the hero still rides, still sweeps coins, still repairs — but
+ * deals no damage.
+ *
+ * The economy is deliberately left alone. Parking the hero in a corner would
+ * also starve the gold that buys towers, and the probe would then be measuring
+ * a funding problem rather than a damage one.
+ */
+export const towersOnly: BotFactory = makePolicy({
+  name: 'towers-only',
+  maxTowers: Infinity,
+  bowShare: 0, // a zeroed bow is not worth a coin
+  repairFloor: 0.8,
+  leash: Infinity, // roam for coins; the gold still has to come from somewhere
+  chargeWhenMoving: false,
+  castAbilities: false,
+});
+
+/** Hero only: never builds, buys every bow level, roams freely. */
+export const heroOnly: BotFactory = makePolicy({
+  name: 'hero-only',
+  maxTowers: 0,
+  bowShare: 1,
+  repairFloor: 0.5,
+  leash: Infinity,
+  chargeWhenMoving: true,
+});
+
+/**
+ * A hero config that lands no damage, for the towers-only probe.
+ *
+ * Data rather than an engine flag: the Simulation clones its balance data, so
+ * handing it a zeroed hero is enough, and MG5.1 stays a measurement task with
+ * no engine behaviour added for the benefit of tests.
+ *
+ * Stagger is left intact — it is physical presence, not damage, and removing it
+ * would change how enemies path around the hero rather than how much they take.
+ */
+export function withoutHeroDamage(hero: Hero): Hero {
+  const out = structuredClone(hero);
+  for (const level of out.bow.levels) level.damage = 0;
+  out.trample.damage = 0;
+  return out;
+}
+
 export function forcedPerk(inner: BotFactory, perkId: string): BotFactory {
   return (towers, map) => {
     const policy = inner(towers, map);

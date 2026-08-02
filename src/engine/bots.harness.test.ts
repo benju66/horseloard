@@ -1,6 +1,15 @@
 import { describe, it } from 'vitest';
 import { loadGameData } from '../data/loader';
-import { BOTS, forcedComposition, forcedPerk, runBot, type BotRunResult } from './bots';
+import {
+  BOTS,
+  forcedComposition,
+  forcedPerk,
+  heroOnly,
+  runBot,
+  towersOnly,
+  withoutHeroDamage,
+  type BotRunResult,
+} from './bots';
 
 /**
  * The active-play matrix: every bot × every map × N seeds.
@@ -33,21 +42,26 @@ const SEEDS = [11, 23, 42, 57, 88, 101, 137, 199, 233, 271, 313, 359];
  * `winRate` is the band a competent bot should land in. 100% everywhere means
  * the campaign has no curve; 0% means it is not a curve either, just a wall.
  *
- * `soloCarry` is the more interesting one: may a SINGLE tower type clear this
- * map on its own? Map 1 yes — a new player picking one tower and doing fine is
- * the point. By map 3 it should be no, because that is what makes composition a
- * decision rather than a preference. This is the dial that protects tower
- * balance while difficulty rises: raising enemy HP alone would just crown
- * whichever tower has the highest dps.
+ * `maxSinglePillarWinRate` is the one that matters (TRIANGLE.md, MG5.1). May a
+ * SINGLE pillar — towers alone, or the hero alone — clear this map? Map 1 yes:
+ * a new player leaning entirely on one thing and doing fine is the point. By
+ * map 3 no, because that is what makes the three systems depend on each other
+ * instead of substituting for each other.
+ *
+ * This replaces the retired `soloCarry`, which asked whether a single *tower*
+ * could carry. That question could never stay answered: towers and the hero
+ * both produce damage, so a progression system that scales both will always
+ * eventually make one sufficient. Sufficiency is what we ban here, not
+ * imbalance — leaning 70/30 in any direction must stay viable.
  */
 export const DIFFICULTY_TARGETS: Record<
   string,
-  { winRate: [number, number]; soloCarry: boolean; intent: string }
+  { winRate: [number, number]; maxSinglePillarWinRate: number; intent: string }
 > = {
-  'meadow-road': { winRate: [90, 100], soloCarry: true, intent: 'nearly unloseable — it teaches' },
-  'the-ford': { winRate: [70, 95], soloCarry: true, intent: 'comfortable, but leaks punish' },
-  'crossroads': { winRate: [45, 75], soloCarry: false, intent: 'composition starts to matter' },
-  'warlords-march': { winRate: [25, 55], soloCarry: false, intent: 'honest challenge' },
+  'meadow-road': { winRate: [90, 100], maxSinglePillarWinRate: 100, intent: 'nearly unloseable — it teaches' },
+  'the-ford': { winRate: [70, 95], maxSinglePillarWinRate: 100, intent: 'comfortable, but leaks punish' },
+  'crossroads': { winRate: [45, 75], maxSinglePillarWinRate: 40, intent: 'one pillar is not enough' },
+  'warlords-march': { winRate: [25, 55], maxSinglePillarWinRate: 25, intent: 'honest challenge' },
 };
 
 function pct(n: number, of: number): string {
@@ -181,17 +195,16 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
       const [lo, hi] = target.winRate;
       const winOk = winRate >= lo && winRate <= hi;
 
-      // Solo carry: does ANY single tower clear this map by itself?
+      // Solo carry, retained as texture: does ANY single tower clear this map
+      // by itself? No longer a gate — the pillar probe below is the gate.
       const carriers = data.towers.towers.filter((t) => {
         const solo = SEEDS.map((seed) => runBot(botData, mapId, forcedComposition(t.id), seed));
         return solo.every((r) => r.outcome === 'win');
       });
-      const soloOk = target.soloCarry ? true : carriers.length === 0;
-
-      if (!winOk || !soloOk) failures++;
+      if (!winOk) failures++;
       lines.push(
         `  ${mapId.padEnd(16)} win ${String(winRate).padStart(3)}% (want ${lo}-${hi}) ${winOk ? '✓' : '✗'}   ` +
-          `solo-carriers ${carriers.length}${target.soloCarry ? ' (allowed)' : ` (want 0) ${soloOk ? '✓' : '✗'}`}` +
+          `solo-carriers ${carriers.length} (texture only — see the pillar probe)` +
           `\n${' '.repeat(20)}${target.intent}` +
           (carriers.length ? `\n${' '.repeat(20)}carried by: ${carriers.map((t) => t.id).join(', ')}` : ''),
       );
@@ -200,6 +213,71 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     console.log(
       `\n[difficulty curve vs target]  ${failures === 0 ? 'ON TARGET' : `${failures} map(s) off target`}\n` +
         lines.join('\n'),
+    );
+  });
+
+  /**
+   * MG5.1 — the pillar probe. **The gate for M5.**
+   *
+   * TRIANGLE.md's invariant: no single pillar clears a map alone, and any two
+   * together must. This is the instrument, and it reports two things that have
+   * never been measured before — whether towers alone can hold a map, and
+   * whether the hero alone can.
+   *
+   * Each arm removes one pillar's *contribution* while leaving the others'
+   * *inputs* intact, so a loss means the pillar is insufficient rather than
+   * that the bot was starved:
+   *
+   * - `towers only` — the hero still rides, sweeps coins and repairs, but its
+   *   bow and trample deal zero and it casts nothing. Gold keeps flowing, so
+   *   this measures damage, not funding.
+   * - `hero only`   — builds nothing at all, buys every bow level, roams free.
+   *
+   * The army arm lands with MG5.2; until the barracks exists there is no third
+   * pillar to isolate, which is precisely why the triangle does not close yet.
+   */
+  it('reports whether any single pillar can hold a map alone', { timeout: 120_000 }, () => {
+    const lines: string[] = [];
+    let failures = 0;
+
+    const heroDisabled = { ...botData, hero: withoutHeroDamage(data.hero) };
+
+    for (const mapId of Object.keys(data.maps)) {
+      const target = DIFFICULTY_TARGETS[mapId];
+      const arms: Array<[string, BotRunResult[]]> = [
+        ['towers only', SEEDS.map((s) => runBot(heroDisabled, mapId, towersOnly, s))],
+        ['hero only', SEEDS.map((s) => runBot(botData, mapId, heroOnly, s))],
+        ['both (reference)', BOTS.flatMap((f) => SEEDS.map((s) => runBot(botData, mapId, f, s)))],
+      ];
+
+      const cap = target?.maxSinglePillarWinRate ?? 100;
+      const row: string[] = [`  ${mapId}   (single pillar must stay ≤ ${cap}%)`];
+      for (const [label, runs] of arms) {
+        const win = Math.round((runs.filter((r) => r.outcome === 'win').length / runs.length) * 100);
+        const dmg = Math.round(runs.reduce((s, r) => s + r.damageTaken, 0) / runs.length);
+        const waves = (runs.reduce((s, r) => s + r.wavesCleared, 0) / runs.length).toFixed(1);
+        const isPillar = label !== 'both (reference)';
+        const over = isPillar && win > cap;
+        if (over) failures++;
+        // Towers built and kills matter as much as the win rate here. Coins drop
+        // from kills, so a pillar that cannot kill also cannot fund itself — and
+        // "insufficient" and "starved" are different diagnoses with different fixes.
+        const towers = (runs.reduce((s, r) => s + r.towers.length, 0) / runs.length).toFixed(1);
+        const kills = Math.round(runs.reduce((s, r) => s + r.kills, 0) / runs.length);
+        row.push(
+          `      ${label.padEnd(18)} win ${String(win).padStart(3)}%  ` +
+            `waves ${waves.padStart(4)}/${runs[0]!.totalWaves}  dmg ${String(dmg).padStart(4)}  ` +
+            `towers ${towers.padStart(4)}  kills ${String(kills).padStart(3)}` +
+            (over ? '   ← pillar is sufficient alone' : ''),
+        );
+      }
+      lines.push(row.join('\n'));
+    }
+
+    console.log(
+      `\n[PILLAR PROBE — TRIANGLE.md MG5.1]  ${failures === 0 ? 'OK' : `${failures} pillar(s) sufficient alone`}\n` +
+        lines.join('\n') +
+        '\n  Army arm pending MG5.2 — the barracks is the third pillar and does not exist yet.',
     );
   });
 

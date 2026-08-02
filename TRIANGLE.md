@@ -176,6 +176,56 @@ the hero should both win; 100/0 should not.
 
 ---
 
+## Part A.1 — MG5.1 result (measured 2026-08-02): the towers are not a pillar yet
+
+The first run of the pillar probe. Twelve seeds, drafting on, per map:
+
+| map | towers only | hero only | both | cap |
+|---|---|---|---|---|
+| meadow-road | **8%** | 100% (0 damage taken) | 100% | 100 |
+| the-ford | **0%** | 83% | 81% | 100 |
+| crossroads | **0%** | 8% | 64% | 40 |
+| warlords-march | **0%** | **42%** ✗ | 53% | 25 |
+
+**Two findings, and the second is bigger than the one we went looking for.**
+
+### 1. The hero is the game; the towers are garnish
+
+Hero-only matches or beats the full reference on maps 1 and 2 (100 vs 100, 83 vs
+**81** — towers make the-ford marginally *worse*, because the gold spent on them buys
+less than the bow does). Towers alone clear between 1.0 and 2.6 waves of 8–14.
+
+This is the opposite of the problem we thought we had. It was never "one tower carries";
+it is "the hero carries and the towers barely participate". Every hour spent counter-
+tuning towers against each other was spent on the wrong half of the game.
+
+The one map where the hero cannot solo is **crossroads (8%)** — the two-lane map. The
+hero's limit is *simultaneity*, exactly as predicted, and it is currently the only thing
+in the game that imposes one.
+
+### 2. Towers cannot bootstrap, because the economy is downstream of the hero
+
+Look at the towers-only rows for the-ford and crossroads: **1.0 towers built, 0 kills.**
+The bot spends its starting gold on one tower, that tower cannot kill wave 1 alone, no
+coins drop, and nothing is ever built again. It is not a damage verdict — it is a
+funding collapse.
+
+```
+coins drop from kills → the hero does the killing → gold buys towers
+⇒ towers are funded by the hero
+```
+
+**A pillar that is funded by another pillar can never be independent of it.** This sits
+*underneath* the whole triangle and invalidates the original sequencing: the barracks
+costs gold too, so the army would be hero-funded in exactly the same way. Adding it
+first would have produced a third dependent system, not a third pillar.
+
+**Consequence: kill-independent income becomes MG5.2, ahead of the barracks.** Some
+meaningful share of a run's gold must arrive without anything dying — wave-clear
+payments, mills, or a base tithe. Only then can a non-hero pillar stand up.
+
+---
+
 ## Part C — DESIGN.md amendments to apply
 
 1. **§5 Towers** — add **Barracks** as a fifth launch tower (it was listed as a
@@ -198,15 +248,26 @@ the hero should both win; 100/0 should not.
 Ordered so the triangle exists before anything is tuned against it, and so the cheapest
 measurement comes first.
 
-### M5.1 — Measure where we actually stand (GO/NO-GO)
-- [ ] Three new bot policies: `towersOnly` (hero never attacks), `heroOnly` (builds
-      nothing), `armyOnly` (barracks only, once it exists).
-- [ ] New harness probe reporting each pillar's solo win rate per map.
-- [ ] Replace `DIFFICULTY_TARGETS.soloCarry` with `maxSinglePillarWinRate`.
-- **Accept:** the report runs and tells us, for the first time, whether hero-only can
-  clear map 3. Nobody has ever measured this. No content changes in this task.
+### M5.1 — Measure where we actually stand (GO/NO-GO) — ✅ DONE 2026-08-02
+- [x] `towersOnly` / `heroOnly` bot policies + `withoutHeroDamage`.
+- [x] Pillar probe in the harness, reporting win/waves/damage/towers/kills per arm.
+- [x] `DIFFICULTY_TARGETS.soloCarry` → `maxSinglePillarWinRate`.
+- **Result: see Part A.1.** Towers are not a pillar (0–8%), the hero nearly is
+  (42–100%), and the economy is downstream of hero kills so towers cannot bootstrap.
+  Re-sequenced the rest of M5 accordingly.
 
-### M5.2 — Barracks and soldiers
+### M5.2 — Kill-independent income (NEW — promoted by the MG5.1 result)
+- [ ] A share of run gold that arrives without kills: wave-clear payments re-priced,
+      a starting mill or base tithe, or both. Tune so a towers-only run can build a
+      second tower without the hero landing a hit.
+- [ ] Re-measure the pillar probe: towers-only must reach a *sensible* number of towers
+      and non-zero kills before any conclusion about tower strength means anything.
+- **Accept:** towers-only builds ≥3 towers on every map and clears more than one wave.
+  It should still *lose* — but it must lose to insufficiency, not to bankruptcy.
+- **Why first:** the barracks costs gold too. Building it before this would produce a
+  third hero-funded system rather than a third pillar.
+
+### M5.3 — Barracks and soldiers
 - [ ] `ArmySystem` in `/src/engine`: soldier entities, rally points, respawn timers.
 - [ ] Enemies gain a `blocked` state — stopped and fighting, not walking.
 - [ ] `barracks` tower in `towers.json`; soldiers are data-driven (count, hp, damage,
@@ -216,31 +277,31 @@ measurement comes first.
   resumes it; `armyOnly` loses every map; towers + army beats towers alone on the same
   wave budget.
 
-### M5.3 — Hero becomes burst
+### M5.4 — Hero becomes burst
 - [ ] Re-shape the bow curve so base damage scales slowly.
 - [ ] Move hero power into abilities; add Rapid Fire, Heavy Shaft, area denial.
 - [ ] Ability upgrade perks ("Volley fires twice", "Charge burns the ground").
 - **Accept:** `heroOnly` loses maps 3–4 at every draft outcome the bots can reach.
 
-### M5.4 — XP and levels
+### M5.5 — XP and levels
 - [ ] `XpSystem`; enemies gain `xpValue`; curve in `economy.json`.
 - [ ] Levels deal drafts; `everyNWaves` removed.
 - [ ] HUD: XP bar and level.
 - **Accept:** 25–35 levels on a full map-1 run; drafts never block the sim.
 
-### M5.5 — Perk families and the offer rule
+### M5.6 — Perk families and the offer rule
 - [ ] `family` on `PerkSchema`; one-factor validation at load.
 - [ ] `PerkSystem.deal` composes hero + tower/army + wildcard.
 - [ ] Rebuild the pool across five families, including the Army line.
 - **Accept:** no offer is ever all-hero; no offer is ever entirely dead cards for the
   current build.
 
-### M5.6 — Meta tree becomes unlocks
+### M5.7 — Meta tree becomes unlocks
 - [ ] Convert stat nodes to unlock nodes (abilities, perks, the barracks).
 - [ ] Save migration — schema is versioned, this is the first real one.
 - **Accept:** meta grants no raw stats; existing saves migrate without loss.
 
-### M5.7 — Rebalance the campaign against the triangle
+### M5.8 — Rebalance the campaign against the triangle
 - [ ] Re-price wave budgets per B.8 on all four maps.
 - [ ] Retire `soloCarry`; adopt the no-single-pillar invariant.
 - **Accept:** every map in its win band; no pillar clears maps 3–4 alone; every tower
@@ -252,7 +313,7 @@ measurement comes first.
 
 - **The army is real engine work.** Friendly units are a new entity type, not a
   projectile behaviour. If M5.2 does not land, the triangle is a two-legged stool and
-  we are back to substitutes. It is sequenced second for exactly this reason.
+  we are back to substitutes. It is sequenced right after the economy fix for exactly this reason.
 - **Cooldown-gating the hero can read as "weak".** Mitigation: abilities must be
   frequent and loud. If the hero stops being fun, the pivot has failed on its most
   important axis, and that judgement is a phone-and-thumbs call, not a harness one.

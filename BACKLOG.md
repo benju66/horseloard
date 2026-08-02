@@ -11,13 +11,27 @@ family, M4 polish items are real, outside playtesting matters again. DESIGN §3'
 single biome" v1 commitment still conflicts with wanting worlds and multiple levels —
 unresolved, settle it before large content work.
 
-**SOLO-CARRY IS SOLVED (2026-08-01).** `npm run bots` reports ON TARGET for the first
-time: `solo-carriers 0` on crossroads and warlords-march, all four win-rate bands green,
-and tower balance improved on the way (forced-composition 100/100/55/10 → 60/85/80/5).
-All three counters were needed — C's frontal block and A's armor for archer, B's flyers
-for bombard — and none sufficed alone. **Read DESIGN §6's "RESOLVED" block before
-touching enemy or tower data**; it records why the hero's arrows must ignore armor, and
-three traps that cost real time.
+**M5 IS THE CURRENT MILESTONE — read TRIANGLE.md first.** The game is becoming a
+roguelite build game on a tower-defence spine (Vampire Survivors progression, Thronefall
+hero and day/night, TD structure). TRIANGLE.md is authoritative for M5 and outranks
+DESIGN.md where they disagree.
+
+**"Solo-carry is solved" (2026-08-01) is SUPERSEDED and was answering the wrong
+question.** It was true and it did not survive in-run drafting, because towers and the
+hero both produce damage and two systems producing the same resource are substitutes
+forever. The invariant is now **no single *pillar* clears a map alone** — towers supply
+rate, the army supplies exposure, the hero supplies burst.
+
+**MG5.1 measured it and found the towers are not a pillar at all** (2026-08-02): towers
+alone clear **0-8%** of maps while the hero alone clears **100/83/8/42%**, matching or
+beating the full reference on maps 1-2. And towers cannot bootstrap — on two maps the
+towers-only arm builds 1 tower and gets 0 kills, because coins come from kills and the
+hero does the killing. **Kill-independent income (MG5.2) now comes before the barracks**;
+a pillar funded by another pillar can never be independent of it.
+
+The armor / flyer / frontal-block counters all stay as texture. DESIGN §6's "RESOLVED"
+block is still worth reading for *why* counter-tuning cannot hold against a progression
+system, and for three traps that cost real time.
 
 **AUDIO: SFX DONE (2026-08-01), music still missing.** 16 sounds, all synthesised in
 code (`src/audio/voices.ts`) rather than sampled — nothing to download, nothing to
@@ -278,13 +292,18 @@ Full plan in **TRIANGLE.md** (authoritative). Per-task acceptance criteria live 
 
 **The decision in one line:** towers supply *rate*, the army supplies *exposure*, the hero supplies *burst* — no single pillar may clear a map alone, and any two together must. Four measured attempts to hold "no single tower carries" all came undone because towers and the hero produce the same resource, and two systems producing the same resource are substitutes forever. Retired and replaced.
 
-[ ] **MG5.1 — Measure where we stand (GO/NO-GO).** `towersOnly` / `heroOnly` / `armyOnly` bot policies, a harness probe per pillar, `DIFFICULTY_TARGETS.soloCarry` → `maxSinglePillarWinRate`. No content changes. **Nobody has ever measured whether hero-only clears map 3** — do that before changing anything.
-[ ] **MG5.2 — Barracks + soldiers.** `ArmySystem`, enemy `blocked` state, `barracks` tower, instanced soldier rendering. The pillar that makes the triangle exist; sequenced second because everything after it is tuned against a two-legged stool otherwise. Biggest engine piece in M5 — friendly units are a new entity type, not a projectile behaviour.
-[ ] **MG5.3 — Hero becomes burst.** Bow curve flattened; power moves into cooldown-gated abilities (Rapid Fire, Heavy Shaft, area denial); ability-upgrade perks. This is the structural cap on hero throughput.
-[ ] **MG5.4 — XP and levels drive the draft.** `XpSystem`, enemy `xpValue`, curve in economy.json, ~25-35 levels per map, `everyNWaves` removed. Kills → XP means riding out to fight *is* progression, which finally wires pillar 1 to the reward loop.
-[ ] **MG5.5 — Perk families + offer rule.** Five families (Hero/Towers/Army/Economy/Keep); one factor per perk; every offer = 1 hero + 1 tower-or-army + 1 wildcard. Replaces per-perk tuning with a structural guarantee — no accidental pure-hero build, no all-dead offers.
-[ ] **MG5.6 — Meta tree becomes unlocks, not stats.** Removes the double-dip where meta and perks multiply the same numbers. First real save migration.
-[ ] **MG5.7 — Rebalance the campaign against the triangle.** Re-price wave budgets; retire `soloCarry`; adopt the no-single-pillar invariant.
+[x] **MG5.1 — Measure where we stand** (2026-08-02). `towersOnly` / `heroOnly` policies, `withoutHeroDamage`, a pillar probe, and `soloCarry` → `maxSinglePillarWinRate`.
+**the problem was the other half of the game.** Towers alone clear 0-8% of maps; the hero alone clears 100/83/8/42%. Hero-only *matches or beats the full reference* on maps 1-2 (100 vs 100, 83 vs **81** — towers make the-ford marginally worse, because gold spent on them buys less than the bow does). Every hour spent counter-tuning towers against each other was spent on the half of the game that barely participates. It was never "one tower carries"; it is "the hero carries".
+**the hero's only real limit is simultaneity.** The one map it cannot solo is crossroads (8%) — the two-lane map. Nothing else in the game imposes a "be in two places" constraint.
+**and the deeper one: towers cannot bootstrap.** On the-ford and crossroads the towers-only arm builds **1.0 towers and gets 0 kills**. Starting gold buys one tower, that tower cannot kill wave 1 alone, no coins drop, nothing is ever built again. Coins come from kills and the hero does the killing, so *towers are funded by the hero* — a pillar funded by another pillar can never be independent of it. This invalidated the original M5 order: the barracks costs gold too, so building it next would have produced a third hero-funded system rather than a third pillar.
+**learned:** "insufficient" and "starved" are different diagnoses with different fixes, and a win-rate column alone cannot tell them apart. Reporting towers-built and kills alongside the win rate is what made this visible — worth doing on every future probe.
+[ ] **MG5.2 — Kill-independent income (NEW, promoted by the MG5.1 result).** A meaningful share of run gold must arrive without anything dying — re-priced wave-clear payments, a starting mill, or a base tithe. **Accept:** towers-only builds ≥3 towers on every map and clears more than one wave; it should still lose, but to insufficiency rather than bankruptcy.
+[ ] **MG5.3 — Barracks + soldiers.** `ArmySystem`, enemy `blocked` state, `barracks` tower, instanced soldier rendering. The pillar that makes the triangle exist; sequenced second because everything after it is tuned against a two-legged stool otherwise. Biggest engine piece in M5 — friendly units are a new entity type, not a projectile behaviour.
+[ ] **MG5.4 — Hero becomes burst.** Bow curve flattened; power moves into cooldown-gated abilities (Rapid Fire, Heavy Shaft, area denial); ability-upgrade perks. This is the structural cap on hero throughput.
+[ ] **MG5.5 — XP and levels drive the draft.** `XpSystem`, enemy `xpValue`, curve in economy.json, ~25-35 levels per map, `everyNWaves` removed. Kills → XP means riding out to fight *is* progression, which finally wires pillar 1 to the reward loop.
+[ ] **MG5.6 — Perk families + offer rule.** Five families (Hero/Towers/Army/Economy/Keep); one factor per perk; every offer = 1 hero + 1 tower-or-army + 1 wildcard. Replaces per-perk tuning with a structural guarantee — no accidental pure-hero build, no all-dead offers.
+[ ] **MG5.7 — Meta tree becomes unlocks, not stats.** Removes the double-dip where meta and perks multiply the same numbers. First real save migration.
+[ ] **MG5.8 — Rebalance the campaign against the triangle.** Re-price wave budgets; retire `soloCarry`; adopt the no-single-pillar invariant.
 
 **Exit:** every map in its win band; no pillar clears maps 3-4 alone; every tower *and* the barracks appear in winning runs; runs measurably diverge across seeds; validated on a real phone.
 
