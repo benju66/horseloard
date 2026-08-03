@@ -529,9 +529,10 @@ is map tuning rather than tree tuning. The career ramp itself is now deliberatel
 to LV8, ~23 to LV22, ~152 to LV44, which is the long-game shape.
 Still deferred until M7.2 lands, for the original reason: the feedback layer changes what the
 curve should be, so tuning first means tuning twice.
-[ ] **M7.4 — More maps.** Four is not a campaign for a long game. Wave sets and maps are pure
-JSON (CLAUDE.md #1), so this is authoring, not engineering — the constraint is that each map
-must ask a *new question*, not restate an old one at higher HP.
+[ ] **M7.4 — More maps** → **superseded by M8, see BIOMES.md.** Four is not a campaign for a
+long game, but "more maps" was the wrong frame: the problem is that all four ask the *same
+question*, so the tree's six paths have nowhere to express themselves. Restructured as three
+biomes of four levels, each with its own enemy pool and one terrain rule.
 [x] **M7.6 — Rule effects: nodes that change what the game does** (2026-08-03). Eight of them,
 replacing the eight flattest stat nodes: `crit-vs-hindered`, `pierce-on-kill`,
 `zones-strip-armor`, `first-tower-free`, `soldiers-reform`, `bounty-on-blocked`,
@@ -619,6 +620,29 @@ to judge structure. Revisit when the structure has stopped moving.
 **Still true, and now three milestones old: none of this has been played by a human.** The tree
 screen, the loadout and the whole "decide before you ride" premise are phone-and-thumbs
 questions, and the bots cannot answer one of them.
+
+## M8 — Biomes  ← NEXT
+Full plan in **BIOMES.md**. Three biomes of four levels replacing four standalone maps.
+
+**The decision in one line:** the tree has six paths and the campaign has four maps that all ask
+the same question, so build diversity has nowhere to go — biomes are the payoff for the tree
+rather than a feature beside it. A biome is a palette, an enemy pool, **one terrain rule** and a
+difficulty band; a biome missing the terrain rule is a reskin, and that is the test.
+
+**The roster already clusters three ways**, each punishing a different pillar: swarm/runner/looter
+punish rate, brute/shieldbearer/halberdier punish the army (`antiInfantry` shreds soldiers), and
+wolf-rider/raven/outrider punish the line (`flying` and `blockImmune` walk past a blocker). A Host
+build that dominates biome 1 should be dismantled by biome 2 — which is impossible on today's
+campaign and is the whole argument.
+
+**Measurement comes before authoring** (M8.4 before M8.5): per-biome build diversity, and
+pillar-by-biome. **Accept: no single path is in the top third of builds in all three biomes.** If
+Ride carries everywhere, the biomes are palettes. Authoring eight maps before that probe exists is
+authoring them blind — the lesson M7 taught twice.
+
+**Open and worth answering cheaply first:** whether biome natives earn their cost (test the mix
+before adding enemies), and whether `narrow-cuts` should be an engine rule at all when a
+plot-poor layout might ask the same question with no engine work.
 
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
