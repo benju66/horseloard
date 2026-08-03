@@ -368,6 +368,10 @@ Gold and XP stay separate currencies with separate jobs: **gold buys commitment*
 
 The curve is `base × growth^(n-1)`, geometric rather than a table so it keeps working in endless. **Where it is steep matters more than how many levels it yields** — three curves all produced ~30 levels and only one preserved the difficulty bands, because a level that arrives after the fight it was needed for buys nothing.
 
+**Perk families and the offer rule** (MG5.6, TRIANGLE.md §B.5). Every perk belongs to one of five families — **Hero · Towers · Army · Economy · Keep** — and every offer of three reserves one Hero slot and one Tower-or-Army slot, with the rest wildcards. The family is printed on the card.
+
+This replaces per-perk balance tuning with a structural guarantee. It bans nothing and removes no agency — you still choose freely — but you cannot accidentally draft a pure-hero run however the weights fall, and you never face three cards that are all dead for what you built. Measured: the rule alone moved crossroads 44% → 64% and warlords-march 25% → 50% with no weight changed, and put all four maps inside their bands for the first time.
+
 **Loss payout:** tokens are earned per wave cleared even on defeat. This is the rubber band that makes a hard endgame compatible with a broad audience — a failed run is progress, never wasted time.
 
 **Wave-clear sweep:** any coins still on the ground when a wave ends auto-fly to the hero. No tedious sweeping between waves, and it's a free feel-good beat on every clear. (Coin expiry and Looters therefore only threaten coins *during* combat, which is when the pressure is interesting.)

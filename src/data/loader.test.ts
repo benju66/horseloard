@@ -215,6 +215,7 @@ describe('cross-file references', () => {
     const raw = seed();
     (raw.perks as any).perks.push({
       id: 'perk-ghost-ability',
+      family: 'hero',
       name: 'Ghost',
       description: 'x',
       effects: [{ type: 'ability-stat', abilityId: 'meteor', stat: 'cooldown', perRank: 0.9, mode: 'multiply' }],
@@ -228,6 +229,7 @@ describe('cross-file references', () => {
     const raw = seed();
     (raw.perks as any).perks.push({
       id: 'perk-wrong-stat',
+      family: 'hero',
       name: 'Wrong',
       description: 'x',
       // Heavy Shaft is a line, not a circle — it has no radius.
@@ -242,6 +244,7 @@ describe('cross-file references', () => {
     const raw = seed();
     (raw.perks as any).perks.push({
       id: 'perk-broad',
+      family: 'hero',
       name: 'Broad',
       description: 'x',
       effects: [{ type: 'ability-stat', abilityId: null, stat: 'radius', perRank: 1.2, mode: 'multiply' }],

@@ -457,12 +457,33 @@ measurement comes first.
 - **Reference curve after the change:** 92 / 72 / 44 / 25 against bands of 90–100 /
   70–95 / 45–75 / 25–55. Three in band, crossroads 1pp under.
 
-### M5.6 — Perk families and the offer rule
-- [ ] `family` on `PerkSchema`; one-factor validation at load.
-- [ ] `PerkSystem.deal` composes hero + tower/army + wildcard.
-- [ ] Rebuild the pool across five families, including the Army line.
-- **Accept:** no offer is ever all-hero; no offer is ever entirely dead cards for the
-  current build.
+### M5.6 — Perk families and the offer rule — ✅ DONE 2026-08-03
+- [x] `family` on `PerkSchema`, required, one of five.
+- [x] `PerkSystem.deal` composes hero + tower/army + wildcard, degrading a starved slot
+      to a wildcard rather than shrinking the offer.
+- [x] Pool spread across all five families: 12 hero, 8 towers, 4 army, 2 economy, 2 keep.
+- [x] Load-time check that `hero`, `towers` and `army` are all non-empty — a pool with
+      no army cards would honour the rule by never applying it, and the guarantee would
+      silently not exist.
+- [x] The family is **on the card**. An offer whose balance you cannot see is three
+      anonymous upgrades, which is the failure the pool was rebuilt to avoid.
+- **Not done: the one-factor lint.** §B.5 rule 1 says a perk contributes to one factor
+  only. Mechanically deciding whether `cost × 0.76` is an upgrade or a downgrade is
+  ambiguous, and a strict "all effects in one family" rule would ban the tradeoff cards
+  that make a pick cost something — the whole reason `effects` is an array. Left as a
+  review rule rather than shipped as a bad check.
+- **Result — the campaign is ON TARGET on all four maps for the first time:**
+
+  | map | win | band |
+  |---|---|---|
+  | meadow-road | 100% | 90–100 ✓ |
+  | the-ford | 78% | 70–95 ✓ |
+  | crossroads | 64% | 45–75 ✓ |
+  | warlords-march | 50% | 25–55 ✓ |
+
+  Guaranteeing a tower-or-army card in every offer is worth more than any per-perk
+  tuning was: boards come out supported instead of lopsided, without a single weight
+  being touched. Pillar probe still OK, cadence still 29.5 / 28.1 / 31.8 / 34.8.
 
 ### M5.7 — Meta tree becomes unlocks
 - [ ] Convert stat nodes to unlock nodes (abilities, perks, the barracks).

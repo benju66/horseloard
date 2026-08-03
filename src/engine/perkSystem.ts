@@ -138,24 +138,44 @@ export class PerkSystem {
     const picked: Perk[] = [];
     const remaining = [...candidates];
     const size = Math.min(this.offerSize, remaining.length);
+
+    // The offer rule (TRIANGLE.md §B.5): one hero card, one tower-or-army card,
+    // then wildcards. This replaces per-perk balance tuning with a structural
+    // guarantee — it bans nothing and removes no agency, you still choose
+    // freely, but you cannot accidentally draft a pure-hero run however the
+    // weights fall, and you never face three cards that are all dead for what
+    // you built.
+    //
+    // Slots degrade to wildcard rather than shrinking the offer: late in a run
+    // a whole family can be exhausted, and a two-card draft would read as the
+    // game running out rather than as a rule being honoured.
+    const SLOTS: ReadonlyArray<ReadonlyArray<Perk['family']> | null> = [
+      ['hero'],
+      ['towers', 'army'],
+    ];
     for (let i = 0; i < size; i++) {
-      let total = 0;
-      for (const p of remaining) total += p.weight;
-      let roll = this.rng() * total;
-      let index = remaining.length - 1;
-      for (let j = 0; j < remaining.length; j++) {
-        roll -= remaining[j]!.weight;
-        if (roll <= 0) {
-          index = j;
-          break;
-        }
-      }
-      picked.push(remaining[index]!);
-      remaining.splice(index, 1);
+      const want = SLOTS[i] ?? null;
+      const pool = want ? remaining.filter((p) => want.includes(p.family)) : remaining;
+      const from = pool.length > 0 ? pool : remaining;
+      const chosen = this.weightedPick(from);
+      picked.push(chosen);
+      remaining.splice(remaining.indexOf(chosen), 1);
     }
 
     this.offer = picked;
     return this.offer;
+  }
+
+  /** Weighted pick from a list. Drawn from the injected rng, so seeds replay. */
+  private weightedPick(from: readonly Perk[]): Perk {
+    let total = 0;
+    for (const p of from) total += p.weight;
+    let roll = this.rng() * total;
+    for (const p of from) {
+      roll -= p.weight;
+      if (roll <= 0) return p;
+    }
+    return from[from.length - 1]!;
   }
 
   /**

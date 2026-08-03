@@ -33,8 +33,22 @@ const NOT_MID_RUN: Record<string, string> = {
   startingGold: 'granted at run start; raising it mid-run has no effect',
 };
 
+/**
+ * The five families (TRIANGLE.md §B.5). A perk belongs to exactly one, and the
+ * offer rule below is built on that.
+ *
+ * These are not cosmetic tags. `hero`, `towers` and `army` are the three
+ * pillars; `economy` and `keep` are the two things that support all of them.
+ * Every offer contains one hero card and one tower-or-army card, which means
+ * you cannot accidentally draft a pure-hero run no matter how the weights fall
+ * — a structural guarantee that replaces per-perk balance tuning.
+ */
+export const PerkFamilySchema = z.enum(['hero', 'towers', 'army', 'economy', 'keep']);
+export type PerkFamily = z.infer<typeof PerkFamilySchema>;
+
 export const PerkSchema = z.object({
   id: IdSchema,
+  family: PerkFamilySchema,
   name: z.string().min(1),
   description: z.string().min(1).describe('shown on the draft card — say what it does, in the fiction'),
   /**
@@ -79,6 +93,25 @@ export const PerksFileSchema = z
     perks: z.array(PerkSchema).min(1),
   })
   .superRefine((file, ctx) => {
+    // The offer rule needs a pool that can satisfy it (TRIANGLE.md §B.5).
+    //
+    // `deal` degrades a starved slot to a wildcard rather than shrinking the
+    // offer, which is right at the *end* of a run when a family is exhausted —
+    // and completely wrong as a permanent state. A pool with no army cards
+    // would honour the rule silently by never applying it, and the guarantee
+    // would quietly not exist. Caught here instead.
+    const byFamily = new Map<string, number>();
+    for (const p of file.perks) byFamily.set(p.family, (byFamily.get(p.family) ?? 0) + 1);
+    for (const required of ['hero', 'towers', 'army'] as const) {
+      if ((byFamily.get(required) ?? 0) === 0) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['perks'],
+          message: `no "${required}" perks — every offer reserves a slot for that family, and an empty family makes the offer rule a no-op`,
+        });
+      }
+    }
+
     const seen = new Set<string>();
     file.perks.forEach((p, i) => {
       if (seen.has(p.id)) {
