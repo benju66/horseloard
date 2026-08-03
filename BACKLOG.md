@@ -621,6 +621,31 @@ to judge structure. Revisit when the structure has stopped moving.
 screen, the loadout and the whole "decide before you ride" premise are phone-and-thumbs
 questions, and the bots cannot answer one of them.
 
+## M9 — Counter-enemies  ← NEXT
+Full design in **BIOMES.md Part K**. The prerequisite M8 is blocked on.
+
+**The design constraint in one line:** a counter-enemy is not a hard enemy, it is **an enemy
+towers cannot answer by being more numerous.** Every trait in the current roster fails that
+test — armour makes towers work harder, speed makes them work sooner, `flying` and `blockImmune`
+route around the army but stay in tower range the whole way.
+
+[ ] **M9.1 — The Sapper.** `towerBreak`, low HP, must die before it arrives. **Zero engine
+work** — `towerBreak` is fully implemented in `towerSystem.ts` and has been given to exactly one
+enemy, the warlord, which appears once at the end of a campaign. The anti-tower mechanic was
+built the whole time and never deployed as a regular threat.
+[ ] **M9.2 — The Juggernaut.** 80% damage reduction *while moving freely*, normal while slowed
+or blocked. One more read of the `hindered` test that `damageVsHindered` already uses. **The
+direct answer to Part J:** the first enemy whose counter is a *pillar* rather than a quantity,
+which is what should finally separate the pools.
+[ ] **M9.3 — Stalker and Warden**, only if 9.1 and 9.2 have not already separated the pools.
+Hero-seeking (template: `lootsCoins`) and a defensive aura (template: `warCry`).
+[ ] **M9.4 — The gate.** Re-run the pool probe. If the carrying path differs between pools,
+BIOMES.md Part H is unblocked.
+
+**Cheapest first, re-measured after each.** If the Sapper and Juggernaut alone do it, the other
+two are content rather than prerequisites and the moderate engine work never happens. None need
+art to be tested — placeholder geometry is a valid state.
+
 ## M8 — Biomes  ← BLOCKED by its own thesis test, see BIOMES.md Part J
 Full plan in **BIOMES.md**. Three biomes of four levels replacing four standalone maps.
 

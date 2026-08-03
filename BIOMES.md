@@ -263,3 +263,99 @@ probe; if the carrying path differs, Part H proceeds unchanged.
 
 An hour of work, before eight hand-authored maps rather than after. **The probe did its job by
 returning a negative** — which is the whole argument for building instruments before content.
+
+---
+
+## Part K — The counter-enemies
+
+Design for the prerequisite J.2 names. **Not yet built.**
+
+The finding to design against, stated precisely: *every trait in the roster is answered by more
+towers*. Armour makes towers work harder; speed makes them work sooner; `flying` and
+`blockImmune` route around the army but stay in tower range the whole way. So a counter-enemy
+is not "a hard enemy" — it is **an enemy towers cannot answer by being more numerous.**
+
+Four, and each names the tree answer it demands.
+
+### K.1 The Sapper — punishes a static line
+
+Slight, quick, carries a maul. Walks the lane and knocks a tower down a level as it passes.
+
+- **Traits:** `towerBreak` (small radius, short cooldown), low HP, moderate speed, no armour
+- **Engine work: none.** `towerBreak` is fully implemented in `towerSystem.ts` and is currently
+  given to exactly one enemy — the warlord, which appears once at the end of a campaign. The
+  anti-tower mechanic has been built the whole time and never deployed as a regular threat.
+- **Punishes:** stacking towers and leaving them. A line with no answer degrades every wave.
+- **Answers:** burst that kills it before it arrives — The Hunt, The Storm — or Frost holding
+  it outside its own break radius.
+- **Why it is not just "a threat":** killing it *late* is worthless. That is the property no
+  amount of extra dps substitutes for.
+
+### K.2 The Juggernaut — punishes towers *without* the other pillars
+
+Vast, slow, and almost impervious while it has momentum.
+
+- **Traits:** takes **80% less damage while moving freely**; normal damage while **slowed or
+  blocked**. High HP, very slow, high siege dps.
+- **Engine work: small.** `slowRemaining > 0 || state === 'blocked'` is already the "hindered"
+  test used by `damageVsHindered` and `crit-vs-hindered`. This is one more read of it, inverted.
+- **Punishes:** a pure tower board, absolutely. Rate alone cannot kill it.
+- **Answers:** **The Host** (a soldier holding it) or **The Storm** (caltrops slowing it), and
+  then anything. This is the one enemy that makes exposure *mandatory* rather than efficient.
+- **This is the direct answer to Part J.** It is the first enemy in the roster whose counter is
+  a pillar rather than a quantity, and it is the reason the pools would finally differ.
+
+### K.3 The Stalker — punishes camping
+
+Leaves the road and comes for you.
+
+- **Traits:** ignores the lane and beelines for the hero; `staggersHero`; low siege dps (it is
+  harassment, not a gate threat); modest HP.
+- **Engine work: moderate.** A new movement mode, but `lootsCoins` is the template — an enemy
+  that leaves the lane, seeks a target and behaves differently is already a shape the
+  EnemySystem supports.
+- **Punishes:** standing still, and a hero with no damage of their own.
+- **Answers:** **The Ride** (outrun it, trample it) or hero burst. Towers only help if you fight
+  where they are — which makes *where you stand* a decision rather than a habit.
+- **Note on the invariant:** the hero cannot die, so the cost is control, not life. Repeated
+  stagger while you are trying to be somewhere else is the price.
+
+### K.4 The Warden — punishes thin, spread damage
+
+Carries a standard. Everything near it is harder to kill.
+
+- **Traits:** aura granting nearby enemies a damage reduction; no attack of its own; travels
+  mid-pack
+- **Engine work: moderate.** `warCry` is the exact template — a periodic radius effect on other
+  enemies — and this is the defensive version of it.
+- **Punishes:** damage spread evenly across a board, which is what a wide tower line produces.
+- **Answers:** focus fire and burst — reach the Warden and kill *it*. Rewards The Hunt's
+  single-target damage and any ability that can be aimed.
+
+### K.5 What each one takes away
+
+| | punishes | pillar it makes necessary |
+|---|---|---|
+| Sapper | leaving a line alone | burst, or control |
+| **Juggernaut** | **towers without exposure** | **army or Storm** |
+| Stalker | camping | hero, mobility |
+| Warden | thin spread damage | focus, burst |
+
+Together they mean a tower board is necessary and **never sufficient** — which is the triangle
+invariant finally expressed in the *enemies* rather than only in the wave budget.
+
+### K.6 Build order, and the gate
+
+| step | work |
+|---|---|
+| **M9.1** | Sapper. Zero engine work — a JSON entry. Re-run the pool probe immediately. |
+| **M9.2** | Juggernaut. One damage read. Re-run the probe. **This is the one that should move it.** |
+| **M9.3** | Stalker and Warden, if 9.1 and 9.2 have not already separated the pools. |
+| **M9.4** | Re-run the pool probe as the gate. **If the carrying path now differs between pools, BIOMES.md Part H is unblocked.** |
+
+Cheapest first, and re-measured after each. If the Sapper and the Juggernaut alone separate the
+pools, the Stalker and the Warden are content rather than prerequisites — and the moderate
+engine work never has to happen.
+
+**Open:** none of these need art to be tested. Placeholder geometry is a valid state
+(`loader.test.ts` asserts it), so the probe can answer whether they work before a model exists.
