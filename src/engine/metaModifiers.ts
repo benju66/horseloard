@@ -47,10 +47,12 @@ export function applyEffectInPlace(
   data: ModifiableData,
   fx: MetaEffect,
   rank: number,
-): { unlockAbilityId?: string } {
-  if (fx.type === 'unlock-ability') {
-    return { unlockAbilityId: fx.abilityId };
-  }
+): { unlockAbilityId?: string; unlockPerkId?: string; unlockTowerId?: string } {
+  // Unlocks are decisions for a system, not numbers to mutate, so they are
+  // returned rather than applied. All three are routed by the caller.
+  if (fx.type === 'unlock-ability') return { unlockAbilityId: fx.abilityId };
+  if (fx.type === 'unlock-perk') return { unlockPerkId: fx.perkId };
+  if (fx.type === 'unlock-tower') return { unlockTowerId: fx.towerId };
 
   if (fx.type === 'hero-stat') {
     const h = data.hero;
@@ -156,7 +158,6 @@ export function applyEffectInPlace(
       }
     }
   }
-  // unlock-tower: reserved — all four towers ship unlocked for now
   return {};
 }
 
@@ -169,16 +170,28 @@ export function applyMetaModifiers(
   data: ModifiableData,
   nodes: readonly MetaNode[],
   ranks: Record<string, number>,
-): ModifiableData & { unlockedAbilityIds: string[] } {
+): ModifiableData & {
+  unlockedAbilityIds: string[];
+  unlockedPerkIds: string[];
+  unlockedTowerIds: string[];
+} {
   const out: ModifiableData = structuredClone(data);
   const unlockedAbilityIds: string[] = [];
+  const unlockedPerkIds: string[] = [];
+  const unlockedTowerIds: string[] = [];
 
   for (const node of nodes) {
     const rank = ranks[node.id] ?? 0;
     if (rank <= 0) continue;
-    const { unlockAbilityId } = applyEffectInPlace(out, node.effect, rank);
+    const { unlockAbilityId, unlockPerkId, unlockTowerId } = applyEffectInPlace(
+      out,
+      node.effect,
+      rank,
+    );
     if (unlockAbilityId) unlockedAbilityIds.push(unlockAbilityId);
+    if (unlockPerkId) unlockedPerkIds.push(unlockPerkId);
+    if (unlockTowerId) unlockedTowerIds.push(unlockTowerId);
   }
 
-  return { ...out, unlockedAbilityIds };
+  return { ...out, unlockedAbilityIds, unlockedPerkIds, unlockedTowerIds };
 }

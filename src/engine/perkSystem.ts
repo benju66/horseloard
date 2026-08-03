@@ -59,7 +59,24 @@ export class PerkSystem {
   /** Fired on every pick — the renderer uses it for feedback, the harness for logging. */
   readonly onTaken: Array<(perk: Perk, stacks: number) => void> = [];
 
-  constructor(file: PerksFile, data: ModifiableData, rng: () => number = Math.random) {
+  /**
+   * `metaLocked` perks that the meta tree has actually unlocked, or null for
+   * "everything is available".
+   *
+   * Null by default because that is what every engine test, and the bot
+   * harness, want: bots stand in for a player with meta progression, so
+   * measuring them against a fresh-save pool would measure the wrong game.
+   * Only the real run passes a set.
+   */
+  private readonly unlockedPerkIds: ReadonlySet<string> | null;
+
+  constructor(
+    file: PerksFile,
+    data: ModifiableData,
+    rng: () => number = Math.random,
+    unlockedPerkIds: readonly string[] | null = null,
+  ) {
+    this.unlockedPerkIds = unlockedPerkIds === null ? null : new Set(unlockedPerkIds);
     this.pool = file.perks;
     this.byId = new Map(file.perks.map((p) => [p.id, p]));
     this.offerSize = file.offerSize;
@@ -115,7 +132,10 @@ export class PerkSystem {
 
   private eligible(): Perk[] {
     return this.pool.filter(
-      (p) => this.stacksOf(p.id) < p.maxStacks && (this.isOfferable?.(p) ?? true),
+      (p) =>
+        this.stacksOf(p.id) < p.maxStacks &&
+        (!p.metaLocked || this.unlockedPerkIds === null || this.unlockedPerkIds.has(p.id)) &&
+        (this.isOfferable?.(p) ?? true),
     );
   }
 

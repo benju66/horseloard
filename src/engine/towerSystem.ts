@@ -45,13 +45,18 @@ export class TowerSystem {
   /** A towerBreak enemy stomped this plot down a level (null tower = destroyed outright) */
   readonly onTowerBroken: Array<(plot: PlotState) => void> = [];
 
+  private readonly lockedIds: ReadonlySet<string>;
+
   constructor(
     file: TowersFile,
     plots: readonly Plot[],
     enemies: EnemySystem,
     projectiles: ProjectileSystem,
     rng: () => number = Math.random,
+    /** ids the meta tree has not unlocked; empty = the whole roster is buildable */
+    lockedTowerIds: readonly string[] = [],
   ) {
+    this.lockedIds = new Set(lockedTowerIds);
     for (const p of file.projectiles) this.projectilesById.set(p.id, p);
     for (const t of file.towers) this.towersById.set(t.id, t);
     for (const p of plots) {
@@ -74,9 +79,15 @@ export class TowerSystem {
     this.rng = rng;
   }
 
-  /** The buildable roster, in file order. */
+  /**
+   * The buildable roster, in file order.
+   *
+   * Excludes towers the meta tree has not unlocked. Filtered here rather than
+   * upstream so `getTower` still resolves a locked id — a save from a wider
+   * unlock set must not turn a standing tower into a blank plot.
+   */
   get roster(): Tower[] {
-    return [...this.towersById.values()];
+    return [...this.towersById.values()].filter((t) => !this.lockedIds.has(t.id));
   }
 
   get plots(): readonly PlotState[] {
@@ -138,6 +149,7 @@ export class TowerSystem {
     const tower = this.towersById.get(towerId);
     const cost = this.buildCost(towerId);
     if (!plot || !tower || plot.towerId !== null || cost === null) return false;
+    if (this.lockedIds.has(towerId)) return false; // not unlocked; the UI simply never offers it
     plot.towerId = towerId;
     plot.level = 1;
     plot.branchId = null;

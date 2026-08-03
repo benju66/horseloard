@@ -254,11 +254,35 @@ describe('cross-file references', () => {
     expect(() => validateGameData(raw)).not.toThrow();
   });
 
+  // The shipped tree grants no stats any more (MG5.7), so this injects one —
+  // the check must keep working for whatever a future node does.
   it('tower-stat node pointing at an unknown tower', () => {
     const raw = seed();
-    const node = (raw.metatree as any).nodes.find((n: any) => n.effect.type === 'tower-stat');
-    node.effect.towerId = 'tesla';
+    (raw.metatree as any).nodes.push({
+      id: 'ghost-node',
+      branch: 'towers',
+      name: 'Ghost',
+      description: 'x',
+      costPerRank: [10],
+      requires: [],
+      effect: { type: 'tower-stat', towerId: 'tesla', stat: 'damage', perRank: 1.1, mode: 'multiply' },
+    });
     expect(() => validateGameData(raw)).toThrow('unknown tower "tesla"');
+  });
+
+  it('unlock-perk node pointing at a perk that is not metaLocked', () => {
+    const raw = seed();
+    const node = (raw.metatree as any).nodes.find((n: any) => n.effect.type === 'unlock-perk');
+    // Heavy Draw ships unlocked, so a node granting it is a token sink that
+    // does nothing — the exact silent failure the check exists for.
+    node.effect.perkId = 'perk-heavy-draw';
+    expect(() => validateGameData(raw)).toThrow('is not metaLocked');
+  });
+
+  it('metaLocked perk that no node can unlock', () => {
+    const raw = seed();
+    (raw.perks as any).perks[0].metaLocked = true;
+    expect(() => validateGameData(raw)).toThrow('no meta node unlocks');
   });
 
   it('enemy pointing at an unknown model', () => {

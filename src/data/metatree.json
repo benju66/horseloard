@@ -1,29 +1,11 @@
 {
   "nodes": [
     {
-      "id": "swift-steed",
-      "branch": "hero",
-      "name": "Swift Steed",
-      "description": "Your horse moves faster.",
-      "costPerRank": [10, 15, 20],
-      "requires": [],
-      "effect": { "type": "hero-stat", "stat": "moveSpeed", "perRank": 10, "mode": "add" }
-    },
-    {
-      "id": "bowyer",
-      "branch": "hero",
-      "name": "Bowyer",
-      "description": "Your bow hits harder.",
-      "costPerRank": [10, 15, 25],
-      "requires": [],
-      "effect": { "type": "hero-stat", "stat": "bowDamage", "perRank": 1.1, "mode": "multiply" }
-    },
-    {
       "id": "learn-volley",
       "branch": "hero",
       "name": "Volley",
-      "description": "Unlock the Volley ability.",
-      "costPerRank": [15],
+      "description": "Arrow rain can appear in your drafts.",
+      "costPerRank": [10],
       "requires": [],
       "effect": { "type": "unlock-ability", "abilityId": "volley" }
     },
@@ -31,55 +13,118 @@
       "id": "learn-rally-horn",
       "branch": "hero",
       "name": "Rally Horn",
-      "description": "Unlock the Rally Horn ability.",
-      "costPerRank": [15],
+      "description": "The commander's horn can appear in your drafts.",
+      "costPerRank": [10],
       "requires": [],
       "effect": { "type": "unlock-ability", "abilityId": "rally-horn" }
     },
     {
-      "id": "fletchers",
+      "id": "learn-rapid-fire",
+      "branch": "hero",
+      "name": "Rapid Fire",
+      "description": "Draw and loose without pause — draftable once learned.",
+      "costPerRank": [15],
+      "requires": ["learn-volley"],
+      "effect": { "type": "unlock-ability", "abilityId": "rapid-fire" }
+    },
+    {
+      "id": "learn-heavy-shaft",
+      "branch": "hero",
+      "name": "Heavy Shaft",
+      "description": "One arrow through a whole column — draftable once learned.",
+      "costPerRank": [15],
+      "requires": ["learn-volley"],
+      "effect": { "type": "unlock-ability", "abilityId": "heavy-shaft" }
+    },
+    {
+      "id": "learn-caltrops",
+      "branch": "hero",
+      "name": "Caltrops",
+      "description": "Iron scattered on the road — draftable once learned.",
+      "costPerRank": [15],
+      "requires": ["learn-rally-horn"],
+      "effect": { "type": "unlock-perk", "perkId": "perk-road-iron" }
+    },
+    {
+      "id": "veteran-drills",
+      "branch": "hero",
+      "name": "Veteran Drills",
+      "description": "Practised Hands enters the pool — every ability returns sooner.",
+      "costPerRank": [20],
+      "requires": ["learn-rapid-fire"],
+      "effect": { "type": "unlock-perk", "perkId": "perk-practised-hands" }
+    },
+    {
+      "id": "raise-barracks",
       "branch": "towers",
-      "name": "Fletchers",
-      "description": "All towers deal more damage.",
-      "costPerRank": [15, 25, 40],
+      "name": "The Barracks",
+      "description": "Unlocks the barracks — soldiers who hold the road.",
+      "costPerRank": [15],
       "requires": [],
-      "effect": { "type": "tower-stat", "towerId": null, "stat": "damage", "perRank": 1.05, "mode": "multiply" }
+      "effect": { "type": "unlock-tower", "towerId": "barracks" }
     },
     {
-      "id": "masonry",
+      "id": "levy-writ",
       "branch": "towers",
-      "name": "Masonry",
-      "description": "Towers cost less to build and upgrade.",
-      "costPerRank": [20, 35],
-      "requires": ["fletchers"],
-      "effect": { "type": "tower-stat", "towerId": null, "stat": "cost", "perRank": 0.95, "mode": "multiply" }
+      "name": "Levy Writ",
+      "description": "Bigger squads enter the draft pool.",
+      "costPerRank": [15],
+      "requires": ["raise-barracks"],
+      "effect": { "type": "unlock-perk", "perkId": "perk-levy-writ" }
     },
     {
-      "id": "war-chest",
-      "branch": "kingdom",
-      "name": "War Chest",
-      "description": "Start every run with more gold.",
-      "costPerRank": [10, 20, 30],
-      "requires": [],
-      "effect": { "type": "kingdom-stat", "stat": "startingGold", "perRank": 15, "mode": "add" }
+      "id": "the-muster",
+      "branch": "towers",
+      "name": "The Muster",
+      "description": "War Banner enters the pool: the gates open, a host marches out.",
+      "costPerRank": [25],
+      "requires": ["raise-barracks"],
+      "effect": { "type": "unlock-perk", "perkId": "perk-war-banner" }
     },
     {
-      "id": "stone-gate",
-      "branch": "kingdom",
-      "name": "Stone Gate",
-      "description": "The gate withstands more punishment.",
-      "costPerRank": [15, 25, 40],
+      "id": "master-fletchers",
+      "branch": "towers",
+      "name": "Master Fletchers",
+      "description": "Marksman's Oath enters the pool — archers that find the gap.",
+      "costPerRank": [20],
       "requires": [],
-      "effect": { "type": "kingdom-stat", "stat": "gateMaxHp", "perRank": 25, "mode": "add" }
+      "effect": { "type": "unlock-perk", "perkId": "perk-marksmans-oath" }
     },
     {
-      "id": "lodestone",
-      "branch": "kingdom",
-      "name": "Lodestone",
-      "description": "Coins fly to you from farther away.",
-      "costPerRank": [10, 20],
+      "id": "beacon-lore",
+      "branch": "towers",
+      "name": "Beacon Lore",
+      "description": "Towers that lend strength to their neighbours enter the pool.",
+      "costPerRank": [20],
       "requires": [],
-      "effect": { "type": "kingdom-stat", "stat": "coinMagnetRadius", "perRank": 12, "mode": "add" }
+      "effect": { "type": "unlock-perk", "perkId": "perk-beacon-lore" }
+    },
+    {
+      "id": "the-tithe",
+      "branch": "kingdom",
+      "name": "The Tithe",
+      "description": "Towers that pay their keep enter the pool.",
+      "costPerRank": [15],
+      "requires": [],
+      "effect": { "type": "unlock-perk", "perkId": "perk-tithe" }
+    },
+    {
+      "id": "hoarders-bargain",
+      "branch": "kingdom",
+      "name": "Hoarder's Bargain",
+      "description": "Coins that linger — and a muster that pays less — enter the pool.",
+      "costPerRank": [15],
+      "requires": [],
+      "effect": { "type": "unlock-perk", "perkId": "perk-hoarders-bargain" }
+    },
+    {
+      "id": "standing-stones",
+      "branch": "kingdom",
+      "name": "Standing Stones",
+      "description": "Cheap gate repairs enter the pool.",
+      "costPerRank": [15],
+      "requires": [],
+      "effect": { "type": "unlock-perk", "perkId": "perk-standing-stones" }
     }
   ]
 }

@@ -288,6 +288,12 @@ function startMap(mapId: string, endless = false): void {
     abilities: modded.abilities,
     unlockedAbilityIds: modded.unlockedAbilityIds,
     equipSlots: data.equipSlots,
+    // The meta tree grants no stats now (TRIANGLE.md §B.6) — it decides what is
+    // *eligible*, and the draft decides what you actually get.
+    unlockedPerkIds: modded.unlockedPerkIds,
+    lockedTowerIds: data.towers.towers
+      .filter((t) => !t.unlockedByDefault && !modded.unlockedTowerIds.includes(t.id))
+      .map((t) => t.id),
     // Cloned like the wave set: PerkSystem mutates balance data in place, and
     // the loaded pool is shared across every run of the session.
     perks: structuredClone(data.perks),

@@ -238,6 +238,33 @@ export function validateGameData(raw: RawGameData): GameData {
     if (effect.type === 'ability-stat') {
       checkAbilityStat('metatree.json', `nodes.${i}.effect`, effect.abilityId, effect.stat);
     }
+    if (effect.type === 'unlock-perk') {
+      const perk = perks.perks.find((p) => p.id === effect.perkId);
+      if (!perk) {
+        errors.push(
+          `metatree.json → nodes.${i}.effect.perkId: unknown perk "${effect.perkId}"`,
+        );
+      } else if (!perk.metaLocked) {
+        // A node that unlocks something already available is a token sink that
+        // does nothing — the exact silent failure this whole block exists for.
+        errors.push(
+          `metatree.json → nodes.${i}.effect.perkId: perk "${effect.perkId}" is not metaLocked, so this node grants nothing`,
+        );
+      }
+    }
+  });
+
+  // Every metaLocked perk needs a node that can unlock it, or it is content
+  // nobody can ever reach.
+  const unlockable = new Set(
+    metaTreeFile.nodes.flatMap((n) => (n.effect.type === 'unlock-perk' ? [n.effect.perkId] : [])),
+  );
+  perks.perks.forEach((perk, i) => {
+    if (perk.metaLocked && !unlockable.has(perk.id)) {
+      errors.push(
+        `perks.json → perks.${i}.metaLocked: no meta node unlocks "${perk.id}", so it can never appear`,
+      );
+    }
   });
 
   // Perks carry the same effect vocabulary as meta nodes, so they need the same

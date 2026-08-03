@@ -35,6 +35,14 @@ export interface SimData {
   unlockedAbilityIds?: readonly string[];
   /** how many abilities may be carried at once; defaults to the schema's 3 */
   equipSlots?: number;
+  /**
+   * Meta-tree unlocks. Both default to "everything available", which is what
+   * engine tests and the bot harness want — bots stand in for a player with
+   * meta progression, so measuring them against a fresh-save pool would measure
+   * the wrong game. Only the real run passes restricted sets.
+   */
+  unlockedPerkIds?: readonly string[] | null;
+  lockedTowerIds?: readonly string[];
   /** endless mode: waves generate forever, victory never comes */
   endless?: boolean;
   /** in-run draft pool; omitted = no drafting (engine tests, legacy callers) */
@@ -138,6 +146,7 @@ export class Simulation {
       this.enemySystem,
       this.projectileSystem,
       rng,
+      data.lockedTowerIds ?? [],
     );
     this.zones = new ZoneSystem(this.enemySystem, this.ids);
     this.army = new ArmySystem(this.towerSystem, this.enemySystem, this.lanes, this.ids);
@@ -169,6 +178,7 @@ export class Simulation {
             abilities: data.abilities as Ability[],
           },
           rng,
+          data.unlockedPerkIds ?? null,
         )
       : null;
 

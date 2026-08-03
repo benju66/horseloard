@@ -153,6 +153,16 @@ export const TowerSchema = z.object({
   description: z.string().min(1),
   targeting: TargetingModeSchema,
   projectileId: IdSchema.nullable().describe('null only for non-attacking towers (targeting "none")'),
+  /**
+   * Buildable on a fresh save. Defaults true so adding the field does not
+   * silently lock the existing roster; a tower opts out, exactly like
+   * `targetsFlying` below.
+   *
+   * The barracks opts out: the army is the pillar you *earn*, which is what
+   * gives the meta tree something to grant now that it grants no stats
+   * (TRIANGLE.md §B.6).
+   */
+  unlockedByDefault: z.boolean().default(true),
   targetsFlying: z
     .boolean()
     .default(true)

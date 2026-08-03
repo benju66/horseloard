@@ -72,6 +72,13 @@ export const PerkSchema = z.object({
    * weight, so tuning drop rates is one number and needs no new concept.
    */
   weight: z.number().positive().default(1),
+  /**
+   * Locked out of the draft until a meta-tree node unlocks it (TRIANGLE.md
+   * §B.6). Defaults false, so the base pool is fully available on a fresh save
+   * — a new player must never open the game with a starved draft, and the tree
+   * is meant to widen the pool rather than to ration it.
+   */
+  metaLocked: z.boolean().default(false),
 });
 export type Perk = z.infer<typeof PerkSchema>;
 

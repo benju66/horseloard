@@ -187,7 +187,8 @@
         }
       ],
       "maxStacks": 2,
-      "weight": 0.8
+      "weight": 0.8,
+      "metaLocked": true
     },
     {
       "id": "perk-marksmans-oath",
@@ -206,7 +207,8 @@
         }
       ],
       "maxStacks": 2,
-      "weight": 0.85
+      "weight": 0.85,
+      "metaLocked": true
     },
     {
       "id": "perk-beacon-lore",
@@ -225,7 +227,8 @@
         }
       ],
       "maxStacks": 2,
-      "weight": 0.85
+      "weight": 0.85,
+      "metaLocked": true
     },
     {
       "id": "perk-tithe",
@@ -244,7 +247,8 @@
         }
       ],
       "maxStacks": 2,
-      "weight": 0.85
+      "weight": 0.85,
+      "metaLocked": true
     },
     {
       "id": "perk-fletchers-contract",
@@ -343,7 +347,8 @@
         }
       ],
       "maxStacks": 2,
-      "weight": 0.7
+      "weight": 0.7,
+      "metaLocked": true
     },
     {
       "id": "perk-levy-writ",
@@ -363,7 +368,8 @@
         }
       ],
       "maxStacks": 3,
-      "weight": 0.9
+      "weight": 0.9,
+      "metaLocked": true
     },
     {
       "id": "perk-mail-and-shield",
@@ -419,7 +425,8 @@
         }
       ],
       "maxStacks": 1,
-      "weight": 0.9
+      "weight": 0.9,
+      "metaLocked": true
     },
     {
       "id": "perk-quiver-drills",
@@ -461,7 +468,8 @@
         }
       ],
       "maxStacks": 1,
-      "weight": 1
+      "weight": 1,
+      "metaLocked": true
     },
     {
       "id": "perk-practised-hands",
@@ -478,7 +486,8 @@
         }
       ],
       "maxStacks": 3,
-      "weight": 0.95
+      "weight": 0.95,
+      "metaLocked": true
     },
     {
       "id": "perk-warhorse-shoes",

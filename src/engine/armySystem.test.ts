@@ -35,6 +35,7 @@ function barracks(overrides?: Partial<NonNullable<Tower['levels'][number]['garri
     description: 'test',
     targeting: 'none',
     targetsFlying: true,
+    unlockedByDefault: true,
     projectileId: null,
     spriteRef: 'x',
     levels: [

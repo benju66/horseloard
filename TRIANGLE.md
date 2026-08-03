@@ -485,10 +485,30 @@ measurement comes first.
   tuning was: boards come out supported instead of lopsided, without a single weight
   being touched. Pillar probe still OK, cadence still 29.5 / 28.1 / 31.8 / 34.8.
 
-### M5.7 — Meta tree becomes unlocks
-- [ ] Convert stat nodes to unlock nodes (abilities, perks, the barracks).
-- [ ] Save migration — schema is versioned, this is the first real one.
-- **Accept:** meta grants no raw stats; existing saves migrate without loss.
+### M5.7 — Meta tree becomes unlocks — ✅ DONE 2026-08-03
+- [x] Every stat node retired. The tree is now 14 unlock nodes across three branches:
+      abilities, `metaLocked` perks, and the barracks.
+- [x] New `unlock-perk` effect; `metaLocked` on `PerkSchema`, default false so a fresh
+      save never opens with a starved draft — the tree *widens* the pool, it does not
+      ration it.
+- [x] `unlockedByDefault` on `TowerSchema`. The barracks opts out: the army is the
+      pillar you earn, which is what gives the tree something to grant now that it
+      grants no numbers.
+- [x] Load-time checks both ways — a node unlocking a perk that is not `metaLocked` is
+      a token sink that does nothing, and a `metaLocked` perk no node reaches is content
+      nobody can see. Both fail at boot.
+- [x] **Save migration v1 → v2**, with tests. Refunds every token sunk into a retired
+      node and drops the orphan keys.
+- **Why the refund is a migration and not a shrug.** `applyMetaModifiers` iterates
+  nodes, so orphan rank keys would be ignored harmlessly and the save would look fine.
+  That is precisely the trap: ignoring them silently *keeps the tokens spent* on things
+  that no longer exist. The player would open the game, see an untouched tree, and be
+  quietly poorer. `RETIRED_V1_NODES` freezes the old cost table in code because the JSON
+  no longer contains it — a migration has to know the old world, and looking it up in
+  the new one is how a refund silently becomes zero.
+- **Result:** the double-dip is gone (meta and perks no longer multiply the same
+  numbers), and the campaign held: 100 / 78 / 64 / 50, pillar probe OK, cadence
+  29.5 / 28.1 / 31.8 / 34.8.
 
 ### M5.8 — Rebalance the campaign against the triangle
 - [ ] Re-price wave budgets per B.8 on all four maps.

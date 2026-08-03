@@ -49,6 +49,7 @@ export function makeTowersFile(extraTowers: Tower[] = []): TowersFile {
         description: 'test',
         targeting: 'nearest',
         targetsFlying: true,
+        unlockedByDefault: true,
         projectileId: 'test-arrow',
         spriteRef: 'x',
         levels: [

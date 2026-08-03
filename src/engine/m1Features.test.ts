@@ -210,6 +210,7 @@ function auraTowersFile(): TowersFile {
     description: 'test',
     targeting: 'none',
     targetsFlying: true,
+    unlockedByDefault: true,
     projectileId: 'test-frost',
     spriteRef: 'x',
     levels: [
@@ -252,6 +253,7 @@ describe('cluster bomblets and concussion stun', () => {
       name: 'Cluster Mortar',
       targeting: 'first',
       targetsFlying: true,
+      unlockedByDefault: true,
       projectileId: 'test-cluster',
     };
     file.projectiles.push({
@@ -310,6 +312,7 @@ describe('mill income and beacon aura', () => {
       description: 'x',
       targeting: 'none',
       targetsFlying: true,
+      unlockedByDefault: true,
       projectileId: null,
       spriteRef: 'x',
       levels: [
@@ -337,6 +340,7 @@ describe('mill income and beacon aura', () => {
       description: 'x',
       targeting: 'none',
       targetsFlying: true,
+      unlockedByDefault: true,
       projectileId: null,
       spriteRef: 'x',
       levels: [

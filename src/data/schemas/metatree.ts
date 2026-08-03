@@ -119,6 +119,18 @@ export const MetaEffectSchema = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('unlock-ability'), abilityId: IdSchema }),
   z.object({ type: z.literal('unlock-tower'), towerId: IdSchema }),
+  /**
+   * Make a `metaLocked` perk eligible to appear in drafts (TRIANGLE.md §B.6).
+   *
+   * The meta tree decides what *can* show up; the draft decides what you
+   * actually get. That is Vampire Survivors' unlock structure, and it is why
+   * there is no third selection screen — the draft already is the tree.
+   *
+   * Only meaningful on meta nodes. A perk that unlocked another perk would be a
+   * card whose value is "the pool gets better later", which is not a decision
+   * anyone can evaluate at the moment they are asked to make it.
+   */
+  z.object({ type: z.literal('unlock-perk'), perkId: IdSchema }),
 ]);
 export type MetaEffect = z.infer<typeof MetaEffectSchema>;
 

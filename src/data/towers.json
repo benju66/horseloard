@@ -339,6 +339,7 @@
       "targeting": "none",
       "projectileId": null,
       "spriteRef": "tower-barracks",
+      "unlockedByDefault": false,
       "levels": [
         {
           "cost": 45,
