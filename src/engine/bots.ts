@@ -3,7 +3,7 @@ import type {
   EnemiesFile,
   Economy,
   Hero,
-  MapDef,
+  ResolvedMapDef,
   Projectile,
   TowerStats,
   SkillTreeFile,
@@ -12,6 +12,7 @@ import type {
 } from '../data/schemas';
 import type { EnemyInstance } from './enemySystem';
 import { marginalCoverage, plotCoverage, sampleLanes, type LaneSample, type Watcher } from './coverage';
+import { applyTerrainRule } from './effects';
 import { SIM_DT, Simulation } from './simulation';
 import { SkillTree } from './skillTree';
 import type { PlotState } from './towerSystem';
@@ -485,7 +486,7 @@ export interface BotPolicy {
   steer(sim: Simulation): void;
 }
 
-export type BotFactory = (towers: TowersFile, map: MapDef) => BotPolicy;
+export type BotFactory = (towers: TowersFile, map: ResolvedMapDef) => BotPolicy;
 
 interface Plan {
   name: string;
@@ -920,8 +921,17 @@ export interface BotGameData {
   equipSlotGrants?: readonly number[];
   hero: Hero;
   economy: Economy;
-  maps: Record<string, MapDef>;
+  maps: Record<string, ResolvedMapDef>;
   waveSets: Record<string, WaveSet>;
+  /**
+   * The biomes the maps belong to, for their terrain rules.
+   *
+   * Optional so engine-only fixtures need not invent one, but a probe that
+   * compares biomes and omits this is measuring three enemy pools under one
+   * terrain — which is exactly the instrument-cannot-exercise-its-subject
+   * failure BIOMES.md Part J caught the last time. The harness passes it.
+   */
+  biomes?: readonly { id: string; terrainRule?: string }[];
 }
 
 /**
@@ -939,13 +949,23 @@ export function runBot(
   // has never heard of a tree. This is also why the probes below can vary a
   // build without any engine flag: a different build is different data, nothing
   // more.
-  const base = {
-    hero: data.hero,
-    economy: data.economy,
-    towers: data.towers,
-    map: data.maps[mapId]!,
-    abilities: data.abilities as Ability[],
-  };
+  //
+  // The biome's terrain rule folds in first, for the same reason it does in the
+  // game: the rule describes the *place*, so a build's range bonus applies to
+  // the range this place allows rather than the other way round.
+  const biome = data.biomes?.find((b) => b.id === data.maps[mapId]!.biomeId);
+  const terrain = applyTerrainRule(
+    {
+      hero: data.hero,
+      economy: data.economy,
+      towers: data.towers,
+      map: data.maps[mapId]!,
+      abilities: data.abilities as Ability[],
+    },
+    data.enemies,
+    biome?.terrainRule,
+  );
+  const base = terrain.data;
   const built =
     data.skillTree && data.skillNodes?.length
       ? new SkillTree(data.skillTree).applyTo(base, data.skillNodes)
@@ -965,7 +985,7 @@ export function runBot(
 
   const sim = new Simulation(
     {
-      enemies: data.enemies,
+      enemies: terrain.enemies,
       map,
       waveSet,
       hero: built.hero,
@@ -999,7 +1019,11 @@ export function runBot(
   let leaks = 0;
   sim.enemySystem.onReachEnd.push(() => leaks++);
 
-  const bot = factory(data.towers, map);
+  // The bot values plots off the *modified* tower table, so a biome that
+  // shortens sightlines changes which plots it thinks are worth taking. Handing
+  // it `data.towers` would have it shop at unmodified ranges and then build into
+  // a board where those ranges do not exist.
+  const bot = factory(built.towers, map);
   const guardTicks = Math.round(MAX_WAVE_SECONDS / SIM_DT);
   let outcome: BotRunResult['outcome'] = 'stalled';
 

@@ -50,8 +50,8 @@
           "delay": 1.5
         },
         {
-          "enemyId": "brute",
-          "count": 2,
+          "enemyId": "grunt",
+          "count": 6,
           "spacing": 3.9,
           "laneId": "main",
           "delay": 3.1
@@ -76,8 +76,8 @@
           "delay": 1.5
         },
         {
-          "enemyId": "brute",
-          "count": 3,
+          "enemyId": "swarm",
+          "count": 26,
           "spacing": 3.2,
           "laneId": "main",
           "delay": 3
@@ -102,8 +102,8 @@
           "delay": 1.4
         },
         {
-          "enemyId": "brute",
-          "count": 4,
+          "enemyId": "grunt",
+          "count": 13,
           "spacing": 2.8,
           "laneId": "main",
           "delay": 2.8
@@ -128,8 +128,8 @@
           "delay": 4
         },
         {
-          "enemyId": "brute",
-          "count": 10,
+          "enemyId": "swarm",
+          "count": 88,
           "spacing": 1.1,
           "laneId": "main",
           "delay": 0.9
@@ -154,8 +154,8 @@
           "delay": 3.5
         },
         {
-          "enemyId": "brute",
-          "count": 12,
+          "enemyId": "grunt",
+          "count": 38,
           "spacing": 1,
           "laneId": "main",
           "delay": 0.8
@@ -187,8 +187,8 @@
           "delay": 8
         },
         {
-          "enemyId": "brute",
-          "count": 14,
+          "enemyId": "swarm",
+          "count": 122,
           "spacing": 0.9,
           "laneId": "main",
           "delay": 0.7

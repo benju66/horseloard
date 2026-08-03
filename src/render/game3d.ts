@@ -10,6 +10,7 @@ import {
   type SaveData,
 } from '../engine/progression';
 import { SkillTree } from '../engine/skillTree';
+import { applyTerrainRule } from '../engine/effects';
 import { Simulation } from '../engine/simulation';
 import { AbilityBar } from '../ui/dom/abilityBar';
 import { BubbleLayer, bubbleActions } from '../ui/dom/bubbles';
@@ -373,6 +374,22 @@ function startMap(mapId: string, endless = false): void {
   // `reconcile` first, because a save may hold nodes a data change has since
   // made unreachable — dropping them here is the difference between a build
   // that quietly grants more than it should and one that matches the screen.
+  // The biome's terrain rule folds in before the career build does. Order is
+  // deliberate: the rule describes the *place*, so a Wall build's range bonus
+  // should apply to the range this place allows, not the other way round.
+  const biome = data.biomes.find((b) => b.id === data.maps[mapId]!.biomeId);
+  const terrain = applyTerrainRule(
+    {
+      hero: data.hero,
+      economy: data.economy,
+      towers: data.towers,
+      map: data.maps[mapId]!,
+      abilities: data.abilities,
+    },
+    data.enemies,
+    biome?.terrainRule,
+  );
+
   const build = skillTree.reconcile(
     save.build,
     // Reconciling against an unbounded budget on purpose: this drops nodes made
@@ -382,16 +399,7 @@ function startMap(mapId: string, endless = false): void {
     // run's job to do behind the player's back.
     Number.MAX_SAFE_INTEGER,
   );
-  const modded = skillTree.applyTo(
-    {
-      hero: data.hero,
-      economy: data.economy,
-      towers: data.towers,
-      map: data.maps[mapId]!,
-      abilities: data.abilities,
-    },
-    build,
-  );
+  const modded = skillTree.applyTo(terrain.data, build);
 
   activeMapId = mapId;
   activeEndless = endless;
@@ -402,7 +410,7 @@ function startMap(mapId: string, endless = false): void {
   instanced = new InstancedEntities(scene, modded.map, modded.map.camera.elevation);
 
   sim = new Simulation({
-    enemies: data.enemies,
+    enemies: terrain.enemies,
     map: modded.map,
     // Cloned, never shared. Endless appends generated waves onto the wave set
     // as it runs, so handing over the loaded copy would leave those waves

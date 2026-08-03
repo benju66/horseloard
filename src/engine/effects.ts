@@ -1,8 +1,9 @@
 import type {
   Ability,
+  EnemiesFile,
   Economy,
   Hero,
-  MapDef,
+  ResolvedMapDef,
   MetaEffect,
   TowersFile,
 } from '../data/schemas';
@@ -11,7 +12,7 @@ export interface ModifiableData {
   hero: Hero;
   economy: Economy;
   towers: TowersFile;
-  map: MapDef;
+  map: ResolvedMapDef;
   /**
    * The ability roster is balance data like everything else here, because
    * ability upgrades are drafted (TRIANGLE.md §B.6). `AbilitySystem` holds these
@@ -42,6 +43,46 @@ const apply = (base: number, perRank: number, mode: 'add' | 'multiply', rank: nu
  * Returns the unlock ids rather than applying them, since an unlock is a
  * decision for a system rather than a number to mutate.
  */
+/**
+ * Fold a biome's terrain rule into a clone of the balance data.
+ *
+ * A pure transform run *before* the Simulation exists, exactly as the career
+ * tree's `applyTo` is — so the sim has never heard of a biome and a fifth
+ * terrain rule is a JSON entry plus one branch here.
+ *
+ * `narrow-cuts` and `open-country` are the two BIOMES.md Part C names; the
+ * numbers live here rather than in the data because a terrain rule is a
+ * *place*, not a dial. A biome that could tune its own rule per level would be
+ * a modifier, which is the thing Part C.4 rules out.
+ */
+export function applyTerrainRule(
+  data: ModifiableData,
+  enemies: EnemiesFile,
+  rule: string | undefined,
+): { data: ModifiableData; enemies: EnemiesFile } {
+  if (!rule) return { data, enemies };
+  const out: ModifiableData = structuredClone(data);
+  const foes: EnemiesFile = structuredClone(enemies);
+
+  const scaleTowerRange = (f: number): void => {
+    for (const tower of out.towers.towers) {
+      for (const st of [...tower.levels, ...tower.branches.map((b) => b.stats)]) st.range *= f;
+    }
+  };
+
+  if (rule === 'narrow-cuts') {
+    // Close walls, short sightlines. Coverage stops being free and *which*
+    // plots you take starts mattering more than how many.
+    scaleTowerRange(0.82);
+  }
+  if (rule === 'open-country') {
+    // Long views both ways: towers see further, and everything arrives sooner.
+    scaleTowerRange(1.1);
+    for (const e of foes.enemies) e.speed *= 1.12;
+  }
+  return { data: out, enemies: foes };
+}
+
 export function applyEffectInPlace(
   data: ModifiableData,
   fx: MetaEffect,

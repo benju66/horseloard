@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Simulation } from '../engine/simulation';
-import type { MapDef } from '../data/schemas';
+// Resolved: the biome's palette is folded in by the loader (see `world.ts`).
+import type { ResolvedMapDef as MapDef } from '../data/schemas';
 import { simToWorld } from './world';
 
 /**

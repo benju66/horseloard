@@ -199,7 +199,14 @@ export const MapSchema = z
     forge: z.object({ position: Vec2Schema }),
     /** Render-layer blocks. Both fully defaulted — existing maps need no edits. */
     camera: MapCameraSchema.prefault({}),
-    lighting: MapLightingSchema.prefault({}),
+    /** Which biome this level belongs to. Its palette, pool and terrain rule follow. */
+    biomeId: IdSchema,
+    /**
+     * Per-level override of the biome's palette. Omit to inherit, which is the
+     * normal case — the light is what makes a biome read as one place, and four
+     * copies of it is four chances to drift.
+     */
+    lighting: MapLightingSchema.optional(),
   })
   .superRefine((map, ctx) => {
     const laneIds = new Set<string>();
@@ -226,3 +233,5 @@ export const MapSchema = z
     });
   });
 export type MapDef = z.infer<typeof MapSchema>;
+
+export type ResolvedMapDef = MapDef & { lighting: MapLighting };

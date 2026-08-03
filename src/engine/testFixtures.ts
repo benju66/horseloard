@@ -1,4 +1,4 @@
-import type { Economy, Enemy, Hero, MapDef, Tower, TowersFile } from '../data/schemas';
+import type { Economy, Enemy, Hero, ResolvedMapDef, Tower, TowersFile } from '../data/schemas';
 import { MapCameraSchema, MapLightingSchema } from '../data/schemas';
 
 /**
@@ -108,9 +108,10 @@ export function makeEnemy(overrides: Partial<Enemy> & { id: string }): Enemy {
 export function makeMap(overrides?: {
   laneWaypoints?: Array<{ x: number; y: number }>;
   heroSpawn?: { x: number; y: number };
-}): MapDef {
+}): ResolvedMapDef {
   return {
     id: 'straight',
+    biomeId: 'test-biome',
     name: 'Straight',
     description: 'test',
     order: 1,

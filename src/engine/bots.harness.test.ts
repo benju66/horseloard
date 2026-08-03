@@ -158,6 +158,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     economy: data.economy,
     maps: data.maps,
     waveSets: data.waveSets,
+    biomes: data.biomes,
   };
 
   const all: BotRunResult[] = [];

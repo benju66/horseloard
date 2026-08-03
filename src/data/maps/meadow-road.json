@@ -1,5 +1,6 @@
 {
   "id": "meadow-road",
+  "biomeId": "green-road",
   "name": "The Meadow Road",
   "description": "Single lane, gentle S-curve. Teaches: build, loot, forge.",
   "order": 1,

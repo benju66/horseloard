@@ -1,5 +1,6 @@
 {
   "id": "the-ford",
+  "biomeId": "green-road",
   "name": "The Ford",
   "description": "The road splits at the river crossing and rejoins below. Two currents, one gate \u2014 you cannot stand in both.",
   "order": 2,
@@ -158,25 +159,6 @@
     "position": {
       "x": 75,
       "y": 680
-    }
-  },
-  "lighting": {
-    "sunAzimuth": -24,
-    "day": {
-      "groundTint": "#3f7a5c",
-      "pathTint": "#b9a884",
-      "sunColor": "#f4f0d2",
-      "background": "#8fc0c6",
-      "fogColor": "#b4d2d4",
-      "fogDensity": 0.5
-    },
-    "night": {
-      "groundTint": "#5e7e7d",
-      "pathTint": "#9da09b",
-      "skyColor": "#487c95",
-      "background": "#354851",
-      "fogColor": "#3f555d",
-      "fogDensity": 0.62
     }
   }
 }

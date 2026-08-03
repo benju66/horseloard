@@ -76,8 +76,8 @@
           "delay": 0
         },
         {
-          "enemyId": "brute",
-          "count": 2,
+          "enemyId": "grunt",
+          "count": 6,
           "spacing": 3.5,
           "laneId": "west",
           "delay": 1.5
@@ -95,8 +95,8 @@
       "hpMultiplier": 2.258,
       "entries": [
         {
-          "enemyId": "shieldbearer",
-          "count": 3,
+          "enemyId": "grunt",
+          "count": 5,
           "spacing": 2.2,
           "laneId": "west",
           "delay": 0
@@ -148,8 +148,8 @@
       "hpMultiplier": 3.073,
       "entries": [
         {
-          "enemyId": "brute",
-          "count": 4,
+          "enemyId": "swarm",
+          "count": 35,
           "spacing": 2.4,
           "laneId": "east",
           "delay": 0
@@ -169,15 +169,15 @@
           "delay": 8
         },
         {
-          "enemyId": "shieldbearer",
-          "count": 2,
+          "enemyId": "swarm",
+          "count": 10,
           "spacing": 3,
           "laneId": "west",
           "delay": 5
         },
         {
-          "enemyId": "outrider",
-          "count": 2,
+          "enemyId": "looter",
+          "count": 4,
           "spacing": 1.4,
           "laneId": "east",
           "delay": 4
@@ -230,36 +230,36 @@
       "archetypeId": "war-party",
       "entries": [
         {
-          "enemyId": "shieldbearer",
-          "count": 4,
+          "enemyId": "grunt",
+          "count": 7,
           "spacing": 1.6,
           "laneId": "west",
           "delay": 0
         },
         {
-          "enemyId": "brute",
-          "count": 5,
+          "enemyId": "grunt",
+          "count": 16,
           "spacing": 1.8,
           "laneId": "west",
           "delay": 1
         },
         {
-          "enemyId": "shieldbearer",
-          "count": 3,
+          "enemyId": "swarm",
+          "count": 14,
           "spacing": 1.8,
           "laneId": "east",
           "delay": 3
         },
         {
-          "enemyId": "brute",
-          "count": 4,
+          "enemyId": "swarm",
+          "count": 35,
           "spacing": 2,
           "laneId": "east",
           "delay": 4.5
         },
         {
-          "enemyId": "halberdier",
-          "count": 2,
+          "enemyId": "grunt",
+          "count": 10,
           "spacing": 2.4,
           "laneId": "west",
           "delay": 5
@@ -270,15 +270,15 @@
       "hpMultiplier": 4.767,
       "entries": [
         {
-          "enemyId": "brute",
-          "count": 6,
+          "enemyId": "grunt",
+          "count": 19,
           "spacing": 1.4,
           "laneId": "west",
           "delay": 0.5
         },
         {
-          "enemyId": "brute",
-          "count": 6,
+          "enemyId": "swarm",
+          "count": 52,
           "spacing": 1.4,
           "laneId": "east",
           "delay": 0.5
@@ -305,8 +305,8 @@
           "delay": 12
         },
         {
-          "enemyId": "shieldbearer",
-          "count": 3,
+          "enemyId": "grunt",
+          "count": 5,
           "spacing": 2,
           "laneId": "east",
           "delay": 13

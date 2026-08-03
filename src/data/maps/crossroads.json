@@ -1,5 +1,6 @@
 {
   "id": "crossroads",
+  "biomeId": "iron-deeps",
   "name": "Crossroads",
   "description": "Two roads, one keep. You cannot cover both \u2014 your towers must own a lane.",
   "order": 3,
@@ -133,23 +134,6 @@
     "position": {
       "x": 345,
       "y": 655
-    }
-  },
-  "lighting": {
-    "sunAzimuth": -52,
-    "day": {
-      "groundTint": "#7d8a3f",
-      "pathTint": "#d6bc84",
-      "sunColor": "#ffdfa4",
-      "background": "#a8c39c",
-      "fogColor": "#cbd3a8"
-    },
-    "night": {
-      "groundTint": "#71756c",
-      "pathTint": "#aba595",
-      "skyColor": "#5c6a8d",
-      "background": "#3f444a",
-      "fogColor": "#484b52"
     }
   }
 }

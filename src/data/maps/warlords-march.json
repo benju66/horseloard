@@ -1,5 +1,6 @@
 {
   "id": "warlords-march",
+  "biomeId": "long-steppe",
   "name": "The Warlord's March",
   "description": "Two long roads to one gate, and HE walks one of them. The final exam.",
   "order": 4,
@@ -149,25 +150,6 @@
     "position": {
       "x": 75,
       "y": 660
-    }
-  },
-  "lighting": {
-    "sunAzimuth": -66,
-    "day": {
-      "groundTint": "#6b6a4a",
-      "pathTint": "#a89878",
-      "sunColor": "#ffd39a",
-      "sunElevation": 22,
-      "background": "#b09a86",
-      "fogColor": "#c4b09a"
-    },
-    "night": {
-      "groundTint": "#68656d",
-      "pathTint": "#8a838f",
-      "skyColor": "#6e5b81",
-      "sunColor": "#b19dc3",
-      "background": "#423a49",
-      "fogColor": "#4b4352"
     }
   }
 }

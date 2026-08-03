@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import type { LightPreset, MapDef } from '../data/schemas';
+// The *resolved* map: its biome's palette is folded in by `loader.ts`, so the
+// renderer never carries a lighting fallback that could differ from the biome.
+import type { LightPreset, ResolvedMapDef as MapDef } from '../data/schemas';
 import type { ModelViewFactory } from './entityViews';
 
 /**

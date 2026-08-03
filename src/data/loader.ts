@@ -15,7 +15,9 @@ import {
   type Economy,
   type EnemiesFile,
   type Hero,
-  type MapDef,
+  type Biome,
+  BiomesFileSchema,
+  type ResolvedMapDef,
   type ModelsFile,
   type SkillTreeFile,
   type TowersFile,
@@ -30,6 +32,7 @@ import economyJson from './economy.json';
 import archetypesJson from './archetypes.json';
 import modelsJson from './models.json';
 import skillTreeJson from './skilltree.json';
+import biomesJson from './biomes.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
 import theFordMapJson from './maps/the-ford.json';
@@ -55,7 +58,8 @@ export interface GameData {
   /** The career tree — the only place a run's power is decided (SKILLTREE.md). */
   skillTree: SkillTreeFile;
   /** keyed by map id */
-  maps: Record<string, MapDef>;
+  maps: Record<string, ResolvedMapDef>;
+  biomes: Biome[];
   /** keyed by map id */
   waveSets: Record<string, WaveSet>;
 }
@@ -91,6 +95,7 @@ export interface RawGameData {
   archetypes: unknown;
   models: unknown;
   skillTree: unknown;
+  biomes: unknown;
   /** file path (for messages) → raw content */
   maps: Record<string, unknown>;
   /** file path (for messages) → raw content */
@@ -111,12 +116,24 @@ export function validateGameData(raw: RawGameData): GameData {
   const archetypesFile = validateFile(ArchetypesFileSchema, raw.archetypes, 'archetypes.json');
   const modelsFile = validateFile(ModelsFileSchema, raw.models, 'models.json');
   const skillTree = validateFile(SkillTreeFileSchema, raw.skillTree, 'skilltree.json');
+  const biomesFile = validateFile(BiomesFileSchema, raw.biomes, 'biomes.json');
+  const biomes = new Map(biomesFile.biomes.map((b) => [b.id, b]));
 
-  const maps: Record<string, MapDef> = {};
+  const maps: Record<string, ResolvedMapDef> = {};
   for (const [file, content] of Object.entries(raw.maps)) {
     const map = validateFile(MapSchema, content, file);
     if (maps[map.id]) fail([`${file} → id: duplicate map id "${map.id}"`]);
-    maps[map.id] = map;
+    const biome = biomes.get(map.biomeId);
+    if (!biome) {
+      fail([
+        `${file} → biomeId: unknown biome "${map.biomeId}" ` +
+          `(known: ${[...biomes.keys()].join(', ')})`,
+      ]);
+    }
+    // The palette is resolved exactly once, here. Everything downstream sees a
+    // map that has one, so no renderer call site carries a fallback that could
+    // differ from the biome's.
+    maps[map.id] = { ...map, lighting: map.lighting ?? biome.lighting };
   }
 
   const waveSets: Record<string, WaveSet> = {};
@@ -213,6 +230,28 @@ export function validateGameData(raw: RawGameData): GameData {
     if (!waveSets[mapId]) errors.push(`maps → ${mapId}: map has no wave set in waveSets`);
   }
 
+  // Every wave draws from its own biome's pool. A boot failure rather than a
+  // warning: a pool that data can quietly ignore is decoration, and the pool
+  // probe (BIOMES.md Part L) showed it is the only part of a biome that
+  // measurably changes which build wins.
+  for (const [file, ws] of Object.entries(waveSets)) {
+    const map = maps[ws.mapId];
+    if (!map) continue;
+    const biome = biomes.get(map.biomeId);
+    if (!biome) continue;
+    const pool = new Set(biome.pool);
+    ws.waves.forEach((wave, w) => {
+      wave.entries.forEach((entry, e) => {
+        if (!pool.has(entry.enemyId)) {
+          errors.push(
+            `${file} → waves.${w}.entries.${e}.enemyId: "${entry.enemyId}" is not in ` +
+              `biome "${biome.id}" (pool: ${biome.pool.join(', ')})`,
+          );
+        }
+      });
+    });
+  }
+
   // Tree nodes are the only nodes now, and the effect vocabulary they use is
   // cross-file by nature — a stat key names an ability, a grant names a tower. A node aimed at a misspelled tower would validate,
   // sit in the tree, be bought, and do nothing — the worst kind of silent
@@ -285,6 +324,7 @@ export function validateGameData(raw: RawGameData): GameData {
     archetypes: archetypesFile.archetypes,
     models: modelsFile.models,
     skillTree,
+    biomes: biomesFile.biomes,
     maps,
     waveSets,
   };
@@ -301,6 +341,7 @@ export function loadGameData(): GameData {
     archetypes: archetypesJson,
     models: modelsJson,
     skillTree: skillTreeJson,
+    biomes: biomesJson,
     maps: {
       'maps/meadow-road.json': meadowRoadMapJson,
       'maps/the-ford.json': theFordMapJson,

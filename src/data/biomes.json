@@ -1,0 +1,100 @@
+{
+  "biomes": [
+    {
+      "id": "green-road",
+      "name": "The Green Road",
+      "description": "Rolling farmland, warm and open. Where you learn what normal is.",
+      "order": 1,
+      "lighting": {
+        "sunAzimuth": -24,
+        "day": {
+          "groundTint": "#3f7a5c",
+          "pathTint": "#b9a884",
+          "sunColor": "#f4f0d2",
+          "background": "#8fc0c6",
+          "fogColor": "#b4d2d4",
+          "fogDensity": 0.5
+        },
+        "night": {
+          "groundTint": "#5e7e7d",
+          "pathTint": "#9da09b",
+          "skyColor": "#487c95",
+          "background": "#354851",
+          "fogColor": "#3f555d",
+          "fogDensity": 0.62
+        }
+      },
+      "pool": [
+        "grunt",
+        "swarm",
+        "runner",
+        "looter"
+      ]
+    },
+    {
+      "id": "iron-deeps",
+      "name": "The Iron Deeps",
+      "description": "Quarry cuts and pit-heads. Close walls, cold light, and things that do not stop.",
+      "order": 2,
+      "lighting": {
+        "sunAzimuth": -52,
+        "day": {
+          "groundTint": "#7d8a3f",
+          "pathTint": "#d6bc84",
+          "sunColor": "#ffdfa4",
+          "background": "#a8c39c",
+          "fogColor": "#cbd3a8"
+        },
+        "night": {
+          "groundTint": "#71756c",
+          "pathTint": "#aba595",
+          "skyColor": "#5c6a8d",
+          "background": "#3f444a",
+          "fogColor": "#484b52"
+        }
+      },
+      "pool": [
+        "grunt",
+        "brute",
+        "shieldbearer",
+        "halberdier",
+        "juggernaut"
+      ],
+      "terrainRule": "narrow-cuts"
+    },
+    {
+      "id": "long-steppe",
+      "name": "The Long Steppe",
+      "description": "Open grass to the horizon. Everything is faster here, including the wind.",
+      "order": 3,
+      "lighting": {
+        "sunAzimuth": -66,
+        "day": {
+          "groundTint": "#6b6a4a",
+          "pathTint": "#a89878",
+          "sunColor": "#ffd39a",
+          "sunElevation": 22,
+          "background": "#b09a86",
+          "fogColor": "#c4b09a"
+        },
+        "night": {
+          "groundTint": "#68656d",
+          "pathTint": "#8a838f",
+          "skyColor": "#6e5b81",
+          "sunColor": "#b19dc3",
+          "background": "#423a49",
+          "fogColor": "#4b4352"
+        }
+      },
+      "pool": [
+        "grunt",
+        "wolf-rider",
+        "raven",
+        "outrider",
+        "sapper",
+        "warlord"
+      ],
+      "terrainRule": "open-country"
+    }
+  ]
+}

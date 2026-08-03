@@ -9,6 +9,7 @@ import economyJson from './economy.json';
 import archetypesJson from './archetypes.json';
 import modelsJson from './models.json';
 import skillTreeJson from './skilltree.json';
+import biomesJson from './biomes.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
 import theFordMapJson from './maps/the-ford.json';
@@ -29,6 +30,7 @@ function seed(): RawGameData & Record<string, any> {
     archetypes: archetypesJson,
     models: modelsJson,
     skillTree: skillTreeJson,
+    biomes: biomesJson,
     maps: {
       'maps/meadow-road.json': meadowRoadMapJson,
       'maps/the-ford.json': theFordMapJson,

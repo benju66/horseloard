@@ -24,8 +24,8 @@
       "hpMultiplier": 1.802,
       "entries": [
         {
-          "enemyId": "runner",
-          "count": 6,
+          "enemyId": "outrider",
+          "count": 2,
           "spacing": 1.2,
           "laneId": "west",
           "delay": 0
@@ -43,14 +43,14 @@
       "hpMultiplier": 2.079,
       "entries": [
         {
-          "enemyId": "swarm",
-          "count": 9,
+          "enemyId": "sapper",
+          "count": 2,
           "spacing": 0.15,
           "laneId": "east",
           "delay": 0
         },
         {
-          "enemyId": "shieldbearer",
+          "enemyId": "sapper",
           "count": 3,
           "spacing": 2.2,
           "laneId": "west",
@@ -76,14 +76,14 @@
           "delay": 0
         },
         {
-          "enemyId": "brute",
-          "count": 3,
+          "enemyId": "grunt",
+          "count": 10,
           "spacing": 2.8,
           "laneId": "west",
           "delay": 1
         },
         {
-          "enemyId": "looter",
+          "enemyId": "raven",
           "count": 2,
           "spacing": 5,
           "laneId": "east",
@@ -109,15 +109,15 @@
           "delay": 0
         },
         {
-          "enemyId": "runner",
-          "count": 7,
+          "enemyId": "raven",
+          "count": 4,
           "spacing": 0.9,
           "laneId": "east",
           "delay": 2
         },
         {
-          "enemyId": "shieldbearer",
-          "count": 1,
+          "enemyId": "grunt",
+          "count": 2,
           "spacing": 2,
           "laneId": "east",
           "delay": 5
@@ -136,35 +136,35 @@
       "archetypeId": "horde",
       "entries": [
         {
-          "enemyId": "swarm",
+          "enemyId": "outrider",
           "count": 1,
           "spacing": 0.15,
           "laneId": "west",
           "delay": 0
         },
         {
-          "enemyId": "swarm",
-          "count": 3,
+          "enemyId": "sapper",
+          "count": 1,
           "spacing": 0.15,
           "laneId": "east",
           "delay": 1.5
         },
         {
-          "enemyId": "swarm",
-          "count": 9,
+          "enemyId": "outrider",
+          "count": 2,
           "spacing": 0.15,
           "laneId": "west",
           "delay": 4.5
         },
         {
-          "enemyId": "swarm",
-          "count": 9,
+          "enemyId": "sapper",
+          "count": 2,
           "spacing": 0.15,
           "laneId": "east",
           "delay": 6
         },
         {
-          "enemyId": "shieldbearer",
+          "enemyId": "sapper",
           "count": 2,
           "spacing": 0.15,
           "laneId": "west",
@@ -183,8 +183,8 @@
       "hpMultiplier": 3.465,
       "entries": [
         {
-          "enemyId": "brute",
-          "count": 6,
+          "enemyId": "sapper",
+          "count": 12,
           "spacing": 2,
           "laneId": "east",
           "delay": 0
@@ -204,8 +204,8 @@
           "delay": 4
         },
         {
-          "enemyId": "shieldbearer",
-          "count": 2,
+          "enemyId": "grunt",
+          "count": 3,
           "spacing": 2,
           "laneId": "east",
           "delay": 0
@@ -216,29 +216,29 @@
       "hpMultiplier": 3.881,
       "entries": [
         {
-          "enemyId": "shieldbearer",
+          "enemyId": "sapper",
           "count": 4,
           "spacing": 1.6,
           "laneId": "west",
           "delay": 0
         },
         {
-          "enemyId": "brute",
-          "count": 2,
+          "enemyId": "grunt",
+          "count": 6,
           "spacing": 2.2,
           "laneId": "west",
           "delay": 1.5
         },
         {
-          "enemyId": "runner",
-          "count": 9,
+          "enemyId": "outrider",
+          "count": 3,
           "spacing": 0.6,
           "laneId": "east",
           "delay": 3
         },
         {
-          "enemyId": "looter",
-          "count": 3,
+          "enemyId": "outrider",
+          "count": 2,
           "spacing": 4,
           "laneId": "east",
           "delay": 7
@@ -271,8 +271,8 @@
       },
       "entries": [
         {
-          "enemyId": "runner",
-          "count": 8,
+          "enemyId": "raven",
+          "count": 4,
           "spacing": 0.5,
           "laneId": "west",
           "delay": 0
@@ -292,8 +292,8 @@
           "delay": 2
         },
         {
-          "enemyId": "halberdier",
-          "count": 2,
+          "enemyId": "sapper",
+          "count": 6,
           "spacing": 2.4,
           "laneId": "east",
           "delay": 5
@@ -304,21 +304,21 @@
       "hpMultiplier": 4.712,
       "entries": [
         {
-          "enemyId": "brute",
-          "count": 3,
+          "enemyId": "sapper",
+          "count": 6,
           "spacing": 1.6,
           "laneId": "west",
           "delay": 0
         },
         {
-          "enemyId": "brute",
-          "count": 4,
+          "enemyId": "grunt",
+          "count": 13,
           "spacing": 1.8,
           "laneId": "east",
           "delay": 1
         },
         {
-          "enemyId": "swarm",
+          "enemyId": "outrider",
           "count": 1,
           "spacing": 0.15,
           "laneId": "east",
@@ -360,8 +360,8 @@
           "delay": 2.0
         },
         {
-          "enemyId": "shieldbearer",
-          "count": 2,
+          "enemyId": "grunt",
+          "count": 3,
           "spacing": 1.6,
           "laneId": "west",
           "delay": 0
@@ -379,15 +379,15 @@
           "delay": 0
         },
         {
-          "enemyId": "shieldbearer",
+          "enemyId": "sapper",
           "count": 4,
           "spacing": 1.5,
           "laneId": "west",
           "delay": 1
         },
         {
-          "enemyId": "runner",
-          "count": 9,
+          "enemyId": "outrider",
+          "count": 3,
           "spacing": 0.5,
           "laneId": "west",
           "delay": 6
@@ -413,29 +413,29 @@
       },
       "entries": [
         {
-          "enemyId": "shieldbearer",
-          "count": 4,
+          "enemyId": "grunt",
+          "count": 7,
           "spacing": 1.4,
           "laneId": "west",
           "delay": 0
         },
         {
-          "enemyId": "brute",
-          "count": 1,
+          "enemyId": "sapper",
+          "count": 2,
           "spacing": 1.5,
           "laneId": "west",
           "delay": 1
         },
         {
-          "enemyId": "shieldbearer",
+          "enemyId": "sapper",
           "count": 2,
           "spacing": 1.6,
           "laneId": "east",
           "delay": 2.5
         },
         {
-          "enemyId": "brute",
-          "count": 1,
+          "enemyId": "grunt",
+          "count": 3,
           "spacing": 1.7,
           "laneId": "east",
           "delay": 4
@@ -502,8 +502,8 @@
       "hpMultiplier": 5.96,
       "entries": [
         {
-          "enemyId": "brute",
-          "count": 1,
+          "enemyId": "sapper",
+          "count": 2,
           "spacing": 1.4,
           "laneId": "east",
           "delay": 0
@@ -516,21 +516,21 @@
           "delay": 2
         },
         {
-          "enemyId": "swarm",
-          "count": 2,
+          "enemyId": "sapper",
+          "count": 1,
           "spacing": 0.15,
           "laneId": "west",
           "delay": 5
         },
         {
-          "enemyId": "swarm",
-          "count": 2,
+          "enemyId": "outrider",
+          "count": 1,
           "spacing": 0.15,
           "laneId": "east",
           "delay": 7
         },
         {
-          "enemyId": "looter",
+          "enemyId": "raven",
           "count": 3,
           "spacing": 4,
           "laneId": "west",
@@ -571,15 +571,15 @@
           "delay": 4
         },
         {
-          "enemyId": "shieldbearer",
-          "count": 2,
+          "enemyId": "grunt",
+          "count": 3,
           "spacing": 2.2,
           "laneId": "east",
           "delay": 0
         },
         {
-          "enemyId": "brute",
-          "count": 1,
+          "enemyId": "grunt",
+          "count": 3,
           "spacing": 2.5,
           "laneId": "west",
           "delay": 2

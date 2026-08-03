@@ -3,6 +3,7 @@ import { SIM_DT, Simulation, type SimData } from './simulation';
 import type { EnemiesFile, WaveSet } from '../data/schemas';
 import { TEST_ECONOMY, TEST_HERO, TEST_RNG, makeEnemy, makeMap, makeTowersFile } from './testFixtures';
 import { Scaling, noScaling } from './scaling';
+import { applyTerrainRule } from './effects';
 
 /**
  * The rule effects (SKILLTREE.md) — nodes that change what the game *does*.
@@ -341,5 +342,78 @@ describe('momentumArmor', () => {
     advance(sim, 0.1);
     const e = sim.enemySystem.enemies[0]!;
     expect(hit(sim, e, 100)).toBeCloseTo(100);
+  });
+});
+
+/**
+ * Terrain rules (BIOMES.md Part C) — the same class of hazard as the tree
+ * rules above, one level up: a rule that fails to apply makes a whole biome a
+ * palette, and a palette is precisely the failure Part A.1 exists to prevent.
+ *
+ * Tested as a pure transform rather than through a sim, because that is what it
+ * is: it runs once, before the Simulation exists, and the sim never learns a
+ * biome happened. What matters is that it moves the right numbers, leaves the
+ * caller's data alone, and is exactly nothing when a biome has no rule.
+ */
+describe('terrain rules', () => {
+  const bundle = () => ({
+    hero: TEST_HERO,
+    economy: TEST_ECONOMY,
+    towers: makeTowersFile(),
+    map: makeMap(),
+    abilities: [],
+  });
+  const enemyFile = (): EnemiesFile => ({
+    elite: { chance: 0, hpMultiplier: 2, coinMultiplier: 2 },
+    enemies: [makeEnemy({ id: 'walker', name: 'Walker', speed: 50 })],
+  });
+  const ranges = (t: ReturnType<typeof bundle>['towers']): number[] => [
+    ...t.towers[0]!.levels.map((l) => l.range),
+    ...t.towers[0]!.branches.map((b) => b.stats.range),
+  ];
+
+  it('is a no-op with no rule, and hands back the very same objects', () => {
+    // Identity, not deep equality: the first biome is the control, and a clone
+    // there would mean the "unmodified" case silently stopped sharing the
+    // ability objects AbilitySystem holds by reference.
+    const data = bundle();
+    const foes = enemyFile();
+    const out = applyTerrainRule(data, foes, undefined);
+    expect(out.data).toBe(data);
+    expect(out.enemies).toBe(foes);
+  });
+
+  it('narrow-cuts shortens every sightline, levels and branches alike', () => {
+    const before = ranges(bundle().towers);
+    const out = applyTerrainRule(bundle(), enemyFile(), 'narrow-cuts');
+    expect(ranges(out.data.towers)).toEqual(before.map((r) => r * 0.82));
+  });
+
+  it('narrow-cuts leaves the enemies alone — the place is the hazard, not them', () => {
+    const out = applyTerrainRule(bundle(), enemyFile(), 'narrow-cuts');
+    expect(out.enemies.enemies[0]!.speed).toBe(50);
+  });
+
+  it('open-country lengthens sightlines and speeds the enemy up', () => {
+    const before = ranges(bundle().towers);
+    const out = applyTerrainRule(bundle(), enemyFile(), 'open-country');
+    expect(ranges(out.data.towers)).toEqual(before.map((r) => r * 1.1));
+    expect(out.enemies.enemies[0]!.speed).toBeCloseTo(56);
+  });
+
+  it('never writes through to the caller, so one probe cannot poison the next', () => {
+    // The bot harness plays every map off one loaded `data`. Mutating in place
+    // would make map 3's terrain leak into map 4 and read as a tuning problem.
+    const data = bundle();
+    const foes = enemyFile();
+    applyTerrainRule(data, foes, 'open-country');
+    expect(ranges(data.towers)[0]).toBe(60);
+    expect(foes.enemies[0]!.speed).toBe(50);
+  });
+
+  it('ignores a rule name it does not know rather than half-applying one', () => {
+    const out = applyTerrainRule(bundle(), enemyFile(), 'not-a-rule');
+    expect(ranges(out.data.towers)).toEqual(ranges(bundle().towers));
+    expect(out.enemies.enemies[0]!.speed).toBe(50);
   });
 });
