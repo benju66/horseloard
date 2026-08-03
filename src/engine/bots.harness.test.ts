@@ -695,10 +695,13 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * *carrying path* differs between pools.
    */
   it('reports whether different enemy pools make different builds correct', { timeout: 600_000 }, () => {
+    // Each pool now carries one counter-enemy (BIOMES.md Part K) — the whole
+    // point of M9. Green keeps none: it is the teaching pool, and a pool where
+    // towers *are* the answer is the control the other two are read against.
     const POOLS: ReadonlyArray<readonly [string, readonly string[]]> = [
       ['green', ['grunt', 'swarm', 'runner', 'looter']],
-      ['iron', ['grunt', 'brute', 'shieldbearer', 'halberdier']],
-      ['steppe', ['grunt', 'wolf-rider', 'raven', 'outrider']],
+      ['iron', ['grunt', 'brute', 'halberdier', 'juggernaut']],
+      ['steppe', ['grunt', 'wolf-rider', 'raven', 'sapper']],
     ];
     const SAMPLES = 12;
     const mapId = 'crossroads';

@@ -275,3 +275,71 @@ describe('scaling', () => {
     expect(build({ 'tower-damage-per-soldier': { perUnit: 1, max: 2 } }, {}).isEmpty).toBe(false);
   });
 });
+
+/**
+ * `momentumArmor` — the Juggernaut (BIOMES.md K.2).
+ *
+ * The one trait in the roster whose counter is a *pillar* rather than a
+ * quantity. Every other counter-trait — armour, speed, `flying`, `blockImmune`
+ * — is answered by building more towers; this one cannot be, because rate alone
+ * never hinders anything. These assert the property the whole design rests on:
+ * **damage is bad until something stops it, and then it is ordinary.**
+ */
+describe('momentumArmor', () => {
+  const jugg = (multiplier = 0.2) => {
+    const enemies: EnemiesFile = {
+      elite: { chance: 0, hpMultiplier: 2, coinMultiplier: 2 },
+      enemies: [makeEnemy({ id: 'walker', name: 'Walker', hp: 1000, momentumArmor: { multiplier } })],
+    };
+    const sim = new Simulation({ ...fixture([]), enemies }, TEST_RNG);
+    sim.startNextWave();
+    advance(sim, 0.1);
+    return { sim, e: sim.enemySystem.enemies[0]! };
+  };
+
+  const hit = (sim: Simulation, e: { id: number; hp: number }, amount: number): number => {
+    const before = e.hp;
+    sim.enemySystem.applyDamage(e.id, amount);
+    return before - e.hp;
+  };
+
+  it('shrugs off damage while it is moving freely', () => {
+    const { sim, e } = jugg();
+    expect(hit(sim, e, 100)).toBeCloseTo(20);
+  });
+
+  it('takes full damage the moment it is slowed', () => {
+    const { sim, e } = jugg();
+    sim.enemySystem.applySlow(e.id, 0.5, 2);
+    expect(hit(sim, e, 100)).toBeCloseTo(100);
+  });
+
+  it('takes full damage while a soldier is holding it', () => {
+    const { sim, e } = jugg();
+    e.state = 'blocked';
+    expect(hit(sim, e, 100)).toBeCloseTo(100);
+  });
+
+  it('goes back to impervious when the slow wears off', () => {
+    // Otherwise one caltrop early in a wave would disarm it for the whole wave,
+    // and the pillar it demands would only be needed once.
+    const { sim, e } = jugg();
+    sim.enemySystem.applySlow(e.id, 0.5, 1);
+    sim.enemySystem.tick(1.5);
+    expect(hit(sim, e, 100)).toBeCloseTo(20);
+  });
+
+  it('is not bypassed by stripping armour — the hide is not the point, the speed is', () => {
+    const { sim, e } = jugg();
+    sim.enemySystem.stripArmor(e.id, 5);
+    expect(hit(sim, e, 100)).toBeCloseTo(20);
+  });
+
+  it('leaves enemies without the trait completely alone', () => {
+    const sim = new Simulation(fixture([], { hp: 1000 }), TEST_RNG);
+    sim.startNextWave();
+    advance(sim, 0.1);
+    const e = sim.enemySystem.enemies[0]!;
+    expect(hit(sim, e, 100)).toBeCloseTo(100);
+  });
+});

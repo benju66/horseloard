@@ -35,6 +35,23 @@ export const EnemySchema = z.object({
     .optional()
     .describe('Shieldbearer: reduced damage from sources ahead of it — flank it or shoot it from behind'),
   ignoresSlows: z.boolean().optional().describe('Wolf Rider: immune to slows and freezes'),
+  /**
+   * Damage taken **while moving freely** — normal damage the moment it is slowed
+   * or a soldier is holding it.
+   *
+   * The one trait in the roster whose counter is a *pillar* rather than a
+   * quantity. Every other counter-trait — armour, speed, `flying`,
+   * `blockImmune` — is answered by more towers; this one cannot be, because
+   * rate alone never hinders anything. It is the enemy that makes exposure
+   * mandatory instead of merely efficient, and the reason a tower board can be
+   * necessary without ever being sufficient (TRIANGLE.md).
+   */
+  momentumArmor: z
+    .object({
+      multiplier: z.number().gt(0).lt(1).describe('damage factor while unhindered'),
+    })
+    .optional()
+    .describe('Juggernaut: nearly impervious in motion, ordinary once stopped or slowed'),
   armor: z
     .number()
     .min(0)

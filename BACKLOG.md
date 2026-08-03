@@ -621,7 +621,7 @@ to judge structure. Revisit when the structure has stopped moving.
 screen, the loadout and the whole "decide before you ride" premise are phone-and-thumbs
 questions, and the bots cannot answer one of them.
 
-## M9 — Counter-enemies  ← NEXT
+## M9 — Counter-enemies  ← DONE, and it unblocked M8
 Full design in **BIOMES.md Part K**. The prerequisite M8 is blocked on.
 
 **The design constraint in one line:** a counter-enemy is not a hard enemy, it is **an enemy
@@ -629,24 +629,34 @@ towers cannot answer by being more numerous.** Every trait in the current roster
 test — armour makes towers work harder, speed makes them work sooner, `flying` and `blockImmune`
 route around the army but stay in tower range the whole way.
 
-[ ] **M9.1 — The Sapper.** `towerBreak`, low HP, must die before it arrives. **Zero engine
+[x] **M9.1 — The Sapper** (2026-08-03). `towerBreak`, low HP, must die before it arrives. **Zero engine
 work** — `towerBreak` is fully implemented in `towerSystem.ts` and has been given to exactly one
 enemy, the warlord, which appears once at the end of a campaign. The anti-tower mechanic was
 built the whole time and never deployed as a regular threat.
-[ ] **M9.2 — The Juggernaut.** 80% damage reduction *while moving freely*, normal while slowed
+[x] **M9.2 — The Juggernaut** (2026-08-03). 80% damage reduction *while moving freely*, normal while slowed
 or blocked. One more read of the `hindered` test that `damageVsHindered` already uses. **The
 direct answer to Part J:** the first enemy whose counter is a *pillar* rather than a quantity,
 which is what should finally separate the pools.
-[ ] **M9.3 — Stalker and Warden**, only if 9.1 and 9.2 have not already separated the pools.
-Hero-seeking (template: `lootsCoins`) and a defensive aura (template: `warCry`).
-[ ] **M9.4 — The gate.** Re-run the pool probe. If the carrying path differs between pools,
-BIOMES.md Part H is unblocked.
+[—] **M9.3 — Stalker and Warden: not needed.** 9.1 and 9.2 separated the pools on their own, so
+these drop from prerequisites to content and their moderate engine work never has to happen.
+[x] **M9.4 — The gate: PASSED** (2026-08-03). green → crown, iron → **host**, steppe → wall.
+**the decisive line is Iron**, which read `wall +20` before the Juggernaut and reads `wall −18`,
+`host +20` after. Same map, same builds, same wave shapes — towers went from the answer to a
+liability and exposure became the thing that wins. Exactly what K.2 predicted, in a form
+specific enough to have been wrong.
+**two enemies, one of them free.** `towerBreak` was already implemented and given to a single
+boss; the Juggernaut was one line in the damage path reusing the `hindered` test that
+`damageVsHindered` and `crit-vs-hindered` already share.
+**caveats, unresolved:** Green is still saturated at 89-100% so its reading is noise rather than
+evidence; Iron at 0-42% may be too hard, which is a band question for M8.7 and not a reason to
+soften the trait. Twelve builds is a small sample — the direction is decisive, the digits are
+not.
 
 **Cheapest first, re-measured after each.** If the Sapper and Juggernaut alone do it, the other
 two are content rather than prerequisites and the moderate engine work never happens. None need
 art to be tested — placeholder geometry is a valid state.
 
-## M8 — Biomes  ← BLOCKED by its own thesis test, see BIOMES.md Part J
+## M8 — Biomes  ← UNBLOCKED by M9, see BIOMES.md Part L
 Full plan in **BIOMES.md**. Three biomes of four levels replacing four standalone maps.
 
 **The decision in one line:** the tree has six paths and the campaign has four maps that all ask

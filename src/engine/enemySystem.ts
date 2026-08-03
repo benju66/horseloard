@@ -238,6 +238,13 @@ export class EnemySystem {
     if (!ignoresArmor && e.armorStrippedFor <= 0 && e.config.armor > 0) {
       dealt *= 1 - e.config.armor;
     }
+    // Momentum armour: shrugs off everything until something stops it. Checked
+    // against the same `hindered` condition `damageVsHindered` and the
+    // `crit-vs-hindered` rule use, so the three cannot drift apart about what
+    // "held" means. Armour-stripping does *not* bypass it — the hide is not the
+    // point, the speed is.
+    const mom = e.config.momentumArmor;
+    if (mom && e.slowRemaining <= 0 && e.state !== 'blocked') dealt *= mom.multiplier;
     const block = e.config.frontalBlock;
     if (block && sourceX !== undefined && sourceY !== undefined) {
       const dx = sourceX - e.x;

@@ -159,6 +159,41 @@
       "xpValue": 9
     },
     {
+      "id": "sapper",
+      "name": "Sapper",
+      "hp": 34,
+      "speed": 58,
+      "radius": 12,
+      "coinValue": 9,
+      "siegeDps": 3,
+      "staggersHero": false,
+      "eliteEligible": true,
+      "towerBreak": {
+        "radius": 44,
+        "cooldown": 5
+      },
+      "spriteRef": "enemy-runner",
+      "model": "unit-runner",
+      "xpValue": 5
+    },
+    {
+      "id": "juggernaut",
+      "name": "Juggernaut",
+      "hp": 260,
+      "speed": 19,
+      "radius": 20,
+      "coinValue": 30,
+      "siegeDps": 14,
+      "staggersHero": true,
+      "eliteEligible": false,
+      "momentumArmor": {
+        "multiplier": 0.2
+      },
+      "spriteRef": "enemy-brute",
+      "model": "unit-brute",
+      "xpValue": 22
+    },
+    {
       "id": "warlord",
       "name": "The Warlord",
       "hp": 1300,

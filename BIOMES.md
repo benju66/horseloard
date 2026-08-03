@@ -1,8 +1,8 @@
 # BIOMES.md — the campaign, restructured
 
-**Status: DESIGN BLOCKED by its own thesis test (2026-08-03). Do not build Part H yet.**
-See **Part J** — the pool probe says the roster cannot support the biomes proposed here, and
-names what has to change first.
+**Status: UNBLOCKED (2026-08-03). Part H may proceed.**
+The thesis test failed on the original roster (**Part J**), and passes with the two
+counter-enemies designed in **Part K** and shipped in M9 — see **Part L** for the numbers.
 Supersedes DESIGN.md's flat map list. TRIANGLE.md still governs balance; SKILLTREE.md still
 governs progression.
 
@@ -359,3 +359,45 @@ engine work never has to happen.
 
 **Open:** none of these need art to be tested. Placeholder geometry is a valid state
 (`loader.test.ts` asserts it), so the probe can answer whether they work before a model exists.
+
+---
+
+## Part L — The gate, re-run (2026-08-03)
+
+Same probe, same twelve shared builds, same map. The only change is that Iron and Steppe each
+carry one counter-enemy.
+
+```
+                 cr      ho      hu      ri      st      wa     carries
+green  89-100%   +10     +8      -10     -3      -3      -3     crown
+iron    0- 42%   +10     +20     -3      -18     +8      -18    host        ← Juggernaut
+steppe 25-100%   +3      +3      -3      +0      -20     +18    wall        ← Sapper
+```
+
+**Three pools, three carrying paths. The thesis holds.**
+
+The decisive line is Iron. Before the Juggernaut it read `wall +20`; it now reads **`wall −18`,
+`host +20`**. The same map, the same builds, the same wave shapes — and towers went from the
+answer to a *liability*, with exposure becoming the thing that wins. That is precisely what K.2
+predicted, in a form specific enough to have been wrong.
+
+Steppe with the Sapper stays tower-led but sharply separates from Iron, and Green remains the
+control.
+
+### L.1 What this cost
+
+Two enemies. **One of them was free** — `towerBreak` was already implemented and had been given
+to a single boss. The other was one line in the damage path, reusing the `hindered` test that
+`damageVsHindered` and `crit-vs-hindered` already share.
+
+The Stalker and the Warden (K.3, K.4) are **not needed as prerequisites** and drop to content.
+Their moderate engine work never has to happen.
+
+### L.2 Caveats, unresolved
+
+- **Green is still saturated** at 89–100%, where top-third-against-bottom-third is noise. Its
+  `crown` reading is not evidence; it is the control's *spread* that matters, and that wants
+  fixing in tuning rather than trusted here.
+- **Iron at 0–42% is hard**, possibly too hard. That is a band question for M8.7, not a reason
+  to soften the Juggernaut — the trait is doing its job and the wave budget is the dial.
+- Twelve builds remains a small sample. The direction is decisive; the digits are not.
