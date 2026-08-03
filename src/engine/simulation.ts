@@ -35,6 +35,11 @@ export interface SimData {
   /** how many abilities may be carried at once; defaults to the schema's 3 */
   equipSlots?: number;
   /**
+   * The chosen ability bar, in order. Empty = fill from what is unlocked, in
+   * roster order — see `AbilitySystem` for why the fallback is not a lesser path.
+   */
+  loadout?: readonly string[];
+  /**
    * Towers the career tree has not unlocked yet. Empty = the whole roster is
    * buildable, which is what engine tests and the bot harness want.
    */
@@ -155,6 +160,7 @@ export class Simulation {
       this.zones,
       this.army,
       data.equipSlots,
+      data.loadout ?? [],
     );
 
     this.looters = new LooterSystem(this.enemySystem, this.economy, this.lanes);

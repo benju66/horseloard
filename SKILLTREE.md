@@ -280,8 +280,30 @@ unchanged; three new ones:
    **Accept:** no keystone is strictly dominant; every one appears in some winning build.
    A keystone nobody takes is a dead node, and a keystone everybody takes is not a choice.
 
-Plus the existing curve: all four maps stay in band at **a mid-tree build (~22 points)**,
-which is the new reference — not an empty tree and not a maxed one.
+Plus the existing curve: all four maps stay in band at **the reference build**.
+
+### F.4 What measuring actually changed (2026-08-03)
+
+Three of the four probes above were wrong as specified, and the harness said so.
+
+- **The reference is 12 points, not 22.** A full campaign at 3 stars pays ~7,400 XP, which
+  the career curve turns into level 12. Tuning against 22 meant tuning against a player who
+  had already replayed the campaign several times, and duly reported three of four maps
+  "off target" when the real first-run curve was **100 / 97 / 72 / 28**. A new `[RAMP]`
+  report measures every map at 0 / 6 / 12 / 22 / 40 points; re-read it before ever moving
+  the reference again.
+- **The path probe needs a control, and the accept rule is a delta.** As written it pitted a
+  maxed 40-point specialist against maps tuned for a mid-tree generalist and called two
+  paths "dominant". That proves only that 40 points beat 22, which is what progression *is*.
+  It now runs `none` and `spread` arms at the same budget, and accepts any path within
+  +15pp of the generalist.
+- **The harness was ignoring tower unlocks entirely**, so every arm of every probe could
+  build the barracks — which made a tree node that grants a tower worth exactly nothing in
+  the measurement, and made the no-build control stronger than the build it was a control
+  for.
+
+The keystone probe gained a "no keystone" arm for the same reason: a pair that both score
+90% reads very differently when the path was already at 90% on its own.
 
 ---
 

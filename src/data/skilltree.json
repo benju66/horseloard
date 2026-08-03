@@ -521,7 +521,7 @@
       "path": "ride",
       "kind": "keystone",
       "name": "Cataphract",
-      "description": "Nothing can stagger you. \u221225% bow damage.",
+      "description": "Nothing can stagger you and trampling hits three times as hard. \u221235% bow damage, \u221215% speed.",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -539,8 +539,20 @@
         },
         {
           "type": "hero-stat",
+          "stat": "trampleDamage",
+          "perRank": 3.0,
+          "mode": "multiply"
+        },
+        {
+          "type": "hero-stat",
           "stat": "bowDamage",
-          "perRank": 0.75,
+          "perRank": 0.65,
+          "mode": "multiply"
+        },
+        {
+          "type": "hero-stat",
+          "stat": "moveSpeed",
+          "perRank": 0.85,
           "mode": "multiply"
         }
       ]
@@ -550,7 +562,7 @@
       "path": "ride",
       "kind": "keystone",
       "name": "Outrider",
-      "description": "+40% speed, coins fly to you from far off. Trampling stops hurting.",
+      "description": "+45% speed, coins fly to you from far off. Trampling hits 40% softer, and the gate is 35 weaker.",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -563,7 +575,7 @@
         {
           "type": "hero-stat",
           "stat": "moveSpeed",
-          "perRank": 1.4,
+          "perRank": 1.45,
           "mode": "multiply"
         },
         {
@@ -575,8 +587,14 @@
         {
           "type": "hero-stat",
           "stat": "trampleDamage",
-          "perRank": 0.02,
+          "perRank": 0.6,
           "mode": "multiply"
+        },
+        {
+          "type": "kingdom-stat",
+          "stat": "gateMaxHp",
+          "perRank": -35,
+          "mode": "add"
         }
       ]
     },
@@ -1122,7 +1140,7 @@
       "path": "host",
       "kind": "keystone",
       "name": "Shieldwall",
-      "description": "+140% soldier hp, \u221245% soldier damage, one fewer. They do not break.",
+      "description": "Soldiers take 140% more punishment and hold longer. They deal 45% less.",
       "cost": 3,
       "row": 5,
       "requires": [

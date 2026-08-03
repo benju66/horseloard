@@ -362,6 +362,95 @@ Full plan in **TRIANGLE.md** (authoritative). Per-task acceptance criteria live 
 
 **M5 is mechanically complete and has never been played by a human.** Every number above came from headless bots. They can tell you a map is solvable; they cannot tell you whether holding a line of soldiers feels good, whether the XP bar reads at arm's length, or whether the Muster lands as the moment it is meant to be. That is the whole remaining gate, and it is the one thing that cannot be done from here.
 
+## M6 — The career skill tree  ← CURRENT
+Full plan in **SKILLTREE.md** (authoritative). The in-run draft is retired; a run's power is
+settled before the first wave.
+
+**The decision in one line:** picking upgrades mid-fight is a reflex, not a decision — so the
+draft, `perks.json` and the meta tree are all replaced by one career tree with five paths,
+one currency, and a budget you can never spend more than a third of.
+
+[x] **M6.1 — Schema, data, engine** (2026-08-03). `SkillNodeSchema` / `SkillTreeFileSchema`
+reusing `MetaEffect` unchanged; 60 nodes across five paths; `SkillTree` with points,
+prerequisites, exclusivity, cascading refunds, `reconcile` and free respec.
+**the scarcity rule had to be a load-time check, not an intention.** `maxAllocatableFraction`
+(0.35) is verified against the real node costs at boot, so adding nodes without adding budget
+is a boot failure rather than a slow drift into "unlock everything eventually". The first
+draft of the tree tripped it at 37% and the fix was to cut `maxLevel` 40 → 36, not to raise
+the ceiling.
+[x] **M6.2 — Career XP, save v3** (2026-08-03). `economy.tokens` → `economy.career`, XP-denominated;
+`careerLevel` / `careerProgress` / `threeStarredMaps` / `equipSlots`; save v3 (`careerXp`,
+`build`, `loadout`) with a tested v2 → v3 migration. The meta tree is gone entirely —
+`metatree.json` deleted, `metaModifiers.ts` → `effects.ts`, `schemas/metatree.ts` →
+`schemas/effects.ts`.
+**a migration cannot invent an exchange rate it never had.** Tokens and XP never coexisted by
+intent, so there is no honest conversion — what the save *does* hold that survives verbatim is
+the campaign record, and the new economy already prices a star. Career XP is recomputed from
+stars actually earned, and every token (banked *and* sunk into meta nodes) is added at 1:1 so
+nothing held is taken away. Generous by construction: the worst outcome a migration can
+produce is a returning player opening a fresh-looking tree while the numbers reconcile.
+[x] **M6.3 — Delete the draft** (2026-08-03). `PerkSystem`, `perks.json`, `perk.ts`,
+`DraftOverlay` and the in-run level hook all removed; harness loses `forcedPerk`, gains
+`pathBuild` and `spreadBuild`.
+**the loader caught two content holes the moment the draft stopped hiding them.** Rally Horn
+was unlocked by nothing at all, and the Wall path — the tower path — had no ability node;
+one node closed both. And `hunt-volley` "unlocked" the ability every career already starts
+with, so it deepens Volley instead. A load-time check that every non-default ability is
+reachable from the tree is what surfaced them.
+[x] **M6.4 — The tree screen** (2026-08-03). Five columns, one path per phone screen, swiped
+sideways with scroll-snap. Header carries level, XP bar and unspent points; refusals are
+reported by reason (`locked` / `forgone` / `not enough points`), never as an unexplained grey
+box. Keystones render larger with the downside in the same size type as the upside.
+[x] **M6.5 — Loadout and campaign-gated slots** (2026-08-03). `equipSlots` 2, `equipSlotGrants`
+[2, 4]; an explicit `loadout` on `SimData` that is authoritative when set and falls back to
+roster order when not.
+**the fallback is not a lesser path.** A player who unlocks their third ability and never
+opens the loadout screen must still be carrying it, or the node they bought did nothing.
+[ ] **M6.6 — Measure Part F and tune.** See SKILLTREE.md F.4 for what measuring changed.
+**the reference build was wrong by a factor of two, and it was the reference that was wrong,
+not the maps.** A full campaign at 3 stars pays ~7,400 XP → level 12, not the 22 the plan
+assumed. Against 22 the harness reported three of four maps off target; the real first-run
+curve is 100 / 97 / 72 / 28. A new `[RAMP]` report measures every map at 0 / 6 / 12 / 22 / 40
+points, so the band and the budget it describes can never drift apart again silently.
+**a probe without a control measures the budget, not the thing.** The path probe pitted a
+maxed 40-point specialist against maps tuned for a 22-point generalist and called two paths
+"dominant" — which proves only that 40 points beat 22. It now runs `none` and `spread` arms
+at the same budget. The keystone probe gained a "no keystone" arm for the same reason.
+**and the harness was ignoring tower unlocks entirely**, so every arm of every probe could
+build the barracks. A tree node granting a tower was worth exactly nothing in the
+measurement, and the no-build control was stronger than the build it was a control for.
+
+**and the harness ran every map at the opening two equip slots** — the first-map condition
+applied to the endgame. It understated every ability-carrying path by roughly one ability, and
+it understated the *generalist* most of all. Deriving slots from the map's campaign position
+flipped the path probe's verdict outright: Hunt +31pp → **+4pp**, Wall +29pp → **+3pp**.
+There were never two dominant paths.
+
+**a keystone that contradicts its own path is a trap, not a choice.** Three were shipped that
+way and the probe found all three. Cataphract paid 25% bow damage for stagger immunity — nearly
+worthless when the hero cannot die — so nobody could ever take it; it now triples trample and
+the Ride path went **25% → 60%** on that one change. Outrider deleted trample damage at the
+bottom of the *trample* path. Shieldwall's text said "one fewer soldier" while its effect
+changed the squad by zero — the same dishonest-description class as `Heavy Draw` in M5.
+
+**Part F result:** path probe **PASS** (max +4pp over the generalist), budget probe **PASS**
+(32.2% ≤ 35%), keystone probe **PASS** on the stated criterion. Campaign at the 12pt reference:
+**100 / 97 / 72 / 28** against 90-100 / 70-95 / 45-75 / 25-55 — the-ford 2pp over its band.
+
+**Open, and honestly confounded:** Host (6%) and Crown (31%) sit far behind Hunt (100%) and
+Wall (99%) on equal points, and the Ride keystone pair is one-sided (60 vs 29). Some of that is
+real and some is the instrument: the bot rides for coins and shoots, so it converts *rate*
+(Hunt, Wall) efficiently and *exposure* and *greed* (Host, Crown) badly. This is the
+"preference is not evidence of strength" lesson one level up — forcing the path removes the
+chooser but not the skill model. **Do not tune these on bot numbers alone.** The complement
+probe has the same problem in sharper form: it reports the army adding nothing on 0/4 maps
+while both its arms are saturated on maps 1-2 and dead on 3-4, so it is not answerable as
+written. Fix the probe before reading it as a verdict on the barracks.
+
+**Still true, and now three milestones old: none of this has been played by a human.** The tree
+screen, the loadout and the whole "decide before you ride" premise are phone-and-thumbs
+questions, and the bots cannot answer one of them.
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 

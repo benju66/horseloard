@@ -3,6 +3,14 @@
 **Version 0.3 — resolves hero damage (stagger), starting kit, selling, loss payout; co-op hedge**
 A mobile-first tower defense PWA where you are the commander on the field: riding, shooting, looting, and building in real time.
 
+> **Superseded in part, 2026-08-03 — read SKILLTREE.md first.** The in-run draft, `perks.json`
+> and the meta tree are all retired in favour of one **career skill tree**: five paths, one
+> currency, and a run whose power is fully settled before the first wave. Wherever this
+> document says *tokens*, read **career XP**; wherever it says *meta tree* or *draft*, read
+> **the tree**. §7's token payouts and §15.1's account of drafting are the accounts of a
+> system that no longer exists — kept for the reasoning, not as instructions. TRIANGLE.md
+> remains authoritative for balance.
+
 ---
 
 ## 1. Vision & Pillars

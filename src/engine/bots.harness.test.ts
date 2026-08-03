@@ -90,14 +90,26 @@ function summarize(runs: readonly BotRunResult[]): string {
 }
 
 /**
- * The reference career: mid-tree, ~22 points (SKILLTREE.md Part F).
+ * The reference career: **12 points** — what a player holds having played the
+ * campaign once.
+ *
+ * SKILLTREE.md Part F guessed 22 ("mid-tree"). Measured, that was wrong by
+ * about a factor of two: a full campaign at 3 stars pays roughly 7,400 XP,
+ * which the career curve turns into level 12, not 22. Tuning the maps against
+ * 22 would have been tuning them against a player who has already replayed the
+ * whole campaign several times — and duly reported three of four maps "off
+ * target" when the real first-run curve was 100/97/72/28.
+ *
+ * The [RAMP] report is what settled it and is the thing to re-read before ever
+ * moving this number. The bands describe the 12pt column; the 40pt column is a
+ * returning player and is *supposed* to be high — that is what a career is for.
  *
  * `FULL_POINTS` is the career ceiling — maxLevel × pointsPerLevel plus one per
  * map three-starred — read off the data rather than written down here, so a
  * curve change cannot leave the probes measuring a budget the game stopped
  * granting.
  */
-const REFERENCE_POINTS = 22;
+const REFERENCE_POINTS = 12;
 
 describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
   const data = loadGameData();
@@ -122,6 +134,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     enemies: data.enemies,
     abilities: data.abilities,
     equipSlots: data.equipSlots,
+    equipSlotGrants: data.equipSlotGrants,
     hero: data.hero,
     economy: data.economy,
     maps: data.maps,
@@ -433,43 +446,111 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
 
   /**
    * **Path probe — SKILLTREE.md Part F.1.** Spend the whole budget down each
-   * path in turn.
+   * path in turn, against two controls at the *same* budget.
    *
-   * The pillar invariant restated as a build question, and the one measurement
-   * that could invalidate the tree: if a single path clears maps 3-4 on its
-   * own, the tree has a dominant line and every other path is decoration. It
-   * runs on the hard maps only — the easy ones are won by any build, so a
-   * specialist's strength is invisible there.
+   * The controls are the whole probe. A maxed specialist beating maps tuned
+   * for a mid-tree generalist proves nothing except that 40 points beat 22 —
+   * which is what progression *is*. The first version of this probe had no
+   * control arm and duly reported two "dominant" paths; the number that
+   * actually means something is a path's distance from a generalist holding
+   * the same budget.
+   *
+   * - `none` — no build at all. The floor: what the maps ask for unaided.
+   * - `spread` — the same points, round-robin across every path. The control.
+   * - each path — the same points, all down one line.
+   *
+   * **Accept:** no path more than ~15pp above `spread`. A path that far ahead
+   * of a generalist on equal points is the one everybody takes, and the other
+   * four are decoration.
    */
-  it('reports whether any single path clears the hard maps alone', { timeout: 300_000 }, () => {
+  it('reports whether any single path beats a generalist on equal points', { timeout: 300_000 }, () => {
     const lines: string[] = [];
     const hardMaps = Object.keys(data.maps).filter(
       (m) => (DIFFICULTY_TARGETS[m]?.winRate[1] ?? 100) <= 75,
     );
-    const paths = [...new Set(tree.nodes.map((n) => n.path))].sort();
-    for (const path of paths) {
-      const build = pathBuild(tree, path, FULL_POINTS);
-      const pathData = { ...botData, skillNodes: build };
+
+    const measure = (build: readonly string[]) => {
       const runs: BotRunResult[] = [];
       for (const mapId of hardMaps) {
         for (const f of BOTS) {
-          for (const seed of SEEDS) runs.push(runBot(pathData, mapId, f, seed));
+          for (const seed of SEEDS) {
+            runs.push(runBot({ ...botData, skillNodes: build }, mapId, f, seed));
+          }
         }
       }
-      const wins = runs.filter((r) => r.outcome === 'win');
+      return {
+        win: (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100,
+        waves: runs.reduce((s, r) => s + r.wavesCleared, 0) / runs.length,
+      };
+    };
+
+    const row = (label: string, build: readonly string[], vs?: number) => {
+      const m = measure(build);
       lines.push(
-        `  ${path.padEnd(8)} ${String(build.length).padStart(2)} nodes / ` +
-          `${String(tree.spent(build)).padStart(2)}pt  win ${pct(wins.length, runs.length)}  ` +
-          `waves ${(runs.reduce((s, r) => s + r.wavesCleared, 0) / runs.length).toFixed(1)}` +
-          (wins.length / runs.length > 0.5 ? '   ← clears alone; path is dominant' : ''),
+        `  ${label.padEnd(10)} ${String(build.length).padStart(2)} nodes / ` +
+          `${String(tree.spent(build)).padStart(2)}pt  win ${m.win.toFixed(0).padStart(3)}%  ` +
+          `waves ${m.waves.toFixed(1)}` +
+          (vs === undefined
+            ? ''
+            : `  Δ ${(m.win - vs >= 0 ? '+' : '') + (m.win - vs).toFixed(0)}pp` +
+              (m.win - vs > 15 ? '   ← dominant' : '')),
       );
+      return m.win;
+    };
+
+    row('none', []);
+    const spread = row('spread', spreadBuild(tree, FULL_POINTS));
+    for (const path of [...new Set(tree.nodes.map((n) => n.path))].sort()) {
+      row(path, pathBuild(tree, path, FULL_POINTS), spread);
     }
+
     console.log(
-      `\n[PATH PROBE — SKILLTREE.md Part F.1]  full budget down one path, maps ` +
+      `\n[PATH PROBE — SKILLTREE.md Part F.1]  ${FULL_POINTS}pt budget, maps ` +
         `${hardMaps.join(' + ')} × all bots × all seeds\n` +
         lines.join('\n') +
-        '\n  Accept: no path above 50%. A path that clears the hard maps by itself is\n' +
-        '  the single-pillar failure the whole triangle exists to prevent.',
+        '\n  Δ is against the generalist on the same points, not against the reference\n' +
+        '  curve. Accept: no path more than +15pp.',
+    );
+  });
+
+  /**
+   * **The ramp.** Win rate per map at a spread of career budgets.
+   *
+   * The difficulty bands are stated against *a* build, and picking which one is
+   * a design decision that was being made by accident. A career grows, so the
+   * same map is played at 0 points on a first run and at 40 by someone
+   * replaying for stars — the band can only describe one of those, and it has
+   * to be the one a player actually meets the map at.
+   *
+   * This is the table that decides it. Read down a column to see whether a map
+   * holds its band at the budget a player reaches it with; read across a row to
+   * see how fast the tree hands out power.
+   */
+  it('reports the difficulty ramp across career budgets', { timeout: 300_000 }, () => {
+    const budgets = [0, 6, 12, 22, FULL_POINTS];
+    const lines: string[] = [`  ${'map'.padEnd(16)}${budgets.map((b) => `${b}pt`.padStart(7)).join('')}   band`];
+
+    for (const mapId of Object.keys(data.maps)) {
+      const cells = budgets.map((pts) => {
+        const build = spreadBuild(tree, pts);
+        const runs = BOTS.flatMap((f) =>
+          SEEDS.map((seed) => runBot({ ...botData, skillNodes: build }, mapId, f, seed)),
+        );
+        return (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100;
+      });
+      const target = DIFFICULTY_TARGETS[mapId];
+      lines.push(
+        `  ${mapId.padEnd(16)}${cells.map((c) => `${c.toFixed(0)}%`.padStart(7)).join('')}   ` +
+          (target ? `${target.winRate[0]}-${target.winRate[1]}%` : '—'),
+      );
+    }
+
+    console.log(
+      '\n[RAMP]  spread build at N points, all bots × all seeds\n' +
+        lines.join('\n') +
+        '\n  A campaign clear is worth roughly 12 points, so that is the column the\n' +
+        '  bands describe. The 40pt column is a returning player and is expected to\n' +
+        '  be high — that is what the career is for.',
     );
   });
 
@@ -537,8 +618,13 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
 
       const a = rate(k.id);
       const b = partner ? rate(partner.id) : null;
+      // The path without either keystone — so a pair that both scores 90% can
+      // be read as "the path was already at 90%" rather than "both keystones
+      // are enormous".
+      const bare = rate('');
       lines.push(
-        `  ${k.path.padEnd(6)} ${k.id.padEnd(20)} ${a.toFixed(0).padStart(3)}%` +
+        `  ${k.path.padEnd(6)} (no keystone ${bare.toFixed(0).padStart(3)}%)  ` +
+          `${k.id.padEnd(20)} ${a.toFixed(0).padStart(3)}%` +
           (partner && b !== null
             ? `   vs  ${partner.id.padEnd(20)} ${b.toFixed(0).padStart(3)}%` +
               (Math.abs(a - b) > 25 ? '   ← one-sided' : '')

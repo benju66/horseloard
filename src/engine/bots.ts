@@ -830,6 +830,16 @@ export interface BotGameData {
   abilities: readonly Ability[];
   /** how many abilities may be carried at once; defaults to the schema's 3 */
   equipSlots?: number;
+  /**
+   * Campaign milestones that each grant a slot. Supplied so a run is measured
+   * with the bar a player *reaching that map* would carry — a map's position in
+   * the campaign stands in for maps cleared, since a bot run has no career.
+   *
+   * Without this every probe ran maps 3-4 at the opening two slots, which is
+   * the first-map condition applied to the endgame. It understated every
+   * ability-carrying path by roughly one ability.
+   */
+  equipSlotGrants?: readonly number[];
   hero: Hero;
   economy: Economy;
   maps: Record<string, MapDef>;
@@ -865,6 +875,9 @@ export function runBot(
 
   const map = built.map;
   const waveSet = data.waveSets[mapId]!;
+  // Maps a career would have cleared before reaching this one. `order` is the
+  // campaign sequence, so the first map sees zero.
+  const mapsBefore = Math.max(0, (data.maps[mapId]?.order ?? 1) - 1);
 
   const sim = new Simulation(
     {
@@ -875,7 +888,9 @@ export function runBot(
       economy: built.economy,
       towers: built.towers,
       abilities: built.abilities,
-      equipSlots: data.equipSlots,
+      equipSlots:
+        (data.equipSlots ?? 3) +
+        (data.equipSlotGrants ?? []).filter((n) => n <= mapsBefore).length,
       // A bot carries exactly what its build unlocked, on top of the default
       // loadout — never the whole roster.
       //
@@ -884,6 +899,13 @@ export function runBot(
       // gained an equip cap: filling every slot on wave 1 measured a loadout no
       // player can assemble, and made every ability node a dead take.
       unlockedAbilityIds: built.unlockedAbilityIds,
+      // Tower unlocks are part of a build too. Ignoring them let every arm of
+      // every probe build the whole roster, which quietly made a tree node that
+      // grants a tower worth exactly nothing in the measurement — and made the
+      // no-build control stronger than the build it was the control for.
+      lockedTowerIds: data.towers.towers
+        .filter((t) => !t.unlockedByDefault && !built.unlockedTowerIds.includes(t.id))
+        .map((t) => t.id),
     },
     makeRng(seed),
   );

@@ -1,10 +1,14 @@
 {
-  "equipSlots": 3,
+  "equipSlots": 2,
+  "equipSlotGrants": [
+    2,
+    4
+  ],
   "abilities": [
     {
       "id": "volley",
       "name": "Volley",
-      "description": "Arrow rain falls where you ride — when there is a crowd worth spending it on.",
+      "description": "Arrow rain falls where you ride \u2014 when there is a crowd worth spending it on.",
       "cooldown": 21,
       "unlockedByDefault": true,
       "trigger": {
@@ -65,7 +69,7 @@
     {
       "id": "rapid-fire",
       "name": "Rapid Fire",
-      "description": "Draw and loose without pause — for a moment.",
+      "description": "Draw and loose without pause \u2014 for a moment.",
       "cooldown": 23,
       "unlockedByDefault": false,
       "trigger": {
@@ -124,7 +128,7 @@
     {
       "id": "aero-storm",
       "name": "Aerostorm",
-      "description": "The sky answers a hard-fought fight — a wide, slow squall of wind and hail.",
+      "description": "The sky answers a hard-fought fight \u2014 a wide, slow squall of wind and hail.",
       "cooldown": 40,
       "unlockedByDefault": false,
       "trigger": {

@@ -2,12 +2,19 @@
 
 Mobile-first tower defense PWA. You are the commander on the field: riding, shooting, looting, building. Full spec in **DESIGN.md** — read §1 (pillars), §11 (architecture), and the section relevant to the current task before writing code. The design doc is the source of truth for game rules; this file is the source of truth for how we build.
 
-**Currently pivoting (M5).** The game is becoming a roguelite build game on a tower-defence
-spine — Vampire Survivors progression, Thronefall hero and day/night, TD structure.
-**TRIANGLE.md is authoritative for M5** and outranks DESIGN.md where they disagree; read it
-before touching balance, perks, abilities or waves. Its core rule, which supersedes the old
-"no single tower carries" invariant: **towers supply rate, the army supplies exposure, the
-hero supplies burst — no single pillar may clear a map alone, and any two together must.**
+**Currently pivoting (M6).** The game is a roguelite build game on a tower-defence spine —
+Thronefall hero and day/night, TD structure, and a **career skill tree** in place of the
+in-run draft.
+
+Two docs outrank DESIGN.md while the pivot runs, in this order:
+
+- **SKILLTREE.md is authoritative for M6.** The draft, `perks.json` and the meta tree are
+  retired; one tree, one currency, five paths, and a run's power fully settled before the
+  first wave. Read it before touching progression, abilities or the tree.
+- **TRIANGLE.md remains authoritative for balance.** Its core rule supersedes the old "no
+  single tower carries" invariant: **towers supply rate, the army supplies exposure, the
+  hero supplies burst — no single pillar may clear a map alone, and any two together
+  must.**
 
 ## Stack
 
@@ -41,9 +48,9 @@ MIGRATION-3D.md Part A.1 is superseded in full.
 
 ```
 /src/engine     TowerEngine, EnemyEngine, ProjectileSystem, WaveRunner,
-                EconomySystem, GateSystem, PerkSystem, ArmySystem, XpSystem,
+                EconomySystem, GateSystem, SkillTree, ArmySystem, XpSystem,
                 SaveManager  (generic, tested)
-/src/data       towers.json, enemies.json, abilities.json, metatree.json, perks.json,
+/src/data       towers.json, enemies.json, abilities.json, skilltree.json,
                 maps/*.json, waves/*.json  (+ /src/data/schemas/*.ts — Zod)
 /src/render     scene, camera, lights, entity views, decals, fx (never game logic)
 /src/entities   thin classes binding configs to models
@@ -56,7 +63,8 @@ MIGRATION-3D.md Part A.1 is superseded in full.
 ASSETS.md       license ledger — one line per model/sound: source, license,
                 attribution. Update in the same commit that adds the asset.
 DESIGN.md       the spec
-TRIANGLE.md     the M5 three-pillar rebalance — authoritative while in progress
+SKILLTREE.md    the M6 career tree — authoritative while in progress
+TRIANGLE.md     the M5 three-pillar rebalance — authoritative for balance
 MIGRATION-3D.md the Phaser → Three.js render swap; authoritative while in progress
 BACKLOG.md      milestones and tasks with acceptance criteria
 ```
@@ -71,9 +79,10 @@ BACKLOG.md      milestones and tasks with acceptance criteria
 - Abilities are cast at/from the hero position — no global tap-anywhere targeting.
 - **The hero carries at most `equipSlots` abilities (3).** A cooldown bounds one ability; damage-per-minute is the sum over the loadout, so only the equip cap bounds the total. This is what makes the ability roster safe to grow.
 - **Soldiers hold the road in front of the tower line, not in front of the barracks.** Exposure is worth only what is shooting past it; a garrison whose rally point sits outside tower cover makes a board *worse*. Keep `rallyRange` short.
-- **Every draft offers one hero card and one tower-or-army card.** A structural guarantee, not a tuning target: it is what makes an accidental single-pillar build impossible however the weights fall.
-- **The meta tree grants eligibility, never stats.** Unlocks cannot double-dip with the draft; numbers can.
-- Gold buys commitment (towers, barracks); XP buys identity (perks, abilities). Two currencies, two jobs — never merge them.
+- **A run's power is settled before the first wave.** Nothing mid-run changes what you can do — no cards, no pop-ups, no pausing to choose. The tree is where decisions happen; the run is where they are tested.
+- **You can never finish the tree.** The reachable budget stays under 35% of its total cost, enforced at load. A tree you can complete is a checklist, and every build converges on the same one.
+- **Equip slots grow with the campaign, never with the tree.** Unlocking a fourth ability makes it a choice of three. The cap cannot be purchasable or it stops being a cap.
+- Gold buys commitment (towers, barracks) *inside* a run; career XP buys identity *between* runs. Two currencies, two jobs, no overlap — never merge them, and never add a third.
 - Fixed tower plots. No free placement.
 
 ## Performance budget

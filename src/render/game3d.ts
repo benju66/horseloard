@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 import { loadGameData } from '../data/loader';
 import { SaveManager } from '../data/saveManager';
-import { newSave, settleRun, type SaveData } from '../engine/progression';
+import { equipSlots, newSave, settleRun, type SaveData } from '../engine/progression';
 import { SkillTree } from '../engine/skillTree';
 import { Simulation } from '../engine/simulation';
 import { AbilityBar } from '../ui/dom/abilityBar';
 import { BubbleLayer, bubbleActions } from '../ui/dom/bubbles';
 import { DomJoystick } from '../ui/dom/joystick';
 import { RunOverlay } from '../ui/dom/runOverlay';
-import { MapSelectScreen, SkillTreeScreen, screensCss } from '../ui/dom/screens';
+import { LoadoutScreen, MapSelectScreen, SkillTreeScreen, screensCss } from '../ui/dom/screens';
 import { ModelViewFactory, UNIT_HEIGHT } from './entityViews';
 import { FxLayer } from './fx';
 import { InstancedEntities } from './instancedEntities';
@@ -216,12 +216,24 @@ const host = {
   },
 };
 
-const mapSelect = new MapSelectScreen(overlay, host, () => {
-  mapSelect.hide();
-  treeScreen.show();
-});
+const mapSelect = new MapSelectScreen(
+  overlay,
+  host,
+  () => {
+    mapSelect.hide();
+    treeScreen.show();
+  },
+  () => {
+    mapSelect.hide();
+    loadout.show();
+  },
+);
 const treeScreen = new SkillTreeScreen(overlay, host, () => {
   treeScreen.hide();
+  mapSelect.show();
+});
+const loadout = new LoadoutScreen(overlay, host, () => {
+  loadout.hide();
   mapSelect.show();
 });
 
@@ -290,7 +302,8 @@ function startMap(mapId: string, endless = false): void {
     towers: modded.towers,
     abilities: modded.abilities,
     unlockedAbilityIds: modded.unlockedAbilityIds,
-    equipSlots: data.equipSlots,
+    equipSlots: equipSlots(save, data.equipSlots, data.equipSlotGrants),
+    loadout: save.loadout,
     lockedTowerIds: data.towers.towers
       .filter((t) => !t.unlockedByDefault && !modded.unlockedTowerIds.includes(t.id))
       .map((t) => t.id),

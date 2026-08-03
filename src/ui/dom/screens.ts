@@ -1,8 +1,9 @@
 import type { GameData } from '../../data/loader';
-import type { SkillPath } from '../../data/schemas';
+import type { Ability, SkillPath } from '../../data/schemas';
 import { SkillTree, type AllocationRefusal } from '../../engine/skillTree';
 import {
   careerProgress,
+  equipSlots,
   threeStarredMaps,
   unlockedMapIds,
   type SaveData,
@@ -54,16 +55,23 @@ export class MapSelectScreen {
   private readonly root: HTMLDivElement;
   private readonly host: ScreenHost;
 
-  constructor(layer: HTMLElement, host: ScreenHost, openTree: () => void) {
+  constructor(
+    layer: HTMLElement,
+    host: ScreenHost,
+    openTree: () => void,
+    openLoadout: () => void,
+  ) {
     this.host = host;
     this.root = document.createElement('div');
     this.root.className = 'screen';
     this.root.style.display = 'none';
     layer.append(this.root);
     this.openTree = openTree;
+    this.openLoadout = openLoadout;
   }
 
   private readonly openTree: () => void;
+  private readonly openLoadout: () => void;
 
   show(): void {
     this.render();
@@ -151,12 +159,23 @@ export class MapSelectScreen {
     }
     this.root.append(list);
 
+    const actions = document.createElement('div');
+    actions.className = 'screen-actions';
+
     const meta = document.createElement('button');
     meta.className = 'screen-action' + (free > 0 ? '' : ' ghost');
     meta.setAttribute('data-ui', '');
     meta.textContent = free > 0 ? `Skill tree · ${free} ⬢` : 'Skill tree';
     meta.addEventListener('click', () => this.openTree());
-    this.root.append(meta);
+
+    const bar = document.createElement('button');
+    bar.className = 'screen-action ghost';
+    bar.setAttribute('data-ui', '');
+    bar.textContent = 'Loadout';
+    bar.addEventListener('click', () => this.openLoadout());
+
+    actions.append(meta, bar);
+    this.root.append(actions);
   }
 }
 
@@ -354,6 +373,138 @@ export class SkillTreeScreen {
   }
 }
 
+/**
+ * The loadout: which of the unlocked abilities the hero actually carries.
+ *
+ * The equip cap is the structural bound on hero damage-per-minute (TRIANGLE
+ * §B.3) — a cooldown bounds one ability, so the total is the sum over the bar.
+ * That makes this screen the one place the cap is *felt*: unlocking a fourth
+ * ability makes it a choice of three, never a fourth simultaneous one.
+ */
+export class LoadoutScreen {
+  private readonly root: HTMLDivElement;
+  private readonly host: ScreenHost;
+  private readonly onBack: () => void;
+  private readonly tree: SkillTree;
+
+  constructor(layer: HTMLElement, host: ScreenHost, onBack: () => void) {
+    this.host = host;
+    this.onBack = onBack;
+    this.tree = new SkillTree(host.data.skillTree);
+    this.root = document.createElement('div');
+    this.root.className = 'screen';
+    this.root.style.display = 'none';
+    layer.append(this.root);
+  }
+
+  show(): void {
+    this.render();
+    this.root.style.display = '';
+  }
+
+  hide(): void {
+    this.root.style.display = 'none';
+  }
+
+  /** Ability ids the build has unlocked, plus whatever starts unlocked. */
+  private available(): string[] {
+    const { data, save } = this.host;
+    const granted = new Set(
+      this.tree.applyTo(
+        {
+          hero: data.hero,
+          economy: data.economy,
+          towers: data.towers,
+          map: Object.values(data.maps)[0]!,
+          abilities: data.abilities,
+        },
+        save.build,
+      ).unlockedAbilityIds,
+    );
+    return data.abilities.filter((a) => a.unlockedByDefault || granted.has(a.id)).map((a) => a.id);
+  }
+
+  private render(): void {
+    const { data, save } = this.host;
+    const slots = equipSlots(save, data.equipSlots, data.equipSlotGrants);
+    const available = this.available();
+    // A loadout may hold ids a respec has since taken away; drop them here so
+    // the screen and the run agree about what is carried.
+    const carried = save.loadout.filter((id) => available.includes(id)).slice(0, slots);
+    const effective = carried.length > 0 ? carried : available.slice(0, slots);
+
+    this.root.replaceChildren();
+
+    const title = document.createElement('h1');
+    title.className = 'screen-title';
+    title.textContent = 'Loadout';
+    const sub = document.createElement('div');
+    sub.className = 'screen-sub';
+    sub.textContent = `${effective.length}/${slots} carried · ${available.length} unlocked`;
+    this.root.append(title, sub);
+
+    const list = document.createElement('div');
+    list.className = 'node-list';
+    for (const id of available) {
+      const ability = data.abilities.find((a) => a.id === id)!;
+      const on = effective.includes(id);
+      const full = effective.length >= slots;
+
+      const row = document.createElement('button');
+      row.className = 'node-row';
+      row.setAttribute('data-ui', '');
+      if (on) row.classList.add('carried');
+      // A full bar leaves every unequipped row live-looking but inert, which
+      // reads as a broken button. Grey them out and say why once, below.
+      row.disabled = !on && full;
+
+      const name = document.createElement('div');
+      name.className = 'node-name';
+      name.textContent = `${on ? '● ' : '○ '}${ability.name}`;
+      const desc = document.createElement('div');
+      desc.className = 'node-desc';
+      desc.textContent = ability.description;
+      const meta = document.createElement('div');
+      meta.className = 'node-cost';
+      meta.textContent = triggerText(ability.trigger, ability.cooldown);
+
+      row.append(name, desc, meta);
+      row.addEventListener('click', () => {
+        const next: SaveData = structuredClone(this.host.save);
+        next.loadout = on ? effective.filter((x) => x !== id) : [...effective, id];
+        this.host.onSaveChanged(next);
+        this.render();
+      });
+      list.append(row);
+    }
+    this.root.append(list);
+
+    if (effective.length >= slots) {
+      const note = document.createElement('div');
+      note.className = 'screen-sub';
+      note.textContent = 'Bar full — drop one to swap. More slots come from clearing maps.';
+      this.root.append(note);
+    }
+
+    const back = document.createElement('button');
+    back.className = 'screen-action';
+    back.setAttribute('data-ui', '');
+    back.textContent = 'Back';
+    back.addEventListener('click', () => this.onBack());
+    this.root.append(back);
+  }
+}
+
+/** How an ability fires, in one line. Abilities are automatic — no button. */
+function triggerText(trigger: Ability['trigger'], cooldown: number): string {
+  const every = `every ${cooldown}s at most`;
+  if (trigger.type === 'enemies-near') {
+    return `${trigger.count}+ enemies within ${trigger.radius} · ${every}`;
+  }
+  if (trigger.type === 'damage-dealt') return `after ${trigger.amount} damage dealt · ${every}`;
+  return `automatic · every ${cooldown}s`;
+}
+
 export function screensCss(): string {
   return `
 .screen {
@@ -389,6 +540,7 @@ export function screensCss(): string {
   background: rgba(46,120,120,.92); color: #f2ecdd; font: 700 15px ui-monospace, monospace;
 }
 .screen-action.ghost { background: transparent; border: 1px solid rgba(255,255,255,.25); }
+.screen-actions { display: flex; gap: 10px; align-items: stretch; }
 /* ─── Career tree: five columns, one path per screen, swipe sideways ─── */
 .tree-screen { padding: 0; gap: 0; align-items: stretch; }
 .tree-header {
@@ -425,6 +577,7 @@ export function screensCss(): string {
   display: flex; flex-direction: column; gap: 2px;
 }
 .tree-node.taken { background: #2f4a26; border-color: #f6c945; }
+.node-row.carried { background: #2f4a26; border-color: #f6c945; }
 .tree-node.locked, .tree-node[disabled] { background: #1c2419; border-color: #333d30; color: #8a8f85; }
 .tree-node-name { font: 700 15px Georgia, serif; }
 .tree-node-desc { font: 400 12px/1.35 sans-serif; opacity: .9; }

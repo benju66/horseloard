@@ -173,6 +173,15 @@ export const AbilitiesFileSchema = z
      * what makes "which three" a decision instead of "all of them".
      */
     equipSlots: z.number().int().positive().default(3),
+    /**
+     * Campaign milestones that each grant one more slot (SKILLTREE.md B).
+     *
+     * Slot growth is a *campaign* reward rather than a tree node on purpose: it
+     * cannot be rushed by grinding, and it cannot be double-dipped by a build.
+     * Each entry is a count of maps cleared; a career that has cleared that
+     * many carries one extra ability.
+     */
+    equipSlotGrants: z.array(z.number().int().positive()).default([]),
     abilities: z.array(AbilitySchema).min(1),
   })
   .superRefine((file, ctx) => {

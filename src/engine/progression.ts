@@ -78,6 +78,20 @@ export function careerProgress(
   return { level, into: careerXp - spent, needed: need };
 }
 
+/**
+ * Ability slots the campaign has earned: the base, plus one per milestone
+ * cleared (abilities.json `equipSlotGrants`).
+ *
+ * A campaign reward rather than a tree node, deliberately (SKILLTREE.md B): it
+ * cannot be rushed by grinding XP, and it cannot be double-dipped by a build.
+ * The equip cap is the structural bound on hero damage-per-minute, so the one
+ * thing it must not be is purchasable.
+ */
+export function equipSlots(save: SaveData, base: number, grants: readonly number[]): number {
+  const cleared = Object.values(save.campaign).filter((c) => c.completed).length;
+  return base + grants.filter((n) => cleared >= n).length;
+}
+
 /** Maps three-starred — the campaign half of the points budget. */
 export function threeStarredMaps(save: SaveData): number {
   return Object.values(save.campaign).filter((c) => c.stars === 3).length;

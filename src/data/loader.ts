@@ -46,6 +46,7 @@ export interface GameData {
   abilities: AbilitiesFile['abilities'];
   /** How many abilities the hero may carry at once — the burst-pillar cap (DESIGN §4). */
   equipSlots: number;
+  equipSlotGrants: readonly number[];
   hero: Hero;
   economy: Economy;
   archetypes: ArchetypesFile['archetypes'];
@@ -278,6 +279,7 @@ export function validateGameData(raw: RawGameData): GameData {
     enemies,
     abilities: abilitiesFile.abilities,
     equipSlots: abilitiesFile.equipSlots,
+    equipSlotGrants: abilitiesFile.equipSlotGrants,
     hero,
     economy,
     archetypes: archetypesFile.archetypes,

@@ -53,16 +53,31 @@ export class AbilitySystem {
     zones: ZoneSystem,
     army: ArmySystem,
     equipSlots = 3,
+    loadout: readonly string[] = [],
   ) {
     this.equipSlots = equipSlots;
+
+    // An explicit loadout is authoritative: exactly these, in this order, up to
+    // the cap. Without one, fall back to roster order over what is unlocked —
+    // which is what every engine test and the bot harness wants, and what a
+    // career that has never opened the loadout screen gets.
+    //
+    // The fallback is not a lesser path. A player who unlocks their third
+    // ability and never touches the screen must still be *carrying* it, or the
+    // node they bought did nothing.
+    const chosen = loadout.filter((id) => abilities.some((a) => a.id === id));
+    const order =
+      chosen.length > 0
+        ? chosen
+        : abilities
+            .filter((a) => a.unlockedByDefault || extraUnlockedIds.includes(a.id))
+            .map((a) => a.id);
+    const equipped = new Set(order.slice(0, equipSlots));
+
     for (const ability of abilities) {
-      // Defaults and meta-tree grants fill slots in roster order and stop at
-      // the cap, rather than the cap being enforced only on drafted unlocks —
-      // otherwise a player who bought four tree nodes would carry four.
-      const wants = ability.unlockedByDefault || extraUnlockedIds.includes(ability.id);
       this.slots.push({
         ability,
-        unlocked: wants && this.slots.filter((s) => s.unlocked).length < equipSlots,
+        unlocked: equipped.has(ability.id),
         cooldownRemaining: 0,
       });
     }
