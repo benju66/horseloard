@@ -675,6 +675,105 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
   });
 
   /**
+   * **Pool probe — the biome thesis, tested before a single map is authored.**
+   *
+   * BIOMES.md rests on one claim: *different enemy pools make different builds
+   * correct*. If that holds, twelve maps are worth authoring. If it does not,
+   * biomes would be palettes and the whole plan should be cut — which is a much
+   * cheaper thing to learn now than after eight hand-made boards.
+   *
+   * **Single variable.** Each pool runs the *same map* and the *same wave
+   * shapes* — counts, spacing, lanes and pacing are untouched. Only the species
+   * change, and counts are rebalanced so each entry carries the **same total
+   * HP** it did before. Without that normalisation, swapping 8hp swarms for
+   * 105hp halberdiers would make the Iron pool brutally harder and the probe
+   * would measure difficulty rather than *type* — the confound that has bitten
+   * this harness five times.
+   *
+   * Read the bottom table only. Per-pool win rates are not comparable to each
+   * other (HP-matched is not difficulty-matched); what matters is whether the
+   * *carrying path* differs between pools.
+   */
+  it('reports whether different enemy pools make different builds correct', { timeout: 600_000 }, () => {
+    const POOLS: ReadonlyArray<readonly [string, readonly string[]]> = [
+      ['green', ['grunt', 'swarm', 'runner', 'looter']],
+      ['iron', ['grunt', 'brute', 'shieldbearer', 'halberdier']],
+      ['steppe', ['grunt', 'wolf-rider', 'raven', 'outrider']],
+    ];
+    const SAMPLES = 12;
+    const mapId = 'crossroads';
+    const hpOf = new Map(data.enemies.enemies.map((e) => [e.id, e.hp]));
+    const paths = [...new Set(tree.nodes.map((n) => n.path))].sort();
+
+    /** Same waves, different species, same HP per entry. */
+    const reskin = (pool: readonly string[]) => {
+      const base = data.waveSets[mapId]!;
+      let i = 0;
+      return {
+        ...base,
+        waves: base.waves.map((w) => ({
+          ...w,
+          entries: w.entries.map((e) => {
+            const swap = pool[i++ % pool.length]!;
+            const oldHp = hpOf.get(e.enemyId) ?? 1;
+            const newHp = hpOf.get(swap) ?? 1;
+            return { ...e, enemyId: swap, count: Math.max(1, Math.round((e.count * oldHp) / newHp)) };
+          }),
+        })),
+      };
+    };
+
+    // The same sampled builds for every pool, so a difference between pools
+    // cannot be a difference between build samples.
+    const buildRng = makeRng(4242);
+    const builds = Array.from({ length: SAMPLES }, () =>
+      randomBuild(tree, at(REFERENCE_LEVEL, REFERENCE_STARS), buildRng),
+    );
+
+    const lines: string[] = [];
+    for (const [name, pool] of POOLS) {
+      const poolData = { ...botData, waveSets: { ...data.waveSets, [mapId]: reskin(pool) } };
+      const rows = builds
+        .map((build) => {
+          const runs = BOTS.flatMap((f) =>
+            SEEDS.map((seed) => runBot({ ...poolData, skillNodes: build }, mapId, f, seed)),
+          );
+          const share = pathShare(tree, build);
+          const total = tree.spent(build) || 1;
+          return {
+            win: (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100,
+            share: Object.fromEntries(paths.map((p) => [p, ((share[p] ?? 0) / total) * 100])),
+          };
+        })
+        .sort((a, b) => b.win - a.win);
+
+      const third = Math.max(1, Math.floor(rows.length / 3));
+      const avg = (set: typeof rows, p: string) =>
+        set.reduce((s, r) => s + r.share[p]!, 0) / set.length;
+      const deltas = paths.map((p) => avg(rows.slice(0, third), p) - avg(rows.slice(-third), p));
+      const best = paths[deltas.indexOf(Math.max(...deltas))]!;
+      const wins = rows.map((r) => r.win);
+
+      lines.push(
+        `  ${name.padEnd(7)} win ${Math.min(...wins).toFixed(0).padStart(2)}-` +
+          `${Math.max(...wins).toFixed(0).padStart(3)}%   ` +
+          paths.map((p, i) => `${p.slice(0, 2)} ${(deltas[i]! >= 0 ? '+' : '') + deltas[i]!.toFixed(0)}`.padEnd(8)).join('') +
+          `  carries: ${best}`,
+      );
+    }
+
+    console.log(
+      `\n[POOL PROBE — BIOMES.md thesis]  ${SAMPLES} shared builds, ${mapId} reskinned per pool,\n` +
+        '  same wave shapes, counts HP-normalised so only the species differ.\n' +
+        `  ${''.padEnd(20)}${paths.map((p) => p.slice(0, 2).padEnd(8)).join('')}  (pp heavier among winners)\n` +
+        lines.join('\n') +
+        '\n\n  THE TEST: does the carrying path differ between pools?\n' +
+        '  Same path all three → biomes would be palettes; cut the plan.\n' +
+        '  Different paths → the thesis holds and twelve maps are worth authoring.',
+    );
+  });
+
+  /**
    * **Budget probe — Part F.2.** Rule 1 of the design ("you can never finish the
    * tree") as a number rather than an intention.
    *

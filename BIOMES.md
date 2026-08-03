@@ -1,6 +1,8 @@
 # BIOMES.md — the campaign, restructured
 
-**Status: design, not yet built. Authoritative for M8 once approved.**
+**Status: DESIGN BLOCKED by its own thesis test (2026-08-03). Do not build Part H yet.**
+See **Part J** — the pool probe says the roster cannot support the biomes proposed here, and
+names what has to change first.
 Supersedes DESIGN.md's flat map list. TRIANGLE.md still governs balance; SKILLTREE.md still
 governs progression.
 
@@ -208,3 +210,56 @@ maps before the probe exists means authoring them blind.
    of repetition. Biomes improve the *shape* of the campaign; they do not by themselves solve
    the long game. Endless mode and the tree carry that, and whether that is enough is the
    question after this one.
+
+---
+
+## Part J — The thesis test, and what it found (2026-08-03)
+
+Run before authoring anything, exactly as Part G demanded. Twelve shared builds, one map,
+reskinned per pool with wave shapes untouched and counts HP-normalised so **only the species
+differ**.
+
+```
+                 cr      ho      hu      ri      st      wa     carries
+green  89-100%   +10     +8      -10     -3      -3      -3     crown
+iron   25-100%   +8      +0      +0      -5      -23     +20    wall
+steppe  8- 58%   +5      +0      -5      -5      -23     +28    wall
+```
+
+**The thesis does not hold as specified.** Iron and Steppe — the two pools with real spread and
+therefore the only two readable rows — return the same verdict and nearly the same signature:
+build towers, and Storm is a trap. Green looks different but sits at 89–100%, where everything
+wins and top-third-against-bottom-third is noise rather than signal.
+
+### J.1 Why, and it is not about the pools
+
+**The roster has no anti-tower pressure.** Armour, speed, `flying`, `blockImmune` — every trait
+in the eleven is answered by *more towers*. The pools differ in flavour but not in what beats
+them, so no arrangement of them can make a non-Wall build correct. Biomes built on this roster
+would be palettes, which is precisely the failure Part A.1 set out to prevent and Part G was
+written to catch.
+
+This is the same shape as the finding that killed "no single tower carries" in M5: two things
+that produce the same resource are substitutes forever. Here, every enemy asks the same question
+of the player, so every answer is the same answer.
+
+### J.2 What has to happen first
+
+Biomes are still the right destination. The prerequisite is **enemies that punish specific
+answers**, not just enemies with different numbers:
+
+- something that **damages towers**, so a static line degrades and has to be repaired or moved
+- something **immune to a damage shape** rather than to a blocker — splash-proof, or unhittable
+  while moving — so one tower type stops being universal
+- something that **outranges or bypasses** a tower line, making position rather than quantity
+  the answer
+- something that **punishes standing still**, which is the only pressure that makes the hero's
+  mobility a requirement rather than a convenience
+
+Two or three of those, and the pools become genuinely different questions. Then re-run this
+probe; if the carrying path differs, Part H proceeds unchanged.
+
+### J.3 What this cost, and what it saved
+
+An hour of work, before eight hand-authored maps rather than after. **The probe did its job by
+returning a negative** — which is the whole argument for building instruments before content.

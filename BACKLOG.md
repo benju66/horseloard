@@ -621,7 +621,7 @@ to judge structure. Revisit when the structure has stopped moving.
 screen, the loadout and the whole "decide before you ride" premise are phone-and-thumbs
 questions, and the bots cannot answer one of them.
 
-## M8 — Biomes  ← NEXT
+## M8 — Biomes  ← BLOCKED by its own thesis test, see BIOMES.md Part J
 Full plan in **BIOMES.md**. Three biomes of four levels replacing four standalone maps.
 
 **The decision in one line:** the tree has six paths and the campaign has four maps that all ask
@@ -640,9 +640,21 @@ pillar-by-biome. **Accept: no single path is in the top third of builds in all t
 Ride carries everywhere, the biomes are palettes. Authoring eight maps before that probe exists is
 authoring them blind — the lesson M7 taught twice.
 
-**Open and worth answering cheaply first:** whether biome natives earn their cost (test the mix
-before adding enemies), and whether `narrow-cuts` should be an engine rule at all when a
-plot-poor layout might ask the same question with no engine work.
+[x] **M8.0 — The pool probe: test the thesis before authoring** (2026-08-03) — **returned a
+negative, and that is the point.** Twelve shared builds on one map, reskinned per pool with wave
+shapes untouched and counts HP-normalised so only the species differ.
+**Iron and Steppe — the only two pools with enough spread to read — give the same verdict and
+nearly the same signature:** wall +20/+28, storm −23 both. Build towers. Green looks different
+but sits at 89-100%, where everything wins and top-versus-bottom is noise.
+**the roster has no anti-tower pressure.** Armour, speed, `flying`, `blockImmune` — every trait
+in the eleven is answered by *more towers*, so the pools differ in flavour but not in what beats
+them, and no arrangement of them can make a non-Wall build correct. Same shape as the finding
+that killed "no single tower carries": every enemy asks the same question, so every answer is
+the same answer.
+**prerequisite for M8:** enemies that punish specific *answers* — something that damages towers,
+something immune to a damage shape rather than to a blocker, something that outranges a line,
+something that punishes standing still. Two or three of those, then re-run this probe.
+**an hour of work, spent before eight hand-authored maps rather than after.**
 
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
