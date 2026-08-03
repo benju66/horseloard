@@ -108,6 +108,8 @@ export function makeEnemy(overrides: Partial<Enemy> & { id: string }): Enemy {
 export function makeMap(overrides?: {
   laneWaypoints?: Array<{ x: number; y: number }>;
   heroSpawn?: { x: number; y: number };
+  /** Extra buildable plots. `p1` is always present so existing fixtures hold. */
+  plots?: Array<{ id: string; position: { x: number; y: number } }>;
 }): ResolvedMapDef {
   return {
     id: 'straight',
@@ -126,7 +128,7 @@ export function makeMap(overrides?: {
         ],
       },
     ],
-    plots: [{ id: 'p1', position: { x: 10, y: 10 } }],
+    plots: overrides?.plots ?? [{ id: 'p1', position: { x: 10, y: 10 } }],
     gate: { position: { x: 0, y: 110 }, hp: 100, attackSlots: 5 },
     forge: { position: { x: 20, y: 20 } },
     // Render-layer blocks: take the schema's own defaults rather than

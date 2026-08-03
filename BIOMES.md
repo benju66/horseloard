@@ -562,3 +562,100 @@ through, and a future pass should probably require a minimum delta as well.
 
 The army leg is untouched by any of this — still +0pp on Green, **−25pp on Iron**, −1pp on
 Steppe. M.3 remains the top balance item, and it is older than this milestone.
+
+---
+
+## Part O — M8.4.2: the army leg, fixed
+
+M.3 named this the top open item: adding a barracks to a funded tower board was worth **−17pp**
+on Iron and nothing anywhere else, and had been worth nothing since before biomes existed. This
+is the fix, and the interesting part is how long the wrong diagnosis survived.
+
+### O.1 The probe that could answer it
+
+Every earlier probe could only report the verdict — *the barracks is not worth its plot* — and no
+probe could say why, because none measured the thing the pillar is *defined* as. The army does
+not kill; it sells **exposure**, seconds an enemy spends stationary while towers work on it. So
+the pillar's entire value is one number nobody had ever taken: held enemy-seconds under fire.
+
+The exposure probe takes it, plus two more that separate the candidate causes:
+
+| reading | diagnosis |
+|---|---|
+| `block s` near zero | the line dies too fast — fix hp, respawn, engage |
+| `block s` healthy, `under fire %` near zero | the line holds where nothing shoots — fix geometry |
+| both healthy | exposure works; the barracks is simply overpriced against a tower |
+
+Crossroads read **2142 block-seconds, 58 of them (3%) under fire**, with soldiers living 187
+seconds apiece. Not a fragility problem. A geometry problem, decisively.
+
+### O.2 Three wrong fixes, and what each one cost
+
+Worth recording, because each was plausible and each measured as *exactly nothing*:
+
+1. **Post on covered road instead of nearest road.** Implements the stated invariant, which the
+   code did not. Result: byte-identical numbers.
+2. **Triple `rallyRange` to 160.** If cover is out of budget, buy more budget. Result: 3% → 9%.
+3. **Prefer the road *deepest* inside cover, not merely covered** — since the first covered point
+   a search reaches sits on the boundary of a firing circle, and a 72–90 unit engage step walks
+   straight back out of it. Result: byte-identical again.
+
+Three implementations of the same idea, three identical outputs. That is not three failures; it
+is one signal, and it says the code path is not deciding anything.
+
+### O.3 What was actually wrong
+
+Counting road samples within `rallyRange` of every plot on every map:
+
+```
+  map              plots   no road @50   plot→road distances
+  meadow-road          6             4   [15, 28, 51, 57, 63, 72]
+  the-ford             7             7   [62, 62, 64, 64, 74, 74, 79]
+  crossroads           8             6   [28, 31, 50, 63, 65, 70, 70, 74]
+  warlords-march       8             6   [32, 32, 55, 67, 67, 76, 76, 90]
+```
+
+`rallyRange` was **50**. **Twenty-three of twenty-nine plots in the campaign had no road within
+it** — and on the-ford, *not one plot did*. Those garrisons never posted on the lane at all; they
+fanned out around their own plot and held nothing. Where blocking appeared to happen, it was the
+72–90 unit engage radius reaching out from an off-road huddle to grab passers-by — which is
+exactly why the fighting kept happening outside tower cover.
+
+No amount of choosing *better* road helps when there is no road to choose. All three fixes were
+selecting from an empty candidate set.
+
+### O.4 The fix, and what it bought
+
+`rallyRange` 50 → 100, comfortably past the 90-unit worst case. With the depth preference from
+O.2.3 now selecting from a real candidate set:
+
+```
+                   under fire      kills      army over towers alone
+  crossroads        3% → 67%     147 → 262      -83pp → +58pp win
+  the-ford          –  → 77%           282       (both arms at ceiling)
+  warlords-march   49% → 14%*           56              +2pp progress
+```
+
+**Army helps on 2 of 4 maps, up from 0 of 4** — and the two it does not help are both pinned at
+100% by either arm, so there is nothing there to add. The triangle-by-biome gate now reads
+**0 pillars sufficient alone** and exposure paying **+58pp win / +31pp progress** on Iron.
+
+The difficulty curve is unchanged and still on target: **100 / 94 / 50 / 39**.
+
+\* Warlords' *share* fell while its absolute covered seconds barely moved; its garrisons now post
+on road that its sparse tower coverage does not reach. A map-layout question for M8.5, not a
+systems one.
+
+### O.5 The invariant was backwards
+
+CLAUDE.md carried the right rule with the wrong mitigation attached: *"a garrison whose rally
+point sits outside tower cover makes a board worse. Keep `rallyRange` short."*
+
+Short rally range does not keep soldiers near the tower line — it keeps them near **their own
+plot**, and plots are not on the road. The rule is now enforced where it belongs, in the sim, by
+posting on the deepest-covered road available; and `rallyRange` has to be *long* enough to reach
+the lane, not short. Updated in CLAUDE.md.
+
+The lesson is the one this project keeps relearning in new clothes: **the guidance was never
+measured against the maps it governed.** Six plot-to-road distances would have falsified it at
+any point in the last four milestones.

@@ -887,6 +887,29 @@ export interface BotRunResult {
   heroLevel: number;
   /** tower ids standing at the end — reported as data, to spot dead weight */
   towers: string[];
+  /**
+   * Enemy-seconds spent held by soldiers, and how many of those happened where
+   * a damage-dealing tower could actually shoot.
+   *
+   * The army is defined as *exposure*: it does not kill, it holds enemies still
+   * so towers get more seconds on them. That makes the pillar's whole value one
+   * number — held seconds under fire — and until now nothing measured it. The
+   * win-rate probes could only say the barracks was not worth its plot; they
+   * could not say whether it failed because soldiers die too fast (`blockSeconds`
+   * near zero) or because they hold enemies where nothing is shooting
+   * (`blockSeconds` healthy, `coveredBlockSeconds` near zero). Those have
+   * opposite fixes.
+   *
+   * "Under fire" means inside the reach of a plot with a `damage` stat, so an
+   * economy tower's radius never counts as cover.
+   */
+  blockSeconds: number;
+  coveredBlockSeconds: number;
+  /** Mean seconds a soldier survived — the other half of the hold-long-enough read. */
+  soldierLifetime: number;
+  /** Soldier-seconds stood, and how many of those were stood under a gun. */
+  postSeconds: number;
+  coveredPostSeconds: number;
 }
 
 /** The LCG the balance harness uses — same seed, same run, forever. */
@@ -1019,6 +1042,32 @@ export function runBot(
   let leaks = 0;
   sim.enemySystem.onReachEnd.push(() => leaks++);
 
+  let blockSeconds = 0;
+  let coveredBlockSeconds = 0;
+  let soldierSeconds = 0;
+  let soldierDeaths = 0;
+  let postSeconds = 0;
+  let coveredPostSeconds = 0;
+  let lastStanding = 0;
+  /**
+   * Is anything that deals damage able to reach this point?
+   *
+   * Deliberately generous: any armed plot's reach counts, and no line-of-sight
+   * or targeting-priority check is made. A generous test that still reports a
+   * low number is a much stronger result than a strict one that does.
+   */
+  const gunsCovering = (s: Simulation, x: number, y: number): boolean => {
+    for (const plot of s.towerSystem.plots) {
+      if (plot.towerId === null) continue;
+      const st = s.towerSystem.stats(plot);
+      if (!st?.damage) continue;
+      const dx = plot.x - x;
+      const dy = plot.y - y;
+      if (dx * dx + dy * dy <= st.range * st.range) return true;
+    }
+    return false;
+  };
+
   // The bot values plots off the *modified* tower table, so a biome that
   // shortens sightlines changes which plots it thinks are worth taking. Handing
   // it `data.towers` would have it shop at unmodified ranges and then build into
@@ -1035,6 +1084,26 @@ export function runBot(
     while (sim.phase === 'wave' && guard-- > 0) {
       bot.steer(sim);
       sim.tick();
+      // Sampled after the tick, once per frame. Cheap enough not to distort the
+      // headless run and exact enough for a ratio — which is all this is read as.
+      for (const e of sim.enemySystem.enemies) {
+        if (e.state !== 'blocked') continue;
+        blockSeconds += SIM_DT;
+        if (gunsCovering(sim, e.x, e.y)) coveredBlockSeconds += SIM_DT;
+      }
+      for (const s of sim.army.soldiers) {
+        if (s.hp <= 0) continue;
+        soldierSeconds += SIM_DT;
+        // The post, not the soldier. Measured directly because inferring it
+        // from where blocked enemies stand conflates two different failures:
+        // a line posted out of cover, and a line posted in cover that enemies
+        // reach from somewhere else.
+        postSeconds += SIM_DT;
+        if (gunsCovering(sim, s.postX, s.postY)) coveredPostSeconds += SIM_DT;
+      }
+      const standing = sim.army.soldiers.filter((s) => s.hp > 0).length;
+      if (standing < lastStanding) soldierDeaths += lastStanding - standing;
+      lastStanding = standing;
     }
 
     if (sim.phase === 'defeat') {
@@ -1075,5 +1144,10 @@ export function runBot(
     towers: sim.towerSystem.plots
       .filter((p) => p.towerId !== null)
       .map((p) => `${p.towerId}${p.branchId ? ':' + p.branchId : '@L' + p.level}`),
+    blockSeconds,
+    coveredBlockSeconds,
+    soldierLifetime: soldierDeaths > 0 ? soldierSeconds / soldierDeaths : 0,
+    postSeconds,
+    coveredPostSeconds,
   };
 }

@@ -80,6 +80,8 @@ export class ArmySystem {
   private readonly byId = new Map<number, Soldier>();
   /** plotId → its soldiers, so a sell or a downgrade can retire exactly those. */
   private readonly byPlot = new Map<string, Soldier[]>();
+  /** Last board fingerprint the lines were posted against. See `reconcile`. */
+  private lastCover = '';
   /** Dispersed mid-tick; swept once the loop is done. See `tick`. */
   private readonly pendingRemoval: Soldier[] = [];
   private readonly scratch: MutableVec2 = { x: 0, y: 0 };
@@ -366,6 +368,21 @@ export class ArmySystem {
    * that fights for a tower that is no longer there.
    */
   private reconcile(): void {
+    // Where the guns are is an *input* to where a garrison stands, so a board
+    // that gains or loses a tower has to re-post its lines. Otherwise the order
+    // of purchase decides the outcome: a barracks bought before its towers
+    // would post into open ground and stay there for the whole run, which is
+    // the exact failure `postsFor` was fixed to prevent.
+    //
+    // Signature-compared rather than recomputed, because `underFire` walks
+    // every lane sample against every armed plot and this runs at 60Hz. The
+    // signature is O(plots) and changes only on build, sell, upgrade or branch.
+    const cover = this.coverSignature();
+    if (cover !== this.lastCover) {
+      this.lastCover = cover;
+      this.repost();
+    }
+
     for (const plot of this.towers.plots) {
       const garrison = this.towers.stats(plot)?.garrison ?? null;
       const existing = this.byPlot.get(plot.plotId);
@@ -386,6 +403,46 @@ export class ArmySystem {
         this.retire(plot.plotId);
         this.raise(plot, garrison);
       }
+    }
+  }
+
+  /**
+   * A cheap fingerprint of the armed board: which plots can shoot, and how far.
+   *
+   * Only what `underFire` reads, so two boards with the same signature always
+   * cover the same ground. Range is included because an upgrade that extends
+   * reach can pull new road into cover without changing any plot's identity.
+   */
+  private coverSignature(): string {
+    let sig = '';
+    for (const plot of this.towers.plots) {
+      if (plot.towerId === null) continue;
+      const st = this.towers.stats(plot);
+      if (!st?.damage) continue;
+      sig += `${plot.plotId}:${st.range}|`;
+    }
+    return sig;
+  }
+
+  /**
+   * Move standing squads to their posts for the board as it is now.
+   *
+   * Posts move; soldiers do not die and are not replaced. Retiring and raising
+   * would refill the line to full health every time a tower was built, which
+   * turns a build into a heal.
+   */
+  private repost(): void {
+    for (const plot of this.towers.plots) {
+      const squad = this.byPlot.get(plot.plotId);
+      const garrison = this.towers.stats(plot)?.garrison;
+      if (!squad || !garrison) continue;
+      const posts = this.postsFor(plot, garrison);
+      squad.forEach((s, i) => {
+        const post = posts[i];
+        if (!post) return;
+        s.postX = post.x;
+        s.postY = post.y;
+      });
     }
   }
 
@@ -431,30 +488,104 @@ export class ArmySystem {
   }
 
   /**
-   * Where a squad stands: on the nearest lane if one is within `rallyRange`,
-   * spread along it so they form a line across the road rather than a stack.
+   * Where a squad stands: on the road within `rallyRange`, **preferring road
+   * that something can shoot**, spread across it so they form a line rather
+   * than a stack.
    *
-   * A plot with no lane in range keeps its soldiers at home. They will block
-   * nothing, which is the honest outcome — the alternative is teleporting a
-   * garrison across the map to find work, and a plot's position is supposed to
-   * be the decision.
+   * The preference is the whole pillar. Soldiers barely damage anything; what
+   * they sell is *exposure* — seconds an enemy spends standing still while
+   * towers work on it. Holding the road where no tower reaches buys zero of
+   * that, and costs a plot, so it makes a board strictly worse than not
+   * building at all.
+   *
+   * This is a stated invariant ("soldiers hold the road in front of the tower
+   * line, not in front of the barracks") that the code did not implement: it
+   * posted at the *nearest* lane point and relied on a short `rallyRange` to
+   * keep that honest. Short is not the same as covered. Measured on crossroads,
+   * a garrisoned board held enemies for 2142 enemy-seconds and **58 of them —
+   * 3% — happened where a gun could reach**. The rest was the pillar doing its
+   * job into empty air.
+   *
+   * The fallback is still the nearest lane point. A plot with nothing covering
+   * any road near it posts anyway and holds where it can: that is a bad plot
+   * rather than a broken one, and where the plot goes stays the player's
+   * decision.
    */
   private postsFor(
     plot: PlotState,
     garrison: NonNullable<TowerStats['garrison']>,
   ): Array<{ x: number; y: number }> {
-    return this.postsAround(plot.x, plot.y, garrison.squad, garrison.spacing, garrison.rallyRange);
+    return this.postsAround(
+      plot.x,
+      plot.y,
+      garrison.squad,
+      garrison.spacing,
+      garrison.rallyRange,
+      true,
+    );
   }
 
-  /** Shared by garrisons and the Muster — both post a line on the nearest road. */
+  /**
+   * Can any armed tower reach this point?
+   *
+   * Generous on purpose — reach only, no line of sight and no targeting
+   * priority — because this picks a post rather than predicting a kill. An
+   * economy tower's radius is not cover: `damage` is the test, so a mill never
+   * makes a stretch of road look defended.
+   *
+   * Content-agnostic (CLAUDE.md #1): it asks the tower system for stats and
+   * reads two numbers. It has never heard of a bombard.
+   */
+  private underFire(x: number, y: number): boolean {
+    return this.coverDepth(x, y) > 0;
+  }
+
+  /**
+   * **How deeply** a point sits inside tower cover — 0 outside, 1 directly
+   * under a gun, summed so overlapping fields of fire score higher.
+   *
+   * Depth rather than a yes/no, because a soldier does not stay on its post: it
+   * steps up to `engageRadius` to grab a passer-by, and `engageRadius` is 72–90
+   * against tower ranges of 105–125. A post chosen merely for being *covered*
+   * lands on the boundary of the nearest firing circle — the first covered
+   * point the search reaches — and every engagement from there walks straight
+   * back out of it.
+   *
+   * That is not a hypothesis. With posts 100% covered by the boolean test, the
+   * share of held enemy-seconds under fire was still 4%: the line was standing
+   * in cover and fighting outside it.
+   */
+  private coverDepth(x: number, y: number): number {
+    let depth = 0;
+    for (const plot of this.towers.plots) {
+      if (plot.towerId === null) continue;
+      const st = this.towers.stats(plot);
+      if (!st?.damage) continue;
+      const dx = plot.x - x;
+      const dy = plot.y - y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < st.range) depth += 1 - d / st.range;
+    }
+    return depth;
+  }
+
+  /**
+   * Shared by garrisons and the Muster — both post a line on the road.
+   *
+   * `preferCovered` is off for the Muster: it is cast at the hero, mid-fight,
+   * and shoving that line away from where the player asked for it would make an
+   * ability that reads as "hold *here*" do something else. A garrison is placed
+   * once and stands for the run, so it can afford to be picky.
+   */
   private postsAround(
     x: number,
     y: number,
     squad: number,
     spacing: number,
     rallyRange: number,
+    preferCovered = false,
   ): Array<{ x: number; y: number }> {
-    const found = this.nearestLanePoint(x, y, rallyRange);
+    const found = this.nearestLanePoint(x, y, rallyRange, preferCovered);
     const out: Array<{ x: number; y: number }> = [];
     const mid = (squad - 1) / 2;
     for (let i = 0; i < squad; i++) {
@@ -472,25 +603,51 @@ export class ArmySystem {
     return out;
   }
 
+  /**
+   * The closest point of road within `maxDistance`.
+   *
+   * With `preferCovered`, covered road beats uncovered road outright, however
+   * much further away it is *within the rally range* — the range is the budget,
+   * and inside it a post that feeds the towers beats a nearer one that does not.
+   * Among covered candidates the nearest still wins, so a garrison never walks
+   * past good road to reach more of it.
+   */
   private nearestLanePoint(
     x: number,
     y: number,
     maxDistance: number,
+    preferCovered = false,
   ): { lane: LanePath; distance: number; x: number; y: number } | null {
-    let best: { lane: LanePath; distance: number; x: number; y: number } | null = null;
+    type Point = { lane: LanePath; distance: number; x: number; y: number };
+    let best: Point | null = null;
     let bestSq = maxDistance * maxDistance;
+    let deepest: Point | null = null;
+    let deepestDepth = 0;
+    let deepestSq = Infinity;
+    const limitSq = maxDistance * maxDistance;
     for (const lane of this.lanes.values()) {
       for (let d = 0; d <= lane.totalLength; d += LANE_SAMPLE_STEP) {
         lane.positionAt(d, this.scratch);
         const dx = this.scratch.x - x;
         const dy = this.scratch.y - y;
         const dSq = dx * dx + dy * dy;
-        if (dSq >= bestSq) continue;
-        bestSq = dSq;
-        best = { lane, distance: d, x: this.scratch.x, y: this.scratch.y };
+        if (dSq >= limitSq) continue;
+        if (dSq < bestSq) {
+          bestSq = dSq;
+          best = { lane, distance: d, x: this.scratch.x, y: this.scratch.y };
+        }
+        if (!preferCovered) continue;
+        const depth = this.coverDepth(this.scratch.x, this.scratch.y);
+        // Deepest wins; among equally deep road the nearest does, so a garrison
+        // never walks past ground as good as the ground it is heading for.
+        if (depth > deepestDepth || (depth === deepestDepth && depth > 0 && dSq < deepestSq)) {
+          deepestDepth = depth;
+          deepestSq = dSq;
+          deepest = { lane, distance: d, x: this.scratch.x, y: this.scratch.y };
+        }
       }
     }
-    return best;
+    return deepest ?? best;
   }
 
   private garrisonFor(plotId: string): NonNullable<TowerStats['garrison']> | null {

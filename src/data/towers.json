@@ -352,7 +352,7 @@
             "damage": 3,
             "attackInterval": 1.1,
             "respawn": 5.0,
-            "rallyRange": 50,
+            "rallyRange": 100,
             "engageRadius": 72,
             "spacing": 26
           }
@@ -368,7 +368,7 @@
             "damage": 4,
             "attackInterval": 1.1,
             "respawn": 4.5,
-            "rallyRange": 50,
+            "rallyRange": 100,
             "engageRadius": 76,
             "spacing": 26
           }
@@ -384,7 +384,7 @@
             "damage": 5,
             "attackInterval": 1.1,
             "respawn": 4.0,
-            "rallyRange": 50,
+            "rallyRange": 100,
             "engageRadius": 80,
             "spacing": 26
           }
@@ -406,7 +406,7 @@
               "damage": 5,
               "attackInterval": 1.1,
               "respawn": 4.0,
-              "rallyRange": 50,
+              "rallyRange": 100,
               "engageRadius": 80,
               "spacing": 26
             }
@@ -427,7 +427,7 @@
               "damage": 4,
               "attackInterval": 1.1,
               "respawn": 2.5,
-              "rallyRange": 50,
+              "rallyRange": 100,
               "engageRadius": 90,
               "spacing": 24
             }

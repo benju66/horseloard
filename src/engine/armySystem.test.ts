@@ -290,3 +290,115 @@ describe('reconciling with the plots', () => {
     expect(Math.hypot(s.postX - 10, s.postY - 10)).toBeLessThan(30);
   });
 });
+
+/**
+ * **Where a garrison stands.** The pillar sells exposure — seconds an enemy
+ * spends stationary while towers work on it — so a line holding road that
+ * nothing can shoot sells nothing at all, and still costs a plot.
+ *
+ * The invariant is stated in CLAUDE.md ("soldiers hold the road in front of the
+ * tower line, not in front of the barracks") and was not implemented: posts
+ * went to the *nearest* lane point, with a short `rallyRange` relied on to keep
+ * that honest. Short is not covered. On crossroads a garrisoned board held
+ * enemies for 2142 enemy-seconds and 58 of them — 3% — happened under a gun.
+ *
+ * Content-agnostic: the towers here are called "bolt-tower" and "test-barracks"
+ * and nothing below would change if they were called anything else.
+ */
+describe('garrisons post where the towers can shoot', () => {
+  /**
+   * Barracks at (10,10), gun at (10,100) with reach 60, lane running up x=20.
+   *
+   * The nearest road to the barracks is (20,10) and is not covered; the gun
+   * reaches the lane from roughly y=41 to y=159. Both are inside `rallyRange`,
+   * so the choice between them is the only thing under test.
+   */
+  const coverFixture = (): SimData => ({
+    ...fixture(),
+    map: makeMap({
+      heroSpawn: { x: 90, y: 190 },
+      laneWaypoints: [
+        { x: 20, y: 0 },
+        { x: 20, y: 190 },
+      ],
+      plots: [
+        { id: 'p1', position: { x: 10, y: 10 } },
+        { id: 'p2', position: { x: 10, y: 100 } },
+      ],
+    }),
+  });
+
+  const post = (sim: Simulation) => {
+    const s = sim.army.soldiers[0]!;
+    return { x: s.postX, y: s.postY };
+  };
+  /** Distance from the gun plot, which stands at (10,100) with reach 60. */
+  const fromGun = (p: { x: number; y: number }) => Math.hypot(p.x - 10, p.y - 100);
+
+  it('walks past the nearest road to stand where a tower reaches', () => {
+    const sim = new Simulation(coverFixture(), TEST_RNG);
+    sim.buildTower('p2', 'bolt-tower');
+    sim.buildTower('p1', 'test-barracks');
+    sim.tick();
+    expect(fromGun(post(sim))).toBeLessThanOrEqual(60);
+  });
+
+  it('falls back to the nearest road when nothing covers anything', () => {
+    // A bad plot, not a broken one. Where the plot goes stays the decision.
+    const sim = new Simulation(coverFixture(), TEST_RNG);
+    sim.buildTower('p1', 'test-barracks');
+    sim.tick();
+    // Lane sampling is stepped, so assert the *end* of the lane it chose rather
+    // than an exact coordinate: the barracks end, not the gun's stretch.
+    expect(post(sim).y).toBeLessThan(20);
+  });
+
+  it('re-posts a standing squad when a tower is built afterwards', () => {
+    // Otherwise the *order of purchase* decides the run: a barracks bought
+    // before its towers posts into open ground and stays there for good.
+    const sim = new Simulation(coverFixture(), TEST_RNG);
+    sim.buildTower('p1', 'test-barracks');
+    sim.tick();
+    expect(fromGun(post(sim))).toBeGreaterThan(60);
+
+    sim.buildTower('p2', 'bolt-tower');
+    sim.tick();
+    expect(fromGun(post(sim))).toBeLessThanOrEqual(60);
+  });
+
+  it('re-posts when a sale removes the cover it was standing under', () => {
+    const sim = new Simulation(coverFixture(), TEST_RNG);
+    sim.buildTower('p2', 'bolt-tower');
+    sim.buildTower('p1', 'test-barracks');
+    sim.tick();
+    sim.sellTower('p2');
+    sim.tick();
+    expect(post(sim).y).toBeLessThan(20);
+  });
+
+  it('moves the post without healing the soldier', () => {
+    // Retiring and raising the squad would be the simpler implementation and
+    // would turn every tower purchase into a free heal.
+    const sim = new Simulation(coverFixture(), TEST_RNG);
+    sim.buildTower('p1', 'test-barracks');
+    sim.tick();
+    const s = sim.army.soldiers[0]!;
+    s.hp = 7;
+
+    sim.buildTower('p2', 'bolt-tower');
+    sim.tick();
+    expect(sim.army.soldiers[0]!.id).toBe(s.id);
+    expect(sim.army.soldiers[0]!.hp).toBe(7);
+  });
+
+  it('does not treat a tower that deals no damage as cover', () => {
+    // A garrison is not cover for another garrison, and neither is a mill. Only
+    // something that shoots makes a stretch of road worth holding.
+    const sim = new Simulation(coverFixture(), TEST_RNG);
+    sim.buildTower('p2', 'test-barracks');
+    sim.buildTower('p1', 'test-barracks');
+    sim.tick();
+    const p1Squad = sim.army.soldiers.filter((s) => s.plotId === 'p1');
+    expect(p1Squad[0]!.postY).toBeLessThan(20);
+  });
+});

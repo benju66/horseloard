@@ -778,6 +778,71 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
   });
 
   /**
+   * **Exposure probe — why the army leg fails, not that it does.**
+   *
+   * Every probe before this one could only report the *verdict*: a barracks is
+   * not worth the plot it costs, everywhere, and was not worth it before biomes
+   * either. None of them could say why, and the two candidate causes want
+   * opposite fixes:
+   *
+   * - **Soldiers do not hold long enough.** Then `block s` is near zero and the
+   *   fix is squad hp, respawn, or engage radius.
+   * - **Soldiers hold in the wrong place.** Then `block s` is healthy but
+   *   `under fire` is a small fraction of it, and the fix is geometry — rally
+   *   range, plot choice, or where garrison plots sit on a map. CLAUDE.md
+   *   already names this failure; nothing had ever measured it.
+   *
+   * The army is *defined* as exposure — it barely damages, it buys towers more
+   * seconds on a stationary target. So held-seconds-under-fire is not a proxy
+   * for the pillar's value, it **is** the pillar's value, and a pillar whose
+   * defining quantity has never been measured is a pillar taken on faith.
+   *
+   * The coverage test is deliberately generous: any armed plot in range counts,
+   * with no line of sight and no targeting check. A generous test that still
+   * returns a low number is a far stronger result than a strict one that does.
+   */
+  it('reports what a garrison actually buys — held seconds under fire', { timeout: 600_000 }, () => {
+    const funded = withoutAbilities({
+      ...botData,
+      hero: withoutHeroDamage(data.hero),
+      economy: { ...data.economy, startingGold: 260 },
+    });
+    const lines: string[] = [];
+    for (const mapId of Object.keys(data.maps)) {
+      const arms: Array<[string, BotRunResult[]]> = [
+        ['towers only', SEEDS.map((s) => runBot(funded, mapId, combatTowersOnly, s))],
+        ['towers+army', SEEDS.map((s) => runBot(funded, mapId, towersAndArmy, s))],
+        ['army only', SEEDS.map((s) => runBot(funded, mapId, armyOnly, s))],
+      ];
+      const row = [`  ${mapId}`];
+      for (const [label, runs] of arms) {
+        const mean = (f: (r: BotRunResult) => number) => runs.reduce((s, r) => s + f(r), 0) / runs.length;
+        const held = mean((r) => r.blockSeconds);
+        const covered = mean((r) => r.coveredBlockSeconds);
+        // The ratio is the diagnosis. Held seconds say whether the line holds;
+        // the share under fire says whether holding was worth anything.
+        const share = held > 0 ? (covered / held) * 100 : 0;
+        row.push(
+          `      ${label.padEnd(12)} block ${held.toFixed(0).padStart(5)}s  ` +
+            `under fire ${covered.toFixed(0).padStart(5)}s (${share.toFixed(0).padStart(3)}%)  ` +
+            `posts covered ${(mean((r) => r.postSeconds) > 0 ? (mean((r) => r.coveredPostSeconds) / mean((r) => r.postSeconds)) * 100 : 0).toFixed(0).padStart(3)}%  ` +
+            `soldier life ${mean((r) => r.soldierLifetime).toFixed(1).padStart(5)}s  ` +
+            `kills ${String(Math.round(mean((r) => r.kills))).padStart(3)}`,
+        );
+      }
+      lines.push(row.join('\n'));
+    }
+    console.log(
+      '\n[EXPOSURE PROBE — what the army leg actually buys]  funded arms, all seeds\n' +
+        lines.join('\n') +
+        '\n\n  block s near zero      → the line dies too fast; fix hp/respawn/engage.\n' +
+        '  under fire % near zero → the line holds where nothing shoots; fix geometry.\n' +
+        '  both healthy           → exposure works and the barracks is simply overpriced\n' +
+        '                           against a combat tower on the same plot.',
+    );
+  });
+
+  /**
    * **M8.4a — biome diversity, on the real thing.**
    *
    * The pool probe above is a laboratory: one map, reskinned, HP-normalised, no
