@@ -68,14 +68,22 @@ export class HeroSystem {
    */
   private readonly buffs = new Map<HeroBuffStat, { multiplier: number; remaining: number }>();
 
-  /** Charge ability: gallop burst, boosted trample, stagger immunity (the escape tool). */
-  private chargeRemaining = 0;
-  private charge: {
-    speedMultiplier: number;
-    damage: number;
-    slowMultiplier: number;
-    slowDuration: number;
-  } | null = null;
+  /**
+   * Seconds of stagger immunity left after being shoved.
+   *
+   * This is the job Charge used to do. DESIGN §4 made Charge "the escape tool
+   * that pairs with stagger" — but abilities fire themselves now, so nothing
+   * the player presses can escape anything, and Charge itself was cut on
+   * repeated play feedback. Without a replacement, walking into two heavies
+   * meant being shoved, recovering, and being shoved again with no counterplay
+   * at all.
+   *
+   * A passive window is the honest version of what Charge was pretending to be:
+   * the per-enemy cooldown already stopped *one* enemy chain-shoving you, and
+   * this extends that to the crowd. Being staggered still costs you the
+   * control loss; it just cannot cost you the next one immediately.
+   */
+  private staggerImmunity = 0;
 
   readonly onStagger: Array<(by: EnemyInstance) => void> = [];
   readonly onTrample: Array<(target: EnemyInstance) => void> = [];
@@ -107,20 +115,9 @@ export class HeroSystem {
     return this.controlLossRemaining > 0;
   }
 
-  get charging(): boolean {
-    return this.chargeRemaining > 0;
-  }
-
-  activateCharge(effect: {
-    duration: number;
-    speedMultiplier: number;
-    damage: number;
-    slowMultiplier: number;
-    slowDuration: number;
-  }): void {
-    this.chargeRemaining = effect.duration;
-    this.charge = effect;
-    this.controlLossRemaining = 0; // charging breaks an active shove — it's the escape tool
+  /** True while the hero cannot be shoved again — the window after a stagger. */
+  get staggerImmune(): boolean {
+    return this.staggerImmunity > 0;
   }
 
   get bowStats() {
@@ -172,9 +169,9 @@ export class HeroSystem {
       buff.remaining -= dt;
       if (buff.remaining <= 0) this.buffs.delete(stat);
     }
-    if (this.chargeRemaining > 0) {
-      this.chargeRemaining -= dt;
-      if (this.chargeRemaining < 1e-9) this.chargeRemaining = 0;
+    if (this.staggerImmunity > 0) {
+      this.staggerImmunity -= dt;
+      if (this.staggerImmunity < 1e-9) this.staggerImmunity = 0;
     }
     this.move(dt);
     this.resolveContacts();
@@ -191,24 +188,13 @@ export class HeroSystem {
     } else {
       let mx = this.input.x;
       let my = this.input.y;
-      let m = Math.hypot(mx, my);
-      if (this.charging && m <= INPUT_DEADZONE) {
-        // Burst continues along the true heading with a loose stick. This used
-        // to use `dir`, which is a left/right mirror flag — so charging after
-        // steering upward launched you sideways.
-        mx = this.headingX;
-        my = this.headingY;
-        m = 1;
-      }
+      const m = Math.hypot(mx, my);
       if (m > INPUT_DEADZONE) {
         if (m > 1) {
           mx /= m;
           my /= m;
         }
-        const speed =
-          this.config.moveSpeed *
-          this.buffFactor('moveSpeed') *
-          (this.charging ? this.charge!.speedMultiplier : 1);
+        const speed = this.config.moveSpeed * this.buffFactor('moveSpeed');
         this.x += mx * speed * dt;
         this.y += my * speed * dt;
         this.headingX = mx;
@@ -232,10 +218,12 @@ export class HeroSystem {
       const dy = this.y - e.y;
       if (dx * dx + dy * dy > reach * reach) continue;
 
-      // No chain-staggers; a charging hero is immune — Charge is the escape tool (DESIGN §4).
+      // No chain-staggers, from this enemy or from the crowd behind it. The
+      // per-enemy cooldown handles the first; `staggerImmunity` handles the
+      // second, and is what replaced Charge as the escape (see the field).
       if (
         !this.staggered &&
-        !this.charging &&
+        !this.staggerImmune &&
         e.config.staggersHero &&
         (this.staggerReadyAt.get(e.id) ?? 0) <= this.time
       ) {
@@ -245,16 +233,13 @@ export class HeroSystem {
         this.shoveVx = (dx / dist) * shoveSpeed;
         this.shoveVy = (dy / dist) * shoveSpeed;
         this.controlLossRemaining = this.config.stagger.controlLossDuration;
+        this.staggerImmunity =
+          this.config.stagger.controlLossDuration + this.config.stagger.immunityAfter;
         for (const fn of this.onStagger) fn(e);
       } else if (this.moving && (this.trampleReadyAt.get(e.id) ?? 0) <= this.time) {
         this.trampleReadyAt.set(e.id, this.time + this.config.trample.perEnemyCooldown);
         for (const fn of this.onTrample) fn(e);
-        if (this.charging && this.charge) {
-          this.enemies.applySlow(e.id, this.charge.slowMultiplier, this.charge.slowDuration);
-          this.enemies.applyDamage(e.id, this.charge.damage, this.x, this.y);
-        } else {
-          this.enemies.applyDamage(e.id, this.config.trample.damage, this.x, this.y);
-        }
+        this.enemies.applyDamage(e.id, this.config.trample.damage, this.x, this.y);
       }
     }
   }

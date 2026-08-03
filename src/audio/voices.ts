@@ -119,10 +119,6 @@ export const VOICES: Record<string, Voice> = {
   },
 
   // ─── Hero and abilities ───
-  'sfx-charge': (c, o, t, p) => {
-    hiss(c, o, t, { freq: 300 * p, sweepTo: 1500 * p, decay: 0.32, peak: 0.22, q: 0.6 });
-    tone(c, o, t, { type: 'sawtooth', from: 90 * p, to: 240 * p, decay: 0.3, peak: 0.12 });
-  },
   'sfx-volley': (c, o, t, p) => {
     hiss(c, o, t, { freq: 1500 * p, sweepTo: 3800 * p, decay: 0.5, peak: 0.16, q: 0.5 });
   },
@@ -133,6 +129,19 @@ export const VOICES: Record<string, Voice> = {
     }
   },
 
+  'sfx-whirl': (c, o, t, p) => {
+    // Steel spinning up: a rising airy sweep, no impact. It marks the moment
+    // the ring appears, which matters more now that nothing was pressed to
+    // make it happen.
+    hiss(c, o, t, { type: 'bandpass', freq: 700 * p, sweepTo: 2600 * p, decay: 0.45, peak: 0.14, q: 1.4 });
+    tone(c, o, t, { type: 'triangle', from: 320 * p, to: 780 * p, decay: 0.4, peak: 0.07 });
+  },
+  'sfx-storm': (c, o, t, p) => {
+    // Wide and slow — the only sound in the game with a long tail, because it
+    // is the only ability that announces the fight was hard.
+    hiss(c, o, t, { freq: 400 * p, sweepTo: 1500 * p, decay: 1.2, peak: 0.16, q: 0.4 });
+    tone(c, o, t, { type: 'sine', from: 70 * p, to: 40 * p, decay: 1.0, peak: 0.13 });
+  },
   'sfx-muster': (c, o, t, p) => {
     // The gates opening: a low swell under the horn, then the tramp of boots.
     // Deliberately the biggest sound the hero has — it is the once-a-map moment.

@@ -10,6 +10,7 @@ import {
   combatTowersOnly,
   towersAndArmy,
   towersOnly,
+  withoutAbilities,
   withoutHeroDamage,
   type BotRunResult,
 } from './bots';
@@ -272,7 +273,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     const lines: string[] = [];
     let failures = 0;
 
-    const heroDisabled = { ...botData, hero: withoutHeroDamage(data.hero) };
+    const heroDisabled = withoutAbilities({ ...botData, hero: withoutHeroDamage(data.hero) });
 
     for (const mapId of Object.keys(data.maps)) {
       const target = DIFFICULTY_TARGETS[mapId];
@@ -337,11 +338,11 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * and the barracks is a worse tower rather than a third pillar.
    */
   it('reports whether exposure actually multiplies rate', { timeout: 120_000 }, () => {
-    const funded = {
+    const funded = withoutAbilities({
       ...botData,
       hero: withoutHeroDamage(data.hero),
       economy: { ...data.economy, startingGold: 260 },
-    };
+    });
     const lines: string[] = [];
     let complements = 0;
     for (const mapId of Object.keys(data.maps)) {

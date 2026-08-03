@@ -52,12 +52,13 @@ describe('seed data', () => {
     expect(data.towers.towers.map((t) => t.id)).toEqual(['archer', 'bombard', 'frost-spire', 'mill', 'barracks']);
     expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute', 'shieldbearer', 'swarm', 'wolf-rider', 'raven', 'looter', 'outrider', 'halberdier', 'warlord']);
     expect(data.abilities.map((a) => a.id)).toEqual([
-      'charge',
       'volley',
+      'whirling-blades',
       'rally-horn',
       'rapid-fire',
       'heavy-shaft',
       'caltrops',
+      'aero-storm',
       'muster',
     ]);
     expect(Object.keys(data.maps).sort()).toEqual(['crossroads', 'meadow-road', 'the-ford', 'warlords-march']);
@@ -67,10 +68,13 @@ describe('seed data', () => {
     expect(data.metaTree.length).toBeGreaterThanOrEqual(9);
   });
 
-  it('only charge is unlocked by default', () => {
+  it('exactly one ability is unlocked by default', () => {
     const data = validateGameData(seed());
     const unlocked = data.abilities.filter((a) => a.unlockedByDefault).map((a) => a.id);
-    expect(unlocked).toEqual(['charge']);
+    // Charge used to hold this slot as the "identity verb". It was cut on
+    // repeated play feedback; Volley is the opener now because it is the one
+    // ability that reads instantly when it fires itself.
+    expect(unlocked).toEqual(['volley']);
   });
 
   it('wave hpMultiplier defaults to 1 when omitted', () => {

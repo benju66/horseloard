@@ -212,6 +212,12 @@ export class Simulation {
       };
     }
 
+    // Hero damage feeds `damage-dealt` triggers. Hero-sourced only: an ability
+    // that fires "after a hard-fought stretch" has to mean the player's fight,
+    // not the towers ticking over while they ride somewhere else.
+    this.projectileSystem.onHeroDamage.push((amount) => this.abilities.noteHeroDamage(amount));
+    this.hero.onTrample.push(() => this.abilities.noteHeroDamage(data.hero.trample.damage));
+
     // Kills drop coins where the enemy died — the loot line is the gameplay.
     // Elites pay double (enemies.json elite.coinMultiplier).
     this.enemySystem.onDeath.push((e) => {
@@ -274,7 +280,9 @@ export class Simulation {
     this.army.tick(SIM_DT);
     this.hero.tick(SIM_DT);
     this.abilities.tick(SIM_DT);
-    this.zones.tick(SIM_DT); // hazards persist across phases, like besiegers
+    // Hazards persist across phases, like besiegers. The hero position is the
+    // anchor orbiting zones circle; static ones ignore it.
+    this.zones.tick(SIM_DT, this.hero.x, this.hero.y);
     this.projectileSystem.tick(SIM_DT);
     this.economy.tick(SIM_DT, this.hero.x, this.hero.y, this.phase === 'wave');
 

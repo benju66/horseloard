@@ -8,20 +8,29 @@ function advanceSeconds(sim: Simulation, seconds: number): void {
   for (let i = 0; i < n; i++) sim.tick();
 }
 
+/**
+ * Triggers are deliberately impossible here. Abilities fire themselves in the
+ * game, so a fixture on a `cooldown` trigger would cast before the test got to,
+ * and every assertion about `castAbility` returning true would race the sim.
+ * These tests are about what an effect *does*; `auto-casting` below covers when
+ * it happens.
+ */
 const ABILITIES: Ability[] = [
   {
-    id: 'charge',
-    name: 'Charge',
+    id: 'whirling-blades',
+    name: 'Whirling Blades',
     description: 'x',
     cooldown: 12,
-    unlockedByDefault: true,
+    unlockedByDefault: false,
+    trigger: { type: 'enemies-near', count: 99, radius: 1 },
     effect: {
-      type: 'charge',
-      duration: 1,
-      speedMultiplier: 2.2,
-      damage: 15,
-      slowMultiplier: 0.5,
-      slowDuration: 1.5,
+      type: 'orbit',
+      blades: 2,
+      radius: 30,
+      bladeRadius: 12,
+      revolutionsPerSecond: 1,
+      damagePerSecond: 20,
+      duration: 3,
     },
     iconRef: 'x',
   },
@@ -31,6 +40,7 @@ const ABILITIES: Ability[] = [
     description: 'x',
     cooldown: 18,
     unlockedByDefault: false,
+    trigger: { type: 'enemies-near', count: 99, radius: 1 },
     effect: { type: 'aoe-damage', damage: 35, radius: 90 },
     iconRef: 'x',
   },
@@ -40,6 +50,7 @@ const ABILITIES: Ability[] = [
     description: 'x',
     cooldown: 16,
     unlockedByDefault: false,
+    trigger: { type: 'enemies-near', count: 99, radius: 1 },
     effect: { type: 'hero-buff', stat: 'bowFireRate', multiplier: 3, duration: 2 },
     iconRef: 'x',
   },
@@ -49,6 +60,7 @@ const ABILITIES: Ability[] = [
     description: 'x',
     cooldown: 13,
     unlockedByDefault: false,
+    trigger: { type: 'enemies-near', count: 99, radius: 1 },
     effect: { type: 'pierce-shot', damage: 60, range: 200, halfWidth: 15 },
     iconRef: 'x',
   },
@@ -58,6 +70,7 @@ const ABILITIES: Ability[] = [
     description: 'x',
     cooldown: 18,
     unlockedByDefault: false,
+    trigger: { type: 'enemies-near', count: 99, radius: 1 },
     effect: { type: 'ground-zone', radius: 60, duration: 2.2, damagePerSecond: 20, slowMultiplier: 0.5 },
     iconRef: 'x',
   },
@@ -67,6 +80,7 @@ const ABILITIES: Ability[] = [
     description: 'x',
     cooldown: 30,
     unlockedByDefault: false,
+    trigger: { type: 'enemies-near', count: 99, radius: 1 },
     effect: { type: 'tower-rate-buff', rateMultiplier: 2, duration: 3 },
     iconRef: 'x',
   },
@@ -500,13 +514,12 @@ describe('abilities', () => {
    */
   it('carries only as many abilities as there are equip slots', () => {
     const sim = new Simulation(
-      { ...m1Fixture({ unlocked: ['volley', 'rapid-fire', 'heavy-shaft'] }), equipSlots: 2 },
+      { ...m1Fixture({ unlocked: ['volley', 'whirling-blades', 'rapid-fire', 'heavy-shaft'] }), equipSlots: 2 },
       TEST_RNG,
     );
-    // Charge is unlockedByDefault and comes first in the roster; volley fills
-    // the second slot; the rest are turned away.
+    // Slots fill in roster order and stop at the cap; the rest are turned away.
     expect(sim.abilities.slots.filter((s) => s.unlocked).map((s) => s.ability.id)).toEqual([
-      'charge',
+      'whirling-blades',
       'volley',
     ]);
     expect(sim.abilities.hasFreeSlot).toBe(false);
@@ -515,8 +528,11 @@ describe('abilities', () => {
   });
 
   it('an unlock lands in a free slot and is ready at once', () => {
-    const sim = new Simulation({ ...m1Fixture(), equipSlots: 2 }, TEST_RNG);
-    expect(sim.abilities.equippedCount).toBe(1); // charge only
+    const sim = new Simulation(
+      { ...m1Fixture({ unlocked: ['volley'] }), equipSlots: 2 },
+      TEST_RNG,
+    );
+    expect(sim.abilities.equippedCount).toBe(1);
 
     expect(sim.abilities.unlock('caltrops')).toBe(true);
     expect(sim.abilities.getSlot('caltrops')!.cooldownRemaining).toBe(0);
@@ -541,22 +557,32 @@ describe('abilities', () => {
     expect(e.hp).toBeLessThan(100);
   });
 
-  it('charge boosts speed, tramples hard with slow, and shrugs off staggers', () => {
-    const heavy = makeEnemy({ id: 'heavy', speed: 0.001, hp: 1000, staggersHero: true });
-    const sim = new Simulation(m1Fixture({ enemies: [heavy] }), TEST_RNG);
-    const e = sim.enemySystem.spawn('heavy', 'main', 1); // (20,20)
-    sim.hero.x = 35;
-    sim.hero.y = 35;
-    sim.hero.input.x = -0.5;
-    sim.hero.input.y = -0.5;
-    expect(sim.castAbility('charge')).toBe(true);
-    advanceSeconds(sim, 0.5);
-    expect(sim.hero.staggered).toBe(false); // heavy contact can't shove a charging hero
-    // exactly one charge trample (15) plus whatever the bow chipped in (5/shot)
-    const chipped = 1000 - e.hp;
-    expect(chipped).toBeGreaterThanOrEqual(15);
-    expect(chipped).toBeLessThanOrEqual(15 + 10);
-    expect(e.slowRemaining).toBeGreaterThan(0); // the charge slow, from the trample
+  /**
+   * The orbit is what replaced Charge — the one weapon that defends the space
+   * *around* the hero rather than a direction from it. Blades circle, so what
+   * matters is that they stay attached to a moving hero and still cut.
+   */
+  it('blades circle the hero, follow them, and expire', () => {
+    const sim = new Simulation(m1Fixture({ unlocked: ['whirling-blades'] }), TEST_RNG);
+    sim.hero.x = 60;
+    sim.hero.y = 60;
+
+    expect(sim.castAbility('whirling-blades')).toBe(true);
+    expect(sim.zones.zones).toHaveLength(2); // fixture: 2 blades
+
+    const distances = sim.zones.zones.map((z) => Math.hypot(z.x - 60, z.y - 60));
+    for (const d of distances) expect(d).toBeCloseTo(30, 0); // fixture radius
+
+    // Ride away: the ring comes with you, or it is just a ground zone.
+    sim.hero.x = 40;
+    sim.hero.y = 100;
+    sim.tick();
+    for (const z of sim.zones.zones) {
+      expect(Math.hypot(z.x - 40, z.y - 100)).toBeCloseTo(30, 0);
+    }
+
+    advanceSeconds(sim, 3.2); // fixture duration 3
+    expect(sim.zones.zones).toHaveLength(0);
   });
 });
 

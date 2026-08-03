@@ -53,6 +53,17 @@ export const HeroSchema = z.object({
       controlLossDuration: z.number().positive().describe('seconds of lost control (~0.4)'),
       shoveDistance: z.number().positive().describe('world units of knockback over the control loss'),
       perEnemyCooldown: z.number().positive().describe('seconds before the same enemy can stagger the hero again'),
+      /**
+       * Grace period after a shove ends, during which nothing can shove again.
+       *
+       * Inherited the job Charge used to do. Charge was "the escape tool that
+       * pairs with stagger" (DESIGN §4) and was cut on repeated play feedback;
+       * with abilities firing themselves there is no button left to escape
+       * with, so the counterplay has to be passive. Without it, riding into two
+       * heavies is a shove, a recovery, and another shove, with nothing the
+       * player can do about any of it.
+       */
+      immunityAfter: z.number().nonnegative().default(0.9).describe('seconds of grace after a shove'),
     })
     .describe('received from staggersHero enemies on contact; the hero cannot die'),
 });
