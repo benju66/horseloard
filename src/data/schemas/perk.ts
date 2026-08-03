@@ -67,14 +67,13 @@ export const PerksFileSchema = z
     /** How many cards a draft offers. Fewer than this only when the pool runs dry. */
     offerSize: z.number().int().min(2).max(5).default(3),
     /**
-     * Deal a draft every N wave clears. **This is the difficulty dial for the
-     * whole feature**, and it is a single number on purpose.
+     * RETIRED at MG5.5 (TRIANGLE.md §B.4) — kept only so existing files still
+     * validate. **Nothing reads it.** Drafts come from hero levels now, so the
+     * cadence dial is `economy.xp`, not this.
      *
-     * Measured with `npm run bots` at the default of 1: drafting moved
-     * crossroads from 60% to 93% win rate against a 45-75% target, and
-     * the-ford 73% → 87%. Raising this is the cheapest correction; the
-     * alternative is re-tuning enemy scaling now that players compound power
-     * within a run, which is the larger and more deliberate pass.
+     * A card per wave clear rewarded *surviving* and fired about twelve times a
+     * run. A card per level rewards *fighting* and fires 25-35 times, which is
+     * the cadence the whole progression loop was missing.
      */
     everyNWaves: z.number().int().min(1).max(5).default(1),
     perks: z.array(PerkSchema).min(1),

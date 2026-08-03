@@ -8,6 +8,17 @@ export const EnemySchema = z.object({
   speed: z.number().positive().describe('world units per second along the lane'),
   radius: z.number().positive().describe('body radius, world units (contact + render)'),
   coinValue: z.number().int().nonnegative().describe('coins dropped on death'),
+  /**
+   * XP granted on death. Optional — omitted falls back to `economy.xp
+   * .perKillDefault`, so the whole roster works before a single value is
+   * authored and a new enemy is never silently worth zero.
+   *
+   * Deliberately a separate number from `coinValue`. Gold buys commitment
+   * (towers, the barracks); XP buys identity (perks, abilities). Tying them
+   * together would collapse two currencies with different jobs into one
+   * (TRIANGLE.md §B.4).
+   */
+  xpValue: z.number().nonnegative().optional(),
   siegeDps: z
     .number()
     .positive()

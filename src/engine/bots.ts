@@ -841,6 +841,8 @@ export interface BotRunResult {
   leaks: number;
   goldLeft: number;
   bowLevel: number;
+  /** hero level reached — the draft cadence, and the ~25-35 target of TRIANGLE §B.4 */
+  heroLevel: number;
   /** tower ids standing at the end — reported as data, to spot dead weight */
   towers: string[];
   /** perks drafted this run as "id xN" — the measurement the draft exists for */
@@ -970,6 +972,7 @@ export function runBot(
     leaks,
     goldLeft: sim.gold,
     bowLevel: sim.hero.bowLevel,
+    heroLevel: sim.xp.level,
     towers: sim.towerSystem.plots
       .filter((p) => p.towerId !== null)
       .map((p) => `${p.towerId}${p.branchId ? ':' + p.branchId : '@L' + p.level}`),

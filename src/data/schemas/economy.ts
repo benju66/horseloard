@@ -36,6 +36,26 @@ export const EconomySchema = z.object({
     endlessMilestoneEvery: z.number().int().positive(),
     perEndlessMilestone: z.number().int().positive(),
   }),
+  /**
+   * The XP curve that replaces `everyNWaves` as the draft's cadence
+   * (TRIANGLE.md §B.4). Kills grant XP, XP grants levels, **every level deals a
+   * draft** — so riding out to fight *is* progression, which is DESIGN §1's
+   * first pillar finally wired to the reward loop instead of sitting beside it.
+   *
+   * Target is ~25–35 levels on a full map, not ~12. Vampire Survivors fires
+   * this loop every 20–40 seconds and that cadence is the whole dopamine spine;
+   * one card per wave was never going to feel like a build coming together.
+   *
+   * `base × growth^(n-1)` for the nth level. Geometric rather than a table so
+   * the curve keeps working on a 14-wave map and in endless, where a table
+   * would simply run out.
+   */
+  xp: z.object({
+    base: z.number().positive().describe('XP for level 2'),
+    growth: z.number().gte(1).describe('multiplier per level; 1 = flat'),
+    perKillDefault: z.number().nonnegative().describe('XP for an enemy with no xpValue'),
+    eliteMultiplier: z.number().gte(1),
+  }),
   stars: z.object({
     twoStarMaxDamageFraction: z
       .number()

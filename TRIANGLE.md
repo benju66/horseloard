@@ -430,11 +430,32 @@ measurement comes first.
   warlords-march 22% → 3% and the-ford 75% → 61%. Putting enemies into waves *is*
   re-pricing wave budgets, which is MG5.8's job, not MG5.4's.
 
-### M5.5 — XP and levels
-- [ ] `XpSystem`; enemies gain `xpValue`; curve in `economy.json`.
-- [ ] Levels deal drafts; `everyNWaves` removed.
-- [ ] HUD: XP bar and level.
-- **Accept:** 25–35 levels on a full map-1 run; drafts never block the sim.
+### M5.5 — XP and levels — ✅ DONE 2026-08-03
+- [x] `XpSystem`; `xpValue` on every enemy (optional, with a roster default so a new
+      enemy is never silently worth zero); geometric curve in `economy.json`.
+- [x] Levels deal drafts. `everyNWaves` is retired — the field survives only so old
+      files validate, and nothing reads it.
+- [x] `PerkSystem.queue()`: cards owed beyond the one in hand are **banked**, not
+      dropped and not swapped under the player's thumb. Levelling twice mid-charge is
+      routine now; either alternative reads as the game eating a reward.
+- [x] HUD: XP bar, level, and the queued-card count.
+- **Result.** Levels on a full clear, 12 seeds × all bots:
+
+  | map | full clears | levels |
+  |---|---|---|
+  | meadow-road | 33/36 | 29.6 |
+  | the-ford | 26/36 | 28.4 |
+  | crossroads | 16/36 | 31.9 |
+  | warlords-march | 9/36 | 34.8 |
+
+  All four inside the 25–35 band. The curve is `base 6 × 1.075^(n-1)` — front-loaded
+  (level 2 costs ~3 kills) with a slow tail. Both halves were measured: `base 7.5 ×
+  1.06` gave the right level counts but cost the-ford 75% → 64% and warlords 22% → 14%,
+  because power arrived too late to matter; `base 6 × 1.05` fixed the difficulty and
+  overshot to 36–44 levels. Steepening the tail instead of the head kept both.
+
+- **Reference curve after the change:** 92 / 72 / 44 / 25 against bands of 90–100 /
+  70–95 / 45–75 / 25–55. Three in band, crossroads 1pp under.
 
 ### M5.6 — Perk families and the offer rule
 - [ ] `family` on `PerkSchema`; one-factor validation at load.

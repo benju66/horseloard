@@ -29,6 +29,16 @@ export class PerkSystem {
 
   /** perk id → stacks taken this run. */
   private readonly taken = new Map<string, number>();
+  /**
+   * Cards owed but not yet on the table.
+   *
+   * Levels arrive faster than a player can answer them once XP drives the draft
+   * (TRIANGLE.md §B.4) — a big elite kill can grant two at once, and a level
+   * mid-charge goes unanswered for a while. Without a queue the second card
+   * would either replace the first under the player's thumb or vanish. Both
+   * read as the game eating a reward.
+   */
+  private queued = 0;
 
   /**
    * The cards currently on the table, or null when there is no pending draft.
@@ -60,6 +70,26 @@ export class PerkSystem {
   /** Stacks taken of a given perk. */
   stacksOf(perkId: string): number {
     return this.taken.get(perkId) ?? 0;
+  }
+
+  /** Cards owed beyond the one currently on the table — the HUD shows this. */
+  get queuedDrafts(): number {
+    return this.queued;
+  }
+
+  /**
+   * Owe the player a card. Deals immediately when the table is clear, otherwise
+   * banks it for whenever the current offer is answered.
+   */
+  queue(): void {
+    this.queued++;
+    if (!this.offer) this.dealFromQueue();
+  }
+
+  private dealFromQueue(): void {
+    if (this.queued <= 0) return;
+    if (this.deal()) this.queued--;
+    else this.queued = 0; // pool is dry; owing cards nobody can be dealt is a leak
   }
 
   /** Everything taken this run, for the HUD and the run summary. */
@@ -161,11 +191,13 @@ export class PerkSystem {
     this.taken.set(perkId, stacks + 1);
     this.offer = null;
     for (const fn of this.onTaken) fn(perk, stacks + 1);
+    this.dealFromQueue();
     return true;
   }
 
   /** Decline the draft. The card is spent; the run moves on. */
   skip(): void {
     this.offer = null;
+    this.dealFromQueue();
   }
 }

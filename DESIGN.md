@@ -362,6 +362,12 @@ Engine note: "reached end" is an entity state change (walker → besieger, new p
 
 **Free respec, always.** No monetization means no reason to punish experimentation; respec friction is dark-pattern residue.
 
+**XP and levels** (MG5.5, TRIANGLE.md §B.4). Kills grant XP; every level deals a draft. That replaces the old "a card per wave clear" cadence, and the replacement is the design, not the plumbing: a card per wave rewarded *surviving*, a card per level rewards *fighting*, and fighting means riding out to where the enemies are. Pillar 1 — greed pulls you toward danger — had been sitting beside the reward loop since M0 rather than driving it. Target and measured result are both **25-35 levels on a full map**, against ~12 before.
+
+Gold and XP stay separate currencies with separate jobs: **gold buys commitment** (towers, the barracks), **XP buys identity** (perks, abilities). `xpValue` tracks how much of a fight a thing is, not what it drops.
+
+The curve is `base × growth^(n-1)`, geometric rather than a table so it keeps working in endless. **Where it is steep matters more than how many levels it yields** — three curves all produced ~30 levels and only one preserved the difficulty bands, because a level that arrives after the fight it was needed for buys nothing.
+
 **Loss payout:** tokens are earned per wave cleared even on defeat. This is the rubber band that makes a hard endgame compatible with a broad audience — a failed run is progress, never wasted time.
 
 **Wave-clear sweep:** any coins still on the ground when a wave ends auto-fly to the hero. No tedious sweeping between waves, and it's a free feel-good beat on every clear. (Coin expiry and Looters therefore only threaten coins *during* combat, which is when the pressure is interesting.)

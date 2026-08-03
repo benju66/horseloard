@@ -19,6 +19,12 @@
     "hpPerPurchase": 20,
     "costPerHp": 0.5
   },
+  "xp": {
+    "base": 6,
+    "growth": 1.075,
+    "perKillDefault": 2,
+    "eliteMultiplier": 3
+  },
   "stars": {
     "twoStarMaxDamageFraction": 0.3
   },

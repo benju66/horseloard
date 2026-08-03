@@ -160,6 +160,34 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     );
   });
 
+  /**
+   * The draft's cadence (TRIANGLE.md §B.4). Target is **25–35 levels on a full
+   * map** — Vampire Survivors fires this loop every 20–40 seconds, and that
+   * cadence is the dopamine spine the old one-card-per-wave-clear never had.
+   *
+   * Read levels against *waves cleared*, not against the target alone: a run
+   * that dies on wave 4 should of course be short of 25, and averaging it in
+   * with full clears would make a healthy curve look starved.
+   */
+  it('reports how many levels a run actually produces', () => {
+    const lines: string[] = [];
+    for (const mapId of Object.keys(data.maps)) {
+      const runs = BOTS.flatMap((f) => SEEDS.map((s) => runBot(botData, mapId, f, s)));
+      const wins = runs.filter((r) => r.outcome === 'win');
+      const avg = (rs: BotRunResult[]) =>
+        rs.length ? rs.reduce((s, r) => s + r.heroLevel, 0) / rs.length : 0;
+      const onFull = avg(wins);
+      const off = wins.length === 0 ? '' : onFull < 25 ? '   ← under 25' : onFull > 35 ? '   ← over 35' : '';
+      lines.push(
+        `  ${mapId.padEnd(16)} full clears ${String(wins.length).padStart(2)}/${runs.length}  ` +
+          `levels ${onFull ? onFull.toFixed(1) : ' – '} (all runs ${avg(runs).toFixed(1)})${off}`,
+      );
+    }
+    console.log(
+      '\n[draft cadence — TRIANGLE.md §B.4, want 25-35 levels on a full clear]\n' + lines.join('\n'),
+    );
+  });
+
   it('reports tower preference across every free-choice run', () => {
     const used = new Map<string, number>();
     for (const r of all) {

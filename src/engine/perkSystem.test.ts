@@ -452,6 +452,62 @@ describe('ability cards', () => {
   });
 });
 
+/**
+ * Levels arrive faster than a player answers them once XP drives the draft
+ * (TRIANGLE.md §B.4). Everything here guards against the queue silently eating
+ * a card, which reads as the game withholding a reward.
+ */
+describe('queued drafts', () => {
+  it('deals immediately when the table is clear', () => {
+    const sys = new PerkSystem(pool(), data(), seededRng(71));
+    sys.queue();
+    expect(sys.offer).not.toBeNull();
+    expect(sys.queuedDrafts).toBe(0);
+  });
+
+  it('banks a level that lands while a card is already in hand', () => {
+    const sys = new PerkSystem(pool(), data(), seededRng(72));
+    sys.queue();
+    const first = sys.offer!;
+    sys.queue(); // levelled again mid-charge
+    // The card in hand must not be swapped under the player's thumb.
+    expect(sys.offer).toBe(first);
+    expect(sys.queuedDrafts).toBe(1);
+  });
+
+  it('deals the banked card the moment the current one is answered', () => {
+    const sys = new PerkSystem(pool(), data(), seededRng(73));
+    sys.queue();
+    sys.queue();
+    sys.take(sys.offer![0]!.id);
+    expect(sys.offer).not.toBeNull();
+    expect(sys.queuedDrafts).toBe(0);
+  });
+
+  it('deals the banked card after a skip too — declining is not forfeiting', () => {
+    const sys = new PerkSystem(pool(), data(), seededRng(74));
+    sys.queue();
+    sys.queue();
+    sys.skip();
+    expect(sys.offer).not.toBeNull();
+  });
+
+  it('drops the backlog when the pool runs dry rather than owing forever', () => {
+    const sys = new PerkSystem(pool(), data(), seededRng(75));
+    for (const id of ['a', 'a', 'b', 'b', 'b', 'c', 'd']) {
+      let guard = 0;
+      do {
+        sys.deal();
+      } while (!sys.offer?.some((p) => p.id === id) && guard++ < 400);
+      sys.take(id);
+    }
+    sys.queue();
+    sys.queue();
+    expect(sys.offer).toBeNull();
+    expect(sys.queuedDrafts).toBe(0);
+  });
+});
+
 describe('bookkeeping', () => {
   it('reports what was taken, for the HUD and the run summary', () => {
     const sys = new PerkSystem(pool(), data(), seededRng(11));
