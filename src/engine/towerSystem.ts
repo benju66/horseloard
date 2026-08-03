@@ -140,7 +140,28 @@ export class TowerSystem {
   }
 
   sellRefund(plot: PlotState, fraction: number): number {
-    return Math.floor(plot.invested * fraction);
+    // Rule `full-salvage`: everything back, so a tower is a position you can
+    // change your mind about rather than a commitment you eat.
+    return Math.floor(plot.invested * (this.fullSalvage ? 1 : fraction));
+  }
+
+  /** Rule `first-tower-free`: builds this phase that cost nothing. */
+  private freeBuildsUsed = 0;
+  freeBuildsPerPhase = 0;
+  fullSalvage = false;
+
+  /** Called on every wave clear; the allowance is per build phase, not per run. */
+  resetFreeBuilds(): void {
+    this.freeBuildsUsed = 0;
+  }
+
+  /** True when the next build would be free — the Simulation checks before charging. */
+  get nextBuildIsFree(): boolean {
+    return this.freeBuildsUsed < this.freeBuildsPerPhase;
+  }
+
+  noteFreeBuild(): void {
+    this.freeBuildsUsed++;
   }
 
   /** Mutations assume the gold check already passed (Simulation owns spending). */

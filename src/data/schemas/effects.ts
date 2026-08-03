@@ -68,6 +68,42 @@ export const AbilityStatKeySchema = z.enum([
 ]);
 export type AbilityStatKey = z.infer<typeof AbilityStatKeySchema>;
 
+/**
+ * **Rules.** Effects that change what the game *does*, not what a number is.
+ *
+ * Everything above multiplies something. That was the whole vocabulary until
+ * M7.6, and it is why two whole paths measured as dead: no quantity of "+18%
+ * soldier hp" can ever be exciting, and ranking a boring node three times only
+ * buys three times the boredom. A tree is deep when its nodes are *rules* —
+ * things you have to build around rather than things you add up.
+ *
+ * These are engine vocabulary, not content, exactly like the effect types
+ * themselves: `pierce-on-kill` names a mechanic. The substrate rule is intact —
+ * no rule here knows what an archer or a grunt is.
+ *
+ * Each is deliberately cheap: every one is reachable through machinery the
+ * engine already had, which is why eight of them cost less than one new system.
+ */
+export const RuleKeySchema = z.enum([
+  /** A hero arrow that kills carries on to the next enemy behind it. */
+  'pierce-on-kill',
+  /** Every hero shot at a slowed or held enemy lands as a critical. */
+  'crit-vs-hindered',
+  /** Enemies standing in your ground zones lose their armour. */
+  'zones-strip-armor',
+  /** The first tower raised in each build phase is free. */
+  'first-tower-free',
+  /** Every fallen soldier returns the instant a wave is cleared. */
+  'soldiers-reform',
+  /** Enemies killed while a soldier holds them pay a bounty. */
+  'bounty-on-blocked',
+  /** Coins on the ground never expire, even mid-combat. */
+  'coins-never-expire',
+  /** Selling a tower returns everything invested in it. */
+  'full-salvage',
+]);
+export type RuleKey = z.infer<typeof RuleKeySchema>;
+
 const statModFields = {
   perRank: z.number().describe('applied once per purchased rank'),
   mode: z.enum(['add', 'multiply']),
@@ -148,5 +184,11 @@ export const MetaEffectSchema = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('unlock-ability'), abilityId: IdSchema }),
   z.object({ type: z.literal('unlock-tower'), towerId: IdSchema }),
+  /**
+   * A rule, on or off. No `perRank`: a rule that applied "1.4 times" would not
+   * be a rule, and the moment ranks land this is the effect type that must stay
+   * rank-blind or the whole distinction collapses.
+   */
+  z.object({ type: z.literal('rule'), rule: RuleKeySchema }),
 ]);
 export type MetaEffect = z.infer<typeof MetaEffectSchema>;

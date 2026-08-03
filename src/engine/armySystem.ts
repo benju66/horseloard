@@ -109,6 +109,17 @@ export class ArmySystem {
     return n;
   }
 
+  /**
+   * Rule `soldiers-reform`: every fallen soldier returns at once.
+   *
+   * Called on a wave clear rather than continuously, so it never makes the
+   * garrison unkillable mid-fight — it only means a wave that cost you the
+   * whole host is not also a wave that starts the next one undefended.
+   */
+  reformAll(): void {
+    for (const s of this.list) s.respawnIn = 0;
+  }
+
   tick(dt: number): void {
     this.reconcile();
 

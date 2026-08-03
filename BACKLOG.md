@@ -514,6 +514,34 @@ curve should be, so tuning first means tuning twice.
 [ ] **M7.4 — More maps.** Four is not a campaign for a long game. Wave sets and maps are pure
 JSON (CLAUDE.md #1), so this is authoring, not engineering — the constraint is that each map
 must ask a *new question*, not restate an old one at higher HP.
+[x] **M7.6 — Rule effects: nodes that change what the game does** (2026-08-03). Eight of them,
+replacing the eight flattest stat nodes: `crit-vs-hindered`, `pierce-on-kill`,
+`zones-strip-armor`, `first-tower-free`, `soldiers-reform`, `bounty-on-blocked`,
+`coins-never-expire`, `full-salvage`. New `rule` effect type, routed like an unlock; new
+`rules.test.ts`.
+**five of seven effect types could only ever change a number, and that is why two paths were
+dead.** No quantity of "+18% soldier hp" is exciting, and ranking a boring node three times buys
+three times the boredom — so ranks and tier-gating were the wrong thing to build first. Depth in
+a tree comes from rules you build *around*, not multipliers you add up.
+**every one was reachable through machinery the engine already had** — pierce, armour, slow,
+the blocked state, coin spawning, sell refunds. Eight rules cost less than one new system, which
+is the substrate rule paying out.
+**and the tests immediately caught a node that did nothing.** `hero-ignores-armor` was in the
+first draft; `hero.json` already sets `ignoresArmor: true`, so it would have cost a point and
+changed no number in the game — invisible from inside, and indistinguishable from a weak node.
+That is precisely the failure class rules have to be tested against, and why these get tests
+where the stat nodes they replaced never did.
+**open, deliberately left for M7.3:** the hero's bow ignoring armour by default means the
+shieldbearer's armour is irrelevant to the hero pillar entirely. Flipping it would give armour
+meaning against all three pillars and make an armour-piercing node worth having — but it is a
+real nerf and belongs in the retune, not in a vocabulary change.
+
+[ ] **M7.7 — Ranks and tier gating.** Now worth doing, and not before: ranks are a multiplier on
+node *quality*, so they had to land on nodes worth ranking. Two parts — a node buyable N times,
+and "spend N points in this path to open the next row" replacing the current rigid chains, which
+force a specific order and make some nodes mandatory tolls. Rules stay rank-blind: a rule that
+applied "1.4 times" would not be a rule.
+
 [ ] **M7.5 — More to unlock.** The tree is the only unlock surface today. A long game wants
 more kinds of thing arriving over time — towers, enemies, abilities, maps, cosmetics — on a
 cadence, so that levelling keeps producing news.

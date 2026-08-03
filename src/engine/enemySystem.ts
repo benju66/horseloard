@@ -34,6 +34,15 @@ export interface EnemyInstance {
   /** movement debuff: 1 = none, 0 = frozen. Applied while slowRemaining > 0. */
   slowFactor: number;
   slowRemaining: number;
+  /**
+   * Seconds of "no armour" left, from rule `zones-strip-armor`.
+   *
+   * A countdown rather than a boolean because the zone that applied it moves
+   * and expires — a flag set on entry would need a matching clear on exit, and
+   * an enemy that walks out of a patch during the frame it dies would keep the
+   * effect forever. Refreshed while standing in the patch, exactly like slow.
+   */
+  armorStrippedFor: number;
   /** damage taken multiplier while slowed (Brittle marks) */
   vulnerability: number;
   /** movement buff from war cries; active while hasteRemaining > 0 */
@@ -108,6 +117,7 @@ export class EnemySystem {
       facingY: 1,
       slowFactor: 1,
       slowRemaining: 0,
+      armorStrippedFor: 0,
       vulnerability: 1,
       hasteFactor: 1,
       hasteRemaining: 0,
@@ -126,6 +136,10 @@ export class EnemySystem {
 
   tick(dt: number): void {
     for (const e of this.list) {
+      if (e.armorStrippedFor > 0) {
+        e.armorStrippedFor -= dt;
+        if (e.armorStrippedFor < 0) e.armorStrippedFor = 0;
+      }
       if (e.slowRemaining > 0) {
         e.slowRemaining -= dt;
         if (e.slowRemaining <= 0) {
@@ -221,7 +235,9 @@ export class EnemySystem {
     // Armor before the facing block, so the two stack multiplicatively rather
     // than one masking the other: an armored shieldbearer hit from the front
     // should be brutally hard, which is the point of having both counters.
-    if (!ignoresArmor && e.config.armor > 0) dealt *= 1 - e.config.armor;
+    if (!ignoresArmor && e.armorStrippedFor <= 0 && e.config.armor > 0) {
+      dealt *= 1 - e.config.armor;
+    }
     const block = e.config.frontalBlock;
     if (block && sourceX !== undefined && sourceY !== undefined) {
       const dx = sourceX - e.x;
@@ -260,6 +276,12 @@ export class EnemySystem {
   }
 
   /** Slow (or freeze at factor 0). Stronger slows win; durations refresh. Slow-immune enemies shrug. */
+  /** Rule `zones-strip-armor`. Refreshed, never accumulated — see the field. */
+  stripArmor(id: number, duration: number): void {
+    const e = this.byId.get(id);
+    if (e) e.armorStrippedFor = Math.max(e.armorStrippedFor, duration);
+  }
+
   applySlow(id: number, factor: number, duration: number, vulnerability = 1): void {
     const e = this.byId.get(id);
     if (!e) return;

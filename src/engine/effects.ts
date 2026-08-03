@@ -46,11 +46,14 @@ export function applyEffectInPlace(
   data: ModifiableData,
   fx: MetaEffect,
   rank: number,
-): { unlockAbilityId?: string; unlockTowerId?: string } {
+): { unlockAbilityId?: string; unlockTowerId?: string; rule?: string } {
   // Unlocks are decisions for a system, not numbers to mutate, so they are
   // returned rather than applied. All three are routed by the caller.
   if (fx.type === 'unlock-ability') return { unlockAbilityId: fx.abilityId };
   if (fx.type === 'unlock-tower') return { unlockTowerId: fx.towerId };
+  // Rules are switches the systems read, not numbers to fold into a config, so
+  // they are returned for the caller to route exactly as unlocks are.
+  if (fx.type === 'rule') return { rule: fx.rule };
 
   if (fx.type === 'hero-stat') {
     const h = data.hero;

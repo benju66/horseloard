@@ -44,6 +44,14 @@ export interface SimData {
    * buildable, which is what engine tests and the bot harness want.
    */
   lockedTowerIds?: readonly string[];
+  /**
+   * Rules the career build has switched on (`RuleKeySchema`).
+   *
+   * Engine vocabulary, not content — `pierce-on-kill` names a mechanic the same
+   * way `aoe-damage` does, so the substrate rule is untouched and a system may
+   * read this set directly.
+   */
+  rules?: readonly string[];
   /** endless mode: waves generate forever, victory never comes */
   endless?: boolean;
 }
@@ -86,6 +94,8 @@ export class Simulation {
    */
   readonly xp: XpSystem;
   readonly endless: boolean;
+  /** The rules this run is playing under. Fixed before wave 1, never changes. */
+  readonly rules: ReadonlySet<string>;
   /**
    * Fired when a wave is cleared, with the wave number and the XP it paid.
    *
@@ -174,6 +184,26 @@ export class Simulation {
     );
 
     this.looters = new LooterSystem(this.enemySystem, this.economy, this.lanes);
+
+    // ─── Rules (SKILLTREE.md — effects that change what the game does) ───
+    this.rules = new Set(data.rules ?? []);
+
+    if (this.rules.has('crit-vs-hindered')) this.hero.critVsHindered = true;
+    if (this.rules.has('pierce-on-kill')) this.projectileSystem.pierceOnKill = true;
+    if (this.rules.has('zones-strip-armor')) this.zones.stripsArmor = true;
+    if (this.rules.has('coins-never-expire')) this.economy.coinsNeverExpire = true;
+    if (this.rules.has('full-salvage')) this.towerSystem.fullSalvage = true;
+    if (this.rules.has('first-tower-free')) this.towerSystem.freeBuildsPerPhase = 1;
+
+    // A held enemy that dies pays a bounty. The one rule that makes the army
+    // pillar fund itself: soldiers barely damage by design, so before this a
+    // garrison could only ever be a cost you hoped the towers repaid.
+    if (this.rules.has('bounty-on-blocked')) {
+      this.enemySystem.onDeath.push((e) => {
+        if (e.state !== 'blocked') return;
+        this.economy.spawnCoins(e.x, e.y, Math.max(1, Math.round(e.config.coinValue * 0.6)));
+      });
+    }
 
     // Mills drop coins beside themselves — map safety converted into economy.
     this.towerSystem.onIncome.push((x, y, value) => {
@@ -273,6 +303,11 @@ export class Simulation {
     const { base, perWave } = this.economy.config.waveClearBonus;
     this.economy.gold += base + perWave * this.waveRunner.waveNumber;
     this.economy.sweep();
+    // The host re-forms with the dawn rather than on a timer, so a wave that
+    // cost you the whole garrison is not also a wave that starts the next one
+    // undefended.
+    if (this.rules.has('soldiers-reform')) this.army.reformAll();
+    this.towerSystem.resetFreeBuilds();
     const wave = this.waveRunner.waveNumber;
     const earned = this.xp.totalXp - this.xpAtWaveStart;
     this.xpAtWaveStart = this.xp.totalXp;
@@ -326,12 +361,24 @@ export class Simulation {
     return true;
   }
 
-  buildTower(plotId: string, towerId: string): boolean {
+  /** What raising this tower costs right now — 0 while a free build is owed. */
+  buildPrice(towerId: string): number | null {
     const cost = this.towerSystem.buildCost(towerId);
+    if (cost === null) return null;
+    return this.towerSystem.nextBuildIsFree ? 0 : cost;
+  }
+
+  buildTower(plotId: string, towerId: string): boolean {
+    const price = this.buildPrice(towerId);
     const plot = this.towerSystem.getPlot(plotId);
-    if (cost === null || !plot || plot.towerId !== null) return false;
-    if (!this.economy.spend(cost)) return false;
-    return this.towerSystem.build(plotId, towerId);
+    if (price === null || !plot || plot.towerId !== null) return false;
+    const free = price === 0 && this.towerSystem.nextBuildIsFree;
+    if (!this.economy.spend(price)) return false;
+    const built = this.towerSystem.build(plotId, towerId);
+    // Consumed only on a build that actually happened, so a refused placement
+    // never burns the allowance.
+    if (built && free) this.towerSystem.noteFreeBuild();
+    return built;
   }
 
   upgradeTower(plotId: string): boolean {

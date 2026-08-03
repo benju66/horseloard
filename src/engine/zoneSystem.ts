@@ -65,6 +65,17 @@ export interface GroundZone {
  * means a tower or a wave event could drop one later with no changes.
  */
 export class ZoneSystem {
+  /**
+   * Rule `zones-strip-armor`: anything standing in your ground is unarmoured
+   * while it stands there.
+   *
+   * The Storm path's answer to heavy enemies. It pays nothing on its own and a
+   * great deal beside towers that were already struggling to chew armour, which
+   * is the synergy shape a tree wants — worth building around, worthless as a
+   * stat line.
+   */
+  stripsArmor = false;
+
   private readonly enemies: EnemySystem;
   private readonly ids: IdGenerator;
   private readonly list: GroundZone[] = [];
@@ -127,6 +138,7 @@ export class ZoneSystem {
         const dy = e.y - z.y;
         if (dx * dx + dy * dy > rSq) continue;
         if (z.slowMultiplier < 1) this.enemies.applySlow(e.id, z.slowMultiplier, SLOW_REFRESH);
+        if (this.stripsArmor) this.enemies.stripArmor(e.id, SLOW_REFRESH);
         if (pulsing && z.damagePerSecond > 0) this.hits.push(e.id);
       }
       // Collected first, applied second: `applyDamage` can remove an enemy, and

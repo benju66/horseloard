@@ -18,6 +18,25 @@ export type HeroBuffStat = 'bowDamage' | 'bowFireRate' | 'moveSpeed';
  * instead (DESIGN §4). Consumes hero.json — no balance constants live here.
  */
 export class HeroSystem {
+  /**
+   * Rule `hero-ignores-armor`. Written to the shared projectile def, so it
+   * applies to every arrow from the moment it is set — which is before wave 1,
+   * because a run's power never changes once it starts.
+   */
+  set ignoresArmor(on: boolean) {
+    this.bowProjectile.ignoresArmor = on;
+  }
+
+  get ignoresArmor(): boolean {
+    return this.bowProjectile.ignoresArmor ?? false;
+  }
+
+  /**
+   * Rule `crit-vs-hindered`. The Hunt path's hook into the other two pillars:
+   * worth nothing alone, and a great deal beside a frost spire or a garrison.
+   */
+  critVsHindered = false;
+
   private readonly config: Hero;
   private readonly enemies: EnemySystem;
   private readonly projectiles: ProjectileSystem;
@@ -264,11 +283,17 @@ export class HeroSystem {
     // meant to reward having built a frost spire or a barracks; checking at
     // impact would instead reward the enemy still being slowed a second later,
     // which is a different and much fiddlier thing to reason about.
+    const hindered = target.slowRemaining > 0 || target.state === 'blocked';
     let damage = stats.damage * this.buffFactor('bowDamage');
-    if (this.config.crit.chance > 0 && this.rng() < this.config.crit.chance) {
+    // Rule `crit-vs-hindered` turns the roll into a certainty against anything
+    // frost slowed or a soldier is holding. A rule rather than "+crit chance"
+    // on purpose: certainty is something you build a whole board around, where
+    // another percentage is something you add up and forget.
+    const guaranteed = this.critVsHindered && hindered;
+    if (guaranteed || (this.config.crit.chance > 0 && this.rng() < this.config.crit.chance)) {
       damage *= this.config.crit.multiplier;
     }
-    if (this.config.damageVsHindered > 1 && (target.slowRemaining > 0 || target.state === 'blocked')) {
+    if (this.config.damageVsHindered > 1 && hindered) {
       damage *= this.config.damageVsHindered;
     }
     this.projectiles.spawn(this.x, this.y + BOW_MUZZLE_OFFSET_Y, target.id, damage, this.bowProjectile, true);

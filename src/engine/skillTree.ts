@@ -181,10 +181,15 @@ export class SkillTree {
   applyTo(
     data: ModifiableData,
     allocated: readonly string[],
-  ): ModifiableData & { unlockedAbilityIds: string[]; unlockedTowerIds: string[] } {
+  ): ModifiableData & {
+    unlockedAbilityIds: string[];
+    unlockedTowerIds: string[];
+    rules: string[];
+  } {
     const out: ModifiableData = structuredClone(data);
     const unlockedAbilityIds: string[] = [];
     const unlockedTowerIds: string[] = [];
+    const rules: string[] = [];
 
     for (const id of allocated) {
       const node = this.byId.get(id);
@@ -193,9 +198,10 @@ export class SkillTree {
         const r = applyEffectInPlace(out, fx, 1);
         if (r.unlockAbilityId) unlockedAbilityIds.push(r.unlockAbilityId);
         if (r.unlockTowerId) unlockedTowerIds.push(r.unlockTowerId);
+        if (r.rule) rules.push(r.rule);
       }
     }
 
-    return { ...out, unlockedAbilityIds, unlockedTowerIds };
+    return { ...out, unlockedAbilityIds, unlockedTowerIds, rules };
   }
 }

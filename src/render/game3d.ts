@@ -402,6 +402,7 @@ function startMap(mapId: string, endless = false): void {
     towers: modded.towers,
     abilities: modded.abilities,
     unlockedAbilityIds: modded.unlockedAbilityIds,
+    rules: modded.rules,
     equipSlots: equipSlots(save, data.equipSlots, data.equipSlotGrants),
     loadout: save.loadout,
     lockedTowerIds: data.towers.towers

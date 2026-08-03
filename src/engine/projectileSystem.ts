@@ -36,6 +36,8 @@ export interface ProjectileInstance {
   aoeRadius: number; // 0 = single target
   /** Copied off the def at spawn: armor does not reduce this hit. */
   ignoresArmor: boolean;
+  /** Rule `pierce-on-kill`: whether this shot has already carried through once. */
+  pierced: boolean;
   stun: SlowEffect | null;
   bomblets: { count: number; damage: number; radius: number; spread: number } | null;
   fromHero: boolean;
@@ -76,6 +78,34 @@ export class ProjectileSystem {
    */
   readonly onHeroDamage: Array<(amount: number) => void> = [];
 
+  /**
+   * Rule `pierce-on-kill`: a hero shot that kills carries on to the next enemy
+   * behind it, once.
+   *
+   * Once, not forever — an arrow that pierces without limit turns a line of
+   * enemies into a single click, and the hero is the *burst* pillar
+   * (TRIANGLE §B.3). One extra body rewards lining a shot up; unlimited would
+   * make lining up the only thing that matters.
+   */
+  pierceOnKill = false;
+
+  /** Nearest live enemy other than `excludeId`, or null. For pierce re-aiming. */
+  private nearestOther(x: number, y: number, excludeId: number): number | null {
+    let best: number | null = null;
+    let bestSq = Infinity;
+    for (const e of this.enemies.enemies) {
+      if (e.id === excludeId) continue;
+      const dx = e.x - x;
+      const dy = e.y - y;
+      const dSq = dx * dx + dy * dy;
+      if (dSq < bestSq) {
+        bestSq = dSq;
+        best = e.id;
+      }
+    }
+    return best;
+  }
+
   spawn(x: number, y: number, targetId: number, damage: number, def: ProjectileDef, fromHero: boolean): void {
     const target = this.enemies.getById(targetId);
     if (!target) return;
@@ -99,6 +129,7 @@ export class ProjectileSystem {
       speed: 0,
       aoeRadius: 0,
       ignoresArmor: false,
+      pierced: false,
       stun: null,
       bomblets: null,
       fromHero: false,
@@ -113,6 +144,7 @@ export class ProjectileSystem {
     p.speed = def.speed ?? 400;
     p.aoeRadius = def.behavior === 'aoe' ? (def.radius ?? 0) : 0;
     p.ignoresArmor = def.ignoresArmor ?? false;
+    p.pierced = false;
     p.stun = def.behavior === 'aoe' ? (def.stun ?? null) : null;
     p.bomblets = def.behavior === 'aoe' ? (def.bomblets ?? null) : null;
     p.fromHero = fromHero;
@@ -150,7 +182,18 @@ export class ProjectileSystem {
             }
           }
         } else if (target) {
-          this.enemies.applyDamage(target.id, p.damage, p.x, p.y, p.ignoresArmor);
+          const killed = this.enemies.applyDamage(target.id, p.damage, p.x, p.y, p.ignoresArmor);
+          // Rule `pierce-on-kill`: on a kill, re-aim at the nearest other enemy
+          // and fly on. `pierced` makes it once only — see the field.
+          if (killed && this.pierceOnKill && p.fromHero && !p.pierced) {
+            const next = this.nearestOther(p.x, p.y, target.id);
+            if (next !== null) {
+              p.pierced = true;
+              p.targetId = next;
+              if (p.fromHero) for (const fn of this.onHeroDamage) fn(p.damage);
+              continue;
+            }
+          }
         }
         if (p.fromHero) for (const fn of this.onHeroDamage) fn(p.damage);
         this.release(i, p);

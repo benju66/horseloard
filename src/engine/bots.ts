@@ -871,7 +871,12 @@ export function runBot(
   const built =
     data.skillTree && data.skillNodes?.length
       ? new SkillTree(data.skillTree).applyTo(base, data.skillNodes)
-      : { ...base, unlockedAbilityIds: [] as string[], unlockedTowerIds: [] as string[] };
+      : {
+          ...base,
+          unlockedAbilityIds: [] as string[],
+          unlockedTowerIds: [] as string[],
+          rules: [] as string[],
+        };
 
   const map = built.map;
   const waveSet = data.waveSets[mapId]!;
@@ -899,6 +904,7 @@ export function runBot(
       // gained an equip cap: filling every slot on wave 1 measured a loadout no
       // player can assemble, and made every ability node a dead take.
       unlockedAbilityIds: built.unlockedAbilityIds,
+      rules: built.rules,
       // Tower unlocks are part of a build too. Ignoring them let every arm of
       // every probe build the whole roster, which quietly made a tree node that
       // grants a tower worth exactly nothing in the measurement — and made the

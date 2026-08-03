@@ -27,6 +27,13 @@ export class EconomySystem {
 
   readonly onCollect: Array<(value: number, x: number, y: number) => void> = [];
 
+  /**
+   * Rule `coins-never-expire`. Coins expiring during combat is what makes greed
+   * a decision (DESIGN §1) — turning it off is genuinely build-defining, which
+   * is why it is a keystone-weight rule rather than a stat.
+   */
+  coinsNeverExpire = false;
+
   constructor(config: Economy, rng: () => number = Math.random) {
     this.config = config;
     this.rng = rng;
@@ -104,7 +111,7 @@ export class EconomySystem {
         }
         continue;
       }
-      if (inCombat && !this.sweepActive) {
+      if (inCombat && !this.sweepActive && !this.coinsNeverExpire) {
         c.age += dt;
         if (c.age >= expirySeconds) {
           this.release(i, c);

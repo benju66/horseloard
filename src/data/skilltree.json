@@ -180,8 +180,8 @@
       "path": "hunt",
       "pool": "hero",
       "kind": "notable",
-      "name": "Practised Hands",
-      "description": "Every ability returns 18% sooner.",
+      "name": "Clean Through",
+      "description": "A shot that kills carries on to the enemy behind it.",
       "icon": "\ud83e\udd32",
       "cost": 2,
       "row": 3,
@@ -191,11 +191,8 @@
       "excludes": [],
       "effects": [
         {
-          "type": "ability-stat",
-          "abilityId": null,
-          "stat": "cooldown",
-          "perRank": 0.82,
-          "mode": "multiply"
+          "type": "rule",
+          "rule": "pierce-on-kill"
         }
       ]
     },
@@ -204,8 +201,8 @@
       "path": "hunt",
       "pool": "hero",
       "kind": "notable",
-      "name": "Broadheads",
-      "description": "Arrows hit 22% harder and reach 12% further.",
+      "name": "Cruel Aim",
+      "description": "Every shot at a slowed or held enemy is a critical hit.",
       "icon": "\ud83d\udd3a",
       "cost": 2,
       "row": 4,
@@ -215,16 +212,8 @@
       "excludes": [],
       "effects": [
         {
-          "type": "hero-stat",
-          "stat": "bowDamage",
-          "perRank": 1.22,
-          "mode": "multiply"
-        },
-        {
-          "type": "hero-stat",
-          "stat": "bowRange",
-          "perRank": 1.12,
-          "mode": "multiply"
+          "type": "rule",
+          "rule": "crit-vs-hindered"
         }
       ]
     },
@@ -904,8 +893,8 @@
       "path": "wall",
       "pool": "kingdom",
       "kind": "notable",
-      "name": "Long Watch",
-      "description": "Every tower watches 20% more road.",
+      "name": "Standing Levy",
+      "description": "The first tower you raise each night costs nothing.",
       "icon": "\ud83d\udd2d",
       "cost": 2,
       "row": 4,
@@ -915,11 +904,8 @@
       "excludes": [],
       "effects": [
         {
-          "type": "tower-stat",
-          "towerId": null,
-          "stat": "range",
-          "perRank": 1.2,
-          "mode": "multiply"
+          "type": "rule",
+          "rule": "first-tower-free"
         }
       ]
     },
@@ -1074,8 +1060,8 @@
       "path": "host",
       "pool": "kingdom",
       "kind": "notable",
-      "name": "Standing Orders",
-      "description": "Replacements march out 35% sooner.",
+      "name": "The Reforming",
+      "description": "Every fallen soldier returns the moment a wave is cleared.",
       "icon": "\ud83d\udce3",
       "cost": 2,
       "row": 2,
@@ -1085,15 +1071,8 @@
       "excludes": [],
       "effects": [
         {
-          "type": "tower-grant",
-          "towerId": null,
-          "grant": {
-            "kind": "garrison",
-            "squad": 0,
-            "hpMultiplier": 1.0,
-            "damageMultiplier": 1.0,
-            "respawnMultiplier": 0.65
-          }
+          "type": "rule",
+          "rule": "soldiers-reform"
         }
       ]
     },
@@ -1102,8 +1081,8 @@
       "path": "host",
       "pool": "kingdom",
       "kind": "notable",
-      "name": "Drill Yard",
-      "description": "Soldiers fight 50% harder.",
+      "name": "Blood Price",
+      "description": "Enemies killed while a soldier holds them pay a bounty in coin.",
       "icon": "\u2692\ufe0f",
       "cost": 2,
       "row": 2,
@@ -1113,14 +1092,8 @@
       "excludes": [],
       "effects": [
         {
-          "type": "tower-grant",
-          "towerId": null,
-          "grant": {
-            "kind": "garrison",
-            "squad": 0,
-            "hpMultiplier": 1.0,
-            "damageMultiplier": 1.5
-          }
+          "type": "rule",
+          "rule": "bounty-on-blocked"
         }
       ]
     },
@@ -1370,8 +1343,8 @@
       "path": "crown",
       "pool": "kingdom",
       "kind": "notable",
-      "name": "Wide Roads",
-      "description": "Coins linger 50% longer; the muster pays 25% more.",
+      "name": "The Long Count",
+      "description": "Coins on the ground never expire, even mid-fight.",
       "icon": "\ud83d\udee4\ufe0f",
       "cost": 2,
       "row": 1,
@@ -1381,16 +1354,8 @@
       "excludes": [],
       "effects": [
         {
-          "type": "kingdom-stat",
-          "stat": "coinExpiryTime",
-          "perRank": 1.5,
-          "mode": "multiply"
-        },
-        {
-          "type": "kingdom-stat",
-          "stat": "waveClearBonus",
-          "perRank": 1.25,
-          "mode": "multiply"
+          "type": "rule",
+          "rule": "coins-never-expire"
         }
       ]
     },
@@ -1425,8 +1390,8 @@
       "path": "crown",
       "pool": "kingdom",
       "kind": "notable",
-      "name": "Standing Stones",
-      "description": "Gate repairs cost 30% less.",
+      "name": "Salvage Rights",
+      "description": "Selling a tower returns everything you put into it.",
       "icon": "\ud83d\uddff",
       "cost": 2,
       "row": 2,
@@ -1436,10 +1401,8 @@
       "excludes": [],
       "effects": [
         {
-          "type": "kingdom-stat",
-          "stat": "repairCost",
-          "perRank": 0.7,
-          "mode": "multiply"
+          "type": "rule",
+          "rule": "full-salvage"
         }
       ]
     },
@@ -1823,8 +1786,8 @@
       "path": "storm",
       "pool": "hero",
       "kind": "notable",
-      "name": "Deluge",
-      "description": "Ground patches cover a further 25%.",
+      "name": "Sundering Ground",
+      "description": "Anything standing in your ground loses its armour.",
       "icon": "\ud83c\udf0a",
       "cost": 2,
       "row": 4,
@@ -1834,18 +1797,8 @@
       "excludes": [],
       "effects": [
         {
-          "type": "ability-stat",
-          "abilityId": "caltrops",
-          "stat": "radius",
-          "perRank": 1.25,
-          "mode": "multiply"
-        },
-        {
-          "type": "ability-stat",
-          "abilityId": "aero-storm",
-          "stat": "radius",
-          "perRank": 1.25,
-          "mode": "multiply"
+          "type": "rule",
+          "rule": "zones-strip-armor"
         }
       ]
     },

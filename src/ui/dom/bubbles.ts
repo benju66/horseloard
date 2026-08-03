@@ -60,9 +60,17 @@ export function bubbleActions(sim: Simulation, map: MapDef): BubbleAction[] {
     const plot = nearestPlot;
     if (plot.towerId === null) {
       for (const tower of sys.roster) {
-        const cost = sys.buildCost(tower.id) ?? 0;
-        push(plot.x, plot.y, `Build ${tower.name}`, `${cost} gold`, gold >= cost, () =>
-          sim.buildTower(plot.plotId, tower.id),
+        // The price, not the list cost — rule `first-tower-free` makes the first
+        // build of each phase cost nothing, and a bubble quoting the list price
+        // would have the player saving up for something already free.
+        const cost = sim.buildPrice(tower.id) ?? 0;
+        push(
+          plot.x,
+          plot.y,
+          `Build ${tower.name}`,
+          cost === 0 ? 'free' : `${cost} gold`,
+          gold >= cost,
+          () => sim.buildTower(plot.plotId, tower.id),
         );
       }
       return out;
