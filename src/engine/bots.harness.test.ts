@@ -2,10 +2,13 @@ import { describe, it } from 'vitest';
 import { loadGameData } from '../data/loader';
 import {
   BOTS,
+  armyOnly,
   forcedComposition,
   forcedPerk,
   heroOnly,
   runBot,
+  combatTowersOnly,
+  towersAndArmy,
   towersOnly,
   withoutHeroDamage,
   type BotRunResult,
@@ -247,6 +250,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
       const target = DIFFICULTY_TARGETS[mapId];
       const arms: Array<[string, BotRunResult[]]> = [
         ['towers only', SEEDS.map((s) => runBot(heroDisabled, mapId, towersOnly, s))],
+        ['army only', SEEDS.map((s) => runBot(heroDisabled, mapId, armyOnly, s))],
         ['hero only', SEEDS.map((s) => runBot(botData, mapId, heroOnly, s))],
         ['both (reference)', BOTS.flatMap((f) => SEEDS.map((s) => runBot(botData, mapId, f, s)))],
       ];
@@ -257,7 +261,10 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
         const win = Math.round((runs.filter((r) => r.outcome === 'win').length / runs.length) * 100);
         const dmg = Math.round(runs.reduce((s, r) => s + r.damageTaken, 0) / runs.length);
         const waves = (runs.reduce((s, r) => s + r.wavesCleared, 0) / runs.length).toFixed(1);
-        const isPillar = label !== 'both (reference)';
+        // Only the single-pillar arms are held to the cap. 'towers+army' and
+        // the reference are two- and three-pillar arms, and are *supposed* to
+        // win — that is the other half of the invariant.
+        const isPillar = label.endsWith(' only');
         const over = isPillar && win > cap;
         if (over) failures++;
         // Towers built and kills matter as much as the win rate here. Coins drop
@@ -283,7 +290,69 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     console.log(
       `\n[PILLAR PROBE — TRIANGLE.md MG5.1]  ${failures === 0 ? 'OK' : `${failures} pillar(s) sufficient alone`}\n` +
         lines.join('\n') +
-        '\n  Army arm pending MG5.2 — the barracks is the third pillar and does not exist yet.',
+        '\n  Each arm must fail alone. Whether two together succeed is the complement probe below.',
+    );
+  });
+
+  /**
+   * The other half of the invariant: **any two pillars together must clear a
+   * map**. This probe answers it for the pair the barracks exists to create.
+   *
+   * Run on a deliberately inflated budget, which is the whole point. On the
+   * shipped economy both tower arms die on wave 1 with one tower standing — the
+   * bot never reaches the point where a garrison has anything to amplify, so a
+   * comparison there measures which arm starves first, not whether exposure
+   * multiplies rate. Funding both arms identically and generously isolates the
+   * one variable that matters: is the barracks buildable, or not.
+   *
+   * If `towers+army` does not beat `towers only` here, TRIANGLE §B.2 is wrong
+   * and the barracks is a worse tower rather than a third pillar.
+   */
+  it('reports whether exposure actually multiplies rate', { timeout: 120_000 }, () => {
+    const funded = {
+      ...botData,
+      hero: withoutHeroDamage(data.hero),
+      economy: { ...data.economy, startingGold: 260 },
+    };
+    const lines: string[] = [];
+    let complements = 0;
+    for (const mapId of Object.keys(data.maps)) {
+      const arms: Array<[string, BotRunResult[]]> = [
+        ['towers only', SEEDS.map((s) => runBot(funded, mapId, combatTowersOnly, s))],
+        ['towers+army', SEEDS.map((s) => runBot(funded, mapId, towersAndArmy, s))],
+      ];
+      const waveOf = (runs: BotRunResult[]) =>
+        runs.reduce((s, r) => s + r.wavesCleared, 0) / runs.length;
+      const winOf = (runs: BotRunResult[]) =>
+        (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100;
+      const gain = waveOf(arms[1]![1]) - waveOf(arms[0]![1]);
+      const winGain = winOf(arms[1]![1]) - winOf(arms[0]![1]);
+      // Wins decide, waves break the tie. Waves alone reads a map where the
+      // army converts near-misses into clears as a *regression*, because a run
+      // that wins on wave 12 and one that dies on wave 12 score the same.
+      const helps = winGain > 0 || (winGain === 0 && gain > 0);
+      if (helps) complements++;
+      const row = [`  ${mapId}${helps ? '' : '   ← army adds nothing here'}`];
+      for (const [label, runs] of arms) {
+        const win = Math.round((runs.filter((r) => r.outcome === 'win').length / runs.length) * 100);
+        const towers = (runs.reduce((s, r) => s + r.towers.length, 0) / runs.length).toFixed(1);
+        const kills = Math.round(runs.reduce((s, r) => s + r.kills, 0) / runs.length);
+        row.push(
+          `      ${label.padEnd(14)} win ${String(win).padStart(3)}%  ` +
+            `waves ${waveOf(runs).toFixed(1).padStart(4)}/${runs[0]!.totalWaves}  ` +
+            `towers ${towers.padStart(4)}  kills ${String(kills).padStart(3)}`,
+        );
+      }
+      row.push(
+        `      Δwin ${winGain >= 0 ? '+' : ''}${winGain.toFixed(0)}pp   ` +
+          `Δwaves ${gain >= 0 ? '+' : ''}${gain.toFixed(1)}`,
+      );
+      lines.push(row.join('\n'));
+    }
+    console.log(
+      `\n[COMPLEMENT PROBE — TRIANGLE.md §B.2]  army helps on ${complements}/${Object.keys(data.maps).length} maps\n` +
+        lines.join('\n') +
+        '\n  Funded equally on purpose — on the shipped economy neither arm survives to build.',
     );
   });
 

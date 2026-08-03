@@ -64,6 +64,30 @@ export const AbilityEffectSchema = z.discriminatedUnion('type', [
     damagePerSecond: z.number().nonnegative(),
     slowMultiplier: z.number().gt(0).lte(1).describe('1 = no slow'),
   }),
+  /**
+   * The Muster: the gates open and a host marches up the road.
+   *
+   * Spectacle, and the hero's one direct contribution to the army's factor. It
+   * exists as a separate effect from the barracks (TRIANGLE.md §B.2) because
+   * the barracks does the *routine* work — a thing that happens continuously
+   * cannot also be the moment people remember. Soldiers spawn at the gate and
+   * hold the road until they fall; they are never replaced, which is what keeps
+   * this a burst rather than a second garrison.
+   */
+  z.object({
+    // Named for the mechanic, not the ability. `muster` would collide with the
+    // ability's own id, and `substrate.test.ts` records what that costs: an
+    // engine enum that matches a content id is a literal the guard can no
+    // longer police, silently.
+    type: z.literal('summon-host'),
+    squad: z.number().int().positive(),
+    hp: z.number().positive(),
+    damage: z.number().positive(),
+    attackInterval: z.number().positive(),
+    lifetime: z.number().positive().describe('seconds before the host disperses'),
+    engageRadius: z.number().positive(),
+    spacing: z.number().positive(),
+  }),
   // Charge: gallop burst, tramples through enemies.
   z.object({
     type: z.literal('charge'),

@@ -49,8 +49,8 @@ function seed(): RawGameData & Record<string, any> {
 describe('seed data', () => {
   it('validates clean', () => {
     const data = validateGameData(seed());
-    expect(data.towers.towers.map((t) => t.id)).toEqual(['archer', 'bombard', 'frost-spire', 'mill']);
-    expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute', 'shieldbearer', 'swarm', 'wolf-rider', 'raven', 'looter', 'warlord']);
+    expect(data.towers.towers.map((t) => t.id)).toEqual(['archer', 'bombard', 'frost-spire', 'mill', 'barracks']);
+    expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute', 'shieldbearer', 'swarm', 'wolf-rider', 'raven', 'looter', 'outrider', 'halberdier', 'warlord']);
     expect(data.abilities.map((a) => a.id)).toEqual([
       'charge',
       'volley',
@@ -58,6 +58,7 @@ describe('seed data', () => {
       'rapid-fire',
       'heavy-shaft',
       'caltrops',
+      'muster',
     ]);
     expect(Object.keys(data.maps).sort()).toEqual(['crossroads', 'meadow-road', 'the-ford', 'warlords-march']);
     expect(data.waveSets['meadow-road']?.waves).toHaveLength(8);

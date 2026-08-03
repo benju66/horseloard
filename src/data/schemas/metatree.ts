@@ -84,6 +84,22 @@ export const MetaEffectSchema = z.discriminatedUnion('type', [
         value: z.number().int().positive(),
         interval: z.number().positive().describe('seconds between coin drops'),
       }),
+      /**
+       * Scale a garrison — the army pillar's draft lever.
+       *
+       * Unlike the other grants this one only ever *scales*: it will not give a
+       * garrison to a tower that shipped without one. A card that turned every
+       * tower into a barracks would make the army free rather than a build
+       * decision, and the pillar's whole job is to cost a plot.
+       */
+      z.object({
+        kind: z.literal('garrison'),
+        squad: z.number().int().nonnegative().describe('extra soldiers per rank'),
+        hpMultiplier: z.number().positive(),
+        damageMultiplier: z.number().positive(),
+        respawnMultiplier: z.number().positive().default(1),
+        engageRadiusMultiplier: z.number().positive().default(1),
+      }),
     ]),
   }),
   /**

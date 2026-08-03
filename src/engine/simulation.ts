@@ -12,6 +12,7 @@ import { AbilitySystem } from './abilitySystem';
 import { LooterSystem } from './looterSystem';
 import { PerkSystem } from './perkSystem';
 import { ZoneSystem } from './zoneSystem';
+import { ArmySystem } from './armySystem';
 import { generateEndlessWave } from './endless';
 
 /** Fixed simulation timestep. Rendering framerate is unrelated (CLAUDE.md #2). */
@@ -67,6 +68,8 @@ export class Simulation {
   readonly abilities: AbilitySystem;
   /** Ground hazards the hero leaves behind — the only friendly thing that is not a unit or a tower. */
   readonly zones: ZoneSystem;
+  /** The army pillar: soldiers posted by garrison towers (TRIANGLE.md §B.2). */
+  readonly army: ArmySystem;
   readonly looters: LooterSystem;
   /** The in-run draft, or null when this run has no perk pool. */
   readonly perks: PerkSystem | null;
@@ -135,6 +138,7 @@ export class Simulation {
       rng,
     );
     this.zones = new ZoneSystem(this.enemySystem, this.ids);
+    this.army = new ArmySystem(this.towerSystem, this.enemySystem, this.lanes, this.ids);
     this.abilities = new AbilitySystem(
       data.abilities ?? [],
       data.unlockedAbilityIds ?? [],
@@ -142,6 +146,7 @@ export class Simulation {
       this.hero,
       this.towerSystem,
       this.zones,
+      this.army,
       data.equipSlots,
     );
 
@@ -242,6 +247,9 @@ export class Simulation {
     this.looters.tick(SIM_DT);
     this.gate.tick(SIM_DT);
     this.towerSystem.tick(SIM_DT);
+    // After the towers, before the hero: a soldier that grabs an enemy this
+    // tick should already be holding it when the hero decides where to ride.
+    this.army.tick(SIM_DT);
     this.hero.tick(SIM_DT);
     this.abilities.tick(SIM_DT);
     this.zones.tick(SIM_DT); // hazards persist across phases, like besiegers

@@ -81,6 +81,7 @@ export function makeEnemy(overrides: Partial<Enemy> & { id: string }): Enemy {
   return {
     armor: 0,
     flying: false,
+    blockImmune: false,
     name: overrides.id,
     hp: 10,
     speed: 10,

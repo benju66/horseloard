@@ -133,12 +133,24 @@ export function applyEffectInPlace(
             // Aura multipliers compose, because two beacons should stack.
             damageMultiplier: (st.towerAura?.damageMultiplier ?? 1) * Math.pow(g.damageMultiplier, rank),
           };
-        } else {
+        } else if (g.kind === 'income') {
           // Income: more coins per drop, never a faster drop, so granting it
           // broadly cannot outpace the coin pool or the sweep.
           st.income = {
             value: (st.income?.value ?? 0) + g.value * rank,
             interval: st.income?.interval ?? g.interval,
+          };
+        } else if (st.garrison) {
+          // Scales an existing garrison, never creates one. A card that turned
+          // an archer tower into a barracks would hand the army pillar out for
+          // free, and it is supposed to cost a plot.
+          st.garrison = {
+            ...st.garrison,
+            squad: st.garrison.squad + g.squad * rank,
+            hp: st.garrison.hp * Math.pow(g.hpMultiplier, rank),
+            damage: st.garrison.damage * Math.pow(g.damageMultiplier, rank),
+            respawn: st.garrison.respawn * Math.pow(g.respawnMultiplier, rank),
+            engageRadius: st.garrison.engageRadius * Math.pow(g.engageRadiusMultiplier, rank),
           };
         }
       }

@@ -17,6 +17,8 @@ const MAX_COINS = 256;
 const MAX_CHESTS = 8;
 const MAX_PROJECTILES = 192;
 const MAX_BARS = 128;
+/** Soldiers are the highest-count *friendly* entity, so they get a batch of their own. */
+const MAX_SOLDIERS = 64;
 
 const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
 
@@ -89,6 +91,9 @@ export class InstancedEntities {
   private readonly barFill: InstanceBatch;
   private readonly eliteRings: InstanceBatch;
   private readonly carried: InstanceBatch;
+  private readonly soldiers: InstanceBatch;
+  private readonly soldierBarBg: InstanceBatch;
+  private readonly soldierBarFill: InstanceBatch;
   private readonly map: MapDef;
   private readonly scratch = new THREE.Vector3();
   private time = 0;
@@ -117,6 +122,22 @@ export class InstancedEntities {
     this.barFill = new InstanceBatch(scene, new THREE.PlaneGeometry(1, 1), hpFill, MAX_BARS);
     this.eliteRings = new InstanceBatch(scene, new THREE.RingGeometry(0.82, 1, 16), eliteMat, MAX_BARS);
     this.carried = new InstanceBatch(scene, new THREE.SphereGeometry(3.4, 6, 5), goldFlat, MAX_BARS);
+
+    // Soldiers get their own colour and their own bar pair rather than sharing
+    // the enemy ones: a line of blue holding a line of red is the single read
+    // the army pillar depends on, and a shared green bar over both sides makes
+    // a skirmish unreadable at a glance.
+    const friendly = new THREE.MeshLambertMaterial({ color: '#5b8bff' });
+    const friendlyFill = new THREE.MeshBasicMaterial({ color: '#7fb2ff' });
+    this.soldiers = new InstanceBatch(
+      scene,
+      new THREE.CapsuleGeometry(4.2, 9, 3, 6),
+      friendly,
+      MAX_SOLDIERS,
+      true,
+    );
+    this.soldierBarBg = new InstanceBatch(scene, new THREE.PlaneGeometry(1, 1), hpBg, MAX_SOLDIERS);
+    this.soldierBarFill = new InstanceBatch(scene, new THREE.PlaneGeometry(1, 1), friendlyFill, MAX_SOLDIERS);
   }
 
   update(sim: Simulation, dt: number): void {
@@ -193,6 +214,32 @@ export class InstancedEntities {
     this.barFill.end();
     this.eliteRings.end();
     this.carried.end();
+
+    this.soldiers.begin();
+    this.soldierBarBg.begin();
+    this.soldierBarFill.begin();
+    for (const s of sim.army.soldiers) {
+      if (s.respawnIn > 0) continue; // down; the barracks is walking a replacement out
+      simToWorld(this.map, s.x, s.y, this.scratch);
+      this.soldiers.put(this.scratch.x, 9, this.scratch.z, 1, Math.atan2(s.facingX, s.facingY));
+      if (s.hp < s.maxHp) {
+        const w = 16;
+        const frac = Math.max(0, s.hp / s.maxHp);
+        this.soldierBarBg.putScaled(this.scratch.x, 26, this.scratch.z, w, 2.4, 1, this.billboardTilt);
+        this.soldierBarFill.putScaled(
+          this.scratch.x - (w * (1 - frac)) / 2,
+          26.2,
+          this.scratch.z,
+          w * frac,
+          2.4,
+          1,
+          this.billboardTilt,
+        );
+      }
+    }
+    this.soldiers.end();
+    this.soldierBarBg.end();
+    this.soldierBarFill.end();
   }
 
   dispose(): void {
@@ -204,5 +251,8 @@ export class InstancedEntities {
     this.barFill.dispose();
     this.eliteRings.dispose();
     this.carried.dispose();
+    this.soldiers.dispose();
+    this.soldierBarBg.dispose();
+    this.soldierBarFill.dispose();
   }
 }

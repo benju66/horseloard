@@ -121,6 +121,34 @@
       "model": "unit-looter"
     },
     {
+      "id": "outrider",
+      "name": "Outrider",
+      "hp": 46,
+      "speed": 62,
+      "radius": 12,
+      "coinValue": 9,
+      "siegeDps": 4,
+      "staggersHero": false,
+      "eliteEligible": true,
+      "blockImmune": true,
+      "spriteRef": "enemy-outrider",
+      "model": "unit-outrider"
+    },
+    {
+      "id": "halberdier",
+      "name": "Halberdier",
+      "hp": 105,
+      "speed": 24,
+      "radius": 15,
+      "coinValue": 14,
+      "siegeDps": 7,
+      "staggersHero": true,
+      "eliteEligible": true,
+      "antiInfantry": 4.5,
+      "spriteRef": "enemy-halberdier",
+      "model": "unit-halberdier"
+    },
+    {
       "id": "warlord",
       "name": "The Warlord",
       "hp": 1300,

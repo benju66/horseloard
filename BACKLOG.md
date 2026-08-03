@@ -45,6 +45,14 @@ the first time** — 97/75/53/28 against 90-100/70-95/45-75/25-55 — so the MG5
 above predicting a wave-budget re-tune at MG5.8 was reading an instrument error as a
 design problem. **Towers are still not a pillar (0-8%); that is MG5.4's job.**
 
+**MG5.4 built the third pillar and it works** (2026-08-03): army-only clears **0%** of
+every map, and towers+army on an equal budget takes the-ford from 17% to **92%**. Towers
+still cannot hold a map alone and are not meant to — the claim was never "towers are a
+pillar by themselves", it is "towers supply rate and rate alone clears nothing". The
+Outrider and Halberdier ship in `enemies.json` but are **held out of the campaign wave
+sets**: adding them cost warlords-march 22% → 3%, and putting enemies into waves is
+wave-budget work, which belongs to MG5.8.
+
 The armor / flyer / frontal-block counters all stay as texture. DESIGN §6's "RESOLVED"
 block is still worth reading for *why* counter-tuning cannot hold against a progression
 system, and for three traps that cost real time.
@@ -323,7 +331,10 @@ Full plan in **TRIANGLE.md** (authoritative). Per-task acceptance criteria live 
 **a cooldown caps one ability; nothing capped the sum of them.** Adding three draftable abilities put hero-only *back up* to 33% on crossroads and 58% on warlords — a pillar that had just been driven to 0% on both. Damage-per-minute is `Σ burst/cooldown` over everything equipped, so a growing roster is a sustain engine built out of burst parts. Fixed with an **equip cap** (`abilities.json` `equipSlots: 3`) — which DESIGN §4 had always specified and nothing had ever enforced. This is the structural cap, not the cooldown.
 **the bot was measuring a loadout no player can assemble.** It force-unlocked the whole roster on wave 1, which the equip cap made impossible; it now starts with Charge and drafts the rest, like a real run. That change alone moved the reference from 100/100/97/100 to 97/75/53/28 — **in band on all four maps for the first time**, with no wave budget touched. The MG5.2 note above predicting a re-tune at MG5.8 was reading an instrument error as a design problem.
 **learned:** that is three times now that a suspicious number was the harness, not the game (five-seed noise, the coverage-blind valuation, and this). A bot shortcut taken for convenience — "unlock everything, we're measuring the ceiling" — silently became a lie about the game the moment unlocks became a mechanic. Bot shortcuts need re-reading every time the thing they shortcut changes.
-[ ] **MG5.4 — Barracks + soldiers.** `ArmySystem`, enemy `blocked` state, `barracks` tower, instanced soldier rendering. The pillar that makes the triangle exist; sequenced second because everything after it is tuned against a two-legged stool otherwise. Biggest engine piece in M5 — friendly units are a new entity type, not a projectile behaviour.
+[x] **MG5.4 — Barracks + soldiers** (2026-08-03). `ArmySystem`, enemy `blocked` state, `barracks` tower with a data-driven `garrison` block and two branches, instanced soldier rendering, the Muster (`summon-host`), army perks, and two counter enemies (Outrider `blockImmune`, Halberdier `antiInfantry`). **Pillar probe: army-only 0% on all four maps.** Complement probe, funded equally: the-ford 17% → 92%, crossroads 0% → 17%, warlords +1.5 waves and kills 90 → 126.
+**exposure is geometry, not numbers.** The first build let soldiers post up to 130 units from their own plot, and adding a barracks made a board *worse* — crossroads cleared 2.4 fewer waves with half the kills. Making soldiers tougher made it worse still (−1.6 → −2.4 waves), which is the tell: they were holding enemies where no tower could shoot them, so a longer hold was a longer nothing. Cutting rally range to 50 flipped every arm in one change. **A blocker is only worth what is shooting past it.**
+**"more X made it worse" is now three-for-three a signal to stop tuning and look for a mechanism.** More gold → fewer towers was a coverage-blind bot. More abilities → stronger hero was a missing equip cap. More soldier HP → fewer kills was rally geometry. In each case the tuning knob was pointing at a bug.
+**learned:** a probe that cannot survive to exercise the thing it measures is not a probe. `towers+army` was byte-identical to `towers only` for three measurement rounds because both arms died on wave 1 with one tower standing — the barracks was never built, so the pillar claim was untested while appearing tested. Funding both arms generously and excluding economy towers made it answerable. (That inflated arm also surfaced a real, still-open bot bug: a rich early bot values a mill at ~2.4× an archer and buys nothing else.)
 [ ] **MG5.5 — XP and levels drive the draft.** `XpSystem`, enemy `xpValue`, curve in economy.json, ~25-35 levels per map, `everyNWaves` removed. Kills → XP means riding out to fight *is* progression, which finally wires pillar 1 to the reward loop.
 [ ] **MG5.6 — Perk families + offer rule.** Five families (Hero/Towers/Army/Economy/Keep); one factor per perk; every offer = 1 hero + 1 tower-or-army + 1 wildcard. Replaces per-perk tuning with a structural guarantee — no accidental pure-hero build, no all-dead offers.
 [ ] **MG5.7 — Meta tree becomes unlocks, not stats.** Removes the double-dip where meta and perks multiply the same numbers. First real save migration.

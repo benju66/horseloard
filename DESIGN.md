@@ -112,6 +112,24 @@ The Mill is the strategist's tower: it converts map safety into economy, and it'
 
 **Extensibility contract:** a tower is a JSON config (id, cost curve, stats per level, projectile def, targeting mode, branch defs, sprite refs, sfx refs) consumed by one TowerEngine. Targeting modes (nearest / first / strongest / none) and projectile behaviors (ballistic, instant, AoE, aura) are the small enum set the engine implements. Tower #5 (e.g., a Ballista with pierce, or a Tesla chain-lightning) is a config + assets, zero engine work, and slots straight into the meta tree as an unlock. **Barracks is now a launch tower, not an expansion** (promoted 2026-08-02, TRIANGLE.md §B.2): it rallies soldier blockers onto the path, and blocking is the one resource neither towers nor the hero produce. Soldiers deal little damage on purpose — they buy *exposure*, which multiplies every tower's output.
 
+> **Shipped 2026-08-03 (MG5.4), with one rule that had to be measured.** A garrison is a
+> `garrison` stat block on a tower level — squad, hp, damage, attack interval, respawn,
+> rally range, engage radius — and `ArmySystem` posts that squad on the nearest lane. One
+> soldier holds one enemy: squad size is the exposure dial, and a wave with more bodies
+> than the line has soldiers simply flows around it, which is what stops the army clearing
+> a map alone.
+>
+> **Soldiers must post next to their own tower line, not merely next to their own
+> building.** Exposure is only worth what is shooting past it, so a rally point outside
+> tower cover converts a plot into a speed bump. Measured: with a 130-unit rally range,
+> adding a barracks made a board *worse* on three of four maps; at 50 units the same
+> comparison took the-ford from 17% to 92%. The number is small on purpose — where you put
+> a barracks is a decision about where your towers already are.
+
+**The Muster** (hero ability, long cooldown) drops a plotless host on the road beside you for a fixed lifetime, with no replacements. It is the army pillar's spectacle; the barracks does the routine work, and that split is what keeps the Muster a moment rather than a second garrison.
+
+**Counters:** the **Outrider** (`blockImmune`) rides through the line, and the **Halberdier** (`antiInfantry`) cuts soldiers down several times faster than it batters the gate. Flying enemies are unblockable for free — ground troops cannot reach them. A blocker that stopped everything would make the barracks an auto-include and delete the build decision, which is the same trap §6 records for towers.
+
 **Courtyard structure policy: exactly two — Gate and Forge.** Horse upgrades fold into the forge and meta tree rather than a separate Stable; every additional structure splits the same coin sink and dilutes the build decision instead of deepening it. Explicit non-goals inherited from the genre: town-building/resource chains, gacha or merge heroes, energy timers, tap-anywhere global spells, and free-form tower placement — fixed plots are load-bearing for authorable difficulty.
 
 ---

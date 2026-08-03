@@ -63,6 +63,30 @@ export const EnemySchema = z.object({
     })
     .optional()
     .describe('Warlord: knocks a tower down one level when it stomps past'),
+  /**
+   * Outrider: rides straight through the line and cannot be held.
+   *
+   * The counter that keeps the army honest. A blocker that stops *everything*
+   * would make the barracks an auto-include and collapse the build decision —
+   * the same trap DESIGN §6 records for towers. Flying enemies get this for
+   * free (ground soldiers cannot reach them) and do not need the flag.
+   */
+  blockImmune: z
+    .boolean()
+    .default(false)
+    .describe('cannot be stopped by soldiers; walks through the line'),
+  /**
+   * Halberdier: cuts soldiers down far faster than it batters the gate.
+   *
+   * The other counter, and the more interesting one — it does not ignore the
+   * army, it *beats* it, so the answer is towers covering the rally point
+   * rather than skipping the barracks.
+   */
+  antiInfantry: z
+    .number()
+    .gt(1)
+    .optional()
+    .describe('damage multiplier against soldiers (its siegeDps is the base rate)'),
   spriteRef: SpriteRefSchema,
   /**
    * Model manifest id (models.json). Optional during the 3D migration so the

@@ -88,6 +88,21 @@ Two scales, because one is structural and one is spectacle:
 Soldiers deal **low** damage on purpose. If they killed things they would be a third
 rate source, and we would be back to substitutes.
 
+**MG5.4 measured this and found the geometry matters more than the numbers.** Exposure is
+only worth anything where something is *shooting* — a soldier who stops an enemy out of
+tower range has converted a plot into a speed bump. The first build let a garrison post
+up to 130 units from its own plot, and the result was that adding a barracks made a
+board strictly **worse**: on crossroads, `towers+army` cleared 2.4 fewer waves than
+towers alone and killed half as much. Making the soldiers *stronger* made it worse still
+(−1.6 → −2.4 waves), which is the tell that it was never a tuning problem — longer holds
+meant longer parked outside the fire.
+
+Cutting the rally range to 50 flipped it in one change. On the-ford the same comparison
+went from **17% → 92%** wins, +2.9 waves, kills 132 → 202. So the rule the barracks is
+built on: **soldiers hold the road in front of their own tower line, not in front of
+their own building.** Placement is the decision, and it has to be a *joint* decision with
+the towers or the pillar does not exist.
+
 ### B.3 The hero is burst, not sustain — and that is the structural cap
 
 **The single most important mechanical decision in this document.**
@@ -378,15 +393,42 @@ measurement comes first.
   the equip cap made impossible, so it now starts with Charge and drafts the rest.
   Towers are still not a pillar; that is MG5.4's job, not a tuning problem.
 
-### M5.4 — Barracks and soldiers
-- [ ] `ArmySystem` in `/src/engine`: soldier entities, rally points, respawn timers.
-- [ ] Enemies gain a `blocked` state — stopped and fighting, not walking.
-- [ ] `barracks` tower in `towers.json`; soldiers are data-driven (count, hp, damage,
-      respawn, rally offset).
-- [ ] Instanced rendering for soldiers; they are the highest-count friendly entity.
-- **Accept:** an enemy that meets a soldier stops advancing; killing the soldier
-  resumes it; `armyOnly` loses every map; towers + army beats towers alone on the same
-  wave budget.
+### M5.4 — Barracks and soldiers — ✅ DONE 2026-08-03
+- [x] `ArmySystem` in `/src/engine`: soldier entities, lane-relative posts, respawn
+      timers, one-soldier-one-enemy pairing.
+- [x] Enemies gain a `blocked` state — stopped and fighting, not walking. `walkingCount`
+      counts it, or a wave would end mid-skirmish.
+- [x] `barracks` tower in `towers.json`, fully data-driven via a `garrison` stat block;
+      two branches (Shieldwall / Levy). Army perks via a `garrison` tower-grant.
+- [x] Instanced rendering for soldiers, in their own colour with their own HP bars.
+- [x] **The Muster** — `summon-host`, a plotless host on a lifetime, posted on the lane
+      nearest the hero. Drafted via War Banner.
+- [x] Counter enemies: **Outrider** (`blockImmune`) and **Halberdier** (`antiInfantry`).
+- **Result.** Pillar probe (12 seeds × all bots), with the complement arm split out:
+
+  | map | towers | army | hero | reference |
+  |---|---|---|---|---|
+  | meadow-road | 8% | 0% | 33% | 97% |
+  | the-ford | 0% | 0% | 25% | 75% |
+  | crossroads | 0% | 0% | 0% | 56% |
+  | warlords-march | 0% | 0% | 0% | 22% |
+
+  `armyOnly` loses every map — the criterion. And the complement probe, funded equally
+  so both arms actually build:
+
+  | map | towers only | towers+army |
+  |---|---|---|
+  | meadow-road | 100% | 92% (ceiling; towers alone already clear it) |
+  | the-ford | 17% | **92%** |
+  | crossroads | 0% | **17%** |
+  | warlords-march | 0% | 0% (+1.5 waves, kills 90 → 126) |
+
+  Exposure multiplies rate. It is not subtle where there is room for it to matter.
+
+- **Deferred to MG5.8 on purpose:** the Outrider and Halberdier exist, are tested and are
+  in `enemies.json`, but are **not in the campaign wave sets**. Adding them cost
+  warlords-march 22% → 3% and the-ford 75% → 61%. Putting enemies into waves *is*
+  re-pricing wave budgets, which is MG5.8's job, not MG5.4's.
 
 ### M5.5 — XP and levels
 - [ ] `XpSystem`; enemies gain `xpValue`; curve in `economy.json`.

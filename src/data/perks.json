@@ -329,6 +329,78 @@
       "weight": 0.7
     },
     {
+      "id": "perk-levy-writ",
+      "name": "Levy Writ",
+      "description": "Every barracks musters more bodies onto the road.",
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": null,
+          "grant": {
+            "kind": "garrison",
+            "squad": 1,
+            "hpMultiplier": 1.0,
+            "damageMultiplier": 1.0
+          }
+        }
+      ],
+      "maxStacks": 3,
+      "weight": 0.9
+    },
+    {
+      "id": "perk-mail-and-shield",
+      "name": "Mail and Shield",
+      "description": "Soldiers hold far longer before they fall.",
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": null,
+          "grant": {
+            "kind": "garrison",
+            "squad": 0,
+            "hpMultiplier": 1.4,
+            "damageMultiplier": 1.0
+          }
+        }
+      ],
+      "maxStacks": 3,
+      "weight": 0.9
+    },
+    {
+      "id": "perk-standing-orders",
+      "name": "Standing Orders",
+      "description": "Replacements march out sooner, and hold a wider stretch of road.",
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": null,
+          "grant": {
+            "kind": "garrison",
+            "squad": 0,
+            "hpMultiplier": 1.0,
+            "damageMultiplier": 1.0,
+            "respawnMultiplier": 0.72,
+            "engageRadiusMultiplier": 1.15
+          }
+        }
+      ],
+      "maxStacks": 2,
+      "weight": 0.85
+    },
+    {
+      "id": "perk-war-banner",
+      "name": "War Banner",
+      "description": "Unlocks the Muster: the gates open and a host marches out.",
+      "effects": [
+        {
+          "type": "unlock-ability",
+          "abilityId": "muster"
+        }
+      ],
+      "maxStacks": 1,
+      "weight": 0.9
+    },
+    {
       "id": "perk-quiver-drills",
       "name": "Quiver Drills",
       "description": "Learn to draw and loose without pause. Unlocks Rapid Fire.",
