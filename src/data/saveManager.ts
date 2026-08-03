@@ -1,4 +1,4 @@
-import { newSave, type SaveData } from '../engine/progression';
+import { migrateV1ToV2, newSave, SAVE_VERSION, type SaveData } from '../engine/progression';
 
 const DB_NAME = 'horse-lord';
 const STORE = 'save';
@@ -44,14 +44,20 @@ export class SaveManager {
     });
   }
 
-  /** Chain migrations version by version; v1 is current. */
+  /**
+   * Chain migrations one version at a time, each handing off to the next.
+   *
+   * A ladder rather than a lookup table, so a save two versions behind is
+   * upgraded by composition — adding v3 means appending one step, never
+   * authoring a bespoke v1→v3 path that would have to be kept in sync with
+   * both of the others.
+   */
   private migrate(raw: { schemaVersion?: number }): SaveData {
-    switch (raw.schemaVersion) {
-      case 1:
-        return raw as SaveData;
-      default:
-        // Unknown/corrupt: don't destroy the row silently — start fresh in memory.
-        return newSave();
-    }
+    let save = raw as SaveData;
+    if (save.schemaVersion === 1) save = migrateV1ToV2(save);
+    // Unknown/corrupt, or from a future build: don't destroy the row silently —
+    // start fresh in memory and leave what is on disk alone.
+    if (save.schemaVersion !== SAVE_VERSION) return newSave();
+    return save;
   }
 }

@@ -94,6 +94,39 @@ export const TowerStatsSchema = z.object({
     })
     .optional()
     .describe('buffs the damage of other towers in radius (Beacon)'),
+  /**
+   * The army pillar (TRIANGLE.md §B.2). A tower with a garrison posts soldiers
+   * on the nearest lane; an enemy that meets one stops advancing and fights.
+   *
+   * The numbers here are deliberately shaped so this cannot become a damage
+   * source. `damage` is low and `attackInterval` long: soldiers supply
+   * **exposure**, which is a different factor from rate, and two systems
+   * producing different factors are complements rather than substitutes. If a
+   * squad ever kills a wave on its own it has stopped being the third pillar
+   * and become a fourth tower.
+   *
+   * One soldier holds one enemy. That makes `squad` the exposure dial, and it
+   * means a big enough wave simply walks past — which is the property that
+   * keeps the army from clearing a map alone.
+   */
+  garrison: z
+    .object({
+      squad: z.number().int().positive().describe('soldiers posted at once'),
+      hp: z.number().positive(),
+      damage: z.number().positive().describe('per attack — keep this small'),
+      attackInterval: z.number().positive().describe('seconds between attacks'),
+      respawn: z.number().positive().describe('seconds to replace a fallen soldier'),
+      rallyRange: z
+        .number()
+        .positive()
+        .describe('how far from the plot a lane may be for soldiers to post on it'),
+      engageRadius: z
+        .number()
+        .positive()
+        .describe('how far from its post a soldier will step to grab an enemy'),
+      spacing: z.number().positive().describe('gap between posts along the lane'),
+    })
+    .optional(),
 });
 export type TowerStats = z.infer<typeof TowerStatsSchema>;
 
@@ -120,6 +153,16 @@ export const TowerSchema = z.object({
   description: z.string().min(1),
   targeting: TargetingModeSchema,
   projectileId: IdSchema.nullable().describe('null only for non-attacking towers (targeting "none")'),
+  /**
+   * Buildable on a fresh save. Defaults true so adding the field does not
+   * silently lock the existing roster; a tower opts out, exactly like
+   * `targetsFlying` below.
+   *
+   * The barracks opts out: the army is the pillar you *earn*, which is what
+   * gives the meta tree something to grant now that it grants no stats
+   * (TRIANGLE.md §B.6).
+   */
+  unlockedByDefault: z.boolean().default(true),
   targetsFlying: z
     .boolean()
     .default(true)

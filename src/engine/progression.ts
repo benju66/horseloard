@@ -1,8 +1,19 @@
 import type { Economy, MetaNode } from '../data/schemas';
 
-/** Save schema v1 — versioned from the first write (CLAUDE.md #4). No derived state. */
+/** The current save schema version. Bump with every shape or meaning change. */
+export const SAVE_VERSION = 2;
+
+/**
+ * Save schema v2 — versioned from the first write (CLAUDE.md #4). No derived state.
+ *
+ * The shape is unchanged from v1; the *meaning* of `meta.ranks` is not. MG5.7
+ * retired every stat node in the meta tree in favour of unlocks, so a v1 save
+ * holds ranks in nodes that no longer exist. `SaveManager.migrate` refunds
+ * those and drops the keys — see the note there for why that is a migration and
+ * not something to leave to `applyMetaModifiers` quietly ignoring them.
+ */
 export interface SaveData {
-  schemaVersion: 1;
+  schemaVersion: number;
   updatedAt: string;
   tokens: number;
   campaign: Record<string, { stars: 0 | 1 | 2 | 3; bestWavesCleared: number; completed: boolean }>;
@@ -12,13 +23,57 @@ export interface SaveData {
 
 export function newSave(): SaveData {
   return {
-    schemaVersion: 1,
+    schemaVersion: SAVE_VERSION,
     updatedAt: new Date().toISOString(),
     tokens: 0,
     campaign: {},
     endlessBest: {},
     meta: { ranks: {} },
   };
+}
+
+/**
+ * The nodes MG5.7 retired, with what each rank cost. Frozen here rather than
+ * read from `metatree.json`, because the file no longer contains them — a
+ * migration has to know the *old* world, and looking it up in the new one is
+ * how refunds silently become zero.
+ */
+const RETIRED_V1_NODES: Record<string, readonly number[]> = {
+  'swift-steed': [10, 15, 20],
+  bowyer: [10, 15, 25],
+  fletchers: [15, 25, 40],
+  masonry: [20, 35],
+  'war-chest': [10, 20, 30],
+  'stone-gate': [15, 25, 40],
+  lodestone: [10, 20],
+};
+
+/**
+ * v1 → v2: the meta tree stopped granting stats (TRIANGLE.md §B.6).
+ *
+ * Every stat node is gone, so a returning player has tokens sunk into things
+ * that no longer exist. `applyMetaModifiers` would ignore the orphan keys
+ * harmlessly — which is exactly why this needs to be a migration and not left
+ * alone. Ignoring them silently *keeps the player's tokens spent* on nothing:
+ * the save would look fine, the tree would look untouched, and the tokens would
+ * simply be gone. Refunding is the only honest outcome.
+ *
+ * Volley and Rally Horn survive with the same ids and cheaper costs. Their
+ * ranks are kept rather than refunded — the player still has what they bought,
+ * and the price difference is not worth clawing back.
+ */
+export function migrateV1ToV2(save: SaveData): SaveData {
+  const next: SaveData = structuredClone(save);
+  next.schemaVersion = 2;
+
+  let refund = 0;
+  for (const [nodeId, costs] of Object.entries(RETIRED_V1_NODES)) {
+    const rank = next.meta.ranks[nodeId] ?? 0;
+    for (let r = 0; r < rank; r++) refund += costs[r] ?? 0;
+    delete next.meta.ranks[nodeId];
+  }
+  next.tokens += refund;
+  return next;
 }
 
 export interface RunOutcome {

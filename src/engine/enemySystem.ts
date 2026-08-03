@@ -4,12 +4,14 @@ import type { LanePath } from './path';
 
 /**
  * 'walking' — advancing along its lane
+ * 'blocked' — stopped on the road, fighting a soldier. Resumes walking the
+ *             moment the soldier dies; the ArmySystem owns both transitions.
  * 'to-slot' — reached the path end, marching to its assigned siege position
  * 'at-slot' — in position at the gate. Leaks never despawn (DESIGN §6);
  *             whether this spot deals siege damage is the GateSystem's call
  *             (attack slot) or not (overflow queue).
  */
-export type EnemyState = 'walking' | 'to-slot' | 'at-slot' | 'looting';
+export type EnemyState = 'walking' | 'blocked' | 'to-slot' | 'at-slot' | 'looting';
 
 export interface EnemyInstance {
   readonly id: number;
@@ -39,6 +41,8 @@ export interface EnemyInstance {
   hasteRemaining: number;
   /** seconds until this enemy's next war cry (warCry configs only) */
   cryCooldown: number;
+  /** soldier id holding this enemy while state is 'blocked'; the ArmySystem owns it */
+  blockedBy: number | null;
 }
 
 /**
@@ -108,6 +112,7 @@ export class EnemySystem {
       hasteFactor: 1,
       hasteRemaining: 0,
       cryCooldown: config.warCry ? config.warCry.interval * 0.4 : 0,
+      blockedBy: null,
     };
     lane.positionAt(0, e);
     const dir = lane.directionAt(0, this.scratchDir);
@@ -157,6 +162,9 @@ export class EnemySystem {
       const speed = this.effectiveSpeed(e);
 
       if (e.state === 'looting') continue; // the LooterSystem drives these
+      // Held on the road. It keeps its lane distance, so releasing it resumes
+      // the walk from exactly where it stopped rather than teleporting it.
+      if (e.state === 'blocked') continue; // the ArmySystem drives these
 
       if (e.state === 'walking') {
         const lane = this.lanes.get(e.laneId)!;
@@ -284,9 +292,16 @@ export class EnemySystem {
     return this.list.length;
   }
 
+  /**
+   * Enemies still coming down the road — the sim's "is this wave over" test.
+   *
+   * 'blocked' counts. A held enemy has not arrived and has not died; it is
+   * standing on the road being shot at. Leaving it out would end the wave early
+   * and hand the player a clear while the army was still doing its job.
+   */
   get walkingCount(): number {
     let n = 0;
-    for (const e of this.list) if (e.state === 'walking') n++;
+    for (const e of this.list) if (e.state === 'walking' || e.state === 'blocked') n++;
     return n;
   }
 }

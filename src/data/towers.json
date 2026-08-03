@@ -131,7 +131,7 @@
         {
           "id": "archer-rapid",
           "name": "Rapid",
-          "description": "Sheer fire rate \u2014 shreds swarms.",
+          "description": "Sheer fire rate — shreds swarms.",
           "cost": 110,
           "stats": {
             "damage": 14,
@@ -258,7 +258,7 @@
     {
       "id": "mill",
       "name": "Mill",
-      "description": "No attack. Drops coins beside itself \u2014 ride by to collect.",
+      "description": "No attack. Drops coins beside itself — ride by to collect.",
       "targeting": "none",
       "projectileId": null,
       "spriteRef": "tower-mill",
@@ -331,6 +331,110 @@
         }
       ],
       "model": "build-mill"
+    },
+    {
+      "id": "barracks",
+      "name": "Barracks",
+      "description": "Posts a picket on the road. Soldiers stop what walks into them — and barely scratch it.",
+      "targeting": "none",
+      "projectileId": null,
+      "spriteRef": "tower-barracks",
+      "unlockedByDefault": false,
+      "levels": [
+        {
+          "cost": 45,
+          "damage": 0,
+          "range": 130,
+          "fireInterval": 1,
+          "garrison": {
+            "squad": 3,
+            "hp": 95,
+            "damage": 3,
+            "attackInterval": 1.1,
+            "respawn": 5.0,
+            "rallyRange": 50,
+            "engageRadius": 72,
+            "spacing": 26
+          }
+        },
+        {
+          "cost": 65,
+          "damage": 0,
+          "range": 130,
+          "fireInterval": 1,
+          "garrison": {
+            "squad": 4,
+            "hp": 125,
+            "damage": 4,
+            "attackInterval": 1.1,
+            "respawn": 4.5,
+            "rallyRange": 50,
+            "engageRadius": 76,
+            "spacing": 26
+          }
+        },
+        {
+          "cost": 85,
+          "damage": 0,
+          "range": 130,
+          "fireInterval": 1,
+          "garrison": {
+            "squad": 5,
+            "hp": 160,
+            "damage": 5,
+            "attackInterval": 1.1,
+            "respawn": 4.0,
+            "rallyRange": 50,
+            "engageRadius": 80,
+            "spacing": 26
+          }
+        }
+      ],
+      "branches": [
+        {
+          "id": "barracks-shieldwall",
+          "name": "Shieldwall",
+          "description": "Fewer, far tougher. The line holds where it stands.",
+          "cost": 125,
+          "stats": {
+            "damage": 0,
+            "range": 130,
+            "fireInterval": 1,
+            "garrison": {
+              "squad": 5,
+              "hp": 300,
+              "damage": 5,
+              "attackInterval": 1.1,
+              "respawn": 4.0,
+              "rallyRange": 50,
+              "engageRadius": 80,
+              "spacing": 26
+            }
+          }
+        },
+        {
+          "id": "barracks-levy",
+          "name": "Levy",
+          "description": "More bodies, replaced fast. Holds a wider stretch of road.",
+          "cost": 125,
+          "stats": {
+            "damage": 0,
+            "range": 150,
+            "fireInterval": 1,
+            "garrison": {
+              "squad": 8,
+              "hp": 150,
+              "damage": 4,
+              "attackInterval": 1.1,
+              "respawn": 2.5,
+              "rallyRange": 50,
+              "engageRadius": 90,
+              "spacing": 24
+            }
+          }
+        }
+      ],
+      "model": "build-barracks"
     }
   ]
 }

@@ -67,6 +67,22 @@ const BUFF_MIN_ENEMIES = 5;
 const ARRIVE_EPSILON = 6;
 /** Longest a single wave may run before we call the run stalled. */
 const MAX_WAVE_SECONDS = 240;
+/**
+ * Roster-average siege dps, used to guess how long a soldier survives.
+ *
+ * A constant rather than a read of enemies.json because the spender only ever
+ * sees the tower file. It is a heuristic inside a heuristic — it only has to
+ * rank a barracks against an archer, not predict a fight.
+ */
+const ASSUMED_SIEGE_DPS = 6;
+/**
+ * How much of a neighbour's dps a held enemy actually eats. Well under 1: a
+ * blocked enemy is one target among several, and towers were already shooting
+ * something.
+ */
+const EXPOSURE_AMPLIFICATION = 0.45;
+/** Worth of stopping one enemy with no towers watching — small, but not zero. */
+const BLOCK_FLOOR = 1.5;
 
 function projectileById(file: TowersFile, id: string | null | undefined): Projectile | null {
   if (!id) return null;
@@ -124,6 +140,46 @@ export function incomeValue(
   return goldEarned * valuePerGold * INCOME_RAMP;
 }
 
+/**
+ * What a garrison is worth: not what it kills, but what it *holds still*.
+ *
+ * Exposure is a different factor from rate (TRIANGLE.md §B.2), so it cannot be
+ * scored as damage. A held enemy is a body standing inside whatever the
+ * neighbouring towers cover, which means the value of the block is the fire it
+ * eats — so this multiplies the combat already in range rather than adding to
+ * it. A barracks with nothing near it is nearly worthless, and one posted in
+ * front of an archer line is worth more than the archers cost. That asymmetry
+ * is the pillar, and a scorer that missed it would never build the tower.
+ *
+ * **Scored against what actually covers the post, with no projection.** The
+ * obvious fix for "the first barracks is worth nothing" is to score it against
+ * the fire that will *eventually* arrive, the way `incomeValue` above scores
+ * against the run still to come. Measured, that was strictly worse: it made a
+ * barracks the single best opening buy on every map, the bot opened with one,
+ * and every run died on wave 1 with two kills. A complement projected forward
+ * stops being a complement.
+ *
+ * The honest numbers rank it exactly right on their own — measured on
+ * meadow-road with three archers standing, a barracks on a covered plot scores
+ * 0.40 against a fresh archer's 0.41 and an archer upgrade's 0.28. Below the
+ * next tower, above the next upgrade. That is the whole model.
+ */
+export function exposureValue(
+  stats: TowerStats,
+  neighbourCombat: number,
+  assumedSiegeDps: number,
+): number {
+  const g = stats.garrison;
+  if (!g) return 0;
+  // How long one soldier survives the average attacker, and what fraction of
+  // the time its post is therefore occupied at all.
+  const holdSeconds = g.hp / Math.max(0.5, assumedSiegeDps);
+  const duty = holdSeconds / (holdSeconds + g.respawn);
+  const heldAtOnce = g.squad * duty;
+  const ownDps = (g.damage / g.attackInterval) * g.squad;
+  return heldAtOnce * (neighbourCombat * EXPOSURE_AMPLIFICATION + BLOCK_FLOOR) + ownDps;
+}
+
 /** What a support aura adds, measured against the neighbours actually in range. */
 export function supportValue(stats: TowerStats, neighbourCombat: number): number {
   if (!stats.towerAura) return 0;
@@ -149,7 +205,15 @@ function totalValue(
   return (
     combatValue(stats, def) +
     incomeValue(stats, v.horizonSeconds, v.valuePerGold) +
-    supportValue(stats, stats.towerAura ? v.neighbourCombat(plot.x, plot.y, stats.towerAura.radius) : 0)
+    supportValue(stats, stats.towerAura ? v.neighbourCombat(plot.x, plot.y, stats.towerAura.radius) : 0) +
+    exposureValue(
+      stats,
+      // Everything that can shoot the stretch of road this garrison would hold.
+      stats.garrison
+        ? v.neighbourCombat(plot.x, plot.y, stats.garrison.rallyRange + stats.garrison.engageRadius)
+        : 0,
+      ASSUMED_SIEGE_DPS,
+    )
   );
 }
 
@@ -225,6 +289,8 @@ function affordablePurchases(
   /** when set, the bot may only ever build this tower — the forced-composition probe */
   onlyTowerId: string | null,
   samples: readonly LaneSample[],
+  garrisons: 'any' | 'only' | 'none' = 'any',
+  noIncome = false,
 ): Purchase[] {
   const out: Purchase[] = [];
   const built = sim.towerSystem.plots.filter((p) => p.towerId !== null).length;
@@ -248,6 +314,9 @@ function affordablePurchases(
         const cost = sim.towerSystem.buildCost(tower.id);
         const level1 = tower.levels[0];
         if (cost === null || !level1 || cost > sim.gold) continue;
+        if (garrisons === 'only' && !level1.garrison) continue;
+        if (garrisons === 'none' && level1.garrison) continue;
+        if (noIncome && level1.income) continue;
         // Breadth counts. Without this the greedy scorer stacks a corner and
         // leaves the rest of the road unwatched — measurably worse, and worse
         // the richer it gets.
@@ -401,6 +470,12 @@ function castReady(sim: Simulation, opts: { chargeWhenMoving: boolean }): void {
           sim.castAbility(slot.ability.id);
         }
         break;
+      case 'summon-host':
+        // A long cooldown wants a real wave under it, and the host has to be
+        // posted on road that matters — so: plenty of enemies, and the hero
+        // near enough to a lane for the muster to land on one.
+        if (sim.enemySystem.aliveCount >= BUFF_MIN_ENEMIES) sim.castAbility(slot.ability.id);
+        break;
       case 'charge':
         // The identity verb: ride through bodies, and the escape from a shove.
         if (sim.hero.staggered || (opts.chargeWhenMoving && sim.hero.moving)) {
@@ -442,6 +517,27 @@ interface Plan {
   chargeWhenMoving: boolean;
   /** restrict every build to this tower id — null = free choice */
   onlyTowerId?: string | null;
+  /**
+   * Build only towers that post a garrison — the army-only pillar probe.
+   *
+   * Selected by schema shape rather than by id, so this file still names no
+   * content (CLAUDE.md #1) and a second garrison tower is included the day its
+   * JSON lands.
+   */
+  onlyGarrison?: boolean;
+  /** Skip garrison towers — isolates the tower pillar from the army one. */
+  noGarrison?: boolean;
+  /**
+   * Skip economy towers.
+   *
+   * For the complement probe, which funds both arms generously on purpose. A
+   * rich early bot massively overvalues income — `incomeValue` scales with the
+   * whole remaining run, so at wave 0 a mill scores ~2.4× an archer, and a
+   * funded bot buys nothing but mills and kills nothing at all. That is a real
+   * bot bug worth its own fix; excluding economy towers keeps it from
+   * swallowing a probe about something else.
+   */
+  noIncome?: boolean;
   /**
    * Cast abilities at all. Off for the towers-only pillar probe: Volley and
    * Charge are hero damage, and the probe has to isolate the pillar rather than
@@ -495,6 +591,8 @@ function makePolicy(plan: Plan): BotFactory {
             plan.maxTowers,
             plan.onlyTowerId ?? null,
             samples,
+            plan.onlyGarrison ? 'only' : plan.noGarrison ? 'none' : 'any',
+            plan.noIncome ?? false,
           );
           if (options.length === 0) continue;
           options.sort((a, b) => b.efficiency - a.efficiency);
@@ -626,6 +724,61 @@ export const towersOnly: BotFactory = makePolicy({
   leash: Infinity, // roam for coins; the gold still has to come from somewhere
   chargeWhenMoving: false,
   castAbilities: false,
+  // Garrisons are the army pillar, not this one. Leaving them buildable here
+  // would quietly make 'towers only' mean 'towers and army', and the probe
+  // would stop isolating anything.
+  noGarrison: true,
+});
+
+/**
+ * Towers **and** army, hero still silent — the complement arm.
+ *
+ * TRIANGLE §B.2 claims exposure multiplies rate. That claim is falsifiable in
+ * exactly one place: this arm must beat `towersOnly` on the same wave budget.
+ * If it does not, the barracks is a worse tower rather than a third pillar, and
+ * the whole milestone was wrong.
+ */
+export const towersAndArmy: BotFactory = makePolicy({
+  name: 'towers+army',
+  maxTowers: Infinity,
+  bowShare: 0,
+  repairFloor: 0.8,
+  leash: Infinity,
+  chargeWhenMoving: false,
+  castAbilities: false,
+  noIncome: true,
+});
+
+/** The control arm for the complement probe: same exclusions, minus the garrison. */
+export const combatTowersOnly: BotFactory = makePolicy({
+  name: 'towers-only(combat)',
+  maxTowers: Infinity,
+  bowShare: 0,
+  repairFloor: 0.8,
+  leash: Infinity,
+  chargeWhenMoving: false,
+  castAbilities: false,
+  noGarrison: true,
+  noIncome: true,
+});
+
+/**
+ * Army only: garrison towers and nothing else, with a hero that deals no damage.
+ *
+ * The arm that has to *fail*. Soldiers are meant to hold, not kill, so if this
+ * ever wins a map the barracks has stopped being an exposure source and become
+ * a fourth tower — which would put us back where M5 started, with two systems
+ * producing the same resource.
+ */
+export const armyOnly: BotFactory = makePolicy({
+  name: 'army-only',
+  maxTowers: Infinity,
+  bowShare: 0,
+  repairFloor: 0.8,
+  leash: Infinity, // still rides for coins; the probe is about damage, not funding
+  chargeWhenMoving: false,
+  castAbilities: false,
+  onlyGarrison: true,
 });
 
 /** Hero only: never builds, buys every bow level, roams freely. */
@@ -688,6 +841,8 @@ export interface BotRunResult {
   leaks: number;
   goldLeft: number;
   bowLevel: number;
+  /** hero level reached — the draft cadence, and the ~25-35 target of TRIANGLE §B.4 */
+  heroLevel: number;
   /** tower ids standing at the end — reported as data, to spot dead weight */
   towers: string[];
   /** perks drafted this run as "id xN" — the measurement the draft exists for */
@@ -817,6 +972,7 @@ export function runBot(
     leaks,
     goldLeft: sim.gold,
     bowLevel: sim.hero.bowLevel,
+    heroLevel: sim.xp.level,
     towers: sim.towerSystem.plots
       .filter((p) => p.towerId !== null)
       .map((p) => `${p.towerId}${p.branchId ? ':' + p.branchId : '@L' + p.level}`),

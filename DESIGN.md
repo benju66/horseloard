@@ -112,6 +112,24 @@ The Mill is the strategist's tower: it converts map safety into economy, and it'
 
 **Extensibility contract:** a tower is a JSON config (id, cost curve, stats per level, projectile def, targeting mode, branch defs, sprite refs, sfx refs) consumed by one TowerEngine. Targeting modes (nearest / first / strongest / none) and projectile behaviors (ballistic, instant, AoE, aura) are the small enum set the engine implements. Tower #5 (e.g., a Ballista with pierce, or a Tesla chain-lightning) is a config + assets, zero engine work, and slots straight into the meta tree as an unlock. **Barracks is now a launch tower, not an expansion** (promoted 2026-08-02, TRIANGLE.md §B.2): it rallies soldier blockers onto the path, and blocking is the one resource neither towers nor the hero produce. Soldiers deal little damage on purpose — they buy *exposure*, which multiplies every tower's output.
 
+> **Shipped 2026-08-03 (MG5.4), with one rule that had to be measured.** A garrison is a
+> `garrison` stat block on a tower level — squad, hp, damage, attack interval, respawn,
+> rally range, engage radius — and `ArmySystem` posts that squad on the nearest lane. One
+> soldier holds one enemy: squad size is the exposure dial, and a wave with more bodies
+> than the line has soldiers simply flows around it, which is what stops the army clearing
+> a map alone.
+>
+> **Soldiers must post next to their own tower line, not merely next to their own
+> building.** Exposure is only worth what is shooting past it, so a rally point outside
+> tower cover converts a plot into a speed bump. Measured: with a 130-unit rally range,
+> adding a barracks made a board *worse* on three of four maps; at 50 units the same
+> comparison took the-ford from 17% to 92%. The number is small on purpose — where you put
+> a barracks is a decision about where your towers already are.
+
+**The Muster** (hero ability, long cooldown) drops a plotless host on the road beside you for a fixed lifetime, with no replacements. It is the army pillar's spectacle; the barracks does the routine work, and that split is what keeps the Muster a moment rather than a second garrison.
+
+**Counters:** the **Outrider** (`blockImmune`) rides through the line, and the **Halberdier** (`antiInfantry`) cuts soldiers down several times faster than it batters the gate. Flying enemies are unblockable for free — ground troops cannot reach them. A blocker that stopped everything would make the barracks an auto-include and delete the build decision, which is the same trap §6 records for towers.
+
 **Courtyard structure policy: exactly two — Gate and Forge.** Horse upgrades fold into the forge and meta tree rather than a separate Stable; every additional structure splits the same coin sink and dilutes the build decision instead of deepening it. Explicit non-goals inherited from the genre: town-building/resource chains, gacha or merge heroes, energy timers, tap-anywhere global spells, and free-form tower placement — fixed plots are load-bearing for authorable difficulty.
 
 ---
@@ -343,6 +361,16 @@ Engine note: "reached end" is an entity state change (walker → besieger, new p
 - **Kingdom:** starting gold, gate max HP, repair cost reduction, coin magnet radius, coin expiry time, wave-preview detail
 
 **Free respec, always.** No monetization means no reason to punish experimentation; respec friction is dark-pattern residue.
+
+**XP and levels** (MG5.5, TRIANGLE.md §B.4). Kills grant XP; every level deals a draft. That replaces the old "a card per wave clear" cadence, and the replacement is the design, not the plumbing: a card per wave rewarded *surviving*, a card per level rewards *fighting*, and fighting means riding out to where the enemies are. Pillar 1 — greed pulls you toward danger — had been sitting beside the reward loop since M0 rather than driving it. Target and measured result are both **25-35 levels on a full map**, against ~12 before.
+
+Gold and XP stay separate currencies with separate jobs: **gold buys commitment** (towers, the barracks), **XP buys identity** (perks, abilities). `xpValue` tracks how much of a fight a thing is, not what it drops.
+
+The curve is `base × growth^(n-1)`, geometric rather than a table so it keeps working in endless. **Where it is steep matters more than how many levels it yields** — three curves all produced ~30 levels and only one preserved the difficulty bands, because a level that arrives after the fight it was needed for buys nothing.
+
+**Perk families and the offer rule** (MG5.6, TRIANGLE.md §B.5). Every perk belongs to one of five families — **Hero · Towers · Army · Economy · Keep** — and every offer of three reserves one Hero slot and one Tower-or-Army slot, with the rest wildcards. The family is printed on the card.
+
+This replaces per-perk balance tuning with a structural guarantee. It bans nothing and removes no agency — you still choose freely — but you cannot accidentally draft a pure-hero run however the weights fall, and you never face three cards that are all dead for what you built. Measured: the rule alone moved crossroads 44% → 64% and warlords-march 25% → 50% with no weight changed, and put all four maps inside their bands for the first time.
 
 **Loss payout:** tokens are earned per wave cleared even on defeat. This is the rubber band that makes a hard endgame compatible with a broad audience — a failed run is progress, never wasted time.
 

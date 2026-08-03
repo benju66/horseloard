@@ -133,6 +133,16 @@ export const VOICES: Record<string, Voice> = {
     }
   },
 
+  'sfx-muster': (c, o, t, p) => {
+    // The gates opening: a low swell under the horn, then the tramp of boots.
+    // Deliberately the biggest sound the hero has — it is the once-a-map moment.
+    for (const [mult, peak] of [[1, 0.18], [1.5, 0.11], [2, 0.06]] as const) {
+      tone(c, o, t, { type: 'sawtooth', from: 147 * p * mult, decay: 0.9, peak });
+    }
+    for (let i = 0; i < 4; i++) {
+      tone(c, o, t + 0.28 + i * 0.16, { type: 'square', from: 84 * p, to: 60 * p, decay: 0.11, peak: 0.13 });
+    }
+  },
   'sfx-caltrops': (c, o, t, p) => {
     // A handful of iron hitting dirt: bright scatter, no tone. Deliberately
     // unlike the bow sounds — this ability leaves something behind rather than

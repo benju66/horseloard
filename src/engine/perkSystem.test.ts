@@ -50,10 +50,11 @@ function pool(extra: unknown[] = [], rest: Record<string, unknown> = {}): PerksF
     offerSize: 3,
     ...rest,
     perks: [
-      { id: 'a', name: 'A', description: 'a', effects: [{ type: 'hero-stat', stat: 'moveSpeed', perRank: 1.1, mode: 'multiply' }], maxStacks: 2 },
-      { id: 'b', name: 'B', description: 'b', effects: [{ type: 'hero-stat', stat: 'bowDamage', perRank: 5, mode: 'add' }], maxStacks: 3 },
-      { id: 'c', name: 'C', description: 'c', effects: [{ type: 'kingdom-stat', stat: 'coinMagnetRadius', perRank: 2, mode: 'multiply' }], maxStacks: 1 },
-      { id: 'd', name: 'D', description: 'd', effects: [{ type: 'tower-stat', towerId: null, stat: 'damage', perRank: 1.5, mode: 'multiply' }], maxStacks: 1 },
+      { id: 'a', family: 'hero', name: 'A', description: 'a', effects: [{ type: 'hero-stat', stat: 'moveSpeed', perRank: 1.1, mode: 'multiply' }], maxStacks: 2 },
+      { id: 'b', family: 'hero', name: 'B', description: 'b', effects: [{ type: 'hero-stat', stat: 'bowDamage', perRank: 5, mode: 'add' }], maxStacks: 3 },
+      { id: 'c', family: 'economy', name: 'C', description: 'c', effects: [{ type: 'kingdom-stat', stat: 'coinMagnetRadius', perRank: 2, mode: 'multiply' }], maxStacks: 1 },
+      { id: 'd', family: 'towers', name: 'D', description: 'd', effects: [{ type: 'tower-stat', towerId: null, stat: 'damage', perRank: 1.5, mode: 'multiply' }], maxStacks: 1 },
+      { id: 'e', family: 'army', name: 'E', description: 'e', effects: [{ type: 'tower-grant', towerId: null, grant: { kind: 'garrison', squad: 1, hpMultiplier: 1, damageMultiplier: 1 } }], maxStacks: 1 },
       ...extra,
     ],
   });
@@ -87,7 +88,7 @@ describe('dealing', () => {
   it('shrinks the offer rather than repeating when the pool runs low', () => {
     const sys = new PerkSystem(pool(), data(), seededRng(3));
     // Exhaust everything except one single-stack perk.
-    for (const id of ['a', 'a', 'b', 'b', 'b', 'c']) {
+    for (const id of ['a', 'a', 'b', 'b', 'b', 'c', 'e']) {
       sys.deal();
       // deal() may not include the target; force it by dealing until it does.
       let guard = 0;
@@ -100,7 +101,7 @@ describe('dealing', () => {
 
   it('returns null once every perk is maxed', () => {
     const sys = new PerkSystem(pool(), data(), seededRng(5));
-    for (const id of ['a', 'a', 'b', 'b', 'b', 'c', 'd']) {
+    for (const id of ['a', 'a', 'b', 'b', 'b', 'c', 'd', 'e']) {
       let guard = 0;
       do {
         sys.deal();
@@ -109,6 +110,53 @@ describe('dealing', () => {
     }
     expect(sys.deal()).toBeNull();
     expect(sys.offer).toBeNull();
+  });
+});
+
+/**
+ * The offer rule (TRIANGLE.md §B.5). This is the structural guarantee that
+ * replaces per-perk balance tuning: it bans nothing and removes no agency, but
+ * it makes an accidental pure-hero run impossible however the weights fall.
+ */
+describe('the offer rule', () => {
+  it('always reserves a hero slot and a tower-or-army slot', () => {
+    for (let seed = 1; seed < 60; seed++) {
+      const offer = new PerkSystem(pool(), data(), seededRng(seed)).deal()!;
+      expect(offer.some((p) => p.family === 'hero')).toBe(true);
+      expect(offer.some((p) => p.family === 'towers' || p.family === 'army')).toBe(true);
+    }
+  });
+
+  it('holds even when the weights are stacked entirely against it', () => {
+    // A pool where hero cards are 100× more likely would, under plain weighted
+    // sampling, deal three hero cards constantly. The rule is what makes that
+    // impossible rather than merely unlikely.
+    const skewed = pool([
+      { id: 'h1', family: 'hero', name: 'H1', description: 'x', effects: [{ type: 'hero-stat', stat: 'moveSpeed', perRank: 1.1, mode: 'multiply' }], maxStacks: 9, weight: 100 },
+      { id: 'h2', family: 'hero', name: 'H2', description: 'x', effects: [{ type: 'hero-stat', stat: 'bowRange', perRank: 1.1, mode: 'multiply' }], maxStacks: 9, weight: 100 },
+      { id: 'h3', family: 'hero', name: 'H3', description: 'x', effects: [{ type: 'hero-stat', stat: 'trampleDamage', perRank: 1.1, mode: 'multiply' }], maxStacks: 9, weight: 100 },
+    ]);
+    for (let seed = 1; seed < 60; seed++) {
+      const offer = new PerkSystem(skewed, data(), seededRng(seed)).deal()!;
+      expect(offer.some((p) => p.family === 'towers' || p.family === 'army')).toBe(true);
+    }
+  });
+
+  it('degrades a starved slot to a wildcard rather than shrinking the offer', () => {
+    const sys = new PerkSystem(pool(), data(), seededRng(31));
+    // Take out every tower and army card, then keep dealing.
+    for (const id of ['d', 'e']) {
+      let guard = 0;
+      do {
+        sys.deal();
+      } while (!sys.offer?.some((p) => p.id === id) && guard++ < 400);
+      sys.take(id);
+    }
+    const offer = sys.deal()!;
+    // Three cards, none of them from the reserved families. A two-card draft
+    // here would read as the game running out, not as a rule being honoured.
+    expect(offer).toHaveLength(3);
+    expect(offer.every((p) => p.family !== 'towers' && p.family !== 'army')).toBe(true);
   });
 });
 
@@ -180,6 +228,7 @@ describe('taking', () => {
     const withGate = pool([
       {
         id: 'gate',
+        family: 'hero',
         name: 'Gate',
         description: 'g',
         effects: [{ type: 'kingdom-stat', stat: 'gateMaxHp', perRank: 25, mode: 'add' }],
@@ -225,6 +274,7 @@ describe('tradeoffs and grants', () => {
       pool([
         {
           id: 'trade',
+          family: 'hero',
           name: 'Trade',
           description: 'harder, slower',
           effects: [
@@ -251,6 +301,7 @@ describe('tradeoffs and grants', () => {
       pool([
         {
           id: 'strip',
+          family: 'hero',
           name: 'Strip',
           description: 'cheap towers, weaker keep',
           effects: [
@@ -280,6 +331,7 @@ describe('tradeoffs and grants', () => {
       pool([
         {
           id: 'oath',
+          family: 'hero',
           name: 'Oath',
           description: 'towers can crit',
           effects: [
@@ -313,6 +365,7 @@ describe('tradeoffs and grants', () => {
       pool([
         {
           id: 'oath',
+          family: 'hero',
           name: 'Oath',
           description: 'towers can crit',
           effects: [
@@ -350,6 +403,7 @@ describe('ability cards', () => {
       pool([
         {
           id: 'learn',
+          family: 'hero',
           name: 'Learn',
           description: 'unlocks quick',
           effects: [{ type: 'unlock-ability', abilityId: 'quick' }],
@@ -375,6 +429,7 @@ describe('ability cards', () => {
       pool([
         {
           id: 'storm',
+          family: 'hero',
           name: 'Storm',
           description: 'bigger rain',
           effects: [
@@ -402,6 +457,7 @@ describe('ability cards', () => {
       pool([
         {
           id: 'hands',
+          family: 'hero',
           name: 'Hands',
           description: 'faster recharge',
           effects: [
@@ -432,6 +488,7 @@ describe('ability cards', () => {
       pool([
         {
           id: 'wide',
+          family: 'hero',
           name: 'Wide',
           description: 'bigger radius everywhere',
           effects: [
@@ -449,6 +506,62 @@ describe('ability cards', () => {
     expect((d.abilities[0]!.effect as { radius: number }).radius).toBeCloseTo(150);
     // 'quick' is a hero-buff and has no radius — it must not sprout one.
     expect(d.abilities[1]!.effect).not.toHaveProperty('radius');
+  });
+});
+
+/**
+ * Levels arrive faster than a player answers them once XP drives the draft
+ * (TRIANGLE.md §B.4). Everything here guards against the queue silently eating
+ * a card, which reads as the game withholding a reward.
+ */
+describe('queued drafts', () => {
+  it('deals immediately when the table is clear', () => {
+    const sys = new PerkSystem(pool(), data(), seededRng(71));
+    sys.queue();
+    expect(sys.offer).not.toBeNull();
+    expect(sys.queuedDrafts).toBe(0);
+  });
+
+  it('banks a level that lands while a card is already in hand', () => {
+    const sys = new PerkSystem(pool(), data(), seededRng(72));
+    sys.queue();
+    const first = sys.offer!;
+    sys.queue(); // levelled again mid-charge
+    // The card in hand must not be swapped under the player's thumb.
+    expect(sys.offer).toBe(first);
+    expect(sys.queuedDrafts).toBe(1);
+  });
+
+  it('deals the banked card the moment the current one is answered', () => {
+    const sys = new PerkSystem(pool(), data(), seededRng(73));
+    sys.queue();
+    sys.queue();
+    sys.take(sys.offer![0]!.id);
+    expect(sys.offer).not.toBeNull();
+    expect(sys.queuedDrafts).toBe(0);
+  });
+
+  it('deals the banked card after a skip too — declining is not forfeiting', () => {
+    const sys = new PerkSystem(pool(), data(), seededRng(74));
+    sys.queue();
+    sys.queue();
+    sys.skip();
+    expect(sys.offer).not.toBeNull();
+  });
+
+  it('drops the backlog when the pool runs dry rather than owing forever', () => {
+    const sys = new PerkSystem(pool(), data(), seededRng(75));
+    for (const id of ['a', 'a', 'b', 'b', 'b', 'c', 'd', 'e']) {
+      let guard = 0;
+      do {
+        sys.deal();
+      } while (!sys.offer?.some((p) => p.id === id) && guard++ < 400);
+      sys.take(id);
+    }
+    sys.queue();
+    sys.queue();
+    expect(sys.offer).toBeNull();
+    expect(sys.queuedDrafts).toBe(0);
   });
 });
 

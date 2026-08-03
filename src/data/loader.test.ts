@@ -49,8 +49,8 @@ function seed(): RawGameData & Record<string, any> {
 describe('seed data', () => {
   it('validates clean', () => {
     const data = validateGameData(seed());
-    expect(data.towers.towers.map((t) => t.id)).toEqual(['archer', 'bombard', 'frost-spire', 'mill']);
-    expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute', 'shieldbearer', 'swarm', 'wolf-rider', 'raven', 'looter', 'warlord']);
+    expect(data.towers.towers.map((t) => t.id)).toEqual(['archer', 'bombard', 'frost-spire', 'mill', 'barracks']);
+    expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute', 'shieldbearer', 'swarm', 'wolf-rider', 'raven', 'looter', 'outrider', 'halberdier', 'warlord']);
     expect(data.abilities.map((a) => a.id)).toEqual([
       'charge',
       'volley',
@@ -58,6 +58,7 @@ describe('seed data', () => {
       'rapid-fire',
       'heavy-shaft',
       'caltrops',
+      'muster',
     ]);
     expect(Object.keys(data.maps).sort()).toEqual(['crossroads', 'meadow-road', 'the-ford', 'warlords-march']);
     expect(data.waveSets['meadow-road']?.waves).toHaveLength(8);
@@ -214,6 +215,7 @@ describe('cross-file references', () => {
     const raw = seed();
     (raw.perks as any).perks.push({
       id: 'perk-ghost-ability',
+      family: 'hero',
       name: 'Ghost',
       description: 'x',
       effects: [{ type: 'ability-stat', abilityId: 'meteor', stat: 'cooldown', perRank: 0.9, mode: 'multiply' }],
@@ -227,6 +229,7 @@ describe('cross-file references', () => {
     const raw = seed();
     (raw.perks as any).perks.push({
       id: 'perk-wrong-stat',
+      family: 'hero',
       name: 'Wrong',
       description: 'x',
       // Heavy Shaft is a line, not a circle — it has no radius.
@@ -241,6 +244,7 @@ describe('cross-file references', () => {
     const raw = seed();
     (raw.perks as any).perks.push({
       id: 'perk-broad',
+      family: 'hero',
       name: 'Broad',
       description: 'x',
       effects: [{ type: 'ability-stat', abilityId: null, stat: 'radius', perRank: 1.2, mode: 'multiply' }],
@@ -250,11 +254,35 @@ describe('cross-file references', () => {
     expect(() => validateGameData(raw)).not.toThrow();
   });
 
+  // The shipped tree grants no stats any more (MG5.7), so this injects one —
+  // the check must keep working for whatever a future node does.
   it('tower-stat node pointing at an unknown tower', () => {
     const raw = seed();
-    const node = (raw.metatree as any).nodes.find((n: any) => n.effect.type === 'tower-stat');
-    node.effect.towerId = 'tesla';
+    (raw.metatree as any).nodes.push({
+      id: 'ghost-node',
+      branch: 'towers',
+      name: 'Ghost',
+      description: 'x',
+      costPerRank: [10],
+      requires: [],
+      effect: { type: 'tower-stat', towerId: 'tesla', stat: 'damage', perRank: 1.1, mode: 'multiply' },
+    });
     expect(() => validateGameData(raw)).toThrow('unknown tower "tesla"');
+  });
+
+  it('unlock-perk node pointing at a perk that is not metaLocked', () => {
+    const raw = seed();
+    const node = (raw.metatree as any).nodes.find((n: any) => n.effect.type === 'unlock-perk');
+    // Heavy Draw ships unlocked, so a node granting it is a token sink that
+    // does nothing — the exact silent failure the check exists for.
+    node.effect.perkId = 'perk-heavy-draw';
+    expect(() => validateGameData(raw)).toThrow('is not metaLocked');
+  });
+
+  it('metaLocked perk that no node can unlock', () => {
+    const raw = seed();
+    (raw.perks as any).perks[0].metaLocked = true;
+    expect(() => validateGameData(raw)).toThrow('no meta node unlocks');
   });
 
   it('enemy pointing at an unknown model', () => {

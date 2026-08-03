@@ -12,6 +12,8 @@ import { AbilitySystem } from './abilitySystem';
 import { LooterSystem } from './looterSystem';
 import { PerkSystem } from './perkSystem';
 import { ZoneSystem } from './zoneSystem';
+import { ArmySystem } from './armySystem';
+import { XpSystem } from './xpSystem';
 import { generateEndlessWave } from './endless';
 
 /** Fixed simulation timestep. Rendering framerate is unrelated (CLAUDE.md #2). */
@@ -33,6 +35,14 @@ export interface SimData {
   unlockedAbilityIds?: readonly string[];
   /** how many abilities may be carried at once; defaults to the schema's 3 */
   equipSlots?: number;
+  /**
+   * Meta-tree unlocks. Both default to "everything available", which is what
+   * engine tests and the bot harness want — bots stand in for a player with
+   * meta progression, so measuring them against a fresh-save pool would measure
+   * the wrong game. Only the real run passes restricted sets.
+   */
+  unlockedPerkIds?: readonly string[] | null;
+  lockedTowerIds?: readonly string[];
   /** endless mode: waves generate forever, victory never comes */
   endless?: boolean;
   /** in-run draft pool; omitted = no drafting (engine tests, legacy callers) */
@@ -67,11 +77,13 @@ export class Simulation {
   readonly abilities: AbilitySystem;
   /** Ground hazards the hero leaves behind — the only friendly thing that is not a unit or a tower. */
   readonly zones: ZoneSystem;
+  /** The army pillar: soldiers posted by garrison towers (TRIANGLE.md §B.2). */
+  readonly army: ArmySystem;
   readonly looters: LooterSystem;
   /** The in-run draft, or null when this run has no perk pool. */
   readonly perks: PerkSystem | null;
-  /** Wave clears between drafts — the feature's difficulty dial, from perks.json. */
-  private readonly perkCadence: number;
+  /** Kills → XP → levels → drafts (TRIANGLE.md §B.4). */
+  readonly xp: XpSystem;
   readonly endless: boolean;
   private readonly enemiesFile: EnemiesFile;
   private readonly mapDef: MapDef;
@@ -127,14 +139,17 @@ export class Simulation {
     this.projectileSystem = new ProjectileSystem(this.enemySystem, rng);
     this.hero = new HeroSystem(data.hero, data.map, this.enemySystem, this.projectileSystem);
     this.economy = new EconomySystem(data.economy, rng);
+    this.xp = new XpSystem(data.economy.xp);
     this.towerSystem = new TowerSystem(
       data.towers,
       data.map.plots,
       this.enemySystem,
       this.projectileSystem,
       rng,
+      data.lockedTowerIds ?? [],
     );
     this.zones = new ZoneSystem(this.enemySystem, this.ids);
+    this.army = new ArmySystem(this.towerSystem, this.enemySystem, this.lanes, this.ids);
     this.abilities = new AbilitySystem(
       data.abilities ?? [],
       data.unlockedAbilityIds ?? [],
@@ -142,6 +157,7 @@ export class Simulation {
       this.hero,
       this.towerSystem,
       this.zones,
+      this.army,
       data.equipSlots,
     );
 
@@ -151,7 +167,6 @@ export class Simulation {
     // reference, so it is built from the same `data` and needs no plumbing to
     // reach them. Off entirely when no pool is supplied, which keeps every
     // existing engine test and the legacy call sites untouched.
-    this.perkCadence = data.perks?.everyNWaves ?? 1;
     this.perks = data.perks
       ? new PerkSystem(
           data.perks,
@@ -163,6 +178,7 @@ export class Simulation {
             abilities: data.abilities as Ability[],
           },
           rng,
+          data.unlockedPerkIds ?? null,
         )
       : null;
 
@@ -202,7 +218,18 @@ export class Simulation {
       this.kills++;
       const mult = e.isElite ? data.enemies.elite.coinMultiplier : 1;
       this.economy.spawnCoins(e.x, e.y, Math.round(e.config.coinValue * mult));
+      // ...and XP, which buys identity rather than commitment (TRIANGLE §B.4).
+      this.xp.award(e.config.xpValue, e.isElite);
     });
+
+    // Every level deals a card. This is the cadence `everyNWaves` used to own,
+    // and moving it here is what ties the draft to riding out and fighting
+    // rather than to surviving a wave.
+    //
+    // Only when there is no offer already in hand: the sim never blocks on a
+    // UI decision, so a player mid-charge who levels twice keeps the first card
+    // rather than having it replaced under them.
+    this.xp.onLevelUp.push(() => this.perks?.queue());
   }
 
   get gold(): number {
@@ -242,6 +269,9 @@ export class Simulation {
     this.looters.tick(SIM_DT);
     this.gate.tick(SIM_DT);
     this.towerSystem.tick(SIM_DT);
+    // After the towers, before the hero: a soldier that grabs an enemy this
+    // tick should already be holding it when the hero decides where to ride.
+    this.army.tick(SIM_DT);
     this.hero.tick(SIM_DT);
     this.abilities.tick(SIM_DT);
     this.zones.tick(SIM_DT); // hazards persist across phases, like besiegers
@@ -269,17 +299,18 @@ export class Simulation {
     this.phase = nextPhase;
     this.buildElapsed = 0;
 
-    // Deal the draft rather than introducing a 'draft' phase. Two reasons: the
-    // phase enum is consumed well beyond the engine — the renderer's day/night
-    // cycle keys off `phase === 'wave'` and the score keys off the same line —
-    // so a fifth value would silently change how the game *looks*; and the sim
-    // must never block on a UI decision. The offer simply sits in hand through
-    // the build phase, and a player who ignores it loses nothing.
+    // No draft here any more. Cards come from levels (TRIANGLE.md §B.4), which
+    // means they come from kills, which means they come from riding out to
+    // fight — DESIGN §1's first pillar wired to the reward loop instead of
+    // sitting beside it. A wave-clear card rewarded surviving; this rewards
+    // playing.
     //
-    // Not on victory: a draft handed out after the last wave buys nothing.
-    if (nextPhase === 'build' && this.waveRunner.waveNumber % this.perkCadence === 0) {
-      this.perks?.deal();
-    }
+    // The rest of the old note still holds and is why levels `queue()` rather
+    // than gate: there is deliberately no 'draft' phase. The phase enum is
+    // consumed well beyond the engine — the renderer's day/night cycle keys off
+    // `phase === 'wave'` — so a fifth value would silently change how the game
+    // *looks*, and the sim must never block on a UI decision. An offer sits in
+    // hand until it is answered, mid-wave or not.
   }
 
   /**

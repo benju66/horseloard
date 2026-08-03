@@ -88,6 +88,21 @@ Two scales, because one is structural and one is spectacle:
 Soldiers deal **low** damage on purpose. If they killed things they would be a third
 rate source, and we would be back to substitutes.
 
+**MG5.4 measured this and found the geometry matters more than the numbers.** Exposure is
+only worth anything where something is *shooting* — a soldier who stops an enemy out of
+tower range has converted a plot into a speed bump. The first build let a garrison post
+up to 130 units from its own plot, and the result was that adding a barracks made a
+board strictly **worse**: on crossroads, `towers+army` cleared 2.4 fewer waves than
+towers alone and killed half as much. Making the soldiers *stronger* made it worse still
+(−1.6 → −2.4 waves), which is the tell that it was never a tuning problem — longer holds
+meant longer parked outside the fire.
+
+Cutting the rally range to 50 flipped it in one change. On the-ford the same comparison
+went from **17% → 92%** wins, +2.9 waves, kills 132 → 202. So the rule the barracks is
+built on: **soldiers hold the road in front of their own tower line, not in front of
+their own building.** Placement is the decision, and it has to be a *joint* decision with
+the towers or the pillar does not exist.
+
 ### B.3 The hero is burst, not sustain — and that is the structural cap
 
 **The single most important mechanical decision in this document.**
@@ -378,39 +393,166 @@ measurement comes first.
   the equip cap made impossible, so it now starts with Charge and drafts the rest.
   Towers are still not a pillar; that is MG5.4's job, not a tuning problem.
 
-### M5.4 — Barracks and soldiers
-- [ ] `ArmySystem` in `/src/engine`: soldier entities, rally points, respawn timers.
-- [ ] Enemies gain a `blocked` state — stopped and fighting, not walking.
-- [ ] `barracks` tower in `towers.json`; soldiers are data-driven (count, hp, damage,
-      respawn, rally offset).
-- [ ] Instanced rendering for soldiers; they are the highest-count friendly entity.
-- **Accept:** an enemy that meets a soldier stops advancing; killing the soldier
-  resumes it; `armyOnly` loses every map; towers + army beats towers alone on the same
-  wave budget.
+### M5.4 — Barracks and soldiers — ✅ DONE 2026-08-03
+- [x] `ArmySystem` in `/src/engine`: soldier entities, lane-relative posts, respawn
+      timers, one-soldier-one-enemy pairing.
+- [x] Enemies gain a `blocked` state — stopped and fighting, not walking. `walkingCount`
+      counts it, or a wave would end mid-skirmish.
+- [x] `barracks` tower in `towers.json`, fully data-driven via a `garrison` stat block;
+      two branches (Shieldwall / Levy). Army perks via a `garrison` tower-grant.
+- [x] Instanced rendering for soldiers, in their own colour with their own HP bars.
+- [x] **The Muster** — `summon-host`, a plotless host on a lifetime, posted on the lane
+      nearest the hero. Drafted via War Banner.
+- [x] Counter enemies: **Outrider** (`blockImmune`) and **Halberdier** (`antiInfantry`).
+- **Result.** Pillar probe (12 seeds × all bots), with the complement arm split out:
 
-### M5.5 — XP and levels
-- [ ] `XpSystem`; enemies gain `xpValue`; curve in `economy.json`.
-- [ ] Levels deal drafts; `everyNWaves` removed.
-- [ ] HUD: XP bar and level.
-- **Accept:** 25–35 levels on a full map-1 run; drafts never block the sim.
+  | map | towers | army | hero | reference |
+  |---|---|---|---|---|
+  | meadow-road | 8% | 0% | 33% | 97% |
+  | the-ford | 0% | 0% | 25% | 75% |
+  | crossroads | 0% | 0% | 0% | 56% |
+  | warlords-march | 0% | 0% | 0% | 22% |
 
-### M5.6 — Perk families and the offer rule
-- [ ] `family` on `PerkSchema`; one-factor validation at load.
-- [ ] `PerkSystem.deal` composes hero + tower/army + wildcard.
-- [ ] Rebuild the pool across five families, including the Army line.
-- **Accept:** no offer is ever all-hero; no offer is ever entirely dead cards for the
-  current build.
+  `armyOnly` loses every map — the criterion. And the complement probe, funded equally
+  so both arms actually build:
 
-### M5.7 — Meta tree becomes unlocks
-- [ ] Convert stat nodes to unlock nodes (abilities, perks, the barracks).
-- [ ] Save migration — schema is versioned, this is the first real one.
-- **Accept:** meta grants no raw stats; existing saves migrate without loss.
+  | map | towers only | towers+army |
+  |---|---|---|
+  | meadow-road | 100% | 92% (ceiling; towers alone already clear it) |
+  | the-ford | 17% | **92%** |
+  | crossroads | 0% | **17%** |
+  | warlords-march | 0% | 0% (+1.5 waves, kills 90 → 126) |
 
-### M5.8 — Rebalance the campaign against the triangle
-- [ ] Re-price wave budgets per B.8 on all four maps.
-- [ ] Retire `soloCarry`; adopt the no-single-pillar invariant.
-- **Accept:** every map in its win band; no pillar clears maps 3–4 alone; every tower
-  and the barracks appear in winning runs; runs measurably diverge across seeds.
+  Exposure multiplies rate. It is not subtle where there is room for it to matter.
+
+- **Deferred to MG5.8 on purpose:** the Outrider and Halberdier exist, are tested and are
+  in `enemies.json`, but are **not in the campaign wave sets**. Adding them cost
+  warlords-march 22% → 3% and the-ford 75% → 61%. Putting enemies into waves *is*
+  re-pricing wave budgets, which is MG5.8's job, not MG5.4's.
+
+### M5.5 — XP and levels — ✅ DONE 2026-08-03
+- [x] `XpSystem`; `xpValue` on every enemy (optional, with a roster default so a new
+      enemy is never silently worth zero); geometric curve in `economy.json`.
+- [x] Levels deal drafts. `everyNWaves` is retired — the field survives only so old
+      files validate, and nothing reads it.
+- [x] `PerkSystem.queue()`: cards owed beyond the one in hand are **banked**, not
+      dropped and not swapped under the player's thumb. Levelling twice mid-charge is
+      routine now; either alternative reads as the game eating a reward.
+- [x] HUD: XP bar, level, and the queued-card count.
+- **Result.** Levels on a full clear, 12 seeds × all bots:
+
+  | map | full clears | levels |
+  |---|---|---|
+  | meadow-road | 33/36 | 29.6 |
+  | the-ford | 26/36 | 28.4 |
+  | crossroads | 16/36 | 31.9 |
+  | warlords-march | 9/36 | 34.8 |
+
+  All four inside the 25–35 band. The curve is `base 6 × 1.075^(n-1)` — front-loaded
+  (level 2 costs ~3 kills) with a slow tail. Both halves were measured: `base 7.5 ×
+  1.06` gave the right level counts but cost the-ford 75% → 64% and warlords 22% → 14%,
+  because power arrived too late to matter; `base 6 × 1.05` fixed the difficulty and
+  overshot to 36–44 levels. Steepening the tail instead of the head kept both.
+
+- **Reference curve after the change:** 92 / 72 / 44 / 25 against bands of 90–100 /
+  70–95 / 45–75 / 25–55. Three in band, crossroads 1pp under.
+
+### M5.6 — Perk families and the offer rule — ✅ DONE 2026-08-03
+- [x] `family` on `PerkSchema`, required, one of five.
+- [x] `PerkSystem.deal` composes hero + tower/army + wildcard, degrading a starved slot
+      to a wildcard rather than shrinking the offer.
+- [x] Pool spread across all five families: 12 hero, 8 towers, 4 army, 2 economy, 2 keep.
+- [x] Load-time check that `hero`, `towers` and `army` are all non-empty — a pool with
+      no army cards would honour the rule by never applying it, and the guarantee would
+      silently not exist.
+- [x] The family is **on the card**. An offer whose balance you cannot see is three
+      anonymous upgrades, which is the failure the pool was rebuilt to avoid.
+- **Not done: the one-factor lint.** §B.5 rule 1 says a perk contributes to one factor
+  only. Mechanically deciding whether `cost × 0.76` is an upgrade or a downgrade is
+  ambiguous, and a strict "all effects in one family" rule would ban the tradeoff cards
+  that make a pick cost something — the whole reason `effects` is an array. Left as a
+  review rule rather than shipped as a bad check.
+- **Result — the campaign is ON TARGET on all four maps for the first time:**
+
+  | map | win | band |
+  |---|---|---|
+  | meadow-road | 100% | 90–100 ✓ |
+  | the-ford | 78% | 70–95 ✓ |
+  | crossroads | 64% | 45–75 ✓ |
+  | warlords-march | 50% | 25–55 ✓ |
+
+  Guaranteeing a tower-or-army card in every offer is worth more than any per-perk
+  tuning was: boards come out supported instead of lopsided, without a single weight
+  being touched. Pillar probe still OK, cadence still 29.5 / 28.1 / 31.8 / 34.8.
+
+### M5.7 — Meta tree becomes unlocks — ✅ DONE 2026-08-03
+- [x] Every stat node retired. The tree is now 14 unlock nodes across three branches:
+      abilities, `metaLocked` perks, and the barracks.
+- [x] New `unlock-perk` effect; `metaLocked` on `PerkSchema`, default false so a fresh
+      save never opens with a starved draft — the tree *widens* the pool, it does not
+      ration it.
+- [x] `unlockedByDefault` on `TowerSchema`. The barracks opts out: the army is the
+      pillar you earn, which is what gives the tree something to grant now that it
+      grants no numbers.
+- [x] Load-time checks both ways — a node unlocking a perk that is not `metaLocked` is
+      a token sink that does nothing, and a `metaLocked` perk no node reaches is content
+      nobody can see. Both fail at boot.
+- [x] **Save migration v1 → v2**, with tests. Refunds every token sunk into a retired
+      node and drops the orphan keys.
+- **Why the refund is a migration and not a shrug.** `applyMetaModifiers` iterates
+  nodes, so orphan rank keys would be ignored harmlessly and the save would look fine.
+  That is precisely the trap: ignoring them silently *keeps the tokens spent* on things
+  that no longer exist. The player would open the game, see an untouched tree, and be
+  quietly poorer. `RETIRED_V1_NODES` freezes the old cost table in code because the JSON
+  no longer contains it — a migration has to know the old world, and looking it up in
+  the new one is how a refund silently becomes zero.
+- **Result:** the double-dip is gone (meta and perks no longer multiply the same
+  numbers), and the campaign held: 100 / 78 / 64 / 50, pillar probe OK, cadence
+  29.5 / 28.1 / 31.8 / 34.8.
+
+### M5.8 — Rebalance the campaign against the triangle — ✅ DONE 2026-08-03
+- [x] The counter enemies enter the campaign — Outrider and Halberdier on the later
+      waves of maps 2–4, at roughly half the density the first attempt used. They exist
+      to make the army a *decision*, not to raise the wave budget.
+- [x] `soloCarry` retired; `maxSinglePillarWinRate` is the gate. The per-tower solo
+      table survives as texture, explicitly labelled as such.
+- [x] Invariants folded into CLAUDE.md.
+- **No wave budget was re-priced.** B.8 assumed the campaign would need re-tuning
+  against the triangle. It did not: the structural changes did the work, and every
+  attempt to tune numbers on top made things worse. That is the milestone's real result.
+
+**Final state — every acceptance criterion, measured:**
+
+| criterion | result |
+|---|---|
+| every map in its win band | **100 / 89 / 69 / 50** against 90–100 / 70–95 / 45–75 / 25–55 ✓ |
+| no pillar clears maps 3–4 alone | crossroads 0/0/0, warlords 0/0/8 ✓ |
+| every tower in winning runs | archer 90, bombard 12, frost 364, mill 114, **barracks 54** ✓ |
+| two pillars together must clear | the-ford towers-only 0% → towers+army **67%** ✓ |
+| draft cadence | 29.5 / 28.9 / 32.2 / 35.4 levels ✓ |
+
+---
+
+## Part F — What M5 actually taught
+
+Five milestones, and the same lesson each time in a different costume: **when more of
+something makes the game worse, stop tuning and go find the mechanism.**
+
+| symptom | looked like | actually was |
+|---|---|---|
+| more gold → fewer towers | economy | a bot blind to lane coverage |
+| more abilities → stronger hero | ability numbers | no equip cap |
+| tougher soldiers → fewer kills | garrison stats | rally points outside tower range |
+| a barracks made boards worse | the barracks | scoring a complement as a projection |
+
+Not one of those was fixed by a number. Every genuine fix was structural — a cap, a
+geometry rule, an offer composition rule — and each one held without further tuning,
+which is exactly what Part A predicted and counter-tuning never managed.
+
+The corollary is about instruments. Three separate measurement rounds reported
+`towers+army` as byte-identical to `towers only` and the pillar claim as untested-while-
+appearing-tested, because both arms died before the thing being measured could happen.
+**A probe that cannot survive to exercise its subject is not a probe.**
 
 ---
 

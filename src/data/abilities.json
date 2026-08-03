@@ -90,6 +90,25 @@
       },
       "iconRef": "icon-caltrops",
       "castSfxRef": "sfx-caltrops"
+    },
+    {
+      "id": "muster",
+      "name": "The Muster",
+      "description": "The gates open. A host marches out and holds the road beside you.",
+      "cooldown": 55,
+      "unlockedByDefault": false,
+      "effect": {
+        "type": "summon-host",
+        "squad": 7,
+        "hp": 120,
+        "damage": 5,
+        "attackInterval": 1.1,
+        "lifetime": 26,
+        "engageRadius": 78,
+        "spacing": 24
+      },
+      "iconRef": "icon-muster",
+      "castSfxRef": "sfx-muster"
     }
   ]
 }

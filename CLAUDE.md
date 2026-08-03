@@ -69,6 +69,11 @@ BACKLOG.md      milestones and tasks with acceptance criteria
 - Hero cannot die; only heavy enemies stagger (shove + ~0.4s control loss, per-enemy cooldown).
 - Coins expire only during combat; wave clear sweeps all ground coins to the hero.
 - Abilities are cast at/from the hero position — no global tap-anywhere targeting.
+- **The hero carries at most `equipSlots` abilities (3).** A cooldown bounds one ability; damage-per-minute is the sum over the loadout, so only the equip cap bounds the total. This is what makes the ability roster safe to grow.
+- **Soldiers hold the road in front of the tower line, not in front of the barracks.** Exposure is worth only what is shooting past it; a garrison whose rally point sits outside tower cover makes a board *worse*. Keep `rallyRange` short.
+- **Every draft offers one hero card and one tower-or-army card.** A structural guarantee, not a tuning target: it is what makes an accidental single-pillar build impossible however the weights fall.
+- **The meta tree grants eligibility, never stats.** Unlocks cannot double-dip with the draft; numbers can.
+- Gold buys commitment (towers, barracks); XP buys identity (perks, abilities). Two currencies, two jobs — never merge them.
 - Fixed tower plots. No free placement.
 
 ## Performance budget

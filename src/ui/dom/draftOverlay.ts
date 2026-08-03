@@ -100,6 +100,16 @@ export class DraftOverlay {
       card.className = 'draft-card';
       card.setAttribute('data-ui', '');
 
+      // The family tag is the offer rule made visible (TRIANGLE.md §B.5). Every
+      // draft holds one hero card and one tower-or-army card; a player who
+      // cannot see that is choosing between three anonymous upgrades, which is
+      // the "preference, not decision" failure the whole pool was rebuilt to
+      // avoid. Content-agnostic: the string comes from `perks.json`.
+      const family = document.createElement('div');
+      family.className = 'draft-card-family';
+      family.dataset.family = perk.family;
+      family.textContent = perk.family;
+
       const name = document.createElement('div');
       name.className = 'draft-card-name';
       name.textContent = perk.name;
@@ -108,7 +118,7 @@ export class DraftOverlay {
       desc.className = 'draft-card-desc';
       desc.textContent = perk.description;
 
-      card.append(name, desc);
+      card.append(family, name, desc);
 
       // Show the stack state only once something is stacked — a "0/3" on every
       // card is noise on a first draft.
@@ -147,6 +157,18 @@ export class DraftOverlay {
   border: 1px solid rgba(246,201,69,.35); background: rgba(30,44,60,.92);
 }
 .draft-card:active { background: rgba(46,66,86,.95); }
+.draft-card-family {
+  display: inline-block; margin-bottom: 5px; padding: 2px 7px; border-radius: 999px;
+  font: 700 9px/1.4 ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase;
+  color: #10201a; background: #9fb0c4;
+}
+/* One colour per pillar, plus two neutrals for the supports. The point is that
+   two glances tell you the offer is balanced without reading a word. */
+.draft-card-family[data-family="hero"]    { background: #9fd8ff; }
+.draft-card-family[data-family="towers"]  { background: #f6c945; }
+.draft-card-family[data-family="army"]    { background: #7fb2ff; }
+.draft-card-family[data-family="economy"] { background: #8fe36a; }
+.draft-card-family[data-family="keep"]    { background: #d7c3a2; }
 .draft-card-name { font: 700 16px ui-monospace, monospace; color: #f2ecdd; }
 .draft-card-desc { font: 400 13px/1.4 sans-serif; color: #b9c6d6; margin-top: 3px; }
 .draft-card-stack { font: 600 11px ui-monospace, monospace; color: #f6c945; margin-top: 5px; }

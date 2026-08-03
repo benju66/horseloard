@@ -8,6 +8,17 @@ export const EnemySchema = z.object({
   speed: z.number().positive().describe('world units per second along the lane'),
   radius: z.number().positive().describe('body radius, world units (contact + render)'),
   coinValue: z.number().int().nonnegative().describe('coins dropped on death'),
+  /**
+   * XP granted on death. Optional — omitted falls back to `economy.xp
+   * .perKillDefault`, so the whole roster works before a single value is
+   * authored and a new enemy is never silently worth zero.
+   *
+   * Deliberately a separate number from `coinValue`. Gold buys commitment
+   * (towers, the barracks); XP buys identity (perks, abilities). Tying them
+   * together would collapse two currencies with different jobs into one
+   * (TRIANGLE.md §B.4).
+   */
+  xpValue: z.number().nonnegative().optional(),
   siegeDps: z
     .number()
     .positive()
@@ -63,6 +74,30 @@ export const EnemySchema = z.object({
     })
     .optional()
     .describe('Warlord: knocks a tower down one level when it stomps past'),
+  /**
+   * Outrider: rides straight through the line and cannot be held.
+   *
+   * The counter that keeps the army honest. A blocker that stops *everything*
+   * would make the barracks an auto-include and collapse the build decision —
+   * the same trap DESIGN §6 records for towers. Flying enemies get this for
+   * free (ground soldiers cannot reach them) and do not need the flag.
+   */
+  blockImmune: z
+    .boolean()
+    .default(false)
+    .describe('cannot be stopped by soldiers; walks through the line'),
+  /**
+   * Halberdier: cuts soldiers down far faster than it batters the gate.
+   *
+   * The other counter, and the more interesting one — it does not ignore the
+   * army, it *beats* it, so the answer is towers covering the rally point
+   * rather than skipping the barracks.
+   */
+  antiInfantry: z
+    .number()
+    .gt(1)
+    .optional()
+    .describe('damage multiplier against soldiers (its siegeDps is the base rate)'),
   spriteRef: SpriteRefSchema,
   /**
    * Model manifest id (models.json). Optional during the 3D migration so the

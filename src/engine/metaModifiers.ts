@@ -47,10 +47,12 @@ export function applyEffectInPlace(
   data: ModifiableData,
   fx: MetaEffect,
   rank: number,
-): { unlockAbilityId?: string } {
-  if (fx.type === 'unlock-ability') {
-    return { unlockAbilityId: fx.abilityId };
-  }
+): { unlockAbilityId?: string; unlockPerkId?: string; unlockTowerId?: string } {
+  // Unlocks are decisions for a system, not numbers to mutate, so they are
+  // returned rather than applied. All three are routed by the caller.
+  if (fx.type === 'unlock-ability') return { unlockAbilityId: fx.abilityId };
+  if (fx.type === 'unlock-perk') return { unlockPerkId: fx.perkId };
+  if (fx.type === 'unlock-tower') return { unlockTowerId: fx.towerId };
 
   if (fx.type === 'hero-stat') {
     const h = data.hero;
@@ -133,18 +135,29 @@ export function applyEffectInPlace(
             // Aura multipliers compose, because two beacons should stack.
             damageMultiplier: (st.towerAura?.damageMultiplier ?? 1) * Math.pow(g.damageMultiplier, rank),
           };
-        } else {
+        } else if (g.kind === 'income') {
           // Income: more coins per drop, never a faster drop, so granting it
           // broadly cannot outpace the coin pool or the sweep.
           st.income = {
             value: (st.income?.value ?? 0) + g.value * rank,
             interval: st.income?.interval ?? g.interval,
           };
+        } else if (st.garrison) {
+          // Scales an existing garrison, never creates one. A card that turned
+          // an archer tower into a barracks would hand the army pillar out for
+          // free, and it is supposed to cost a plot.
+          st.garrison = {
+            ...st.garrison,
+            squad: st.garrison.squad + g.squad * rank,
+            hp: st.garrison.hp * Math.pow(g.hpMultiplier, rank),
+            damage: st.garrison.damage * Math.pow(g.damageMultiplier, rank),
+            respawn: st.garrison.respawn * Math.pow(g.respawnMultiplier, rank),
+            engageRadius: st.garrison.engageRadius * Math.pow(g.engageRadiusMultiplier, rank),
+          };
         }
       }
     }
   }
-  // unlock-tower: reserved — all four towers ship unlocked for now
   return {};
 }
 
@@ -157,16 +170,28 @@ export function applyMetaModifiers(
   data: ModifiableData,
   nodes: readonly MetaNode[],
   ranks: Record<string, number>,
-): ModifiableData & { unlockedAbilityIds: string[] } {
+): ModifiableData & {
+  unlockedAbilityIds: string[];
+  unlockedPerkIds: string[];
+  unlockedTowerIds: string[];
+} {
   const out: ModifiableData = structuredClone(data);
   const unlockedAbilityIds: string[] = [];
+  const unlockedPerkIds: string[] = [];
+  const unlockedTowerIds: string[] = [];
 
   for (const node of nodes) {
     const rank = ranks[node.id] ?? 0;
     if (rank <= 0) continue;
-    const { unlockAbilityId } = applyEffectInPlace(out, node.effect, rank);
+    const { unlockAbilityId, unlockPerkId, unlockTowerId } = applyEffectInPlace(
+      out,
+      node.effect,
+      rank,
+    );
     if (unlockAbilityId) unlockedAbilityIds.push(unlockAbilityId);
+    if (unlockPerkId) unlockedPerkIds.push(unlockPerkId);
+    if (unlockTowerId) unlockedTowerIds.push(unlockTowerId);
   }
 
-  return { ...out, unlockedAbilityIds };
+  return { ...out, unlockedAbilityIds, unlockedPerkIds, unlockedTowerIds };
 }

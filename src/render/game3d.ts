@@ -71,6 +71,15 @@ style.textContent =
 #topbar { position: absolute; top: env(safe-area-inset-top, 6px); left: 0; right: 0;
   display: flex; gap: 10px; justify-content: center; padding: 8px;
   text-shadow: 0 1px 3px rgba(0,0,0,.85); }
+#xpbar { position: absolute; top: calc(env(safe-area-inset-top, 6px) + 30px);
+  left: 50%; transform: translateX(-50%); width: min(58vw, 300px); height: 12px;
+  border-radius: 7px; background: rgba(20,30,24,.62);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.5); overflow: hidden; }
+#xpfill { position: absolute; inset: 0 auto 0 0; width: 0%;
+  background: linear-gradient(90deg, #6ec8a8, #9fe3b8); transition: width .18s ease-out; }
+#xplabel { position: absolute; inset: 0; display: grid; place-items: center;
+  font: 700 9px/1 ui-monospace, monospace; letter-spacing: .06em;
+  color: #10201a; text-shadow: 0 1px 0 rgba(255,255,255,.25); }
 #startbtn { position: absolute; bottom: calc(env(safe-area-inset-bottom, 12px) + 18px);
   left: 50%; transform: translateX(-50%); pointer-events: auto;
   padding: 14px 26px; border-radius: 16px; border: 0;
@@ -89,11 +98,25 @@ hud.id = 'hud';
 hud.style.display = 'none';
 const topbar = document.createElement('div');
 topbar.id = 'topbar';
+/**
+ * The XP bar (TRIANGLE.md §B.4). It sits directly under the top row because it
+ * is now the *primary* progression read — levels deal the drafts, so this bar
+ * filling is the thing a player watches, ahead of gold and ahead of the wave
+ * counter. A card arriving with no visible reason it arrived would read as
+ * random.
+ */
+const xpBar = document.createElement('div');
+xpBar.id = 'xpbar';
+const xpFill = document.createElement('div');
+xpFill.id = 'xpfill';
+const xpLabel = document.createElement('span');
+xpLabel.id = 'xplabel';
+xpBar.append(xpFill, xpLabel);
 const startBtn = document.createElement('button');
 startBtn.id = 'startbtn';
 startBtn.setAttribute('data-ui', '');
 startBtn.textContent = 'Start wave';
-hud.append(topbar, startBtn);
+hud.append(topbar, xpBar, startBtn);
 overlay.append(hud);
 
 const audio = new AudioManager();
@@ -265,6 +288,12 @@ function startMap(mapId: string, endless = false): void {
     abilities: modded.abilities,
     unlockedAbilityIds: modded.unlockedAbilityIds,
     equipSlots: data.equipSlots,
+    // The meta tree grants no stats now (TRIANGLE.md §B.6) — it decides what is
+    // *eligible*, and the draft decides what you actually get.
+    unlockedPerkIds: modded.unlockedPerkIds,
+    lockedTowerIds: data.towers.towers
+      .filter((t) => !t.unlockedByDefault && !modded.unlockedTowerIds.includes(t.id))
+      .map((t) => t.id),
     // Cloned like the wave set: PerkSystem mutates balance data in place, and
     // the loaded pool is shared across every run of the session.
     perks: structuredClone(data.perks),
@@ -552,6 +581,15 @@ function syncHud(): void {
   topbar.textContent =
     `${sim.gold}g · gate ${Math.ceil(sim.gate.hp)}/${sim.gate.maxHp} · ` +
     `w${sim.waveRunner.waveNumber}/${sim.waveRunner.totalWaves} · bow L${sim.hero.bowLevel} · ${fps}fps`;
+
+  const pct = `${(sim.xp.fraction * 100).toFixed(1)}%`;
+  if (xpFill.style.width !== pct) xpFill.style.width = pct;
+  // Queued cards are shown rather than hidden: levelling twice mid-charge is
+  // common now, and a player who cannot see they are owed a second card has no
+  // reason to open the draft again.
+  const queued = sim.perks?.queuedDrafts ?? 0;
+  const label = `LV ${sim.xp.level}${queued > 0 ? `  ·  +${queued} card${queued > 1 ? 's' : ''}` : ''}`;
+  if (xpLabel.textContent !== label) xpLabel.textContent = label;
 
   // Ride close → bubble → tap. Anchors projected from sim space each frame.
   const actions = bubbleActions(sim, world.map);

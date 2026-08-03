@@ -29,6 +29,7 @@ export const TEST_ECONOMY: Economy = {
   earlyStart: { windowSeconds: 12, maxBonus: 15 },
   repair: { hpPerPurchase: 20, costPerHp: 0.5 },
   tokens: { perStarFirstTime: 10, perWaveOnDefeat: 1, endlessMilestoneEvery: 10, perEndlessMilestone: 5 },
+  xp: { base: 30, growth: 1.12, perKillDefault: 3, eliteMultiplier: 3 },
   stars: { twoStarMaxDamageFraction: 0.3 },
 };
 
@@ -48,6 +49,7 @@ export function makeTowersFile(extraTowers: Tower[] = []): TowersFile {
         description: 'test',
         targeting: 'nearest',
         targetsFlying: true,
+        unlockedByDefault: true,
         projectileId: 'test-arrow',
         spriteRef: 'x',
         levels: [
@@ -81,6 +83,7 @@ export function makeEnemy(overrides: Partial<Enemy> & { id: string }): Enemy {
   return {
     armor: 0,
     flying: false,
+    blockImmune: false,
     name: overrides.id,
     hp: 10,
     speed: 10,

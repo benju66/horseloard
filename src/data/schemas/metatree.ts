@@ -84,6 +84,22 @@ export const MetaEffectSchema = z.discriminatedUnion('type', [
         value: z.number().int().positive(),
         interval: z.number().positive().describe('seconds between coin drops'),
       }),
+      /**
+       * Scale a garrison — the army pillar's draft lever.
+       *
+       * Unlike the other grants this one only ever *scales*: it will not give a
+       * garrison to a tower that shipped without one. A card that turned every
+       * tower into a barracks would make the army free rather than a build
+       * decision, and the pillar's whole job is to cost a plot.
+       */
+      z.object({
+        kind: z.literal('garrison'),
+        squad: z.number().int().nonnegative().describe('extra soldiers per rank'),
+        hpMultiplier: z.number().positive(),
+        damageMultiplier: z.number().positive(),
+        respawnMultiplier: z.number().positive().default(1),
+        engageRadiusMultiplier: z.number().positive().default(1),
+      }),
     ]),
   }),
   /**
@@ -103,6 +119,18 @@ export const MetaEffectSchema = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('unlock-ability'), abilityId: IdSchema }),
   z.object({ type: z.literal('unlock-tower'), towerId: IdSchema }),
+  /**
+   * Make a `metaLocked` perk eligible to appear in drafts (TRIANGLE.md §B.6).
+   *
+   * The meta tree decides what *can* show up; the draft decides what you
+   * actually get. That is Vampire Survivors' unlock structure, and it is why
+   * there is no third selection screen — the draft already is the tree.
+   *
+   * Only meaningful on meta nodes. A perk that unlocked another perk would be a
+   * card whose value is "the pool gets better later", which is not a decision
+   * anyone can evaluate at the moment they are asked to make it.
+   */
+  z.object({ type: z.literal('unlock-perk'), perkId: IdSchema }),
 ]);
 export type MetaEffect = z.infer<typeof MetaEffectSchema>;
 

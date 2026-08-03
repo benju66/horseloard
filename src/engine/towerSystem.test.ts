@@ -110,6 +110,7 @@ describe('firing', () => {
       name: 'Vanguard',
       targeting: 'first',
       targetsFlying: true,
+      unlockedByDefault: true,
     };
     const sim = new Simulation(towerFixture([firstTower]), TEST_RNG);
     sim.buildTower('p1', 'vanguard');
@@ -128,6 +129,7 @@ describe('firing', () => {
       name: 'Executioner',
       targeting: 'strongest',
       targetsFlying: true,
+      unlockedByDefault: true,
     };
     const sim = new Simulation(towerFixture([strongTower]), TEST_RNG);
     sim.buildTower('p1', 'executioner');
@@ -147,6 +149,7 @@ describe('firing', () => {
       name: 'Money Shed',
       targeting: 'none',
       targetsFlying: true,
+      unlockedByDefault: true,
       projectileId: null,
     };
     const sim = new Simulation(towerFixture([mill]), TEST_RNG);
@@ -166,6 +169,7 @@ describe('substrate rule (the M0.5 acceptance)', () => {
       description: 'substrate proof',
       targeting: 'first',
       targetsFlying: true,
+      unlockedByDefault: true,
       projectileId: 'test-bomb', // aoe def already in the file
       spriteRef: 'x',
       levels: [

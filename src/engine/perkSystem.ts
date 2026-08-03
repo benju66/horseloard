@@ -29,6 +29,16 @@ export class PerkSystem {
 
   /** perk id → stacks taken this run. */
   private readonly taken = new Map<string, number>();
+  /**
+   * Cards owed but not yet on the table.
+   *
+   * Levels arrive faster than a player can answer them once XP drives the draft
+   * (TRIANGLE.md §B.4) — a big elite kill can grant two at once, and a level
+   * mid-charge goes unanswered for a while. Without a queue the second card
+   * would either replace the first under the player's thumb or vanish. Both
+   * read as the game eating a reward.
+   */
+  private queued = 0;
 
   /**
    * The cards currently on the table, or null when there is no pending draft.
@@ -49,7 +59,24 @@ export class PerkSystem {
   /** Fired on every pick — the renderer uses it for feedback, the harness for logging. */
   readonly onTaken: Array<(perk: Perk, stacks: number) => void> = [];
 
-  constructor(file: PerksFile, data: ModifiableData, rng: () => number = Math.random) {
+  /**
+   * `metaLocked` perks that the meta tree has actually unlocked, or null for
+   * "everything is available".
+   *
+   * Null by default because that is what every engine test, and the bot
+   * harness, want: bots stand in for a player with meta progression, so
+   * measuring them against a fresh-save pool would measure the wrong game.
+   * Only the real run passes a set.
+   */
+  private readonly unlockedPerkIds: ReadonlySet<string> | null;
+
+  constructor(
+    file: PerksFile,
+    data: ModifiableData,
+    rng: () => number = Math.random,
+    unlockedPerkIds: readonly string[] | null = null,
+  ) {
+    this.unlockedPerkIds = unlockedPerkIds === null ? null : new Set(unlockedPerkIds);
     this.pool = file.perks;
     this.byId = new Map(file.perks.map((p) => [p.id, p]));
     this.offerSize = file.offerSize;
@@ -60,6 +87,26 @@ export class PerkSystem {
   /** Stacks taken of a given perk. */
   stacksOf(perkId: string): number {
     return this.taken.get(perkId) ?? 0;
+  }
+
+  /** Cards owed beyond the one currently on the table — the HUD shows this. */
+  get queuedDrafts(): number {
+    return this.queued;
+  }
+
+  /**
+   * Owe the player a card. Deals immediately when the table is clear, otherwise
+   * banks it for whenever the current offer is answered.
+   */
+  queue(): void {
+    this.queued++;
+    if (!this.offer) this.dealFromQueue();
+  }
+
+  private dealFromQueue(): void {
+    if (this.queued <= 0) return;
+    if (this.deal()) this.queued--;
+    else this.queued = 0; // pool is dry; owing cards nobody can be dealt is a leak
   }
 
   /** Everything taken this run, for the HUD and the run summary. */
@@ -85,7 +132,10 @@ export class PerkSystem {
 
   private eligible(): Perk[] {
     return this.pool.filter(
-      (p) => this.stacksOf(p.id) < p.maxStacks && (this.isOfferable?.(p) ?? true),
+      (p) =>
+        this.stacksOf(p.id) < p.maxStacks &&
+        (!p.metaLocked || this.unlockedPerkIds === null || this.unlockedPerkIds.has(p.id)) &&
+        (this.isOfferable?.(p) ?? true),
     );
   }
 
@@ -108,24 +158,44 @@ export class PerkSystem {
     const picked: Perk[] = [];
     const remaining = [...candidates];
     const size = Math.min(this.offerSize, remaining.length);
+
+    // The offer rule (TRIANGLE.md §B.5): one hero card, one tower-or-army card,
+    // then wildcards. This replaces per-perk balance tuning with a structural
+    // guarantee — it bans nothing and removes no agency, you still choose
+    // freely, but you cannot accidentally draft a pure-hero run however the
+    // weights fall, and you never face three cards that are all dead for what
+    // you built.
+    //
+    // Slots degrade to wildcard rather than shrinking the offer: late in a run
+    // a whole family can be exhausted, and a two-card draft would read as the
+    // game running out rather than as a rule being honoured.
+    const SLOTS: ReadonlyArray<ReadonlyArray<Perk['family']> | null> = [
+      ['hero'],
+      ['towers', 'army'],
+    ];
     for (let i = 0; i < size; i++) {
-      let total = 0;
-      for (const p of remaining) total += p.weight;
-      let roll = this.rng() * total;
-      let index = remaining.length - 1;
-      for (let j = 0; j < remaining.length; j++) {
-        roll -= remaining[j]!.weight;
-        if (roll <= 0) {
-          index = j;
-          break;
-        }
-      }
-      picked.push(remaining[index]!);
-      remaining.splice(index, 1);
+      const want = SLOTS[i] ?? null;
+      const pool = want ? remaining.filter((p) => want.includes(p.family)) : remaining;
+      const from = pool.length > 0 ? pool : remaining;
+      const chosen = this.weightedPick(from);
+      picked.push(chosen);
+      remaining.splice(remaining.indexOf(chosen), 1);
     }
 
     this.offer = picked;
     return this.offer;
+  }
+
+  /** Weighted pick from a list. Drawn from the injected rng, so seeds replay. */
+  private weightedPick(from: readonly Perk[]): Perk {
+    let total = 0;
+    for (const p of from) total += p.weight;
+    let roll = this.rng() * total;
+    for (const p of from) {
+      roll -= p.weight;
+      if (roll <= 0) return p;
+    }
+    return from[from.length - 1]!;
   }
 
   /**
@@ -161,11 +231,13 @@ export class PerkSystem {
     this.taken.set(perkId, stacks + 1);
     this.offer = null;
     for (const fn of this.onTaken) fn(perk, stacks + 1);
+    this.dealFromQueue();
     return true;
   }
 
   /** Decline the draft. The card is spent; the run moves on. */
   skip(): void {
     this.offer = null;
+    this.dealFromQueue();
   }
 }

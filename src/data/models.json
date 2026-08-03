@@ -164,6 +164,16 @@
       "file": "models/kaykit/Skeleton_Mage.glb"
     },
     {
+      "id": "unit-outrider",
+      "base": "base-beast",
+      "scale": 0.92
+    },
+    {
+      "id": "unit-halberdier",
+      "base": "base-humanoid",
+      "scale": 1.08
+    },
+    {
       "id": "world-gate",
       "silhouette": "structure",
       "tint": 4,
@@ -235,6 +245,12 @@
       "silhouette": "structure",
       "tint": 7,
       "file": "models/kenney-td/tower-round-build-d.glb"
+    },
+    {
+      "id": "build-barracks",
+      "silhouette": "structure",
+      "tint": 8,
+      "file": "models/kenney-td/tower-round-build-e.glb"
     }
   ]
 }

@@ -3,6 +3,7 @@ import type { EnemySystem } from './enemySystem';
 import type { HeroSystem } from './heroSystem';
 import type { TowerSystem } from './towerSystem';
 import type { ZoneSystem } from './zoneSystem';
+import type { ArmySystem } from './armySystem';
 
 export interface AbilitySlot {
   readonly ability: Ability;
@@ -21,6 +22,7 @@ export class AbilitySystem {
   private readonly hero: HeroSystem;
   private readonly towers: TowerSystem;
   private readonly zones: ZoneSystem;
+  private readonly army: ArmySystem;
   private readonly aoeScratch: number[] = [];
   /**
    * How many abilities may be carried at once (abilities.json `equipSlots`).
@@ -37,6 +39,7 @@ export class AbilitySystem {
     hero: HeroSystem,
     towers: TowerSystem,
     zones: ZoneSystem,
+    army: ArmySystem,
     equipSlots = 3,
   ) {
     this.equipSlots = equipSlots;
@@ -55,6 +58,7 @@ export class AbilitySystem {
     this.hero = hero;
     this.towers = towers;
     this.zones = zones;
+    this.army = army;
   }
 
   getSlot(abilityId: string): AbilitySlot | undefined {
@@ -159,6 +163,11 @@ export class AbilitySystem {
         }
         break;
       }
+      case 'summon-host':
+        // Posted on the road nearest the hero, not around the hero — a host
+        // mustered in a field blocks nothing, so where you ride is the decision.
+        this.army.muster(this.hero.x, this.hero.y, effect);
+        break;
       case 'ground-zone':
         // Dropped at the hero's feet — ride to where they will be, not where
         // they are. The ZoneSystem owns its lifetime from here.
