@@ -510,11 +510,49 @@ measurement comes first.
   numbers), and the campaign held: 100 / 78 / 64 / 50, pillar probe OK, cadence
   29.5 / 28.1 / 31.8 / 34.8.
 
-### M5.8 — Rebalance the campaign against the triangle
-- [ ] Re-price wave budgets per B.8 on all four maps.
-- [ ] Retire `soloCarry`; adopt the no-single-pillar invariant.
-- **Accept:** every map in its win band; no pillar clears maps 3–4 alone; every tower
-  and the barracks appear in winning runs; runs measurably diverge across seeds.
+### M5.8 — Rebalance the campaign against the triangle — ✅ DONE 2026-08-03
+- [x] The counter enemies enter the campaign — Outrider and Halberdier on the later
+      waves of maps 2–4, at roughly half the density the first attempt used. They exist
+      to make the army a *decision*, not to raise the wave budget.
+- [x] `soloCarry` retired; `maxSinglePillarWinRate` is the gate. The per-tower solo
+      table survives as texture, explicitly labelled as such.
+- [x] Invariants folded into CLAUDE.md.
+- **No wave budget was re-priced.** B.8 assumed the campaign would need re-tuning
+  against the triangle. It did not: the structural changes did the work, and every
+  attempt to tune numbers on top made things worse. That is the milestone's real result.
+
+**Final state — every acceptance criterion, measured:**
+
+| criterion | result |
+|---|---|
+| every map in its win band | **100 / 89 / 69 / 50** against 90–100 / 70–95 / 45–75 / 25–55 ✓ |
+| no pillar clears maps 3–4 alone | crossroads 0/0/0, warlords 0/0/8 ✓ |
+| every tower in winning runs | archer 90, bombard 12, frost 364, mill 114, **barracks 54** ✓ |
+| two pillars together must clear | the-ford towers-only 0% → towers+army **67%** ✓ |
+| draft cadence | 29.5 / 28.9 / 32.2 / 35.4 levels ✓ |
+
+---
+
+## Part F — What M5 actually taught
+
+Five milestones, and the same lesson each time in a different costume: **when more of
+something makes the game worse, stop tuning and go find the mechanism.**
+
+| symptom | looked like | actually was |
+|---|---|---|
+| more gold → fewer towers | economy | a bot blind to lane coverage |
+| more abilities → stronger hero | ability numbers | no equip cap |
+| tougher soldiers → fewer kills | garrison stats | rally points outside tower range |
+| a barracks made boards worse | the barracks | scoring a complement as a projection |
+
+Not one of those was fixed by a number. Every genuine fix was structural — a cap, a
+geometry rule, an offer composition rule — and each one held without further tuning,
+which is exactly what Part A predicted and counter-tuning never managed.
+
+The corollary is about instruments. Three separate measurement rounds reported
+`towers+army` as byte-identical to `towers only` and the pillar claim as untested-while-
+appearing-tested, because both arms died before the thing being measured could happen.
+**A probe that cannot survive to exercise its subject is not a probe.**
 
 ---
 

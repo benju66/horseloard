@@ -169,6 +169,13 @@
           "spacing": 0.15,
           "laneId": "west",
           "delay": 0
+        },
+        {
+          "enemyId": "outrider",
+          "count": 3,
+          "spacing": 1.4,
+          "laneId": "east",
+          "delay": 4
         }
       ]
     },
@@ -283,6 +290,13 @@
           "spacing": 0.8,
           "laneId": "east",
           "delay": 2
+        },
+        {
+          "enemyId": "halberdier",
+          "count": 2,
+          "spacing": 2.4,
+          "laneId": "east",
+          "delay": 5
         }
       ]
     },
@@ -474,6 +488,13 @@
           "spacing": 1.5,
           "laneId": "west",
           "delay": 1
+        },
+        {
+          "enemyId": "outrider",
+          "count": 4,
+          "spacing": 1.1,
+          "laneId": "west",
+          "delay": 3
         }
       ]
     },

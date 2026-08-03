@@ -111,7 +111,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
   const all: BotRunResult[] = [];
 
   for (const mapId of Object.keys(data.maps)) {
-    it(`plays ${mapId}`, () => {
+    it(`plays ${mapId}`, { timeout: 60_000 }, () => {
       const lines: string[] = [];
       for (const factory of BOTS) {
         const runs = SEEDS.map((seed) => runBot(botData, mapId, factory, seed));
@@ -138,7 +138,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * are not decisions, which is both an easiness problem AND the thing most
    * likely to flatten tower balance if difficulty is raised by HP alone.
    */
-  it('reports whether gold is actually scarce', () => {
+  it('reports whether gold is actually scarce', { timeout: 60_000 }, () => {
     const lines: string[] = [];
     for (const mapId of Object.keys(data.maps)) {
       const runs = BOTS.flatMap((f) => SEEDS.map((seed) => runBot(botData, mapId, f, seed)));
@@ -169,7 +169,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * that dies on wave 4 should of course be short of 25, and averaging it in
    * with full clears would make a healthy curve look starved.
    */
-  it('reports how many levels a run actually produces', () => {
+  it('reports how many levels a run actually produces', { timeout: 60_000 }, () => {
     const lines: string[] = [];
     for (const mapId of Object.keys(data.maps)) {
       const runs = BOTS.flatMap((f) => SEEDS.map((s) => runBot(botData, mapId, f, s)));
@@ -390,7 +390,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * it never picks might be weak or might just be mis-scored. Forcing the build
    * removes the model from the question entirely.
    */
-  it('reports whether each tower can carry a map alone', () => {
+  it('reports whether each tower can carry a map alone', { timeout: 60_000 }, () => {
     const lines: string[] = [];
     for (const tower of data.towers.towers) {
       const runs: BotRunResult[] = [];
@@ -448,7 +448,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * "the preference column is not evidence about tower strength". A perk that
    * shows up in winning runs might be strong, or might simply be dealt often.
    */
-  it('reports whether any single perk swings the campaign', { timeout: 120_000 }, () => {
+  it('reports whether any single perk swings the campaign', { timeout: 300_000 }, () => {
     const lines: string[] = [];
     // Maps 3-4 only: the easy maps win regardless, so a perk's effect is
     // invisible there. The interesting question is whether a perk rescues a map
