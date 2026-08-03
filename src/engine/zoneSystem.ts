@@ -22,12 +22,30 @@ export interface ZoneSpec {
   readonly duration: number;
   readonly damagePerSecond: number;
   readonly slowMultiplier: number;
+  /**
+   * Makes this zone circle a moving anchor instead of sitting still.
+   *
+   * Orbiting blades are the same hazard as a patch of caltrops — a radius that
+   * hurts what stands in it — differing only in whether the radius stays put.
+   * Modelling them as mobile zones rather than a third damage system means the
+   * pulse cadence, the slow refresh and the swap-remove all come for free.
+   */
+  readonly orbit?: {
+    readonly index: number;
+    readonly count: number;
+    readonly distance: number;
+    readonly revolutionsPerSecond: number;
+  };
 }
 
 export interface GroundZone {
   readonly id: number;
-  readonly x: number;
-  readonly y: number;
+  x: number;
+  y: number;
+  /** set when this zone circles the hero rather than holding a fixed spot */
+  readonly orbit: ZoneSpec['orbit'];
+  /** radians travelled so far, for an orbiting zone */
+  angle: number;
   readonly radius: number;
   readonly damagePerSecond: number;
   readonly slowMultiplier: number;
@@ -61,10 +79,17 @@ export class ZoneSystem {
   }
 
   spawn(x: number, y: number, spec: ZoneSpec): GroundZone {
+    // Blades start evenly spaced, so three of them read as a ring rather than
+    // as one blade that stutters. Placed on the ring at spawn rather than
+    // waiting for the first tick — a ring that starts collapsed on the hero
+    // and springs outward reads as a bug.
+    const angle = spec.orbit ? (spec.orbit.index / spec.orbit.count) * Math.PI * 2 : 0;
     const zone: GroundZone = {
       id: this.ids.allocate(),
-      x,
-      y,
+      x: spec.orbit ? x + Math.cos(angle) * spec.orbit.distance : x,
+      y: spec.orbit ? y + Math.sin(angle) * spec.orbit.distance : y,
+      orbit: spec.orbit,
+      angle,
       radius: spec.radius,
       damagePerSecond: spec.damagePerSecond,
       slowMultiplier: spec.slowMultiplier,
@@ -79,9 +104,18 @@ export class ZoneSystem {
     return zone;
   }
 
-  tick(dt: number): void {
+  /**
+   * `anchorX/Y` is where orbiting zones circle — the hero. Static zones ignore
+   * it entirely, so a caller with nothing to anchor can pass anything.
+   */
+  tick(dt: number, anchorX = 0, anchorY = 0): void {
     for (let i = this.list.length - 1; i >= 0; i--) {
       const z = this.list[i]!;
+      if (z.orbit) {
+        z.angle += z.orbit.revolutionsPerSecond * Math.PI * 2 * dt;
+        z.x = anchorX + Math.cos(z.angle) * z.orbit.distance;
+        z.y = anchorY + Math.sin(z.angle) * z.orbit.distance;
+      }
       const rSq = z.radius * z.radius;
 
       const pulsing = (z.pulseIn -= dt) <= 0;

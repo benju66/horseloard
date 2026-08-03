@@ -490,21 +490,21 @@
       "metaLocked": true
     },
     {
-      "id": "perk-warhorse-shoes",
+      "id": "perk-honed-edges",
       "family": "hero",
-      "name": "Warhorse Shoes",
-      "description": "Charge hits far harder, and takes longer to come round again.",
+      "name": "Honed Edges",
+      "description": "The blades bite far deeper, and take longer to spin up again.",
       "effects": [
         {
           "type": "ability-stat",
-          "abilityId": "charge",
-          "stat": "damage",
-          "perRank": 1.6,
+          "abilityId": "whirling-blades",
+          "stat": "damagePerSecond",
+          "perRank": 1.5,
           "mode": "multiply"
         },
         {
           "type": "ability-stat",
-          "abilityId": "charge",
+          "abilityId": "whirling-blades",
           "stat": "cooldown",
           "perRank": 1.15,
           "mode": "multiply"
@@ -547,6 +547,30 @@
           "type": "hero-stat",
           "stat": "moveSpeed",
           "perRank": 1.1,
+          "mode": "multiply"
+        }
+      ],
+      "maxStacks": 2,
+      "weight": 0.8
+    },
+    {
+      "id": "perk-whirlwind",
+      "family": "hero",
+      "name": "Whirlwind",
+      "description": "One more blade in the ring, spinning wider.",
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "whirling-blades",
+          "stat": "radius",
+          "perRank": 1.18,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "whirling-blades",
+          "stat": "duration",
+          "perRank": 1.25,
           "mode": "multiply"
         }
       ],

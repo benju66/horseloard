@@ -109,7 +109,7 @@ describe('stagger (received)', () => {
     expect(heavy.hp).toBe(100); // shove is not damage
   });
 
-  it('respects the per-enemy cooldown but not across enemies', () => {
+  it('respects the per-enemy cooldown, and the grace window on top of it', () => {
     const sim = new Simulation(heroFixture(MELEE_HERO), TEST_RNG);
     sim.enemySystem.spawn('heavy', 'main', 1);
     const count: string[] = [];
@@ -127,19 +127,23 @@ describe('stagger (received)', () => {
     sim.tick();
     expect(count).toHaveLength(1);
 
-    // A different heavy staggers immediately.
+    // A *different* heavy used to stagger immediately here, and this test used
+    // to assert that. `stagger.immunityAfter` deliberately reversed it — the
+    // grace window is what replaced Charge as the escape, and its whole job is
+    // to stop the enemy behind the one that just shoved you from shoving you
+    // again. See HeroSystem.
     const second = sim.enemySystem.spawn('heavy', 'main', 1);
     sim.hero.x = second.x + 2;
     sim.hero.y = second.y + 2;
     sim.tick();
-    expect(count).toHaveLength(2);
+    expect(count).toHaveLength(1);
 
-    // After the first enemy's cooldown lapses it staggers again.
-    advanceSeconds(sim, TEST_HERO.stagger.perEnemyCooldown);
-    sim.hero.x = 22;
-    sim.hero.y = 22;
+    // Once the grace lapses, the second heavy lands its shove.
+    advanceSeconds(sim, TEST_HERO.stagger.immunityAfter);
+    sim.hero.x = second.x + 2;
+    sim.hero.y = second.y + 2;
     sim.tick();
-    expect(count).toHaveLength(3);
+    expect(count).toHaveLength(2);
   });
 
   it('non-staggering enemies never shove', () => {
@@ -245,58 +249,63 @@ describe('forge (bow levels)', () => {
   });
 });
 
-describe('charge heading', () => {
+/**
+ * Charge is gone (cut on repeated play feedback), and with it the only thing a
+ * player could press to escape a shove. `stagger.immunityAfter` inherited that
+ * job — see HeroSystem. These pin the property that made it necessary: without
+ * it, riding into a crowd of heavies is a shove, a recovery, and another shove,
+ * with no counterplay at all.
+ */
+describe('stagger', () => {
   /**
-   * Charge continues under its own steam when the stick is released. It used to
-   * steer by `dir` — a left/right sprite-mirror flag — so ANY charge went due
-   * left or due right regardless of where the hero was actually travelling.
-   * Steering up and charging launched you sideways at full speed.
-   *
-   * Found in the 3D build, but the 2D build had it too; a mirrored sprite just
-   * made it easy to miss.
+   * Enemies are repositioned from their lane distance every tick, so a test
+   * cannot park one on the hero — it has to ride the hero onto them. Both
+   * spawn at the lane start and barely move.
    */
-  const CHARGE = { duration: 1, speedMultiplier: 3, damage: 5, slowMultiplier: 0.5, slowDuration: 1 };
-
-  function chargeFrom(ix: number, iy: number): { dx: number; dy: number } {
-    const sim = new Simulation(heroFixture(), TEST_RNG);
-    // Centre of the 100x200 fixture map. Charge is 3x a 100u/s walk, so the
-    // sample window has to stay short or the boundary clamp eats the result —
-    // which is exactly what made the first version of this test lie.
-    sim.hero.x = 50;
-    sim.hero.y = 100;
-
-    // Steer briefly so a heading is established, then release and charge.
-    sim.hero.input.x = ix;
-    sim.hero.input.y = iy;
-    for (let i = 0; i < 5; i++) sim.tick();
-    sim.hero.activateCharge(CHARGE);
-    sim.hero.input.x = 0;
-    sim.hero.input.y = 0;
-
-    const x0 = sim.hero.x;
-    const y0 = sim.hero.y;
-    for (let i = 0; i < Math.round(0.12 / SIM_DT); i++) sim.tick();
-    return { dx: sim.hero.x - x0, dy: sim.hero.y - y0 };
+  function twoHeaviesOnTheHero() {
+    const data = heroFixture(MELEE_HERO);
+    const sim = new Simulation(data, TEST_RNG);
+    sim.enemySystem.spawn('heavy', 'main', 1);
+    sim.enemySystem.spawn('heavy', 'main', 1);
+    sim.hero.x = 20;
+    sim.hero.y = 20;
+    return sim;
   }
 
-  it('carries the hero along the direction actually travelled, not just left/right', () => {
-    const up = chargeFrom(0, -1);
-    expect(up.dy).toBeLessThan(-5);
-    expect(Math.abs(up.dx)).toBeLessThan(Math.abs(up.dy) * 0.2);
+  it('cannot be shoved again while the grace window is open', () => {
+    const sim = twoHeaviesOnTheHero();
+    let shoves = 0;
+    sim.hero.onStagger.push(() => shoves++);
 
-    const down = chargeFrom(0, 1);
-    expect(down.dy).toBeGreaterThan(5);
-    expect(Math.abs(down.dx)).toBeLessThan(Math.abs(down.dy) * 0.2);
+    // Two heavies in contact at once. Without the grace window the second
+    // shoves the instant the first one's control loss ends, and a player
+    // riding into a crowd never gets the stick back.
+    for (let i = 0; i < Math.round(1.0 / SIM_DT); i++) {
+      sim.hero.x = 20;
+      sim.hero.y = 20;
+      sim.tick();
+    }
+    expect(shoves).toBe(1);
+    expect(sim.hero.staggerImmune).toBe(true);
   });
 
-  it('preserves a diagonal heading', () => {
-    const diag = chargeFrom(0.707, -0.707);
-    expect(diag.dx).toBeGreaterThan(3);
-    expect(diag.dy).toBeLessThan(-3);
-    // Roughly 45 degrees: neither axis dominates.
-    expect(Math.abs(Math.abs(diag.dx) - Math.abs(diag.dy))).toBeLessThan(Math.abs(diag.dx) * 0.25);
-  });
+  it('opens up again once the window lapses', () => {
+    const sim = twoHeaviesOnTheHero();
+    let shoves = 0;
+    sim.hero.onStagger.push(() => shoves++);
 
+    // 0.4s control loss + 0.9s grace = 1.3s. Run well past it: the grace is a
+    // floor on how often you can be shoved, not immunity.
+    for (let i = 0; i < Math.round(3.0 / SIM_DT); i++) {
+      sim.hero.x = 20;
+      sim.hero.y = 20;
+      sim.tick();
+    }
+    expect(shoves).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('heading', () => {
   it('still mirrors the 2D sprite flag independently of heading', () => {
     const sim = new Simulation(heroFixture(), TEST_RNG);
     sim.hero.input.x = -1;

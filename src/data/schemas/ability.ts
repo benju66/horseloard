@@ -2,6 +2,35 @@ import { z } from 'zod';
 import { IdSchema, SfxRefSchema, SpriteRefSchema } from './common';
 
 /**
+ * When an ability fires itself.
+ *
+ * **Abilities are not buttons.** DESIGN §1 pillar 2 says "auto-fire means the
+ * thumb steers and the brain plays", and that was applied to the bow while a
+ * three-button ability bar was bolted onto the other thumb — a direct
+ * contradiction nobody had noticed. Abilities now fire on their own, so the
+ * whole game is one thumb on a joystick and the decisions live in the build.
+ *
+ * The condition is the interesting part. `cooldown` alone dumps a Volley into
+ * an empty field the instant it comes up; `enemies-near` waits for something
+ * worth spending it on. That heuristic is not new — the bot harness has been
+ * playing exactly this way since M1, which in hindsight was the game telling us
+ * it wanted to play itself.
+ */
+export const AbilityTriggerSchema = z.discriminatedUnion('type', [
+  /** Fire the moment it is off cooldown. For buffs and anything always useful. */
+  z.object({ type: z.literal('cooldown') }),
+  /** Fire when at least `count` enemies are within `radius` of the hero. */
+  z.object({
+    type: z.literal('enemies-near'),
+    count: z.number().int().positive(),
+    radius: z.number().positive(),
+  }),
+  /** Fire once the hero has dealt this much damage since the last cast. */
+  z.object({ type: z.literal('damage-dealt'), amount: z.number().positive() }),
+]);
+export type AbilityTrigger = z.infer<typeof AbilityTriggerSchema>;
+
+/**
  * Ability effects the engine implements. All are cast at/from the hero
  * position — no global tap-anywhere targeting (DESIGN §4).
  */
@@ -88,14 +117,27 @@ export const AbilityEffectSchema = z.discriminatedUnion('type', [
     engageRadius: z.number().positive(),
     spacing: z.number().positive(),
   }),
-  // Charge: gallop burst, tramples through enemies.
+  /**
+   * Orbiting blades — the one shape the roster completely lacked.
+   *
+   * Everything else fires forward or lands where the hero already is. Nothing
+   * defended the space *around* you, which is exactly the situation Charge was
+   * supposed to answer and never did. An orbit is the classic survivor-game
+   * answer: it needs no aim, no timing and no button, and it rewards riding
+   * *through* a crowd rather than away from it — which is DESIGN §1 pillar 1
+   * ("greed pulls you toward danger") expressed as a weapon.
+   *
+   * Implemented as zones that follow the hero, so it reuses the hazard
+   * machinery rather than adding a third way to damage something.
+   */
   z.object({
-    type: z.literal('charge'),
-    duration: z.number().positive().describe('seconds of burst'),
-    speedMultiplier: z.number().gt(1),
-    damage: z.number().positive().describe('per enemy trampled (internal cooldown per enemy)'),
-    slowMultiplier: z.number().gt(0).lt(1).describe('speed factor applied to trampled enemies'),
-    slowDuration: z.number().positive().describe('seconds'),
+    type: z.literal('orbit'),
+    blades: z.number().int().positive(),
+    radius: z.number().positive().describe('distance from the hero'),
+    bladeRadius: z.number().positive().describe('how far each blade reaches'),
+    revolutionsPerSecond: z.number().positive(),
+    damagePerSecond: z.number().positive(),
+    duration: z.number().positive().describe('seconds the blades persist'),
   }),
 ]);
 export type AbilityEffect = z.infer<typeof AbilityEffectSchema>;
@@ -107,7 +149,9 @@ export const AbilitySchema = z.object({
   cooldown: z.number().positive().describe('seconds'),
   unlockedByDefault: z
     .boolean()
-    .describe('Charge is free from the start; others unlock via meta-tree nodes'),
+    .describe('available on a fresh save; the rest unlock via meta-tree nodes'),
+  /** When this fires itself. Defaults to "the moment it is ready". */
+  trigger: AbilityTriggerSchema.default({ type: 'cooldown' }),
   effect: AbilityEffectSchema,
   iconRef: SpriteRefSchema,
   castSfxRef: SfxRefSchema.optional(),

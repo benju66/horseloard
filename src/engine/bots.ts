@@ -422,69 +422,16 @@ function countWithin(sim: Simulation, x: number, y: number, radius: number): num
 }
 
 /**
- * Cast whatever is ready, judged by effect type — the engine's vocabulary,
- * not the ability roster's. A new ability with a known effect type is used
- * automatically; one with a new effect type is ignored until taught here.
+ * Abilities used to be cast from here, by a `castReady` helper that judged each
+ * effect type against the field. That helper is gone — `AbilitySystem` fires
+ * abilities itself now, using the same conditions, because play feedback said
+ * the ability bar should not exist at all.
+ *
+ * The harness suppresses hero abilities the way it suppresses the bow: with
+ * data. `withoutAbilities` hands a run an empty roster, exactly as
+ * `withoutHeroDamage` hands it a zeroed bow — no engine flag exists for the
+ * benefit of a probe.
  */
-function castReady(sim: Simulation, opts: { chargeWhenMoving: boolean }): void {
-  for (const slot of sim.abilities.slots) {
-    if (!slot.unlocked || slot.cooldownRemaining > 0) continue;
-    const effect = slot.ability.effect;
-    switch (effect.type) {
-      case 'aoe-damage':
-        if (countWithin(sim, sim.hero.x, sim.hero.y, effect.radius) >= CLUSTER_MIN_TARGETS) {
-          sim.castAbility(slot.ability.id);
-        }
-        break;
-      case 'tower-rate-buff':
-        if (sim.enemySystem.aliveCount >= BUFF_MIN_ENEMIES) sim.castAbility(slot.ability.id);
-        break;
-      case 'hero-buff':
-        // A fire-rate window with nothing in bow range is a wasted cooldown, so
-        // spend it only when there is something to shoot. Movement buffs are
-        // worth having whenever the rider is actually moving.
-        if (
-          effect.stat === 'moveSpeed'
-            ? sim.hero.moving
-            : countWithin(sim, sim.hero.x, sim.hero.y, sim.hero.bowStats.range) > 0
-        ) {
-          sim.castAbility(slot.ability.id);
-        }
-        break;
-      case 'pierce-shot':
-        // Worth a cooldown only when the corridor actually contains bodies.
-        // Approximated by the count inside its reach — the exact corridor test
-        // lives in AbilitySystem, and duplicating it here would be a second
-        // copy of a rule to keep in sync.
-        if (countWithin(sim, sim.hero.x, sim.hero.y, effect.range) >= CLUSTER_MIN_TARGETS) {
-          sim.castAbility(slot.ability.id);
-        }
-        break;
-      case 'ground-zone':
-        // A patch under the hero's own feet is only worth it when the road is
-        // busy: the bot has no notion of "where they will be", so it settles
-        // for "where they already are". A human plays it better, which means
-        // the harness under-reports this ability rather than over-reports it —
-        // the safe direction for a balance instrument.
-        if (countWithin(sim, sim.hero.x, sim.hero.y, effect.radius) >= CLUSTER_MIN_TARGETS) {
-          sim.castAbility(slot.ability.id);
-        }
-        break;
-      case 'summon-host':
-        // A long cooldown wants a real wave under it, and the host has to be
-        // posted on road that matters — so: plenty of enemies, and the hero
-        // near enough to a lane for the muster to land on one.
-        if (sim.enemySystem.aliveCount >= BUFF_MIN_ENEMIES) sim.castAbility(slot.ability.id);
-        break;
-      case 'charge':
-        // The identity verb: ride through bodies, and the escape from a shove.
-        if (sim.hero.staggered || (opts.chargeWhenMoving && sim.hero.moving)) {
-          sim.castAbility(slot.ability.id);
-        }
-        break;
-    }
-  }
-}
 
 // ─── Policies ───
 
@@ -514,7 +461,6 @@ interface Plan {
   repairFloor: number;
   /** stay within this distance of the gate (Infinity = roam the whole map) */
   leash: number;
-  chargeWhenMoving: boolean;
   /** restrict every build to this tower id — null = free choice */
   onlyTowerId?: string | null;
   /**
@@ -538,12 +484,6 @@ interface Plan {
    * swallowing a probe about something else.
    */
   noIncome?: boolean;
-  /**
-   * Cast abilities at all. Off for the towers-only pillar probe: Volley and
-   * Charge are hero damage, and the probe has to isolate the pillar rather than
-   * measure "towers plus a hero who still nukes things".
-   */
-  castAbilities?: boolean;
 }
 
 /**
@@ -606,7 +546,6 @@ function makePolicy(plan: Plan): BotFactory {
         const besieger = nearestBesieger(sim);
         if (besieger) {
           seek(sim, besieger.x, besieger.y);
-          if (plan.castAbilities !== false) castReady(sim, { chargeWhenMoving: plan.chargeWhenMoving });
           return;
         }
 
@@ -621,7 +560,6 @@ function makePolicy(plan: Plan): BotFactory {
           if (coin) seek(sim, coin.x, coin.y);
           else seek(sim, gate.x, gate.y);
         }
-        if (plan.castAbilities !== false) castReady(sim, { chargeWhenMoving: plan.chargeWhenMoving });
       },
     };
   };
@@ -634,7 +572,6 @@ export const defender: BotFactory = makePolicy({
   bowShare: 0.15,
   repairFloor: 0.8,
   leash: 320,
-  chargeWhenMoving: false,
 });
 
 /** Cavalry: minimal field, maximal bow, intercept up the road. */
@@ -644,7 +581,6 @@ export const rider: BotFactory = makePolicy({
   bowShare: 0.6,
   repairFloor: 0.5,
   leash: Infinity,
-  chargeWhenMoving: true,
 });
 
 /** Balanced: towers where they pay, hero where the pressure is. */
@@ -654,7 +590,6 @@ export const mixed: BotFactory = makePolicy({
   bowShare: 0.35,
   repairFloor: 0.7,
   leash: Infinity,
-  chargeWhenMoving: true,
 });
 
 export const BOTS: readonly BotFactory[] = [defender, rider, mixed];
@@ -677,7 +612,6 @@ export function forcedComposition(towerId: string): BotFactory {
     bowShare: 0.35,
     repairFloor: 0.7,
     leash: Infinity,
-    chargeWhenMoving: true,
     onlyTowerId: towerId,
   });
 }
@@ -722,8 +656,6 @@ export const towersOnly: BotFactory = makePolicy({
   bowShare: 0, // a zeroed bow is not worth a coin
   repairFloor: 0.8,
   leash: Infinity, // roam for coins; the gold still has to come from somewhere
-  chargeWhenMoving: false,
-  castAbilities: false,
   // Garrisons are the army pillar, not this one. Leaving them buildable here
   // would quietly make 'towers only' mean 'towers and army', and the probe
   // would stop isolating anything.
@@ -744,8 +676,6 @@ export const towersAndArmy: BotFactory = makePolicy({
   bowShare: 0,
   repairFloor: 0.8,
   leash: Infinity,
-  chargeWhenMoving: false,
-  castAbilities: false,
   noIncome: true,
 });
 
@@ -756,8 +686,6 @@ export const combatTowersOnly: BotFactory = makePolicy({
   bowShare: 0,
   repairFloor: 0.8,
   leash: Infinity,
-  chargeWhenMoving: false,
-  castAbilities: false,
   noGarrison: true,
   noIncome: true,
 });
@@ -776,8 +704,6 @@ export const armyOnly: BotFactory = makePolicy({
   bowShare: 0,
   repairFloor: 0.8,
   leash: Infinity, // still rides for coins; the probe is about damage, not funding
-  chargeWhenMoving: false,
-  castAbilities: false,
   onlyGarrison: true,
 });
 
@@ -788,7 +714,6 @@ export const heroOnly: BotFactory = makePolicy({
   bowShare: 1,
   repairFloor: 0.5,
   leash: Infinity,
-  chargeWhenMoving: true,
 });
 
 /**
@@ -801,6 +726,17 @@ export const heroOnly: BotFactory = makePolicy({
  * Stagger is left intact — it is physical presence, not damage, and removing it
  * would change how enemies path around the hero rather than how much they take.
  */
+/**
+ * A run with no hero abilities, for the towers-only and army-only probes.
+ *
+ * Data rather than an engine flag, for the same reason `withoutHeroDamage`
+ * below is: the Simulation clones its balance data, so handing it an empty
+ * roster is enough, and no probe gets to add behaviour to the engine.
+ */
+export function withoutAbilities<T extends { abilities: readonly Ability[] }>(data: T): T {
+  return { ...data, abilities: [] };
+}
+
 export function withoutHeroDamage(hero: Hero): Hero {
   const out = structuredClone(hero);
   for (const level of out.bow.levels) level.damage = 0;

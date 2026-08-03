@@ -156,6 +156,7 @@ export class FxLayer {
   private readonly heroRing: RingPool;
   private readonly rangeRings: RingPool;
   private readonly zoneRings: RingPool;
+  private readonly bladeRings: RingPool;
   private readonly bursts: BurstPool;
   private readonly map: MapDef;
   private readonly scratch = new THREE.Vector3();
@@ -174,6 +175,9 @@ export class FxLayer {
     // want to be standing on*, so it is a harder, warmer ring than the
     // build-phase range decals, and unlike them it shows during the wave.
     this.zoneRings = new RingPool(scene, 1, '#e2743a', 0.42);
+    // Cold steel against the hazards' warm orange — the two read apart at a
+    // glance even when blades are spinning through a patch of caltrops.
+    this.bladeRings = new RingPool(scene, 1, '#cfe6ff', 0.8);
     this.bursts = new BurstPool(scene);
   }
 
@@ -201,17 +205,19 @@ export class FxLayer {
 
     sim.abilities.onCast.push((ability) => {
       simToWorld(this.map, sim.hero.x, sim.hero.y, this.scratch);
-      // Charge is the identity verb and its whole effect is a 1s state change,
-      // so it needs the loudest tell of anything in the game.
-      const charge = ability.effect.type === 'charge';
+      // Abilities fire themselves now, so the cast tell is doing more work than
+      // it used to: it is the only thing telling a player their build just did
+      // something. Blades get the loudest one — they persist, so the burst is
+      // what marks the moment they start.
+      const orbit = ability.effect.type === 'orbit';
       this.bursts.spawn(
         this.scratch.x,
         14,
         this.scratch.z,
-        charge ? '#9fd8ff' : '#f6c945',
-        charge ? 1.8 : 1.3,
+        orbit ? '#9fd8ff' : '#f6c945',
+        orbit ? 1.8 : 1.3,
       );
-      this.kick(charge ? 0.8 : 0.45);
+      this.kick(orbit ? 0.7 : 0.45);
     });
   }
 
@@ -235,7 +241,7 @@ export class FxLayer {
 
     this.heroRing.begin();
     simToWorld(this.map, sim.hero.x, sim.hero.y, this.scratch);
-    this.heroRing.place(this.scratch.x, this.scratch.z, sim.hero.charging ? 1.5 : 1);
+    this.heroRing.place(this.scratch.x, this.scratch.z, sim.hero.staggerImmune ? 1.35 : 1);
     this.heroRing.end();
 
     // Range decals only while building — they are information, not decoration.
@@ -251,12 +257,18 @@ export class FxLayer {
     }
     this.rangeRings.end();
 
+    // Ground hazards and orbiting blades share a system but must not share a
+    // look: one is somewhere you should not stand, the other is a thing of
+    // yours moving with you.
     this.zoneRings.begin();
+    this.bladeRings.begin();
     for (const zone of sim.zones.zones) {
       simToWorld(this.map, zone.x, zone.y, this.scratch);
-      this.zoneRings.place(this.scratch.x, this.scratch.z, zone.radius);
+      const pool = zone.orbit ? this.bladeRings : this.zoneRings;
+      pool.place(this.scratch.x, this.scratch.z, zone.radius);
     }
     this.zoneRings.end();
+    this.bladeRings.end();
 
     this.bursts.tick(dt);
 
@@ -278,6 +290,7 @@ export class FxLayer {
     this.heroRing.dispose();
     this.rangeRings.dispose();
     this.zoneRings.dispose();
+    this.bladeRings.dispose();
     this.bursts.dispose();
   }
 }

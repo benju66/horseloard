@@ -12,9 +12,21 @@ export interface AbilitySlot {
 }
 
 /**
- * The right-thumb layer: up to three abilities, all cast at/from the hero
- * position — no global tap-anywhere targeting (DESIGN §4). Unlocks come
- * from unlockedByDefault + flags (the meta tree takes over in M3).
+ * The hero's weapons. **They fire themselves.**
+ *
+ * There is no right-thumb layer any more. DESIGN §1 pillar 2 — "auto-fire means
+ * the thumb steers and the brain plays" — was applied to the bow and then
+ * contradicted by a three-button ability bar on the other thumb. Play feedback
+ * settled it: the whole game is one thumb on a joystick, and every decision
+ * lives in the build rather than in the moment.
+ *
+ * Each ability carries a `trigger` saying when it is worth spending. That
+ * condition is not a new invention — `bots.ts` has judged casts this way since
+ * M1, and moving the heuristic from the harness into the game is the harness
+ * admitting it was playing the game the way the game wanted to play itself.
+ *
+ * Still cast at/from the hero position: where you ride is still the decision,
+ * and it is now the *only* one, which makes it a stronger one.
  */
 export class AbilitySystem {
   readonly slots: AbilitySlot[] = [];
@@ -97,6 +109,14 @@ export class AbilitySystem {
     return true;
   }
 
+  /** Damage the hero has dealt since a `damage-dealt` ability last fired. */
+  private damageSinceCast = 0;
+
+  /** Call from the sim whenever the hero lands damage — feeds `damage-dealt`. */
+  noteHeroDamage(amount: number): void {
+    this.damageSinceCast += amount;
+  }
+
   tick(dt: number): void {
     for (const slot of this.slots) {
       if (slot.cooldownRemaining > 0) {
@@ -104,6 +124,35 @@ export class AbilitySystem {
         if (slot.cooldownRemaining < 1e-9) slot.cooldownRemaining = 0;
       }
     }
+    this.autoCast();
+  }
+
+  /**
+   * Fire everything whose trigger is satisfied.
+   *
+   * One per tick, deliberately: firing three abilities on the same frame reads
+   * as a bug rather than as a build coming together, and at 60 ticks a second
+   * the stagger between them is imperceptible anyway.
+   */
+  private autoCast(): void {
+    for (const slot of this.slots) {
+      if (!slot.unlocked || slot.cooldownRemaining > 0) continue;
+      if (!this.triggered(slot.ability.trigger)) continue;
+      if (this.cast(slot.ability.id)) return;
+    }
+  }
+
+  private triggered(trigger: Ability['trigger']): boolean {
+    if (trigger.type === 'cooldown') return true;
+    if (trigger.type === 'damage-dealt') return this.damageSinceCast >= trigger.amount;
+    let n = 0;
+    const rSq = trigger.radius * trigger.radius;
+    for (const e of this.enemies.enemies) {
+      const dx = e.x - this.hero.x;
+      const dy = e.y - this.hero.y;
+      if (dx * dx + dy * dy <= rSq && ++n >= trigger.count) return true;
+    }
+    return false;
   }
 
   /** Returns false when locked or cooling down. */
@@ -173,10 +222,30 @@ export class AbilitySystem {
         // they are. The ZoneSystem owns its lifetime from here.
         this.zones.spawn(this.hero.x, this.hero.y, effect);
         break;
-      case 'charge':
-        this.hero.activateCharge(effect);
+      case 'orbit': {
+        // One zone per blade, evenly spaced and anchored to the hero. The
+        // ZoneSystem does the circling; this only decides how many and how far.
+        for (let i = 0; i < effect.blades; i++) {
+          this.zones.spawn(this.hero.x, this.hero.y, {
+            radius: effect.bladeRadius,
+            duration: effect.duration,
+            damagePerSecond: effect.damagePerSecond,
+            slowMultiplier: 1, // blades cut, they do not slow
+            orbit: {
+              index: i,
+              count: effect.blades,
+              distance: effect.radius,
+              revolutionsPerSecond: effect.revolutionsPerSecond,
+            },
+          });
+        }
         break;
+      }
     }
+
+    // Spent, whatever it was: a damage-gated ability that kept its meter would
+    // fire again the instant its cooldown lapsed.
+    this.damageSinceCast = 0;
 
     slot.cooldownRemaining = slot.ability.cooldown;
     for (const fn of this.onCast) fn(slot.ability);

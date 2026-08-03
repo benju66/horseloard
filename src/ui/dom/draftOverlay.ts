@@ -2,13 +2,20 @@ import type { Perk } from '../../data/schemas';
 import type { Simulation } from '../../engine/simulation';
 
 /**
- * The in-run draft: pick 1 of N on a wave clear (DESIGN §15.1).
+ * The in-run draft. **It never opens itself.**
  *
- * Deliberately does *not* block the game. The sim never entered a 'draft'
- * phase — the offer just sits in hand through the build phase — so this panel
- * is dismissable and the field stays visible and playable behind it. A player
- * who wants to ride out and sweep coins first can, and the cards are still
- * there when they come back.
+ * It used to. That was defensible when drafts came on wave clears — about
+ * twelve a run, during the build phase, when nothing was happening. MG5.5 moved
+ * them to level-ups: roughly thirty a run, mid-combat, while you are riding.
+ * The panel was never revisited, and on device the result was damning — it is
+ * `pointer-events: auto` across the bottom of the screen, which is where the
+ * joystick spawns, so **every draft froze steering until it was dismissed**.
+ * Thirty times a run, mid-fight.
+ *
+ * So the panel is now strictly opt-in: a level-up lights a badge, and the cards
+ * appear only when the player asks for them. Nothing covers the field
+ * uninvited, and the badge carries the count so banking three cards while
+ * fighting is visible rather than silent.
  *
  * Content-agnostic: every string on a card comes from `perks.json`. This file
  * has never heard of a bow.
@@ -19,7 +26,8 @@ export class DraftOverlay {
   private readonly reopen: HTMLButtonElement;
   /** The offer currently rendered, so we only rebuild when it actually changes. */
   private shownFor: string | null = null;
-  private dismissed = false;
+  /** Starts closed and stays closed until the player opens it. */
+  private dismissed = true;
 
   constructor(layer: HTMLElement) {
     this.panel = document.createElement('div');
@@ -50,8 +58,8 @@ export class DraftOverlay {
 
     this.panel.append(title, sub, this.cards, later);
 
-    // A dismissed draft has to be reachable again, or "decide later" is just a
-    // way to lose the card by accident.
+    // The only way the panel ever opens. Deliberately small and out of the
+    // joystick's way — it is an invitation, not an interruption.
     this.reopen = document.createElement('button');
     this.reopen.className = 'draft-reopen';
     this.reopen.setAttribute('data-ui', '');
@@ -84,10 +92,22 @@ export class DraftOverlay {
     const key = offer.map((p) => p.id).join('|');
     if (key !== this.shownFor) {
       this.shownFor = key;
-      this.dismissed = false;
       this.render(offer, sim);
-      this.panel.style.display = '';
-      this.reopen.style.display = 'none';
+      // A new offer badges; it does not barge in. `dismissed` starts true and
+      // only the player clears it.
+      if (!this.dismissed) {
+        this.dismissed = true;
+        this.panel.style.display = 'none';
+      }
+    }
+
+    // Banked cards are worth showing — three waiting is a different situation
+    // from one, and a player mid-fight has no other way to know.
+    if (this.dismissed) {
+      const queued = sim.perks?.queuedDrafts ?? 0;
+      const label = queued > 0 ? `✦ Choose a boon (${queued + 1})` : '✦ Choose a boon';
+      if (this.reopen.textContent !== label) this.reopen.textContent = label;
+      this.reopen.style.display = '';
     }
   }
 
@@ -132,6 +152,10 @@ export class DraftOverlay {
       card.addEventListener('click', (ev) => {
         ev.stopPropagation();
         sim.perks?.take(perk.id);
+        // Straight back to the field. If a card is queued behind this one it
+        // badges again next frame rather than chaining panels at the player.
+        this.dismissed = true;
+        this.panel.style.display = 'none';
       });
       this.cards.append(card);
     }
@@ -178,8 +202,11 @@ export class DraftOverlay {
   color: #9fb0c4; font: 600 13px ui-monospace, monospace;
 }
 .draft-reopen {
+  /* Top of the screen, under the XP bar that spawned it — NOT the bottom.
+     The joystick spawns wherever a thumb lands, and the bottom half is where
+     thumbs land; anything with pointer-events there steals steering. */
   position: fixed; left: 50%; transform: translateX(-50%);
-  bottom: calc(env(safe-area-inset-bottom, 12px) + 74px); pointer-events: auto; z-index: 30;
+  top: calc(env(safe-area-inset-top, 6px) + 50px); pointer-events: auto; z-index: 30;
   padding: 10px 18px; border-radius: 14px; border: 1px solid rgba(246,201,69,.5);
   background: rgba(30,44,60,.92); color: #f6c945; font: 700 14px ui-monospace, monospace;
 }`;

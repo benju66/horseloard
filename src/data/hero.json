@@ -60,6 +60,7 @@
   "stagger": {
     "controlLossDuration": 0.4,
     "shoveDistance": 70,
-    "perEnemyCooldown": 1.2
+    "perEnemyCooldown": 1.2,
+    "immunityAfter": 0.9
   }
 }

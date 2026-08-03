@@ -91,6 +91,35 @@ Design rule: abilities are position-dependent (cast at/from the hero), reinforci
 > hero's contribution to the army's factor without replacing it). Muster arrives with the
 > barracks in MG5.4.
 
+> **Superseded 2026-08-03 by play feedback — abilities are not buttons.**
+> The table above and the ability bar it implies are both retired. Ben, on
+> device: the upgrade pop-up was "totally garbage", and skills should "be based
+> off of a timer or after a certain amount of damage is inflicted that
+> automatically trigger and don't need a button to be pushed."
+>
+> That is pillar 2 finishing its own sentence. "Auto-fire means the thumb steers
+> and the brain plays" was applied to the bow and then contradicted by putting
+> three buttons under the other thumb. **The whole game is now one thumb on a
+> joystick**; every ability carries a `trigger` (`cooldown`, `enemies-near`, or
+> `damage-dealt`) and fires itself. The bar survives as a cooldown *readout*
+> with `pointer-events: none` — which also fixed a real bug, since anything
+> interactive in the lower screen steals the touch that spawns the joystick.
+>
+> **Charge is cut.** §15 recorded "charge doesn't make sense" on 2026-07-30 and
+> parked it pending FX; it has FX now and the verdict was the same. Its escape
+> job passed to `stagger.immunityAfter`, a passive grace window — with no
+> buttons, counterplay has to be passive too.
+>
+> **Whirling Blades** replaces it, and answers what Charge was actually for:
+> nothing in the roster defended the space *around* the hero. An orbit needs no
+> aim, no timing and no button, and it rewards riding *through* a crowd, which
+> is pillar 1 expressed as a weapon. **Aerostorm** is the first `damage-dealt`
+> ability — it arrives because the fight was hard, not because a clock ran out.
+>
+> Cooldowns rose across the board (Volley 14→21, and so on). An ability that
+> fires the instant its condition is met is worth far more than one a player
+> remembers to press, and the cooldown is the only thing bounding it.
+
 **Trample (passive).** Riding through enemies at speed deals small contact damage with an internal cooldown per enemy. Makes the horse feel physical; upgradable in the meta tree.
 
 ---

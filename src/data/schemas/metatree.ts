@@ -33,9 +33,11 @@ export const TowerStatKeySchema = z.enum(['damage', 'range', 'fireRate', 'cost']
 export const AbilityStatKeySchema = z.enum([
   'cooldown',
   'damage',
+  'damagePerSecond',
   'radius',
   'duration',
   'range',
+  'blades',
 ]);
 export type AbilityStatKey = z.infer<typeof AbilityStatKeySchema>;
 

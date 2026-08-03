@@ -53,6 +53,14 @@ Outrider and Halberdier ship in `enemies.json` but are **held out of the campaig
 sets**: adding them cost warlords-march 22% → 3%, and putting enemies into waves is
 wave-budget work, which belongs to MG5.8.
 
+**FIRST ON-DEVICE PLAYTEST (2026-08-03) — two findings, both structural.**
+
+**1. The draft pop-up was "totally garbage", and it was worse than annoying.** The panel is `pointer-events: auto` across the bottom of the screen, which is exactly where the joystick spawns — so **every draft froze steering until dismissed**. MG5.5 tripled draft frequency (12/run at wave clear → ~30/run at level-up, mid-combat) and never revisited a UI built for the old cadence; TRIANGLE.md even asserted "the existing overlay is already the right behaviour" and that claim was never re-checked. The panel is now strictly opt-in: a level badges, and nothing covers the field until the player taps.
+
+**2. Abilities should not be buttons.** Ben: skills should trigger "off of a timer or after a certain amount of damage is inflicted... don't need a button to be pushed". This is DESIGN pillar 2 finishing its own sentence — "auto-fire means the thumb steers and the brain plays" was applied to the bow and then contradicted by a three-button bar on the other thumb. Every ability now carries a `trigger` and fires itself; the bar is a readout with pointer-events off. **Charge is cut** (second time asked — §15 recorded it on 2026-07-30 and parked it pending FX, which it now has). **Whirling Blades** replaces it and answers what Charge was for: nothing defended the space *around* the hero. **Aerostorm** is the first `damage-dealt` ability.
+**auto-fire is a large power increase and had to be paid for.** Firing optimally every time beat a bot heuristic by a lot: the campaign went to 100/100/89/64 against 90-100/70-95/45-75/25-55. Raising cooldowns ~45% (Volley 14→21, Muster 55→72) brought it back **ON TARGET at 100/83/72/39** with the pillar probe still OK. Enemy HP was not touched.
+**learned:** the bot's `castReady` heuristic *was* the auto-fire logic, sitting in the harness since M1. When the instrument has been playing the game a way the game does not support, that is worth reading as a design note rather than as harness detail.
+
 The armor / flyer / frontal-block counters all stay as texture. DESIGN §6's "RESOLVED"
 block is still worth reading for *why* counter-tuning cannot hold against a progression
 system, and for three traps that cost real time.

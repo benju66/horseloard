@@ -1,28 +1,17 @@
 {
+  "equipSlots": 3,
   "abilities": [
-    {
-      "id": "charge",
-      "name": "Charge",
-      "description": "A galloping burst — trample through enemies, damaging and slowing them.",
-      "cooldown": 11,
-      "unlockedByDefault": true,
-      "effect": {
-        "type": "charge",
-        "duration": 1,
-        "speedMultiplier": 2.2,
-        "damage": 30,
-        "slowMultiplier": 0.5,
-        "slowDuration": 1.5
-      },
-      "iconRef": "icon-charge",
-      "castSfxRef": "sfx-charge"
-    },
     {
       "id": "volley",
       "name": "Volley",
-      "description": "Arrow rain at your position — delete the clump you rode into.",
-      "cooldown": 14,
-      "unlockedByDefault": false,
+      "description": "Arrow rain falls where you ride — when there is a crowd worth spending it on.",
+      "cooldown": 21,
+      "unlockedByDefault": true,
+      "trigger": {
+        "type": "enemies-near",
+        "count": 3,
+        "radius": 100
+      },
       "effect": {
         "type": "aoe-damage",
         "damage": 90,
@@ -32,11 +21,39 @@
       "castSfxRef": "sfx-volley"
     },
     {
+      "id": "whirling-blades",
+      "name": "Whirling Blades",
+      "description": "Blades circle you and cut down whatever comes close. Ride through them.",
+      "cooldown": 23,
+      "unlockedByDefault": false,
+      "trigger": {
+        "type": "enemies-near",
+        "count": 2,
+        "radius": 90
+      },
+      "effect": {
+        "type": "orbit",
+        "blades": 3,
+        "radius": 46,
+        "bladeRadius": 20,
+        "revolutionsPerSecond": 0.8,
+        "damagePerSecond": 34,
+        "duration": 7
+      },
+      "iconRef": "icon-whirling-blades",
+      "castSfxRef": "sfx-whirl"
+    },
+    {
       "id": "rally-horn",
       "name": "Rally Horn",
       "description": "All towers loose 80% faster for 8 seconds.",
-      "cooldown": 26,
+      "cooldown": 34,
       "unlockedByDefault": false,
+      "trigger": {
+        "type": "enemies-near",
+        "count": 5,
+        "radius": 400
+      },
       "effect": {
         "type": "tower-rate-buff",
         "rateMultiplier": 1.8,
@@ -49,8 +66,13 @@
       "id": "rapid-fire",
       "name": "Rapid Fire",
       "description": "Draw and loose without pause — for a moment.",
-      "cooldown": 16,
+      "cooldown": 23,
       "unlockedByDefault": false,
+      "trigger": {
+        "type": "enemies-near",
+        "count": 1,
+        "radius": 220
+      },
       "effect": {
         "type": "hero-buff",
         "stat": "bowFireRate",
@@ -64,8 +86,13 @@
       "id": "heavy-shaft",
       "name": "Heavy Shaft",
       "description": "One heavy arrow, straight down the road, through everything in its way.",
-      "cooldown": 13,
+      "cooldown": 19,
       "unlockedByDefault": false,
+      "trigger": {
+        "type": "enemies-near",
+        "count": 2,
+        "radius": 260
+      },
       "effect": {
         "type": "pierce-shot",
         "damage": 120,
@@ -79,8 +106,11 @@
       "id": "caltrops",
       "name": "Caltrops",
       "description": "Scatter iron across the road. Whatever crosses it bleeds and crawls.",
-      "cooldown": 18,
+      "cooldown": 25,
       "unlockedByDefault": false,
+      "trigger": {
+        "type": "cooldown"
+      },
       "effect": {
         "type": "ground-zone",
         "radius": 78,
@@ -92,11 +122,36 @@
       "castSfxRef": "sfx-caltrops"
     },
     {
+      "id": "aero-storm",
+      "name": "Aerostorm",
+      "description": "The sky answers a hard-fought fight — a wide, slow squall of wind and hail.",
+      "cooldown": 40,
+      "unlockedByDefault": false,
+      "trigger": {
+        "type": "damage-dealt",
+        "amount": 900
+      },
+      "effect": {
+        "type": "ground-zone",
+        "radius": 145,
+        "duration": 8,
+        "damagePerSecond": 26,
+        "slowMultiplier": 0.5
+      },
+      "iconRef": "icon-aero-storm",
+      "castSfxRef": "sfx-storm"
+    },
+    {
       "id": "muster",
       "name": "The Muster",
       "description": "The gates open. A host marches out and holds the road beside you.",
-      "cooldown": 55,
+      "cooldown": 72,
       "unlockedByDefault": false,
+      "trigger": {
+        "type": "enemies-near",
+        "count": 5,
+        "radius": 300
+      },
       "effect": {
         "type": "summon-host",
         "squad": 7,

@@ -18,7 +18,7 @@ export const TEST_HERO: Hero = {
     ],
   },
   trample: { damage: 6, perEnemyCooldown: 1 },
-  stagger: { controlLossDuration: 0.4, shoveDistance: 40, perEnemyCooldown: 1.2 },
+  stagger: { controlLossDuration: 0.4, shoveDistance: 40, perEnemyCooldown: 1.2, immunityAfter: 0.9 },
 };
 
 export const TEST_ECONOMY: Economy = {

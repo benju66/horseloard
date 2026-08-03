@@ -66,12 +66,23 @@ export class ProjectileSystem {
     this.rng = rng;
   }
 
+  /**
+   * Damage landed by something the hero fired.
+   *
+   * `fromHero` already rode along on every projectile for rendering; this is
+   * the same flag answering a second question. The alternative — threading a
+   * source id through `applyDamage` — would touch every damage site in the
+   * engine to serve one trigger type.
+   */
+  readonly onHeroDamage: Array<(amount: number) => void> = [];
+
   spawn(x: number, y: number, targetId: number, damage: number, def: ProjectileDef, fromHero: boolean): void {
     const target = this.enemies.getById(targetId);
     if (!target) return;
 
     if (def.behavior === 'instant') {
       this.enemies.applyDamage(targetId, damage, x, y, def.ignoresArmor ?? false);
+      if (fromHero) for (const fn of this.onHeroDamage) fn(damage);
       return;
     }
 
@@ -141,6 +152,7 @@ export class ProjectileSystem {
         } else if (target) {
           this.enemies.applyDamage(target.id, p.damage, p.x, p.y, p.ignoresArmor);
         }
+        if (p.fromHero) for (const fn of this.onHeroDamage) fn(p.damage);
         this.release(i, p);
       } else {
         p.dirX = dx / dist;
