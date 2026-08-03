@@ -21,6 +21,7 @@
       "kind": "minor",
       "name": "Steady Hand",
       "description": "Arrows hit 20% harder.",
+      "icon": "\ud83c\udfaf",
       "cost": 1,
       "row": 0,
       "requires": [],
@@ -41,6 +42,7 @@
       "kind": "minor",
       "name": "Long Draw",
       "description": "Your bow reaches 20% further.",
+      "icon": "\ud83c\udff9",
       "cost": 1,
       "row": 0,
       "requires": [],
@@ -61,6 +63,7 @@
       "kind": "notable",
       "name": "Wider Volley",
       "description": "Volley falls over a 30% larger circle and hits 25% harder.",
+      "icon": "\u2604\ufe0f",
       "cost": 2,
       "row": 1,
       "requires": [
@@ -91,6 +94,7 @@
       "kind": "notable",
       "name": "Keen Eye",
       "description": "Your arrows crit 18% of the time for double.",
+      "icon": "\ud83d\udc41\ufe0f",
       "cost": 2,
       "row": 1,
       "requires": [
@@ -119,6 +123,7 @@
       "kind": "ability",
       "name": "Heavy Shaft",
       "description": "Unlock Heavy Shaft \u2014 one arrow through a column.",
+      "icon": "\ud83d\udde1\ufe0f",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -139,6 +144,7 @@
       "kind": "synergy",
       "name": "Killing Ground",
       "description": "+45% bow damage to enemies that are slowed or held.",
+      "icon": "\ud83d\udc80",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -161,6 +167,7 @@
       "kind": "ability",
       "name": "Rapid Fire",
       "description": "Unlock Rapid Fire \u2014 draw without pause.",
+      "icon": "\u26a1",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -181,6 +188,7 @@
       "kind": "notable",
       "name": "Practised Hands",
       "description": "Every ability returns 18% sooner.",
+      "icon": "\ud83e\udd32",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -204,6 +212,7 @@
       "kind": "notable",
       "name": "Broadheads",
       "description": "Arrows hit 22% harder and reach 12% further.",
+      "icon": "\ud83d\udd3a",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -232,6 +241,7 @@
       "kind": "synergy",
       "name": "Execution",
       "description": "Crits deal a further 60% to slowed or held enemies.",
+      "icon": "\u2620\ufe0f",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -260,6 +270,7 @@
       "kind": "keystone",
       "name": "Deadeye",
       "description": "+90% bow damage. \u221235% bow range. Ride into the teeth of it.",
+      "icon": "\ud83c\udf96\ufe0f",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -290,6 +301,7 @@
       "kind": "keystone",
       "name": "Skirmisher",
       "description": "+45% fire rate and +15% speed. \u221230% bow damage.",
+      "icon": "\ud83c\udfc3",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -326,6 +338,7 @@
       "kind": "minor",
       "name": "Iron Shoes",
       "description": "Trampling deals 50% more.",
+      "icon": "\ud83e\uddf2",
       "cost": 1,
       "row": 0,
       "requires": [],
@@ -346,6 +359,7 @@
       "kind": "minor",
       "name": "Sure Footing",
       "description": "You ride 15% faster.",
+      "icon": "\ud83d\udc0e",
       "cost": 1,
       "row": 0,
       "requires": [],
@@ -366,6 +380,7 @@
       "kind": "ability",
       "name": "Whirling Blades",
       "description": "Unlock Whirling Blades \u2014 steel circles you.",
+      "icon": "\ud83c\udf00",
       "cost": 2,
       "row": 1,
       "requires": [
@@ -386,6 +401,7 @@
       "kind": "notable",
       "name": "Barding",
       "description": "The grace after a shove lasts 70% longer.",
+      "icon": "\ud83d\udee1\ufe0f",
       "cost": 2,
       "row": 1,
       "requires": [
@@ -408,6 +424,7 @@
       "kind": "notable",
       "name": "Full Impact",
       "description": "Trampling hits 45% harder.",
+      "icon": "\ud83d\udca5",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -430,6 +447,7 @@
       "kind": "notable",
       "name": "Honed Edges",
       "description": "Blades cut 40% deeper.",
+      "icon": "\u2694\ufe0f",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -453,6 +471,7 @@
       "kind": "synergy",
       "name": "Warhorse",
       "description": "Trampling hits 25% harder, and the blades cut 25% deeper.",
+      "icon": "\ud83d\udc34",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -482,6 +501,7 @@
       "kind": "notable",
       "name": "Wide Arc",
       "description": "One more blade, circling 20% wider.",
+      "icon": "\ud83d\udd04",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -512,6 +532,7 @@
       "kind": "notable",
       "name": "Broken Ground",
       "description": "Caltrops last 50% longer and bite harder.",
+      "icon": "\ud83d\udd73\ufe0f",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -542,6 +563,7 @@
       "kind": "notable",
       "name": "Relentless",
       "description": "Blades hold for 40% longer.",
+      "icon": "\ud83d\udd25",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -565,6 +587,7 @@
       "kind": "keystone",
       "name": "Cataphract",
       "description": "Nothing can stagger you and trampling hits three times as hard. \u221235% bow damage, \u221215% speed.",
+      "icon": "\ud83d\udc17",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -607,6 +630,7 @@
       "kind": "keystone",
       "name": "Outrider",
       "description": "+60% speed, coins fly to you from far off and linger. Trampling hits half as hard.",
+      "icon": "\ud83d\udca8",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -649,6 +673,7 @@
       "kind": "minor",
       "name": "Fletchers",
       "description": "Every tower hits 18% harder.",
+      "icon": "\ud83c\udff9",
       "cost": 1,
       "row": 0,
       "requires": [],
@@ -670,6 +695,7 @@
       "kind": "minor",
       "name": "Masonry",
       "description": "Towers cost 18% less to raise.",
+      "icon": "\ud83e\uddf1",
       "cost": 1,
       "row": 0,
       "requires": [],
@@ -691,6 +717,7 @@
       "kind": "notable",
       "name": "Marksman's Oath",
       "description": "Archer towers crit 22% of the time for \u00d72.2.",
+      "icon": "\ud83c\udfaf",
       "cost": 2,
       "row": 1,
       "requires": [
@@ -716,6 +743,7 @@
       "kind": "notable",
       "name": "Foundations",
       "description": "Upgrades cost 22% less.",
+      "icon": "\u26cf\ufe0f",
       "cost": 2,
       "row": 1,
       "requires": [
@@ -739,6 +767,7 @@
       "kind": "ability",
       "name": "Rally Horn",
       "description": "Unlock Rally Horn \u2014 every tower fires faster for a while.",
+      "icon": "\ud83d\udcef",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -759,6 +788,7 @@
       "kind": "notable",
       "name": "Powder Cache",
       "description": "Bombards hit 35% harder.",
+      "icon": "\ud83d\udca3",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -782,6 +812,7 @@
       "kind": "notable",
       "name": "Deep Winter",
       "description": "Frost spires hold 25% more ground.",
+      "icon": "\u2744\ufe0f",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -805,6 +836,7 @@
       "kind": "notable",
       "name": "Rapid Reload",
       "description": "Every tower looses 18% faster.",
+      "icon": "\u26a1",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -828,6 +860,7 @@
       "kind": "notable",
       "name": "Beacon Lore",
       "description": "Towers lend neighbours +15% damage. Build them close.",
+      "icon": "\ud83d\udd26",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -853,6 +886,7 @@
       "kind": "synergy",
       "name": "Crossfire",
       "description": "Towers lend neighbours +30% damage across a wide circle. Build them close.",
+      "icon": "\u2716\ufe0f",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -878,6 +912,7 @@
       "kind": "notable",
       "name": "Long Watch",
       "description": "Every tower watches 20% more road.",
+      "icon": "\ud83d\udd2d",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -901,6 +936,7 @@
       "kind": "keystone",
       "name": "Siege Doctrine",
       "description": "+55% tower damage. \u221228% tower range. Few, deadly, close.",
+      "icon": "\ud83c\udff9",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -933,6 +969,7 @@
       "kind": "keystone",
       "name": "Curtain Wall",
       "description": "+40% tower range, \u221235% build cost. \u221222% tower damage.",
+      "icon": "\ud83c\udfef",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -972,6 +1009,7 @@
       "kind": "ability",
       "name": "The Barracks",
       "description": "Unlock the barracks. Soldiers hold the road.",
+      "icon": "\ud83c\udfdb\ufe0f",
       "cost": 2,
       "row": 0,
       "requires": [],
@@ -990,6 +1028,7 @@
       "kind": "minor",
       "name": "Levy Writ",
       "description": "One more soldier in every garrison.",
+      "icon": "\ud83d\udcdc",
       "cost": 1,
       "row": 1,
       "requires": [
@@ -1016,6 +1055,7 @@
       "kind": "notable",
       "name": "Mail and Shield",
       "description": "Soldiers take 45% longer to fall.",
+      "icon": "\ud83d\udee1\ufe0f",
       "cost": 2,
       "row": 1,
       "requires": [
@@ -1042,6 +1082,7 @@
       "kind": "notable",
       "name": "Standing Orders",
       "description": "Replacements march out 35% sooner.",
+      "icon": "\ud83d\udce3",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -1069,6 +1110,7 @@
       "kind": "notable",
       "name": "Drill Yard",
       "description": "Soldiers fight 50% harder.",
+      "icon": "\u2692\ufe0f",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -1095,6 +1137,7 @@
       "kind": "synergy",
       "name": "Wide Picket",
       "description": "Garrisons hold 25% more road, and towers reach 12% further.",
+      "icon": "\ud83d\udea7",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -1129,6 +1172,7 @@
       "kind": "ability",
       "name": "The Muster",
       "description": "Unlock the Muster \u2014 the gates open.",
+      "icon": "\ud83c\udfba",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -1149,6 +1193,7 @@
       "kind": "notable",
       "name": "War Banner",
       "description": "The host is three stronger and holds 35% longer.",
+      "icon": "\ud83d\udea9",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -1179,6 +1224,7 @@
       "kind": "synergy",
       "name": "The Anvil",
       "description": "Your bow deals +25% to slowed or held enemies. Every tower hits 12% harder.",
+      "icon": "\u2693",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -1208,6 +1254,7 @@
       "kind": "keystone",
       "name": "Shieldwall",
       "description": "Soldiers take 140% more punishment and hold longer. They deal 45% less.",
+      "icon": "\ud83d\udee1\ufe0f",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -1236,6 +1283,7 @@
       "kind": "keystone",
       "name": "The Levy",
       "description": "+3 soldiers, respawn halved. \u221245% soldier hp. Bodies are cheap.",
+      "icon": "\ud83d\udc65",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -1265,6 +1313,7 @@
       "kind": "minor",
       "name": "Lodestone",
       "description": "Coins fly to you from 40% further.",
+      "icon": "\ud83e\uddf2",
       "cost": 1,
       "row": 0,
       "requires": [],
@@ -1285,6 +1334,7 @@
       "kind": "minor",
       "name": "Full Coffers",
       "description": "Start every run with 20 more gold.",
+      "icon": "\ud83d\udcb0",
       "cost": 1,
       "row": 0,
       "requires": [],
@@ -1305,6 +1355,7 @@
       "kind": "notable",
       "name": "Stone Gate",
       "description": "The keep withstands 45 more damage.",
+      "icon": "\ud83d\udeaa",
       "cost": 2,
       "row": 1,
       "requires": [
@@ -1327,6 +1378,7 @@
       "kind": "notable",
       "name": "Wide Roads",
       "description": "Coins linger 50% longer; the muster pays 25% more.",
+      "icon": "\ud83d\udee4\ufe0f",
       "cost": 2,
       "row": 1,
       "requires": [
@@ -1355,6 +1407,7 @@
       "kind": "notable",
       "name": "Tithe",
       "description": "Every tower pays 2 coins every 9 seconds.",
+      "icon": "\ud83e\ude99",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -1380,6 +1433,7 @@
       "kind": "notable",
       "name": "Standing Stones",
       "description": "Gate repairs cost 30% less.",
+      "icon": "\ud83d\uddff",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -1402,6 +1456,7 @@
       "kind": "synergy",
       "name": "Ransom",
       "description": "Coins reach 25% further and wave clears pay 15% more.",
+      "icon": "\ud83d\udc8e",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -1430,6 +1485,7 @@
       "kind": "notable",
       "name": "Watchfire",
       "description": "See two waves ahead instead of one.",
+      "icon": "\ud83d\udd25",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -1452,6 +1508,7 @@
       "kind": "synergy",
       "name": "The Quarry",
       "description": "Towers cost 15% less and the keep holds 35 more.",
+      "icon": "\u26f0\ufe0f",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -1481,6 +1538,7 @@
       "kind": "notable",
       "name": "Granary",
       "description": "The muster pays 35% more.",
+      "icon": "\ud83c\udf3e",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -1503,6 +1561,7 @@
       "kind": "keystone",
       "name": "War Chest",
       "description": "+95 starting gold. Wave clears pay half. Front-load everything.",
+      "icon": "\ud83c\udf81",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -1533,6 +1592,7 @@
       "kind": "keystone",
       "name": "The Long Siege",
       "description": "Wave clears pay +90%. \u221230 starting gold, \u221240 gate hp.",
+      "icon": "\u23f1\ufe0f",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -1569,6 +1629,7 @@
       "kind": "minor",
       "name": "Grit",
       "description": "Caltrops bite 25% harder.",
+      "icon": "\ud83e\udea8",
       "cost": 1,
       "row": 0,
       "requires": [],
@@ -1590,6 +1651,7 @@
       "kind": "minor",
       "name": "Wide Scatter",
       "description": "Caltrops cover 25% more ground.",
+      "icon": "\u2733\ufe0f",
       "cost": 1,
       "row": 0,
       "requires": [],
@@ -1611,6 +1673,7 @@
       "kind": "ability",
       "name": "Caltrops",
       "description": "Unlock Caltrops \u2014 iron on the road behind you.",
+      "icon": "\u2699\ufe0f",
       "cost": 2,
       "row": 1,
       "requires": [
@@ -1631,6 +1694,7 @@
       "kind": "notable",
       "name": "Lingering Ruin",
       "description": "Ground patches last 40% longer.",
+      "icon": "\ud83d\udd70\ufe0f",
       "cost": 2,
       "row": 1,
       "requires": [
@@ -1661,6 +1725,7 @@
       "kind": "ability",
       "name": "Aerostorm",
       "description": "Unlock Aerostorm \u2014 a killing wind walks the road.",
+      "icon": "\ud83c\udf2a\ufe0f",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -1681,6 +1746,7 @@
       "kind": "notable",
       "name": "Rolling Thunder",
       "description": "Aerostorm hits 35% harder over 20% more ground.",
+      "icon": "\u26c8\ufe0f",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -1711,6 +1777,7 @@
       "kind": "notable",
       "name": "Gathering Front",
       "description": "Your storms come round 20% sooner.",
+      "icon": "\ud83c\udf25\ufe0f",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -1741,6 +1808,7 @@
       "kind": "synergy",
       "name": "Quagmire",
       "description": "You deal 22% more to anything slowed or held. Pairs with frost and with soldiers.",
+      "icon": "\ud83e\udee7",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -1763,6 +1831,7 @@
       "kind": "notable",
       "name": "Deluge",
       "description": "Ground patches cover a further 25%.",
+      "icon": "\ud83c\udf0a",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -1793,6 +1862,7 @@
       "kind": "synergy",
       "name": "Attrition",
       "description": "Towers hit 15% harder, and coins linger 40% longer while you work the ground.",
+      "icon": "\u23f3",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -1822,6 +1892,7 @@
       "kind": "keystone",
       "name": "Tempest",
       "description": "Storms hit 70% harder and come round twice as often. They cover 35% less ground.",
+      "icon": "\ud83c\udf29\ufe0f",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -1882,6 +1953,7 @@
       "kind": "keystone",
       "name": "Scorched Earth",
       "description": "Storms cover 60% more ground and last 80% longer. They hit 40% softer.",
+      "icon": "\ud83d\udd25",
       "cost": 3,
       "row": 5,
       "requires": [

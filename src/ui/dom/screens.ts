@@ -195,34 +195,46 @@ export class MapSelectScreen {
 }
 
 /**
- * The career tree (SKILLTREE.md Part E).
+ * The career tree — a graph, not a list.
  *
- * Five vertical columns, one path per phone screen, swiped sideways. A path
- * reads top to bottom as a single line of commitment — which is the shape a
- * phone actually wants. The alternative, a 2D graph you pan and zoom, is how
- * every desktop skill tree looks and is unusable with one thumb.
+ * Hex tiles with a glyph, wired together by elbow connectors that show what
+ * unlocks what, on a vertically scrolling board with tabs across the top. The
+ * first version of this screen was a column of text rows; it was technically a
+ * tree and read as a settings menu. **A skill tree has to be legible as a
+ * shape** — you should be able to see the fork coming three rows before you
+ * reach it — and that is a picture, not a list.
  *
- * All the rules live in `SkillTree`; this renders them. In particular the
- * refusal reason is asked for by name rather than reduced to a boolean, because
- * "locked" with no explanation is the thing that makes players stop reading a
- * tree.
+ * Two levels of navigation, because six paths is too many tabs for a phone:
+ * a Hero/Kingdom segmented control (which is also the two point budgets), then
+ * three path tabs under it. The pool you are spending is therefore always the
+ * left/right position of a control you just touched.
+ *
+ * All the rules live in `SkillTree`; this renders them. The refusal reason is
+ * asked for by name rather than reduced to a boolean, because "locked" with no
+ * explanation is what makes players stop reading a tree.
  */
 export class SkillTreeScreen {
   private readonly root: HTMLDivElement;
   private readonly host: ScreenHost;
   private readonly onBack: () => void;
   private readonly tree: SkillTree;
-  private readonly columns: HTMLDivElement;
+  private readonly board: HTMLDivElement;
+  private pool: string;
+  private path: SkillPath;
+  /** Node the detail sheet is showing, or null when it is closed. */
+  private selected: string | null = null;
 
   constructor(layer: HTMLElement, host: ScreenHost, onBack: () => void) {
     this.host = host;
     this.onBack = onBack;
     this.tree = new SkillTree(host.data.skillTree);
+    this.pool = this.tree.pools[0]!;
+    this.path = this.pathsIn(this.pool)[0]!;
     this.root = document.createElement('div');
     this.root.className = 'screen tree-screen';
     this.root.style.display = 'none';
-    this.columns = document.createElement('div');
-    this.columns.className = 'tree-columns';
+    this.board = document.createElement('div');
+    this.board.className = 'tree-board';
     layer.append(this.root);
   }
 
@@ -233,6 +245,10 @@ export class SkillTreeScreen {
 
   hide(): void {
     this.root.style.display = 'none';
+  }
+
+  private pathsIn(pool: string): SkillPath[] {
+    return PATH_ORDER.filter((p) => this.tree.nodes.some((n) => n.path === p && n.pool === pool));
   }
 
   /** Points the career has earned per pool, and what is left after the build. */
@@ -253,21 +269,23 @@ export class SkillTreeScreen {
     const { level, earned, spent, free } = this.budget();
     const progress = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel);
 
-    // Preserve the scroll position across re-renders. Every tap rebuilds the
-    // list, and a column that jumps back to the top on each allocation makes
-    // walking a path feel like fighting the screen.
-    const scrollLeft = this.columns.scrollLeft;
-    const scrollTops = [...this.columns.children].map((c) => c.scrollTop);
-
+    const scrollTop = this.board.scrollTop;
     this.root.replaceChildren();
-    this.columns.replaceChildren();
+    this.board.replaceChildren();
 
+    // ── Header: level, XP bar, one point counter per pool, respec ──
     const header = document.createElement('div');
     header.className = 'tree-header';
 
-    const title = document.createElement('div');
-    title.className = 'tree-level';
-    title.textContent = `LV ${level}`;
+    const back = document.createElement('button');
+    back.className = 'tree-back';
+    back.setAttribute('data-ui', '');
+    back.textContent = '←';
+    back.addEventListener('click', () => this.onBack());
+
+    const lvl = document.createElement('div');
+    lvl.className = 'tree-level';
+    lvl.textContent = `LV ${level}`;
 
     const bar = document.createElement('div');
     bar.className = 'tree-xpbar';
@@ -277,128 +295,225 @@ export class SkillTreeScreen {
       progress.needed > 0 ? `${Math.min(100, (progress.into / progress.needed) * 100)}%` : '100%';
     bar.append(fill);
 
-    // One counter per pool, always both, always in the same order. A counter
-    // that disappears when it hits zero is a counter a player stops trusting.
-    const points = document.createElement('div');
-    points.className = 'tree-points';
-    for (const pool of this.tree.pools) {
-      const chip = document.createElement('span');
-      chip.className = `tree-pool pool-${pool}` + ((free[pool] ?? 0) > 0 ? ' has-free' : '');
-      chip.textContent = `${free[pool] ?? 0} ${this.tree.poolName(pool)}`;
-      chip.title = `${spent[pool] ?? 0} spent of ${earned[pool] ?? 0} earned`;
-      points.append(chip);
-    }
-
     const respec = document.createElement('button');
     respec.className = 'tree-respec';
     respec.setAttribute('data-ui', '');
-    respec.textContent = 'Respec';
-    // Free and always live (SKILLTREE.md C.6). A tree where a third of the
-    // nodes are reachable and mistakes are permanent is a tree nobody
-    // experiments with, which forfeits the point of having paths at all.
+    respec.textContent = '↺';
+    respec.title = 'Respec — free, always';
     respec.disabled = Object.values(spent).every((n) => n === 0);
     respec.addEventListener('click', () => {
       const next: SaveData = structuredClone(this.host.save);
       next.build = [...this.tree.respec()];
       this.host.onSaveChanged(next);
+      this.selected = null;
       this.render();
     });
 
-    header.append(title, bar, points, respec);
+    header.append(back, lvl, bar, respec);
     this.root.append(header);
 
-    for (const path of PATH_ORDER) {
-      this.columns.append(this.renderColumn(path, free));
-    }
-    this.root.append(this.columns);
-
-    const back = document.createElement('button');
-    back.className = 'screen-action';
-    back.setAttribute('data-ui', '');
-    back.textContent = 'Back';
-    back.addEventListener('click', () => this.onBack());
-    this.root.append(back);
-
-    this.columns.scrollLeft = scrollLeft;
-    [...this.columns.children].forEach((c, i) => {
-      c.scrollTop = scrollTops[i] ?? 0;
-    });
-  }
-
-  private renderColumn(path: SkillPath, free: PoolPoints): HTMLDivElement {
-    const { save } = this.host;
-    const pool = this.tree.nodes.find((n) => n.path === path)?.pool ?? this.tree.pools[0]!;
-    const col = document.createElement('div');
-    col.className = `tree-col pool-${pool}`;
-
-    const head = document.createElement('div');
-    head.className = 'tree-col-head';
-    const name = document.createElement('div');
-    name.className = 'tree-col-name';
-    name.textContent = PATH_TITLES[path];
-    const blurb = document.createElement('div');
-    blurb.className = 'tree-col-blurb';
-    // The pool is named in the column head as well as the header, so a player
-    // scrolled halfway down a path still knows which budget they are spending.
-    blurb.textContent = `${PATH_BLURBS[path]} · ${this.tree.poolName(pool)} points`;
-    head.append(name, blurb);
-    col.append(head);
-
-    const nodes = this.tree.nodes
-      .filter((n) => n.path === path)
-      .slice()
-      .sort((a, b) => a.row - b.row);
-
-    for (const node of nodes) {
-      const taken = save.build.includes(node.id);
-      const state = { allocated: save.build, pointsEarned: this.budget().earned };
-      const refusal = this.tree.refusal(node.id, state);
-
-      const row = document.createElement('button');
-      row.className = `tree-node kind-${node.kind}`;
-      row.setAttribute('data-ui', '');
-      if (taken) row.classList.add('taken');
-      else if (refusal !== null) row.classList.add('locked');
-      // A taken node stays live: tapping it refunds, which is the only way to
-      // walk back up a path without nuking the whole build.
-      row.disabled = !taken && refusal !== null;
-
-      const nName = document.createElement('div');
-      nName.className = 'tree-node-name';
-      nName.textContent = node.name;
-      const nDesc = document.createElement('div');
-      // Keystone downsides are rendered in the *same* type as the upside —
-      // a trade-off written in small print is a lie (SKILLTREE.md Part E).
-      nDesc.className = 'tree-node-desc';
-      nDesc.textContent = node.description;
-      const nCost = document.createElement('div');
-      nCost.className = 'tree-node-cost';
-      nCost.textContent = taken
-        ? `✓ ${node.cost} ⬢ · tap to refund`
-        : refusal === null
-          ? `${node.cost} ⬢`
-          : `${node.cost} ⬢ · ${REFUSAL_TEXT[refusal]}`;
-
-      row.append(nName, nDesc, nCost);
-      row.addEventListener('click', () => {
-        const next: SaveData = structuredClone(this.host.save);
-        const fresh = { allocated: this.host.save.build, pointsEarned: this.budget().earned };
-        next.build = [
-          ...(taken
-            ? this.tree.deallocate(node.id, fresh)
-            : this.tree.allocate(node.id, fresh)),
-        ];
-        if (next.build.length === this.host.save.build.length) return;
-        this.host.onSaveChanged(next);
+    // ── Pool selector: the two budgets, always both, always in this order ──
+    const pools = document.createElement('div');
+    pools.className = 'tree-pools';
+    for (const pool of this.tree.pools) {
+      const btn = document.createElement('button');
+      btn.className = `tree-pooltab pool-${pool}` + (pool === this.pool ? ' on' : '');
+      btn.setAttribute('data-ui', '');
+      const nm = document.createElement('span');
+      nm.textContent = this.tree.poolName(pool);
+      const ct = document.createElement('em');
+      ct.className = (free[pool] ?? 0) > 0 ? 'has-free' : '';
+      ct.textContent = `${free[pool] ?? 0}`;
+      ct.title = `${spent[pool] ?? 0} spent of ${earned[pool] ?? 0} earned`;
+      btn.append(nm, ct);
+      btn.addEventListener('click', () => {
+        this.pool = pool;
+        if (!this.pathsIn(pool).includes(this.path)) this.path = this.pathsIn(pool)[0]!;
+        this.selected = null;
         this.render();
       });
-      col.append(row);
+      pools.append(btn);
+    }
+    this.root.append(pools);
+
+    // ── Path tabs for the active pool ──
+    const tabs = document.createElement('div');
+    tabs.className = 'tree-tabs';
+    for (const path of this.pathsIn(this.pool)) {
+      const btn = document.createElement('button');
+      btn.className = 'tree-tab' + (path === this.path ? ' on' : '');
+      btn.setAttribute('data-ui', '');
+      btn.textContent = PATH_TITLES[path];
+      btn.addEventListener('click', () => {
+        this.path = path;
+        this.selected = null;
+        this.render();
+      });
+      tabs.append(btn);
+    }
+    this.root.append(tabs);
+
+    this.renderBoard(free);
+    this.root.append(this.board);
+    this.board.scrollTop = scrollTop;
+
+    if (this.selected) this.root.append(this.renderSheet(this.selected, free));
+  }
+
+  /**
+   * The board: nodes laid out on a row/column grid, connectors drawn beneath.
+   *
+   * Positions are computed here rather than authored in the data — a node knows
+   * its row and its prerequisites, and where it *sits* is a rendering decision.
+   * Authoring x/y in JSON would mean every content edit is also a layout edit.
+   */
+  private renderBoard(free: PoolPoints): void {
+    const nodes = this.tree.nodes.filter((n) => n.path === this.path);
+    const rows = [...new Set(nodes.map((n) => n.row))].sort((a, b) => a - b);
+
+    // Column index per node: nodes sharing a row spread evenly across the width.
+    const COLS = Math.max(...rows.map((r) => nodes.filter((n) => n.row === r).length));
+    const pos = new Map<string, { col: number; row: number; span: number }>();
+    for (const row of rows) {
+      const inRow = nodes.filter((n) => n.row === row).sort((a, b) => (a.id < b.id ? -1 : 1));
+      inRow.forEach((n, i) => pos.set(n.id, { col: i, row, span: inRow.length }));
     }
 
-    // A column that can afford nothing says so once, at the bottom, rather than
-    // repeating "not enough points" on every row above it.
-    if ((free[pool] ?? 0) <= 0) col.classList.add('spent-out');
-    return col;
+    const CELL_W = 100 / COLS;
+    const ROW_H = 118;
+    const x = (id: string) => {
+      const p = pos.get(id)!;
+      // Centre within the row's own share of the width, so a lone node on a row
+      // sits on the spine and a pair straddles it.
+      return ((p.col + 0.5) / p.span) * 100;
+    };
+    const y = (id: string) => rows.indexOf(pos.get(id)!.row) * ROW_H + 46;
+
+    const height = rows.length * ROW_H + 40;
+    const canvas = document.createElement('div');
+    canvas.className = 'tree-canvas';
+    canvas.style.height = `${height}px`;
+
+    // Connectors first, so tiles sit on top of them.
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'tree-wires');
+    svg.setAttribute('viewBox', `0 0 100 ${height}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    for (const node of nodes) {
+      for (const req of node.requires) {
+        if (!pos.has(req)) continue;
+        const held = this.host.save.build.includes(req);
+        const x1 = x(req);
+        const y1 = y(req) + 34;
+        const x2 = x(node.id);
+        const y2 = y(node.id) - 34;
+        const mid = (y1 + y2) / 2;
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        // Orthogonal elbows: down, across, down. Reads as circuitry rather than
+        // as a web, which is what makes a branch visible from a row away.
+        line.setAttribute('d', `M ${x1} ${y1} L ${x1} ${mid} L ${x2} ${mid} L ${x2} ${y2}`);
+        line.setAttribute('class', 'tree-wire' + (held ? ' live' : ''));
+        svg.append(line);
+      }
+    }
+    canvas.append(svg);
+
+    for (const node of nodes) {
+      const taken = this.host.save.build.includes(node.id);
+      const refusal = this.tree.refusal(node.id, {
+        allocated: this.host.save.build,
+        pointsEarned: this.budget().earned,
+      });
+      const state = taken ? 'taken' : refusal === null ? 'open' : refusal === 'excluded' ? 'forgone' : 'locked';
+
+      const cell = document.createElement('button');
+      cell.className = `tree-cell kind-${node.kind} is-${state}` + (this.selected === node.id ? ' sel' : '');
+      cell.setAttribute('data-ui', '');
+      cell.style.left = `${x(node.id)}%`;
+      cell.style.top = `${y(node.id)}px`;
+
+      const hex = document.createElement('span');
+      hex.className = 'tree-hex';
+      hex.textContent = node.icon;
+
+      const badge = document.createElement('span');
+      badge.className = 'tree-badge';
+      badge.textContent = taken ? '✓' : `${node.cost}`;
+
+      const label = document.createElement('span');
+      label.className = 'tree-cell-name';
+      label.textContent = node.name;
+
+      cell.append(hex, badge, label);
+      cell.addEventListener('click', () => {
+        this.selected = this.selected === node.id ? null : node.id;
+        this.render();
+      });
+      canvas.append(cell);
+    }
+
+    this.board.append(canvas);
+    void free;
+  }
+
+  /**
+   * The detail sheet. Descriptions live here rather than on the tiles, because
+   * a board carrying 12 paragraphs stops being a board.
+   */
+  private renderSheet(id: string, free: PoolPoints): HTMLDivElement {
+    const node = this.tree.node(id)!;
+    const taken = this.host.save.build.includes(id);
+    const refusal = this.tree.refusal(id, {
+      allocated: this.host.save.build,
+      pointsEarned: this.budget().earned,
+    });
+
+    const sheet = document.createElement('div');
+    sheet.className = `tree-sheet kind-${node.kind}`;
+
+    const head = document.createElement('div');
+    head.className = 'tree-sheet-head';
+    const ico = document.createElement('span');
+    ico.className = 'tree-sheet-icon';
+    ico.textContent = node.icon;
+    const titles = document.createElement('div');
+    const nm = document.createElement('div');
+    nm.className = 'tree-sheet-name';
+    nm.textContent = node.name;
+    const kind = document.createElement('div');
+    kind.className = 'tree-sheet-kind';
+    kind.textContent = `${node.kind} · ${node.cost} ${this.tree.poolName(node.pool)} point${node.cost > 1 ? 's' : ''}`;
+    titles.append(nm, kind);
+    head.append(ico, titles);
+
+    const desc = document.createElement('div');
+    desc.className = 'tree-sheet-desc';
+    desc.textContent = node.description;
+
+    const act = document.createElement('button');
+    act.className = 'tree-sheet-act';
+    act.setAttribute('data-ui', '');
+    if (taken) {
+      act.textContent = 'Refund';
+      act.classList.add('ghost');
+    } else if (refusal === null) {
+      act.textContent = `Learn · ${node.cost} ⬢`;
+    } else {
+      act.textContent = REFUSAL_TEXT[refusal];
+      act.disabled = true;
+    }
+    act.addEventListener('click', () => {
+      const fresh = { allocated: this.host.save.build, pointsEarned: this.budget().earned };
+      const next: SaveData = structuredClone(this.host.save);
+      next.build = [...(taken ? this.tree.deallocate(id, fresh) : this.tree.allocate(id, fresh))];
+      if (next.build.length === this.host.save.build.length) return;
+      this.host.onSaveChanged(next);
+      this.render();
+    });
+
+    sheet.append(head, desc, act);
+    void free;
+    return sheet;
   }
 }
 
@@ -570,64 +685,112 @@ export function screensCss(): string {
 }
 .screen-action.ghost { background: transparent; border: 1px solid rgba(255,255,255,.25); }
 .screen-actions { display: flex; gap: 10px; align-items: stretch; }
-/* ─── Career tree: five columns, one path per screen, swipe sideways ─── */
-.tree-screen { padding: 0; gap: 0; align-items: stretch; }
+/* ─── Career tree: a node graph on a scrolling board ─── */
+.tree-screen { padding: 0; gap: 0; align-items: stretch; background: #1b2416; }
 .tree-header {
-  display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px;
-  padding-top: calc(14px + env(safe-area-inset-top, 0px));
-  background: #16210f; border-bottom: 1px solid rgba(255,255,255,.08); flex: 0 0 auto;
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px 10px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  background: #141d10; flex: 0 0 auto;
 }
-.tree-level { font: 700 15px ui-monospace, monospace; color: #f6c945; }
-.tree-xpbar { flex: 1; height: 8px; border-radius: 5px; background: rgba(255,255,255,.12); overflow: hidden; }
+.tree-back, .tree-respec {
+  flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; pointer-events: auto;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16);
+  color: #f5ead0; font: 700 16px ui-monospace, monospace; line-height: 1;
+}
+.tree-respec[disabled] { opacity: .3; }
+.tree-level { font: 700 14px ui-monospace, monospace; color: #f6c945; }
+.tree-xpbar { flex: 1; height: 7px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
 .tree-xpfill { height: 100%; background: linear-gradient(90deg, #6fc34a, #f6c945); }
-.tree-points { display: flex; gap: 6px; }
-.tree-pool {
-  font: 700 10px ui-monospace, monospace; color: #8a8f85; letter-spacing: .04em;
-  border: 1px solid rgba(255,255,255,.14); border-radius: 999px; padding: 3px 7px;
+
+/* Pool = budget. Two chips, always both, always this order. */
+.tree-pools { display: flex; gap: 8px; padding: 0 14px 10px; background: #141d10; flex: 0 0 auto; }
+.tree-pooltab {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 9px 10px; border-radius: 11px; pointer-events: auto;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
+  color: #9aa093; font: 700 12px ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase;
 }
-.tree-pool.pool-hero.has-free { color: #ffce6b; border-color: #d98b3a; }
-.tree-pool.pool-kingdom.has-free { color: #bfe0ff; border-color: #5f9fd4; }
-/* The pool is also a colour, so a swipe between columns reads as crossing a
-   boundary rather than as five interchangeable lists. */
-.tree-col.pool-hero .tree-col-name { color: #ffce6b; }
-.tree-col.pool-kingdom .tree-col-name { color: #bfe0ff; }
-.tree-respec {
-  padding: 7px 12px; border-radius: 10px; pointer-events: auto;
-  background: transparent; border: 1px solid rgba(255,255,255,.25); color: #f5ead0;
-  font: 700 11px ui-monospace, monospace;
+.tree-pooltab em { font-style: normal; font-size: 13px; opacity: .75; }
+.tree-pooltab em.has-free { opacity: 1; }
+.tree-pooltab.pool-hero.on { color: #ffce6b; border-color: #d98b3a; background: rgba(217,139,58,.16); }
+.tree-pooltab.pool-kingdom.on { color: #bfe0ff; border-color: #5f9fd4; background: rgba(95,159,212,.16); }
+
+.tree-tabs { display: flex; gap: 6px; padding: 0 14px 12px; background: #141d10; flex: 0 0 auto; }
+.tree-tab {
+  flex: 1; padding: 9px 6px; border-radius: 10px 10px 0 0; pointer-events: auto;
+  background: rgba(0,0,0,.22); border: 0; border-bottom: 2px solid transparent;
+  color: #8a8f85; font: 700 13px Georgia, serif;
 }
-.tree-respec[disabled] { opacity: .35; }
-/* One column fills the viewport and snaps; the row of columns is the swipe. */
-.tree-columns {
-  flex: 1 1 auto; display: flex; overflow-x: auto; overflow-y: hidden;
-  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+.tree-tab.on { background: #1b2416; color: #f5ead0; border-bottom-color: #f6c945; }
+
+/* The board scrolls; the canvas is a positioned coordinate space. */
+.tree-board { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+.tree-canvas { position: relative; width: 100%; padding-bottom: 120px; }
+.tree-wires { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.tree-wire {
+  fill: none; stroke: rgba(255,255,255,.14); stroke-width: 3;
+  vector-effect: non-scaling-stroke; stroke-linejoin: round;
 }
-.tree-col {
-  flex: 0 0 100%; scroll-snap-align: start; overflow-y: auto;
-  display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 24px;
+.tree-wire.live { stroke: #7fd4a8; }
+
+/* A tile: hex glyph, cost badge, name. Positioned by percentage so the board
+   reflows with the viewport instead of needing a fixed canvas width. */
+.tree-cell {
+  position: absolute; transform: translate(-50%, -50%); pointer-events: auto;
+  width: 84px; padding: 0; background: none; border: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
-.tree-col-head { padding: 2px 0 6px; }
-.tree-col-name { font: 700 22px/1.1 Georgia, serif; color: #f6c945; }
-.tree-col-blurb { font: 400 12px sans-serif; color: #cdc6b4; opacity: .8; }
-.tree-node {
-  text-align: left; padding: 11px 13px; border-radius: 12px; pointer-events: auto;
-  background: #24361f; border: 2px solid #59a844; color: #f5ead0;
-  display: flex; flex-direction: column; gap: 2px;
+.tree-hex {
+  width: 60px; height: 60px; display: grid; place-items: center; font-size: 27px; line-height: 1;
+  background: #2b3a23; border: 2px solid rgba(255,255,255,.18);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  filter: grayscale(1) opacity(.45);
 }
-.tree-node.taken { background: #2f4a26; border-color: #f6c945; }
-.node-row.carried { background: #2f4a26; border-color: #f6c945; }
-.tree-node.locked, .tree-node[disabled] { background: #1c2419; border-color: #333d30; color: #8a8f85; }
-.tree-node-name { font: 700 15px Georgia, serif; }
-.tree-node-desc { font: 400 12px/1.35 sans-serif; opacity: .9; }
-.tree-node-cost { font: 700 11px ui-monospace, monospace; color: #f6c945; margin-top: 2px; }
-.tree-node[disabled] .tree-node-cost { color: #8a8f85; }
-/* Keystones are visibly the end of a path — bigger, and the trade-off is not
-   in smaller type than the upside. */
-.tree-node.kind-keystone { padding: 15px 15px; border-width: 3px; border-color: #d98b3a; margin-top: 6px; }
-.tree-node.kind-keystone .tree-node-name { font-size: 19px; color: #ffce6b; }
-.tree-node.kind-keystone .tree-node-desc { font-size: 13px; }
-.tree-node.kind-keystone.taken { border-color: #ffce6b; background: #4a3520; }
-.tree-node.kind-ability { border-style: dashed; }
-.tree-node.kind-synergy { border-color: #5f9fd4; }
-.tree-screen .screen-action { margin: 0 16px calc(14px + env(safe-area-inset-bottom, 0px)); flex: 0 0 auto; }`;
+.tree-badge {
+  margin-top: -11px; padding: 1px 8px; border-radius: 999px; font: 700 10px ui-monospace, monospace;
+  background: #141d10; border: 1px solid rgba(255,255,255,.2); color: #cdc6b4;
+}
+.tree-cell-name { font: 600 10px/1.15 Georgia, serif; color: #8a8f85; text-align: center; max-width: 84px; }
+
+.tree-cell.is-open .tree-hex { filter: none; border-color: #f6c945; box-shadow: 0 0 0 4px rgba(246,201,69,.14); }
+.tree-cell.is-open .tree-badge { color: #f6c945; border-color: #f6c945; }
+.tree-cell.is-open .tree-cell-name { color: #f5ead0; }
+.tree-cell.is-taken .tree-hex { filter: none; background: #3c5a2c; border-color: #7fd4a8; }
+.tree-cell.is-taken .tree-badge { color: #7fd4a8; border-color: #7fd4a8; }
+.tree-cell.is-taken .tree-cell-name { color: #dff0d8; }
+.tree-cell.is-forgone .tree-hex { filter: grayscale(1) opacity(.25); border-style: dashed; }
+.tree-cell.sel .tree-hex { box-shadow: 0 0 0 4px rgba(255,255,255,.35); }
+
+/* Keystones are the end of a path and look like it. */
+.tree-cell.kind-keystone .tree-hex { width: 74px; height: 74px; font-size: 33px; border-width: 3px; }
+.tree-cell.kind-keystone.is-open .tree-hex { border-color: #ff9d3c; box-shadow: 0 0 0 5px rgba(255,157,60,.18); }
+.tree-cell.kind-ability .tree-hex { border-style: dashed; }
+
+/* Detail sheet — descriptions live here so the board stays a board. */
+.tree-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; pointer-events: auto;
+  background: #24311c; border-top: 2px solid #f6c945;
+  padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 9px;
+  box-shadow: 0 -12px 28px rgba(0,0,0,.45);
+}
+.tree-sheet.kind-keystone { border-top-color: #ff9d3c; }
+.tree-sheet-head { display: flex; align-items: center; gap: 12px; }
+.tree-sheet-icon {
+  width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; font-size: 22px;
+  background: #2b3a23; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+.tree-sheet-name { font: 700 19px Georgia, serif; color: #f6c945; }
+.tree-sheet-kind {
+  font: 700 10px ui-monospace, monospace; color: #9aa093;
+  letter-spacing: .07em; text-transform: uppercase;
+}
+.tree-sheet-desc { font: 400 14px/1.45 sans-serif; color: #f5ead0; }
+.tree-sheet-act {
+  padding: 13px; border-radius: 12px; border: 0; pointer-events: auto;
+  background: #f6c945; color: #22300f; font: 700 15px ui-monospace, monospace;
+}
+.tree-sheet-act.ghost { background: transparent; border: 1px solid rgba(255,255,255,.28); color: #f5ead0; }
+.tree-sheet-act[disabled] { background: rgba(255,255,255,.08); color: #8a8f85; }
+`;
 }

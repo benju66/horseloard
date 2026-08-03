@@ -30,13 +30,13 @@ const FILE: SkillTreeFile = {
   maxLevel: 10,
   maxAllocatableFraction: 0.9,
   nodes: [
-    { id: 'a', path: 'hunt', pool: 'hero', kind: 'minor', name: 'A', description: 'a', cost: 1, row: 0, requires: [], excludes: [], effects: bump('bowDamage') },
-    { id: 'b', path: 'hunt', pool: 'hero', kind: 'notable', name: 'B', description: 'b', cost: 2, row: 1, requires: ['a'], excludes: [], effects: bump('bowDamage') },
-    { id: 'c', path: 'hunt', pool: 'hero', kind: 'notable', name: 'C', description: 'c', cost: 3, row: 2, requires: ['b'], excludes: [], effects: bump('bowDamage') },
-    { id: 'k1', path: 'hunt', pool: 'hero', kind: 'keystone', name: 'K1', description: 'k1', cost: 3, row: 3, requires: ['b'], excludes: ['k2'], effects: bump('bowDamage') },
-    { id: 'k2', path: 'hunt', pool: 'hero', kind: 'keystone', name: 'K2', description: 'k2', cost: 3, row: 3, requires: ['b'], excludes: ['k1'], effects: bump('bowDamage') },
-    { id: 'd', path: 'ride', pool: 'hero', kind: 'minor', name: 'D', description: 'd', cost: 1, row: 0, requires: [], excludes: [], effects: bump('bowDamage') },
-    { id: 'e', path: 'ride', pool: 'hero', kind: 'ability', name: 'E', description: 'e', cost: 2, row: 1, requires: ['d'], excludes: [], effects: [{ type: 'unlock-ability', abilityId: 'volley' }] },
+    { id: 'a', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'minor', name: 'A', description: 'a', cost: 1, row: 0, requires: [], excludes: [], effects: bump('bowDamage') },
+    { id: 'b', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'notable', name: 'B', description: 'b', cost: 2, row: 1, requires: ['a'], excludes: [], effects: bump('bowDamage') },
+    { id: 'c', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'notable', name: 'C', description: 'c', cost: 3, row: 2, requires: ['b'], excludes: [], effects: bump('bowDamage') },
+    { id: 'k1', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'keystone', name: 'K1', description: 'k1', cost: 3, row: 3, requires: ['b'], excludes: ['k2'], effects: bump('bowDamage') },
+    { id: 'k2', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'keystone', name: 'K2', description: 'k2', cost: 3, row: 3, requires: ['b'], excludes: ['k1'], effects: bump('bowDamage') },
+    { id: 'd', path: 'ride', pool: 'hero', icon: '⬢', kind: 'minor', name: 'D', description: 'd', cost: 1, row: 0, requires: [], excludes: [], effects: bump('bowDamage') },
+    { id: 'e', path: 'ride', pool: 'hero', icon: '⬢', kind: 'ability', name: 'E', description: 'e', cost: 2, row: 1, requires: ['d'], excludes: [], effects: [{ type: 'unlock-ability', abilityId: 'volley' }] },
   ],
 };
 

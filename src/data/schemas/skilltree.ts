@@ -58,6 +58,14 @@ export const SkillNodeSchema = z.object({
   name: z.string().min(1),
   /** Shown on the node. State the effect plainly; a trade-off hidden in small print is a lie. */
   description: z.string().min(1),
+  /**
+   * The glyph on the node's tile. One or two emoji.
+   *
+   * Emoji rather than sprites so the whole tree is legible before a single icon
+   * is commissioned — the tree has to be *readable at a glance* to be a tree at
+   * all, and a grid of identical squares is a list wearing a costume.
+   */
+  icon: z.string().min(1).max(8),
   cost: z.number().int().positive(),
   /**
    * Row in its column, 0 at the top. The tree renders as five vertical
