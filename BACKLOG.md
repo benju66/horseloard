@@ -474,6 +474,35 @@ at every level — so LV0 read as eight points. It now pairs each level with the
 plausibly holds at it, which is the career as actually lived rather than a level sweep at a
 fixed ceiling.
 
+## M7 — The long game  ← NEXT
+Direction set 2026-08-03: this is a **long game**. The tree, the maps and the XP curve are a
+progression spine, not a difficulty knob, and the thing being designed is the *reward cadence*
+— the psychology of unlocking and levelling — not just the balance.
+
+[ ] **M7.1 — Fix the reward cadence.** Both pools currently grant a point every 4 levels **on
+the same schedule**, so levels 4/8/12 hand out two points at once and three level-ups in every
+four hand out nothing. That is the worst possible shape for a progression game. Stagger them —
+Hero on odd levels, Kingdom on even — for an identical power curve with **twice the reward
+moments** and two alternating heartbeats instead of one. One offset in `pools`, no rebalance.
+[ ] **M7.2 — In-run XP leads nowhere.** Cutting the draft was right; it also left the run's XP
+bar counting toward nothing, so there is no moment-to-moment payoff during play at all. That is
+the loop Vampire Survivors gets almost all of its pull from. The constraint stands — **nothing
+mid-run may change what you can do** — so the answer is reward *without* interruption: banked
+unlocks that announce at wave clear, visible "+2 Hero" on the results screen, milestones you can
+see approaching. Design it as feedback, never as a decision.
+[ ] **M7.3 — Retune the XP curve** against the above. Deferred deliberately: staggering the
+grant and adding the feedback layer both change what the curve should be, so tuning it first
+would be tuning it twice.
+[ ] **M7.4 — More maps.** Four is not a campaign for a long game. Wave sets and maps are pure
+JSON (CLAUDE.md #1), so this is authoring, not engineering — the constraint is that each map
+must ask a *new question*, not restate an old one at higher HP.
+[ ] **M7.5 — More to unlock.** The tree is the only unlock surface today. A long game wants
+more kinds of thing arriving over time — towers, enemies, abilities, maps, cosmetics — on a
+cadence, so that levelling keeps producing news.
+
+**Parked, explicitly:** node art. 72 icons is a real art task and emoji placeholders are enough
+to judge structure. Revisit when the structure has stopped moving.
+
 **Still true, and now three milestones old: none of this has been played by a human.** The tree
 screen, the loadout and the whole "decide before you ride" premise are phone-and-thumbs
 questions, and the bots cannot answer one of them.
