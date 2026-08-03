@@ -270,7 +270,15 @@ function startMap(mapId: string, endless = false): void {
   // `reconcile` first, because a save may hold nodes a data change has since
   // made unreachable — dropping them here is the difference between a build
   // that quietly grants more than it should and one that matches the screen.
-  const build = skillTree.reconcile(save.build, Number.MAX_SAFE_INTEGER);
+  const build = skillTree.reconcile(
+    save.build,
+    // Reconciling against an unbounded budget on purpose: this drops nodes made
+    // *illegal* by a data change, not nodes the career can no longer afford.
+    // Refunding for affordability here would silently strip a build the moment
+    // a curve was retuned, which is the tree screen's job to surface, not the
+    // run's job to do behind the player's back.
+    Object.fromEntries(skillTree.pools.map((p) => [p, Number.MAX_SAFE_INTEGER])),
+  );
   const modded = skillTree.applyTo(
     {
       hero: data.hero,

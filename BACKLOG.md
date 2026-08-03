@@ -447,6 +447,33 @@ probe has the same problem in sharper form: it reports the army adding nothing o
 while both its arms are saturated on maps 1-2 and dead on 3-4, so it is not answerable as
 written. Fix the probe before reading it as a verdict on the barracks.
 
+[x] **M6.7 — Two point pools** (2026-08-03). Hero paths and Kingdom paths spend separate
+budgets; career levels grant one of each. Six paths now, three per pool.
+**one budget made the pillar invariant a punishment instead of a guarantee.** With a single
+purse a player could sink everything into the hero, arrive at map 4 structurally unable to
+hold the road, and the game's only answer was to let them lose and hope they inferred why.
+Two purses mean you always hold some of both while the choice *inside* each half stays
+completely real — the same move as MG5.6's offer rule, which beat four milestones of tuning
+by constraining shape rather than numbers.
+**the split immediately exposed that the hero side was thin.** Two hero paths (48pt) against
+three kingdom paths (73pt) cannot be equally scarce under any grant schedule: a budget big
+enough to feel like progression put Hero over 45% reachable while Kingdom sat near 25%. No
+rate fixes that — it is a content shortage, and the scarcity check is now **per pool** so a
+fat pool can never hide a thin one again. Hence **The Storm**: caltrops and aerostorm left
+The Hunt and The Ride, where they had always been slightly foreign, and became a third hero
+verb that is neither *shoot harder* nor *ride harder*. Both pools now sit at 72/73 points
+and 33% reachable.
+**and two points per level is twice the power at the same level.** The first pooled build
+measured 100/100/100/75 — the reference had silently doubled. Halving the grant rate
+(`levelsPerPoint` 2 → 4, `maxLevel` 40 → 80) and restretching the XP curve put it back
+without touching a single wave budget. **Final: 100 / 97 / 64 / 22** against 90-100 / 70-95 /
+45-75 / 25-55, two maps within 3pp of band. Path probe max +6pp; budget probe 33.3% Hero /
+32.9% Kingdom.
+**the ramp was also lying about fresh careers**, because it assumed every map three-starred
+at every level — so LV0 read as eight points. It now pairs each level with the stars a career
+plausibly holds at it, which is the career as actually lived rather than a level sweep at a
+fixed ceiling.
+
 **Still true, and now three milestones old: none of this has been played by a human.** The tree
 screen, the loadout and the whole "decide before you ride" premise are phone-and-thumbs
 questions, and the bots cannot answer one of them.

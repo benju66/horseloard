@@ -11,9 +11,30 @@ import { MetaEffectSchema } from './effects';
  * (`applyEffectInPlace`). A new node is a JSON entry and nothing else.
  */
 
-/** The five paths. Three are the pillars; two split the hero, because the hero is what you play. */
-export const SkillPathSchema = z.enum(['hunt', 'ride', 'wall', 'host', 'crown']);
+/**
+ * The six paths, in two pools of three.
+ *
+ * **Hero:** Hunt (shoot), Ride (charge), Storm (shape the ground).
+ * **Kingdom:** Wall (towers), Host (soldiers), Crown (gold and the gate).
+ *
+ * The pools are the load-bearing part. A single points budget meant every bow
+ * node was a tower node you did not buy, so a hero-heavy career could arrive at
+ * map 4 structurally unable to hold it — and the game's answer was to punish
+ * that. Two budgets make the triangle a *guarantee* rather than a lesson: you
+ * always have some of both, and the choice inside each half is still real. It
+ * is the same move as M5's offer rule, which beat four milestones of tuning by
+ * constraining shape instead of numbers.
+ */
+export const SkillPathSchema = z.enum(['hunt', 'ride', 'storm', 'wall', 'host', 'crown']);
 export type SkillPath = z.infer<typeof SkillPathSchema>;
+
+/**
+ * Which budget a path spends from. Ids are data, not engine vocabulary — the
+ * allocator groups by whatever strings it finds here, so a third pool would be
+ * a JSON change (CLAUDE.md #1).
+ */
+export const SkillPoolSchema = z.enum(['hero', 'kingdom']);
+export type SkillPool = z.infer<typeof SkillPoolSchema>;
 
 /**
  * What a node is *for*, which is also how the UI colours it.
@@ -31,6 +52,8 @@ export type SkillKind = z.infer<typeof SkillKindSchema>;
 export const SkillNodeSchema = z.object({
   id: IdSchema,
   path: SkillPathSchema,
+  /** Which budget this costs from. Every node in a path must agree. */
+  pool: SkillPoolSchema,
   kind: SkillKindSchema,
   name: z.string().min(1),
   /** Shown on the node. State the effect plainly; a trade-off hidden in small print is a lie. */
@@ -62,15 +85,25 @@ export type SkillNode = z.infer<typeof SkillNodeSchema>;
 export const SkillTreeFileSchema = z
   .object({
     /**
-     * Points per career level, and the level curve. **Scarcity is the whole
-     * mechanism**: a tree you can finish is a checklist, so the reachable
-     * budget must sit far below the tree's total cost. `loader.ts` enforces
-     * that as `maxAllocatableFraction`.
+     * How each pool earns. **Scarcity is the whole mechanism** — a tree you can
+     * finish is a checklist — so every pool's reachable budget must sit far
+     * below the cost of the nodes it can buy. Checked per pool below, because a
+     * combined check would let a fat pool hide a thin one.
+     *
+     * `levelsPerPoint` rather than points-per-level: the interesting rates are
+     * slower than one per level, and a fraction here would be a rounding bug
+     * waiting to be argued about.
      */
-    pointsPerLevel: z.number().int().positive().default(1),
+    pools: z.record(
+      SkillPoolSchema,
+      z.object({
+        /** Shown in the tree header beside the count. */
+        name: z.string().min(1),
+        levelsPerPoint: z.number().int().positive().default(1),
+        pointsPerThreeStar: z.number().int().nonnegative().default(1),
+      }),
+    ),
     maxLevel: z.number().int().positive(),
-    /** Bonus points for campaign milestones — one per map three-starred. */
-    pointsPerThreeStar: z.number().int().nonnegative().default(1),
     /**
      * The hard ceiling on how much of the tree a maxed player may hold.
      * Checked at load against the real node costs, so adding nodes without
@@ -124,10 +157,25 @@ export const SkillTreeFileSchema = z
       });
     });
 
+    // A path spends from exactly one pool. Mixing them inside a column would
+    // make the header's two counters unreadable — you could not tell which
+    // number a node was about to spend.
+    for (const path of SkillPathSchema.options) {
+      const inPath = file.nodes.filter((n) => n.path === path);
+      const pools = new Set(inPath.map((n) => n.pool));
+      if (pools.size > 1) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['nodes'],
+          message: `path "${path}" spans pools ${[...pools].join(' and ')}; a column spends from one budget`,
+        });
+      }
+    }
+
     // Every path needs exactly two keystones, and they must exclude each other.
     // A path with one keystone has no choice at its end; a path with three has
     // a comparison nobody can hold in their head.
-    for (const path of ['hunt', 'ride', 'wall', 'host', 'crown'] as const) {
+    for (const path of SkillPathSchema.options) {
       const keys = file.nodes.filter((n) => n.path === path && n.kind === 'keystone');
       if (keys.length !== 2) {
         ctx.addIssue({
@@ -144,18 +192,34 @@ export const SkillTreeFileSchema = z
       }
     }
 
-    // Scarcity, enforced. See `maxAllocatableFraction`.
-    const total = file.nodes.reduce((s, n) => s + n.cost, 0);
-    const budget = file.maxLevel * file.pointsPerLevel + 4 * file.pointsPerThreeStar;
-    if (budget > total * file.maxAllocatableFraction) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['maxLevel'],
-        message:
-          `budget ${budget} is ${((budget / total) * 100).toFixed(0)}% of the tree's ${total} points, ` +
-          `over the ${(file.maxAllocatableFraction * 100).toFixed(0)}% ceiling — ` +
-          `a tree a player can mostly finish is a checklist, not a build`,
-      });
+    // Scarcity, enforced **per pool**. A combined check passes happily while one
+    // pool is 60% reachable and the other 15%, which is the exact failure the
+    // split was made to avoid: a half of the tree nobody has to choose within.
+    //
+    // Three-starring every map is the ceiling, so the budget assumes all four.
+    for (const [poolId, pool] of Object.entries(file.pools)) {
+      const nodes = file.nodes.filter((n) => n.pool === poolId);
+      if (nodes.length === 0) continue;
+      const total = nodes.reduce((s, n) => s + n.cost, 0);
+      const budget =
+        Math.floor(file.maxLevel / pool.levelsPerPoint) + 4 * pool.pointsPerThreeStar;
+      if (budget > total * file.maxAllocatableFraction) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['pools', poolId],
+          message:
+            `"${poolId}" budget ${budget} is ${((budget / total) * 100).toFixed(0)}% of its ` +
+            `${total} points, over the ${(file.maxAllocatableFraction * 100).toFixed(0)}% ceiling — ` +
+            `a pool a player can mostly finish is a checklist, not a build`,
+        });
+      }
     }
+
+    // A node whose pool has no config would be unbuyable with no way to say why.
+    file.nodes.forEach((n, i) => {
+      if (!file.pools[n.pool]) {
+        ctx.addIssue({ code: 'custom', path: ['nodes', i, 'pool'], message: `unknown pool "${n.pool}"` });
+      }
+    });
   });
 export type SkillTreeFile = z.infer<typeof SkillTreeFileSchema>;

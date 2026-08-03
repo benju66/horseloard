@@ -31,8 +31,8 @@
     "endlessMilestoneEvery": 10,
     "perEndlessMilestone": 200,
     "level": {
-      "base": 400,
-      "growth": 1.1
+      "base": 560,
+      "growth": 1.038
     }
   },
   "stars": {

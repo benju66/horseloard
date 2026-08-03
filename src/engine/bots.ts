@@ -13,7 +13,7 @@ import type {
 import type { EnemyInstance } from './enemySystem';
 import { marginalCoverage, plotCoverage, sampleLanes, type LaneSample, type Watcher } from './coverage';
 import { SIM_DT, Simulation } from './simulation';
-import { SkillTree } from './skillTree';
+import { SkillTree, type PoolPoints } from './skillTree';
 import type { PlotState } from './towerSystem';
 
 /**
@@ -736,7 +736,7 @@ export function withoutHeroDamage(hero: Hero): Hero {
  * Rows first, then cost within a row, so the walk mirrors how a player actually
  * descends a path: you cannot reach row 4 without paying for row 2.
  */
-export function pathBuild(tree: SkillTree, path: string, points: number): readonly string[] {
+export function pathBuild(tree: SkillTree, path: string, points: PoolPoints): readonly string[] {
   const order = tree.nodes
     .filter((n) => n.path === path)
     .slice()
@@ -767,7 +767,7 @@ export function pathBuild(tree: SkillTree, path: string, points: number): readon
  * measure. Round-robin keeps the reference broad and shallow, which is what a
  * player who has not yet committed actually holds.
  */
-export function spreadBuild(tree: SkillTree, points: number): readonly string[] {
+export function spreadBuild(tree: SkillTree, points: PoolPoints): readonly string[] {
   const paths = [...new Set(tree.nodes.map((n) => n.path))].sort();
   let allocated: readonly string[] = [];
   let changed = true;

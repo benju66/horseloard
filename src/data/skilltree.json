@@ -1,12 +1,23 @@
 {
-  "pointsPerLevel": 1,
-  "maxLevel": 36,
-  "pointsPerThreeStar": 1,
+  "pools": {
+    "hero": {
+      "name": "Hero",
+      "levelsPerPoint": 4,
+      "pointsPerThreeStar": 1
+    },
+    "kingdom": {
+      "name": "Kingdom",
+      "levelsPerPoint": 4,
+      "pointsPerThreeStar": 1
+    }
+  },
+  "maxLevel": 80,
   "maxAllocatableFraction": 0.35,
   "nodes": [
     {
       "id": "hunt-steady",
       "path": "hunt",
+      "pool": "hero",
       "kind": "minor",
       "name": "Steady Hand",
       "description": "Arrows hit 20% harder.",
@@ -26,6 +37,7 @@
     {
       "id": "hunt-longdraw",
       "path": "hunt",
+      "pool": "hero",
       "kind": "minor",
       "name": "Long Draw",
       "description": "Your bow reaches 20% further.",
@@ -45,6 +57,7 @@
     {
       "id": "hunt-volley-wide",
       "path": "hunt",
+      "pool": "hero",
       "kind": "notable",
       "name": "Wider Volley",
       "description": "Volley falls over a 30% larger circle and hits 25% harder.",
@@ -74,6 +87,7 @@
     {
       "id": "hunt-keen",
       "path": "hunt",
+      "pool": "hero",
       "kind": "notable",
       "name": "Keen Eye",
       "description": "Your arrows crit 18% of the time for double.",
@@ -101,6 +115,7 @@
     {
       "id": "hunt-shaft",
       "path": "hunt",
+      "pool": "hero",
       "kind": "ability",
       "name": "Heavy Shaft",
       "description": "Unlock Heavy Shaft \u2014 one arrow through a column.",
@@ -120,6 +135,7 @@
     {
       "id": "hunt-killing",
       "path": "hunt",
+      "pool": "hero",
       "kind": "synergy",
       "name": "Killing Ground",
       "description": "+45% bow damage to enemies that are slowed or held.",
@@ -141,6 +157,7 @@
     {
       "id": "hunt-rapid",
       "path": "hunt",
+      "pool": "hero",
       "kind": "ability",
       "name": "Rapid Fire",
       "description": "Unlock Rapid Fire \u2014 draw without pause.",
@@ -160,6 +177,7 @@
     {
       "id": "hunt-hands",
       "path": "hunt",
+      "pool": "hero",
       "kind": "notable",
       "name": "Practised Hands",
       "description": "Every ability returns 18% sooner.",
@@ -180,11 +198,12 @@
       ]
     },
     {
-      "id": "hunt-storm",
+      "id": "hunt-broadhead",
       "path": "hunt",
-      "kind": "ability",
-      "name": "Aerostorm",
-      "description": "Unlock Aerostorm \u2014 the sky answers a hard fight.",
+      "pool": "hero",
+      "kind": "notable",
+      "name": "Broadheads",
+      "description": "Arrows hit 22% harder and reach 12% further.",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -193,14 +212,23 @@
       "excludes": [],
       "effects": [
         {
-          "type": "unlock-ability",
-          "abilityId": "aero-storm"
+          "type": "hero-stat",
+          "stat": "bowDamage",
+          "perRank": 1.22,
+          "mode": "multiply"
+        },
+        {
+          "type": "hero-stat",
+          "stat": "bowRange",
+          "perRank": 1.12,
+          "mode": "multiply"
         }
       ]
     },
     {
       "id": "hunt-execution",
       "path": "hunt",
+      "pool": "hero",
       "kind": "synergy",
       "name": "Execution",
       "description": "Crits deal a further 60% to slowed or held enemies.",
@@ -228,13 +256,14 @@
     {
       "id": "hunt-deadeye",
       "path": "hunt",
+      "pool": "hero",
       "kind": "keystone",
       "name": "Deadeye",
       "description": "+90% bow damage. \u221235% bow range. Ride into the teeth of it.",
       "cost": 3,
       "row": 5,
       "requires": [
-        "hunt-storm"
+        "hunt-broadhead"
       ],
       "excludes": [
         "hunt-skirmisher"
@@ -257,6 +286,7 @@
     {
       "id": "hunt-skirmisher",
       "path": "hunt",
+      "pool": "hero",
       "kind": "keystone",
       "name": "Skirmisher",
       "description": "+45% fire rate and +15% speed. \u221230% bow damage.",
@@ -292,6 +322,7 @@
     {
       "id": "ride-shoes",
       "path": "ride",
+      "pool": "hero",
       "kind": "minor",
       "name": "Iron Shoes",
       "description": "Trampling deals 50% more.",
@@ -311,6 +342,7 @@
     {
       "id": "ride-footing",
       "path": "ride",
+      "pool": "hero",
       "kind": "minor",
       "name": "Sure Footing",
       "description": "You ride 15% faster.",
@@ -330,6 +362,7 @@
     {
       "id": "ride-blades",
       "path": "ride",
+      "pool": "hero",
       "kind": "ability",
       "name": "Whirling Blades",
       "description": "Unlock Whirling Blades \u2014 steel circles you.",
@@ -349,6 +382,7 @@
     {
       "id": "ride-barding",
       "path": "ride",
+      "pool": "hero",
       "kind": "notable",
       "name": "Barding",
       "description": "The grace after a shove lasts 70% longer.",
@@ -368,11 +402,12 @@
       ]
     },
     {
-      "id": "ride-caltrops",
+      "id": "ride-impact",
       "path": "ride",
-      "kind": "ability",
-      "name": "Caltrops",
-      "description": "Unlock Caltrops \u2014 iron on the road.",
+      "pool": "hero",
+      "kind": "notable",
+      "name": "Full Impact",
+      "description": "Trampling hits 45% harder.",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -381,14 +416,17 @@
       "excludes": [],
       "effects": [
         {
-          "type": "unlock-ability",
-          "abilityId": "caltrops"
+          "type": "hero-stat",
+          "stat": "trampleDamage",
+          "perRank": 1.45,
+          "mode": "multiply"
         }
       ]
     },
     {
       "id": "ride-honed",
       "path": "ride",
+      "pool": "hero",
       "kind": "notable",
       "name": "Honed Edges",
       "description": "Blades cut 40% deeper.",
@@ -411,13 +449,14 @@
     {
       "id": "ride-warhorse",
       "path": "ride",
+      "pool": "hero",
       "kind": "synergy",
       "name": "Warhorse",
       "description": "Trampling hits 25% harder, and the blades cut 25% deeper.",
       "cost": 2,
       "row": 3,
       "requires": [
-        "ride-caltrops"
+        "ride-impact"
       ],
       "excludes": [],
       "effects": [
@@ -439,6 +478,7 @@
     {
       "id": "ride-arc",
       "path": "ride",
+      "pool": "hero",
       "kind": "notable",
       "name": "Wide Arc",
       "description": "One more blade, circling 20% wider.",
@@ -468,6 +508,7 @@
     {
       "id": "ride-broken",
       "path": "ride",
+      "pool": "hero",
       "kind": "notable",
       "name": "Broken Ground",
       "description": "Caltrops last 50% longer and bite harder.",
@@ -497,6 +538,7 @@
     {
       "id": "ride-relentless",
       "path": "ride",
+      "pool": "hero",
       "kind": "notable",
       "name": "Relentless",
       "description": "Blades hold for 40% longer.",
@@ -519,6 +561,7 @@
     {
       "id": "ride-cataphract",
       "path": "ride",
+      "pool": "hero",
       "kind": "keystone",
       "name": "Cataphract",
       "description": "Nothing can stagger you and trampling hits three times as hard. \u221235% bow damage, \u221215% speed.",
@@ -560,9 +603,10 @@
     {
       "id": "ride-outrider",
       "path": "ride",
+      "pool": "hero",
       "kind": "keystone",
       "name": "Outrider",
-      "description": "+45% speed, coins fly to you from far off. Trampling hits 40% softer, and the gate is 35 weaker.",
+      "description": "+60% speed, coins fly to you from far off and linger. Trampling hits half as hard.",
       "cost": 3,
       "row": 5,
       "requires": [
@@ -575,7 +619,7 @@
         {
           "type": "hero-stat",
           "stat": "moveSpeed",
-          "perRank": 1.45,
+          "perRank": 1.6,
           "mode": "multiply"
         },
         {
@@ -585,22 +629,23 @@
           "mode": "multiply"
         },
         {
-          "type": "hero-stat",
-          "stat": "trampleDamage",
-          "perRank": 0.6,
+          "type": "kingdom-stat",
+          "stat": "coinExpiryTime",
+          "perRank": 1.6,
           "mode": "multiply"
         },
         {
-          "type": "kingdom-stat",
-          "stat": "gateMaxHp",
-          "perRank": -35,
-          "mode": "add"
+          "type": "hero-stat",
+          "stat": "trampleDamage",
+          "perRank": 0.5,
+          "mode": "multiply"
         }
       ]
     },
     {
       "id": "wall-fletchers",
       "path": "wall",
+      "pool": "kingdom",
       "kind": "minor",
       "name": "Fletchers",
       "description": "Every tower hits 18% harder.",
@@ -621,6 +666,7 @@
     {
       "id": "wall-masonry",
       "path": "wall",
+      "pool": "kingdom",
       "kind": "minor",
       "name": "Masonry",
       "description": "Towers cost 18% less to raise.",
@@ -641,6 +687,7 @@
     {
       "id": "wall-oath",
       "path": "wall",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Marksman's Oath",
       "description": "Archer towers crit 22% of the time for \u00d72.2.",
@@ -665,6 +712,7 @@
     {
       "id": "wall-foundations",
       "path": "wall",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Foundations",
       "description": "Upgrades cost 22% less.",
@@ -687,6 +735,7 @@
     {
       "id": "wall-horn",
       "path": "wall",
+      "pool": "kingdom",
       "kind": "ability",
       "name": "Rally Horn",
       "description": "Unlock Rally Horn \u2014 every tower fires faster for a while.",
@@ -706,6 +755,7 @@
     {
       "id": "wall-powder",
       "path": "wall",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Powder Cache",
       "description": "Bombards hit 35% harder.",
@@ -728,6 +778,7 @@
     {
       "id": "wall-winter",
       "path": "wall",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Deep Winter",
       "description": "Frost spires hold 25% more ground.",
@@ -750,6 +801,7 @@
     {
       "id": "wall-reload",
       "path": "wall",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Rapid Reload",
       "description": "Every tower looses 18% faster.",
@@ -772,6 +824,7 @@
     {
       "id": "wall-beacon",
       "path": "wall",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Beacon Lore",
       "description": "Towers lend neighbours +15% damage. Build them close.",
@@ -796,6 +849,7 @@
     {
       "id": "wall-crossfire",
       "path": "wall",
+      "pool": "kingdom",
       "kind": "synergy",
       "name": "Crossfire",
       "description": "Towers lend neighbours +30% damage across a wide circle. Build them close.",
@@ -820,6 +874,7 @@
     {
       "id": "wall-longwatch",
       "path": "wall",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Long Watch",
       "description": "Every tower watches 20% more road.",
@@ -842,6 +897,7 @@
     {
       "id": "wall-siege",
       "path": "wall",
+      "pool": "kingdom",
       "kind": "keystone",
       "name": "Siege Doctrine",
       "description": "+55% tower damage. \u221228% tower range. Few, deadly, close.",
@@ -873,6 +929,7 @@
     {
       "id": "wall-curtain",
       "path": "wall",
+      "pool": "kingdom",
       "kind": "keystone",
       "name": "Curtain Wall",
       "description": "+40% tower range, \u221235% build cost. \u221222% tower damage.",
@@ -911,6 +968,7 @@
     {
       "id": "host-barracks",
       "path": "host",
+      "pool": "kingdom",
       "kind": "ability",
       "name": "The Barracks",
       "description": "Unlock the barracks. Soldiers hold the road.",
@@ -928,6 +986,7 @@
     {
       "id": "host-levy",
       "path": "host",
+      "pool": "kingdom",
       "kind": "minor",
       "name": "Levy Writ",
       "description": "One more soldier in every garrison.",
@@ -953,6 +1012,7 @@
     {
       "id": "host-mail",
       "path": "host",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Mail and Shield",
       "description": "Soldiers take 45% longer to fall.",
@@ -978,6 +1038,7 @@
     {
       "id": "host-orders",
       "path": "host",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Standing Orders",
       "description": "Replacements march out 35% sooner.",
@@ -1004,6 +1065,7 @@
     {
       "id": "host-drill",
       "path": "host",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Drill Yard",
       "description": "Soldiers fight 50% harder.",
@@ -1029,6 +1091,7 @@
     {
       "id": "host-picket",
       "path": "host",
+      "pool": "kingdom",
       "kind": "synergy",
       "name": "Wide Picket",
       "description": "Garrisons hold 25% more road, and towers reach 12% further.",
@@ -1062,6 +1125,7 @@
     {
       "id": "host-muster",
       "path": "host",
+      "pool": "kingdom",
       "kind": "ability",
       "name": "The Muster",
       "description": "Unlock the Muster \u2014 the gates open.",
@@ -1081,6 +1145,7 @@
     {
       "id": "host-banner",
       "path": "host",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "War Banner",
       "description": "The host is three stronger and holds 35% longer.",
@@ -1110,6 +1175,7 @@
     {
       "id": "host-anvil",
       "path": "host",
+      "pool": "kingdom",
       "kind": "synergy",
       "name": "The Anvil",
       "description": "Your bow deals +25% to slowed or held enemies. Every tower hits 12% harder.",
@@ -1138,6 +1204,7 @@
     {
       "id": "host-shieldwall",
       "path": "host",
+      "pool": "kingdom",
       "kind": "keystone",
       "name": "Shieldwall",
       "description": "Soldiers take 140% more punishment and hold longer. They deal 45% less.",
@@ -1165,6 +1232,7 @@
     {
       "id": "host-thelevy",
       "path": "host",
+      "pool": "kingdom",
       "kind": "keystone",
       "name": "The Levy",
       "description": "+3 soldiers, respawn halved. \u221245% soldier hp. Bodies are cheap.",
@@ -1193,6 +1261,7 @@
     {
       "id": "crown-lodestone",
       "path": "crown",
+      "pool": "kingdom",
       "kind": "minor",
       "name": "Lodestone",
       "description": "Coins fly to you from 40% further.",
@@ -1212,6 +1281,7 @@
     {
       "id": "crown-coffers",
       "path": "crown",
+      "pool": "kingdom",
       "kind": "minor",
       "name": "Full Coffers",
       "description": "Start every run with 20 more gold.",
@@ -1231,6 +1301,7 @@
     {
       "id": "crown-gate",
       "path": "crown",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Stone Gate",
       "description": "The keep withstands 45 more damage.",
@@ -1252,6 +1323,7 @@
     {
       "id": "crown-roads",
       "path": "crown",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Wide Roads",
       "description": "Coins linger 50% longer; the muster pays 25% more.",
@@ -1279,6 +1351,7 @@
     {
       "id": "crown-tithe",
       "path": "crown",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Tithe",
       "description": "Every tower pays 2 coins every 9 seconds.",
@@ -1303,6 +1376,7 @@
     {
       "id": "crown-stones",
       "path": "crown",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Standing Stones",
       "description": "Gate repairs cost 30% less.",
@@ -1324,6 +1398,7 @@
     {
       "id": "crown-ransom",
       "path": "crown",
+      "pool": "kingdom",
       "kind": "synergy",
       "name": "Ransom",
       "description": "Coins reach 25% further and wave clears pay 15% more.",
@@ -1351,6 +1426,7 @@
     {
       "id": "crown-watchfire",
       "path": "crown",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Watchfire",
       "description": "See two waves ahead instead of one.",
@@ -1372,6 +1448,7 @@
     {
       "id": "crown-quarry",
       "path": "crown",
+      "pool": "kingdom",
       "kind": "synergy",
       "name": "The Quarry",
       "description": "Towers cost 15% less and the keep holds 35 more.",
@@ -1400,6 +1477,7 @@
     {
       "id": "crown-granary",
       "path": "crown",
+      "pool": "kingdom",
       "kind": "notable",
       "name": "Granary",
       "description": "The muster pays 35% more.",
@@ -1421,6 +1499,7 @@
     {
       "id": "crown-warchest",
       "path": "crown",
+      "pool": "kingdom",
       "kind": "keystone",
       "name": "War Chest",
       "description": "+95 starting gold. Wave clears pay half. Front-load everything.",
@@ -1450,6 +1529,7 @@
     {
       "id": "crown-longsiege",
       "path": "crown",
+      "pool": "kingdom",
       "kind": "keystone",
       "name": "The Long Siege",
       "description": "Wave clears pay +90%. \u221230 starting gold, \u221240 gate hp.",
@@ -1479,6 +1559,379 @@
           "stat": "gateMaxHp",
           "perRank": -40,
           "mode": "add"
+        }
+      ]
+    },
+    {
+      "id": "storm-grit",
+      "path": "storm",
+      "pool": "hero",
+      "kind": "minor",
+      "name": "Grit",
+      "description": "Caltrops bite 25% harder.",
+      "cost": 1,
+      "row": 0,
+      "requires": [],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "caltrops",
+          "stat": "damagePerSecond",
+          "perRank": 1.25,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "storm-scatter",
+      "path": "storm",
+      "pool": "hero",
+      "kind": "minor",
+      "name": "Wide Scatter",
+      "description": "Caltrops cover 25% more ground.",
+      "cost": 1,
+      "row": 0,
+      "requires": [],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "caltrops",
+          "stat": "radius",
+          "perRank": 1.25,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "storm-caltrops",
+      "path": "storm",
+      "pool": "hero",
+      "kind": "ability",
+      "name": "Caltrops",
+      "description": "Unlock Caltrops \u2014 iron on the road behind you.",
+      "cost": 2,
+      "row": 1,
+      "requires": [
+        "storm-grit"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "unlock-ability",
+          "abilityId": "caltrops"
+        }
+      ]
+    },
+    {
+      "id": "storm-lingering",
+      "path": "storm",
+      "pool": "hero",
+      "kind": "notable",
+      "name": "Lingering Ruin",
+      "description": "Ground patches last 40% longer.",
+      "cost": 2,
+      "row": 1,
+      "requires": [
+        "storm-scatter"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "caltrops",
+          "stat": "duration",
+          "perRank": 1.4,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "aero-storm",
+          "stat": "duration",
+          "perRank": 1.4,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "storm-aero",
+      "path": "storm",
+      "pool": "hero",
+      "kind": "ability",
+      "name": "Aerostorm",
+      "description": "Unlock Aerostorm \u2014 a killing wind walks the road.",
+      "cost": 2,
+      "row": 2,
+      "requires": [
+        "storm-caltrops"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "unlock-ability",
+          "abilityId": "aero-storm"
+        }
+      ]
+    },
+    {
+      "id": "storm-thunder",
+      "path": "storm",
+      "pool": "hero",
+      "kind": "notable",
+      "name": "Rolling Thunder",
+      "description": "Aerostorm hits 35% harder over 20% more ground.",
+      "cost": 2,
+      "row": 2,
+      "requires": [
+        "storm-lingering"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "aero-storm",
+          "stat": "damagePerSecond",
+          "perRank": 1.35,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "aero-storm",
+          "stat": "radius",
+          "perRank": 1.2,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "storm-gathering",
+      "path": "storm",
+      "pool": "hero",
+      "kind": "notable",
+      "name": "Gathering Front",
+      "description": "Your storms come round 20% sooner.",
+      "cost": 2,
+      "row": 3,
+      "requires": [
+        "storm-aero"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "aero-storm",
+          "stat": "cooldown",
+          "perRank": 0.8,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "caltrops",
+          "stat": "cooldown",
+          "perRank": 0.8,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "storm-quagmire",
+      "path": "storm",
+      "pool": "hero",
+      "kind": "synergy",
+      "name": "Quagmire",
+      "description": "You deal 22% more to anything slowed or held. Pairs with frost and with soldiers.",
+      "cost": 2,
+      "row": 3,
+      "requires": [
+        "storm-thunder"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "bowDamageVsHindered",
+          "perRank": 1.22,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "storm-deluge",
+      "path": "storm",
+      "pool": "hero",
+      "kind": "notable",
+      "name": "Deluge",
+      "description": "Ground patches cover a further 25%.",
+      "cost": 2,
+      "row": 4,
+      "requires": [
+        "storm-gathering"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "caltrops",
+          "stat": "radius",
+          "perRank": 1.25,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "aero-storm",
+          "stat": "radius",
+          "perRank": 1.25,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "storm-attrition",
+      "path": "storm",
+      "pool": "hero",
+      "kind": "synergy",
+      "name": "Attrition",
+      "description": "Towers hit 15% harder, and coins linger 40% longer while you work the ground.",
+      "cost": 2,
+      "row": 4,
+      "requires": [
+        "storm-quagmire"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "damage",
+          "perRank": 1.15,
+          "mode": "multiply"
+        },
+        {
+          "type": "kingdom-stat",
+          "stat": "coinExpiryTime",
+          "perRank": 1.4,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "storm-tempest",
+      "path": "storm",
+      "pool": "hero",
+      "kind": "keystone",
+      "name": "Tempest",
+      "description": "Storms hit 70% harder and come round twice as often. They cover 35% less ground.",
+      "cost": 3,
+      "row": 5,
+      "requires": [
+        "storm-deluge"
+      ],
+      "excludes": [
+        "storm-scorched"
+      ],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "caltrops",
+          "stat": "damagePerSecond",
+          "perRank": 1.7,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "aero-storm",
+          "stat": "damagePerSecond",
+          "perRank": 1.7,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "caltrops",
+          "stat": "cooldown",
+          "perRank": 0.5,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "aero-storm",
+          "stat": "cooldown",
+          "perRank": 0.5,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "caltrops",
+          "stat": "radius",
+          "perRank": 0.65,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "aero-storm",
+          "stat": "radius",
+          "perRank": 0.65,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "storm-scorched",
+      "path": "storm",
+      "pool": "hero",
+      "kind": "keystone",
+      "name": "Scorched Earth",
+      "description": "Storms cover 60% more ground and last 80% longer. They hit 40% softer.",
+      "cost": 3,
+      "row": 5,
+      "requires": [
+        "storm-attrition"
+      ],
+      "excludes": [
+        "storm-tempest"
+      ],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "caltrops",
+          "stat": "radius",
+          "perRank": 1.6,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "aero-storm",
+          "stat": "radius",
+          "perRank": 1.6,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "caltrops",
+          "stat": "duration",
+          "perRank": 1.8,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "aero-storm",
+          "stat": "duration",
+          "perRank": 1.8,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "caltrops",
+          "stat": "damagePerSecond",
+          "perRank": 0.6,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "aero-storm",
+          "stat": "damagePerSecond",
+          "perRank": 0.6,
+          "mode": "multiply"
         }
       ]
     }

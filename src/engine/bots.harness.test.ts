@@ -109,7 +109,13 @@ function summarize(runs: readonly BotRunResult[]): string {
  * curve change cannot leave the probes measuring a budget the game stopped
  * granting.
  */
-const REFERENCE_POINTS = 12;
+const REFERENCE_LEVEL = 12;
+/**
+ * Maps three-starred at that point. Two, not four: three-starring scores on
+ * damage *taken*, so a player clearing the campaign for the first time does not
+ * hold a perfect record on the way through.
+ */
+const REFERENCE_STARS = 2;
 
 describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
   const data = loadGameData();
@@ -124,8 +130,18 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * the generalist, so the difficulty bands below still mean what they meant.
    */
   const tree = new SkillTree(data.skillTree);
-  const referenceBuild = spreadBuild(tree, REFERENCE_POINTS);
-  const FULL_POINTS = tree.pointsAt(data.skillTree.maxLevel, Object.keys(data.maps).length);
+  /**
+   * Points at a career level with `stars` maps three-starred, per pool.
+   *
+   * Stars are passed rather than assumed maxed: three-starring every map is the
+   * *ceiling*, and pinning it there at every level makes a fresh career look
+   * like it holds eight points. The ramp below pairs each level with the star
+   * count a player would plausibly have at it.
+   */
+  const at = (level: number, stars: number) => tree.pointsAt(level, stars);
+  const referenceBuild = spreadBuild(tree, at(REFERENCE_LEVEL, REFERENCE_STARS));
+  const FULL_POINTS = at(data.skillTree.maxLevel, Object.keys(data.maps).length);
+  const total = (p: ReturnType<typeof at>) => Object.values(p).reduce((a, b) => a + b, 0);
 
   const botData = {
     towers: data.towers,
@@ -488,7 +504,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
       const m = measure(build);
       lines.push(
         `  ${label.padEnd(10)} ${String(build.length).padStart(2)} nodes / ` +
-          `${String(tree.spent(build)).padStart(2)}pt  win ${m.win.toFixed(0).padStart(3)}%  ` +
+          `${String(total(tree.spent(build))).padStart(2)}pt  win ${m.win.toFixed(0).padStart(3)}%  ` +
           `waves ${m.waves.toFixed(1)}` +
           (vs === undefined
             ? ''
@@ -505,7 +521,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     }
 
     console.log(
-      `\n[PATH PROBE — SKILLTREE.md Part F.1]  ${FULL_POINTS}pt budget, maps ` +
+      `\n[PATH PROBE — SKILLTREE.md Part F.1]  ${total(FULL_POINTS)}pt budget, maps ` +
         `${hardMaps.join(' + ')} × all bots × all seeds\n` +
         lines.join('\n') +
         '\n  Δ is against the generalist on the same points, not against the reference\n' +
@@ -527,12 +543,24 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * see how fast the tree hands out power.
    */
   it('reports the difficulty ramp across career budgets', { timeout: 300_000 }, () => {
-    const budgets = [0, 6, 12, 22, FULL_POINTS];
-    const lines: string[] = [`  ${'map'.padEnd(16)}${budgets.map((b) => `${b}pt`.padStart(7)).join('')}   band`];
+    // Level paired with the stars a career plausibly holds at it — the career as
+    // actually lived, not a level sweep at a fixed ceiling.
+    const stages: ReadonlyArray<readonly [number, number]> = [
+      [0, 0],
+      [6, 1],
+      [REFERENCE_LEVEL, REFERENCE_STARS],
+      [24, 3],
+      [40, 4],
+      [data.skillTree.maxLevel, 4],
+    ];
+    const lines: string[] = [
+      `  ${'map'.padEnd(16)}${stages.map(([l, st]) => `LV${l}/${st}★`.padStart(8)).join('')}   band`,
+      `  ${''.padEnd(16)}${stages.map(([l, st]) => `${total(at(l, st))}pt`.padStart(8)).join('')}`,
+    ];
 
     for (const mapId of Object.keys(data.maps)) {
-      const cells = budgets.map((pts) => {
-        const build = spreadBuild(tree, pts);
+      const cells = stages.map(([lv, st]) => {
+        const build = spreadBuild(tree, at(lv, st));
         const runs = BOTS.flatMap((f) =>
           SEEDS.map((seed) => runBot({ ...botData, skillNodes: build }, mapId, f, seed)),
         );
@@ -540,17 +568,17 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
       });
       const target = DIFFICULTY_TARGETS[mapId];
       lines.push(
-        `  ${mapId.padEnd(16)}${cells.map((c) => `${c.toFixed(0)}%`.padStart(7)).join('')}   ` +
+        `  ${mapId.padEnd(16)}${cells.map((c) => `${c.toFixed(0)}%`.padStart(8)).join('')}   ` +
           (target ? `${target.winRate[0]}-${target.winRate[1]}%` : '—'),
       );
     }
 
     console.log(
-      '\n[RAMP]  spread build at N points, all bots × all seeds\n' +
+      '\n[RAMP]  generalist build at career level N, all bots × all seeds\n' +
         lines.join('\n') +
-        '\n  A campaign clear is worth roughly 12 points, so that is the column the\n' +
-        '  bands describe. The 40pt column is a returning player and is expected to\n' +
-        '  be high — that is what the career is for.',
+        `\n  A first campaign clear reaches about LV${REFERENCE_LEVEL}/${REFERENCE_STARS}★, so that is the column the\n` +
+        '  bands describe. The last column is a maxed career and is expected to be\n' +
+        '  high — that is what a career is for.',
     );
   });
 
@@ -562,15 +590,23 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * second guard — it is the readout that says how much headroom is left before
    * the next batch of nodes trips it.
    */
-  it('reports the allocatable fraction at max level', () => {
-    const full = spreadBuild(tree, FULL_POINTS);
-    const fraction = tree.spent(full) / tree.totalCost;
+  it('reports the allocatable fraction at max level, per pool', () => {
+    // Per pool, because a combined figure passes happily while one pool is 60%
+    // reachable and the other 15% — the exact failure the split was made to
+    // avoid, and a half of the tree nobody has to choose within.
+    const lines = tree.pools.map((pool) => {
+      const cost = tree.totalCost(pool);
+      const budget = FULL_POINTS[pool] ?? 0;
+      return (
+        `  ${tree.poolName(pool).padEnd(8)} ${String(cost).padStart(3)}pt of nodes  ` +
+        `budget ${String(budget).padStart(2)}pt → ${((budget / cost) * 100).toFixed(1)}%`
+      );
+    });
     console.log(
-      `\n[BUDGET PROBE — SKILLTREE.md Part F.2]\n` +
-        `  tree ${tree.nodes.length} nodes / ${tree.totalCost}pt\n` +
-        `  budget ${FULL_POINTS}pt → ${(fraction * 100).toFixed(1)}% allocatable ` +
-        `(${full.length} nodes)\n` +
-        '  Accept: ≤35%. Above that the tree stops being a set of choices.',
+      `\n[BUDGET PROBE — SKILLTREE.md Part F.2]  tree ${tree.nodes.length} nodes / ` +
+        `${tree.totalCost()}pt\n` +
+        lines.join('\n') +
+        '\n  Accept: ≤35% in every pool. Above that a pool stops being a set of choices.',
     );
   });
 

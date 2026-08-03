@@ -81,26 +81,43 @@ levels 8 and 24. Unlocking is separate from equipping. Horse Lord already has th
 
 ## Part C — Structure
 
-### C.1 Five paths
+### C.1 Six paths, two pools
 
 Aligned to the pillars, because the pillars are the architecture (TRIANGLE.md §B.1) and a
 tree that cut across them would fight it.
 
-| path | pillar | fantasy | what it buys |
-|---|---|---|---|
-| **The Hunt** | hero (rate) | the archer | bow, crit, ranged abilities |
-| **The Ride** | hero (presence) | the horseman | speed, trample, close-in abilities, staying upright |
-| **The Wall** | towers (rate) | the engineer | tower stats, tower mechanics, cheaper building |
-| **The Host** | army (exposure) | the commander | barracks, garrisons, the Muster |
-| **The Crown** | support | the sovereign | gold, coins, the gate |
+| pool | path | pillar | fantasy | what it buys |
+|---|---|---|---|---|
+| **Hero** | The Hunt | hero (rate) | the archer | bow, crit, ranged abilities |
+| **Hero** | The Ride | hero (presence) | the horseman | speed, trample, staying upright |
+| **Hero** | The Storm | hero (area) | the stormcaller | caltrops, aerostorm, the ground itself |
+| **Kingdom** | The Wall | towers (rate) | the engineer | tower stats and mechanics, cheaper building |
+| **Kingdom** | The Host | army (exposure) | the commander | barracks, garrisons, the Muster |
+| **Kingdom** | The Crown | support | the sovereign | gold, coins, the gate |
 
-The hero takes two of five because the hero is the thing you play. That is deliberate and
-it is what Vampire Survivors does — most of the tree is your character.
+### C.1a Two pools — the revision that matters (2026-08-03)
 
-**The pillar invariant survives.** The tree changes *which* pillar you lean on, not whether
-you need the others. A full Hunt build still cannot clear crossroads without towers,
-because the wave budget is priced against all three (TRIANGLE §B.8). Leaning 70/30 stays
-viable; leaning 100/0 still loses. That is a testable claim and Part F makes it a probe.
+**Hero paths and Kingdom paths spend separate points.** Career levels grant one of each; a
+bow node can never be priced out by what the walls cost, and vice versa.
+
+The first version had one budget across five paths. It was wrong for a reason worth
+recording: **it made the pillar invariant a punishment instead of a guarantee.** With one
+purse a player could sink everything into the hero, arrive at map 4 structurally unable to
+hold the road, and the game's only answer was to let them lose and hope they inferred why.
+Two purses mean you always hold some of both, and the choice *inside* each half stays
+completely real — which is the same move as M5's offer rule, the single change that beat
+four milestones of tuning by constraining shape rather than numbers.
+
+The split forced a second correction. Two Hero paths (48 points of nodes) against three
+Kingdom paths (73) cannot be equally scarce under any sane grant schedule — a budget large
+enough to feel like progression put the Hero pool over 45% reachable while Kingdom sat near
+25%. **The hero side was simply thin**, which no rate could fix. Hence The Storm: caltrops
+and aerostorm left The Hunt and The Ride, where they had always been slightly foreign, and
+became a third hero verb that is neither *shoot harder* nor *ride harder*. Both pools now
+sit at 72/73 points and **33% reachable each**.
+
+**The pillar invariant survives, and is now cheap.** The tree changes *which* pillar you
+lean on within a half, not whether you have the other half at all.
 
 ### C.2 Node types
 
@@ -113,13 +130,17 @@ viable; leaning 100/0 still loses. That is a testable claim and Part F makes it 
 
 ### C.3 Budget — the scarcity rule, in numbers
 
-- **40 career levels**, 1 skill point each.
-- **+4 points**, one per map 3-starred.
-- **44 points total, ever.**
-- The tree holds **~92 nodes costing ~163 points.**
+- **40 career levels**, one point *per pool* every two levels → 20 each.
+- **+4 points per pool**, one per map 3-starred.
+- **24 Hero points and 24 Kingdom points, ever.**
+- The tree holds **72 nodes costing 145 points** — 72 Hero, 73 Kingdom.
 
-**You will ever allocate about 27% of the tree.** A second campaign down a different path
-is a genuinely different game, which is rule 3 doing its job.
+**You will ever allocate about 33% of each pool**, checked at load, per pool. A combined
+check would pass happily while one pool sat at 60% and the other at 15% — a half of the
+tree nobody has to choose within, which is the failure the split exists to prevent.
+
+A second campaign down different paths is a genuinely different game, which is rule 3 doing
+its job.
 
 ### C.4 Levels and XP
 
@@ -252,11 +273,15 @@ noted. **Keystones are mutually exclusive within their path.**
 
 ## Part E — Screen
 
-Five vertical columns, **one path per phone screen, swipe sideways.** A path reads top to
+Six vertical columns — three Hero, then three Kingdom — **one path per phone screen, swipe
+sideways.** The pool is a colour and is named in both the header and the column head, so the
+swipe reads as crossing a boundary rather than as six interchangeable lists. A path reads top to
 bottom as a single line of commitment, which is the shape a phone actually wants — no
 pan-and-zoom, no minimap, no 2D graph.
 
-- Header: level, XP bar to next level, **points unspent** (the number that pulls you back).
+- Header: level, XP bar to next level, and **two unspent-point counters, one per pool** —
+  always both, always in the same order. A counter that vanishes at zero is one players stop
+  trusting, and "2 hero / 0 kingdom" sends you to a different column than a combined "2".
 - Each node: name, effect, cost, and one of `locked / affordable / taken`.
 - Keystones sit at the bottom of a column, visibly larger, with the downside in the same
   size type as the upside. A trade-off written in small print is a lie.
@@ -271,7 +296,7 @@ pan-and-zoom, no minimap, no 2D graph.
 The harness loses drafting and gains builds. The pillar probe (TRIANGLE MG5.1) still runs
 unchanged; three new ones:
 
-1. **Path probe.** Spend all 44 points down each path in turn. **Accept:** no single path
+1. **Path probe.** Spend the whole budget down each path in turn. **Accept:** no single path
    clears maps 3–4 alone — the pillar invariant restated as a build question. This is the
    one that could invalidate the design, so it runs first.
 2. **Budget probe.** Report allocated fraction at level 40. **Accept:** ≤ 35%. Rule 1 as a
@@ -329,7 +354,9 @@ lands and is measured first.
    argument, not evidence, and only playing it answers it. **If runs feel flat after
    M6.4, the cheapest fix is a small in-run element that is not a pop-up** — e.g. the
    forge offering one ability upgrade per map at a fixed price. Worth holding in reserve.
-2. **44 points across 5 paths may be too thin to feel any of them.** ~9 points per path
+2. ~~**44 points across 5 paths may be too thin to feel any of them.**~~ **Resolved by the
+   pool split (C.1a):** 24 points per pool across three paths each, so a committed line is
+   ~21 of the 24 and genuinely reads as a build. Original note: ~9 points per path
    if spread evenly is nothing; the design assumes you *won't* spread. If measurement
    shows even spreads winning, the keystones are too weak.
 3. **Do minors earn their place?** Fourteen 1-point stat nodes is where filler hides.

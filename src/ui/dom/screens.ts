@@ -1,6 +1,6 @@
 import type { GameData } from '../../data/loader';
 import type { Ability, SkillPath } from '../../data/schemas';
-import { SkillTree, type AllocationRefusal } from '../../engine/skillTree';
+import { SkillTree, type AllocationRefusal, type PoolPoints } from '../../engine/skillTree';
 import {
   careerProgress,
   equipSlots,
@@ -26,10 +26,13 @@ export interface ScreenHost {
 }
 
 /** Column headers. Order is the read order; the data's `path` enum is unordered. */
-const PATH_ORDER: readonly SkillPath[] = ['hunt', 'ride', 'wall', 'host', 'crown'];
+// Hero columns first, then kingdom — the swipe crosses the pool boundary once,
+// so "which budget am I spending" is a position on the screen and not a lookup.
+const PATH_ORDER: readonly SkillPath[] = ['hunt', 'ride', 'storm', 'wall', 'host', 'crown'];
 const PATH_TITLES: Record<SkillPath, string> = {
   hunt: 'The Hunt',
   ride: 'The Ride',
+  storm: 'The Storm',
   wall: 'The Wall',
   host: 'The Host',
   crown: 'The Crown',
@@ -37,6 +40,7 @@ const PATH_TITLES: Record<SkillPath, string> = {
 const PATH_BLURBS: Record<SkillPath, string> = {
   hunt: 'Bow, crit, arrows from above',
   ride: 'Speed, trample, steel in motion',
+  storm: 'Caltrops, aerostorm, the ground itself',
   wall: 'Towers — rate, reach, range',
   host: 'Soldiers holding the road',
   crown: 'Gold, the gate, the long game',
@@ -94,12 +98,23 @@ export class MapSelectScreen {
     title.textContent = 'HORSE LORD';
     const tree = new SkillTree(data.skillTree);
     const { level } = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel);
-    const free = tree.pointsAt(level, threeStarredMaps(save)) - tree.spent(save.build);
+    const free = tree.free(save.build, tree.pointsAt(level, threeStarredMaps(save)));
+    const freeTotal = Object.values(free).reduce((a, b) => a + b, 0);
     const sub = document.createElement('div');
     sub.className = 'screen-sub';
     // Unspent points lead, because that is the number that pulls a player back
     // into the tree. Level alone reads as a badge; "3 points" reads as a task.
-    sub.textContent = free > 0 ? `LV ${level} · ${free} points to spend` : `LV ${level}`;
+    // Broken out by pool, because "2 hero" and "2 kingdom" are two different
+    // errands and a combined "4" would send a player to the wrong column.
+    sub.textContent =
+      freeTotal > 0
+        ? `LV ${level} · ` +
+          tree.pools
+            .filter((p) => (free[p] ?? 0) > 0)
+            .map((p) => `${free[p]} ${tree.poolName(p).toLowerCase()}`)
+            .join(' · ') +
+          ' to spend'
+        : `LV ${level}`;
     this.root.append(title, sub);
 
     const list = document.createElement('div');
@@ -163,9 +178,9 @@ export class MapSelectScreen {
     actions.className = 'screen-actions';
 
     const meta = document.createElement('button');
-    meta.className = 'screen-action' + (free > 0 ? '' : ' ghost');
+    meta.className = 'screen-action' + (freeTotal > 0 ? '' : ' ghost');
     meta.setAttribute('data-ui', '');
-    meta.textContent = free > 0 ? `Skill tree · ${free} ⬢` : 'Skill tree';
+    meta.textContent = freeTotal > 0 ? `Skill tree · ${freeTotal} ⬢` : 'Skill tree';
     meta.addEventListener('click', () => this.openTree());
 
     const bar = document.createElement('button');
@@ -220,13 +235,17 @@ export class SkillTreeScreen {
     this.root.style.display = 'none';
   }
 
-  /** Points the career has earned, and what is left after the current build. */
-  private budget(): { level: number; earned: number; spent: number; free: number } {
+  /** Points the career has earned per pool, and what is left after the build. */
+  private budget(): { level: number; earned: PoolPoints; spent: PoolPoints; free: PoolPoints } {
     const { save, data } = this.host;
     const { level } = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel);
     const earned = this.tree.pointsAt(level, threeStarredMaps(save));
-    const spent = this.tree.spent(save.build);
-    return { level, earned, spent, free: earned - spent };
+    return {
+      level,
+      earned,
+      spent: this.tree.spent(save.build),
+      free: this.tree.free(save.build, earned),
+    };
   }
 
   private render(): void {
@@ -258,10 +277,17 @@ export class SkillTreeScreen {
       progress.needed > 0 ? `${Math.min(100, (progress.into / progress.needed) * 100)}%` : '100%';
     bar.append(fill);
 
+    // One counter per pool, always both, always in the same order. A counter
+    // that disappears when it hits zero is a counter a player stops trusting.
     const points = document.createElement('div');
-    points.className = 'tree-points' + (free > 0 ? ' has-free' : '');
-    points.textContent = `${free} ⬢`;
-    points.title = `${spent} spent of ${earned} earned`;
+    points.className = 'tree-points';
+    for (const pool of this.tree.pools) {
+      const chip = document.createElement('span');
+      chip.className = `tree-pool pool-${pool}` + ((free[pool] ?? 0) > 0 ? ' has-free' : '');
+      chip.textContent = `${free[pool] ?? 0} ${this.tree.poolName(pool)}`;
+      chip.title = `${spent[pool] ?? 0} spent of ${earned[pool] ?? 0} earned`;
+      points.append(chip);
+    }
 
     const respec = document.createElement('button');
     respec.className = 'tree-respec';
@@ -270,7 +296,7 @@ export class SkillTreeScreen {
     // Free and always live (SKILLTREE.md C.6). A tree where a third of the
     // nodes are reachable and mistakes are permanent is a tree nobody
     // experiments with, which forfeits the point of having paths at all.
-    respec.disabled = spent === 0;
+    respec.disabled = Object.values(spent).every((n) => n === 0);
     respec.addEventListener('click', () => {
       const next: SaveData = structuredClone(this.host.save);
       next.build = [...this.tree.respec()];
@@ -299,10 +325,11 @@ export class SkillTreeScreen {
     });
   }
 
-  private renderColumn(path: SkillPath, free: number): HTMLDivElement {
+  private renderColumn(path: SkillPath, free: PoolPoints): HTMLDivElement {
     const { save } = this.host;
+    const pool = this.tree.nodes.find((n) => n.path === path)?.pool ?? this.tree.pools[0]!;
     const col = document.createElement('div');
-    col.className = 'tree-col';
+    col.className = `tree-col pool-${pool}`;
 
     const head = document.createElement('div');
     head.className = 'tree-col-head';
@@ -311,7 +338,9 @@ export class SkillTreeScreen {
     name.textContent = PATH_TITLES[path];
     const blurb = document.createElement('div');
     blurb.className = 'tree-col-blurb';
-    blurb.textContent = PATH_BLURBS[path];
+    // The pool is named in the column head as well as the header, so a player
+    // scrolled halfway down a path still knows which budget they are spending.
+    blurb.textContent = `${PATH_BLURBS[path]} · ${this.tree.poolName(pool)} points`;
     head.append(name, blurb);
     col.append(head);
 
@@ -368,7 +397,7 @@ export class SkillTreeScreen {
 
     // A column that can afford nothing says so once, at the bottom, rather than
     // repeating "not enough points" on every row above it.
-    if (free <= 0) col.classList.add('spent-out');
+    if ((free[pool] ?? 0) <= 0) col.classList.add('spent-out');
     return col;
   }
 }
@@ -551,8 +580,17 @@ export function screensCss(): string {
 .tree-level { font: 700 15px ui-monospace, monospace; color: #f6c945; }
 .tree-xpbar { flex: 1; height: 8px; border-radius: 5px; background: rgba(255,255,255,.12); overflow: hidden; }
 .tree-xpfill { height: 100%; background: linear-gradient(90deg, #6fc34a, #f6c945); }
-.tree-points { font: 700 15px ui-monospace, monospace; color: #8a8f85; }
-.tree-points.has-free { color: #f6c945; }
+.tree-points { display: flex; gap: 6px; }
+.tree-pool {
+  font: 700 10px ui-monospace, monospace; color: #8a8f85; letter-spacing: .04em;
+  border: 1px solid rgba(255,255,255,.14); border-radius: 999px; padding: 3px 7px;
+}
+.tree-pool.pool-hero.has-free { color: #ffce6b; border-color: #d98b3a; }
+.tree-pool.pool-kingdom.has-free { color: #bfe0ff; border-color: #5f9fd4; }
+/* The pool is also a colour, so a swipe between columns reads as crossing a
+   boundary rather than as five interchangeable lists. */
+.tree-col.pool-hero .tree-col-name { color: #ffce6b; }
+.tree-col.pool-kingdom .tree-col-name { color: #bfe0ff; }
 .tree-respec {
   padding: 7px 12px; border-radius: 10px; pointer-events: auto;
   background: transparent; border: 1px solid rgba(255,255,255,.25); color: #f5ead0;

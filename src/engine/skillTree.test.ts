@@ -23,35 +23,50 @@ const bump = (stat: 'bowDamage') => [
  *   k1 (3) ← b ⊗ k2      k2 (3) ← b ⊗ k1
  */
 const FILE: SkillTreeFile = {
-  pointsPerLevel: 1,
+  pools: {
+    hero: { name: 'Hero', levelsPerPoint: 1, pointsPerThreeStar: 1 },
+    kingdom: { name: 'Kingdom', levelsPerPoint: 2, pointsPerThreeStar: 0 },
+  },
   maxLevel: 10,
-  pointsPerThreeStar: 1,
   maxAllocatableFraction: 0.9,
   nodes: [
-    { id: 'a', path: 'hunt', kind: 'minor', name: 'A', description: 'a', cost: 1, row: 0, requires: [], excludes: [], effects: bump('bowDamage') },
-    { id: 'b', path: 'hunt', kind: 'notable', name: 'B', description: 'b', cost: 2, row: 1, requires: ['a'], excludes: [], effects: bump('bowDamage') },
-    { id: 'c', path: 'hunt', kind: 'notable', name: 'C', description: 'c', cost: 3, row: 2, requires: ['b'], excludes: [], effects: bump('bowDamage') },
-    { id: 'k1', path: 'hunt', kind: 'keystone', name: 'K1', description: 'k1', cost: 3, row: 3, requires: ['b'], excludes: ['k2'], effects: bump('bowDamage') },
-    { id: 'k2', path: 'hunt', kind: 'keystone', name: 'K2', description: 'k2', cost: 3, row: 3, requires: ['b'], excludes: ['k1'], effects: bump('bowDamage') },
-    { id: 'd', path: 'ride', kind: 'minor', name: 'D', description: 'd', cost: 1, row: 0, requires: [], excludes: [], effects: bump('bowDamage') },
-    { id: 'e', path: 'ride', kind: 'ability', name: 'E', description: 'e', cost: 2, row: 1, requires: ['d'], excludes: [], effects: [{ type: 'unlock-ability', abilityId: 'volley' }] },
+    { id: 'a', path: 'hunt', pool: 'hero', kind: 'minor', name: 'A', description: 'a', cost: 1, row: 0, requires: [], excludes: [], effects: bump('bowDamage') },
+    { id: 'b', path: 'hunt', pool: 'hero', kind: 'notable', name: 'B', description: 'b', cost: 2, row: 1, requires: ['a'], excludes: [], effects: bump('bowDamage') },
+    { id: 'c', path: 'hunt', pool: 'hero', kind: 'notable', name: 'C', description: 'c', cost: 3, row: 2, requires: ['b'], excludes: [], effects: bump('bowDamage') },
+    { id: 'k1', path: 'hunt', pool: 'hero', kind: 'keystone', name: 'K1', description: 'k1', cost: 3, row: 3, requires: ['b'], excludes: ['k2'], effects: bump('bowDamage') },
+    { id: 'k2', path: 'hunt', pool: 'hero', kind: 'keystone', name: 'K2', description: 'k2', cost: 3, row: 3, requires: ['b'], excludes: ['k1'], effects: bump('bowDamage') },
+    { id: 'd', path: 'ride', pool: 'hero', kind: 'minor', name: 'D', description: 'd', cost: 1, row: 0, requires: [], excludes: [], effects: bump('bowDamage') },
+    { id: 'e', path: 'ride', pool: 'hero', kind: 'ability', name: 'E', description: 'e', cost: 2, row: 1, requires: ['d'], excludes: [], effects: [{ type: 'unlock-ability', abilityId: 'volley' }] },
   ],
 };
 
 const tree = new SkillTree(FILE);
-const state = (allocated: string[], pointsEarned = 20): SkillTreeState => ({ allocated, pointsEarned });
+const state = (allocated: string[], hero = 20): SkillTreeState => ({
+  allocated,
+  pointsEarned: { hero, kingdom: 0 },
+});
 
 describe('points', () => {
-  it('grants per level plus one per map three-starred', () => {
-    expect(tree.pointsAt(5, 2)).toBe(7);
+  it('grants per pool at that pool\'s own rate', () => {
+    // hero earns one a level, kingdom one every two — the rates that let two
+    // pools of different size stay equally scarce.
+    expect(tree.pointsAt(6, 2)).toEqual({ hero: 8, kingdom: 3 });
   });
 
   it('stops granting past maxLevel — the scarcity ceiling is the whole design', () => {
-    expect(tree.pointsAt(999, 0)).toBe(10);
+    expect(tree.pointsAt(999, 0)).toEqual({ hero: 10, kingdom: 5 });
   });
 
-  it('sums the cost of what is held, ignoring ids it does not know', () => {
-    expect(tree.spent(['a', 'b', 'ghost'])).toBe(3);
+  it('sums the cost of what is held, per pool, ignoring ids it does not know', () => {
+    expect(tree.spent(['a', 'b', 'd', 'ghost'])).toEqual({ hero: 4, kingdom: 0 });
+  });
+
+  it('reports what is left per pool', () => {
+    expect(tree.free(['a', 'b'], { hero: 10, kingdom: 4 })).toEqual({ hero: 7, kingdom: 4 });
+  });
+
+  it('totals a single pool\'s node cost for the scarcity denominator', () => {
+    expect(tree.totalCost('hero')).toBe(tree.totalCost());
   });
 });
 
@@ -76,6 +91,15 @@ describe('refusal reports which wall you hit', () => {
     // a(1) + b(2) = 3 spent, c costs 3, only 5 earned.
     expect(tree.refusal('c', state(['a', 'b'], 5))).toBe('too-expensive');
     expect(tree.refusal('c', state(['a', 'b'], 6))).toBeNull();
+  });
+
+  it('prices a node against its own pool only', () => {
+    // The whole point of two budgets: an empty hero purse cannot be rescued by
+    // a full kingdom one, and a full kingdom purse cannot price out a bow node.
+    expect(tree.refusal('a', { allocated: [], pointsEarned: { hero: 0, kingdom: 99 } })).toBe(
+      'too-expensive',
+    );
+    expect(tree.refusal('a', { allocated: [], pointsEarned: { hero: 1, kingdom: 0 } })).toBeNull();
   });
 
   it('allows a root node in any path at any time', () => {
@@ -127,25 +151,25 @@ describe('respec', () => {
 
 describe('reconcile', () => {
   it('keeps a build that is still legal, in a buildable order', () => {
-    expect(tree.reconcile(['c', 'b', 'a'], 20)).toEqual(['a', 'b', 'c']);
+    expect(tree.reconcile(['c', 'b', 'a'], { hero: 20, kingdom: 20 })).toEqual(['a', 'b', 'c']);
   });
 
   it('drops nodes whose prerequisites are missing', () => {
     // Rebuilt forward from nothing, so an orphan cannot survive by being
     // checked against the very set it belongs to.
-    expect(tree.reconcile(['b', 'c'], 20)).toEqual([]);
+    expect(tree.reconcile(['b', 'c'], { hero: 20, kingdom: 20 })).toEqual([]);
   });
 
   it('drops the second of two mutually exclusive keystones', () => {
-    expect(tree.reconcile(['a', 'b', 'k1', 'k2'], 20)).toEqual(['a', 'b', 'k1']);
+    expect(tree.reconcile(['a', 'b', 'k1', 'k2'], { hero: 20, kingdom: 20 })).toEqual(['a', 'b', 'k1']);
   });
 
   it('drops what a shrunken budget can no longer pay for', () => {
-    expect(tree.reconcile(['a', 'b', 'c'], 3)).toEqual(['a', 'b']);
+    expect(tree.reconcile(['a', 'b', 'c'], { hero: 3, kingdom: 0 })).toEqual(['a', 'b']);
   });
 
   it('ignores ids that no longer exist in the data', () => {
-    expect(tree.reconcile(['a', 'retired-node'], 20)).toEqual(['a']);
+    expect(tree.reconcile(['a', 'retired-node'], { hero: 20, kingdom: 20 })).toEqual(['a']);
   });
 });
 
