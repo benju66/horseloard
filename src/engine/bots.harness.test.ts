@@ -6,7 +6,10 @@ import {
   armyOnly,
   forcedComposition,
   heroOnly,
+  makeRng,
   pathBuild,
+  pathShare,
+  randomBuild,
   spreadBuild,
   runBot,
   combatTowersOnly,
@@ -579,6 +582,95 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
         `\n  A first campaign clear reaches about LV${REFERENCE_LEVEL}/${REFERENCE_STARS}★, so that is the column the\n` +
         '  bands describe. The last column is a maxed career and is expected to be\n' +
         '  high — that is what a career is for.',
+    );
+  });
+
+  /**
+   * **Build diversity — the probe the path probe stopped being.**
+   *
+   * The pure-path arms asked "can one path clear a map alone?" and that question
+   * died with M7.8: once a node's value depends on what else you built, a
+   * single-path build is *supposed* to fail, and `wall 40%` reports the design
+   * working rather than Wall being weak.
+   *
+   * The question that survives is the one that was always meant: **is one way of
+   * playing superior?** That can only be asked over the builds a player would
+   * actually assemble, which are mixed. So: sample legal builds at the reference
+   * budget, run each, and look at two things.
+   *
+   * 1. **The spread.** If every build scores the same, the tree does not matter.
+   *    If it spans 0-100%, most of it is traps.
+   * 2. **Path share, top third against bottom.** This is the real answer. If a
+   *    path takes a much larger share of points in the winning builds than the
+   *    losing ones, that path is carrying, however its solo arm measured.
+   *
+   * Seeded off a fixed stream so the sampled builds are the same every run —
+   * a probe whose subjects change between measurements cannot show a trend.
+   */
+  it('reports whether any way of building is superior', { timeout: 300_000 }, () => {
+    const SAMPLES = 14;
+    const rng = makeRng(90210);
+    const tree2 = tree;
+    const paths = [...new Set(tree2.nodes.map((n) => n.path))].sort();
+    const hardMaps = Object.keys(data.maps).filter(
+      (m) => (DIFFICULTY_TARGETS[m]?.winRate[1] ?? 100) <= 75,
+    );
+
+    const rows = Array.from({ length: SAMPLES }, () => {
+      const build = randomBuild(tree2, at(REFERENCE_LEVEL, REFERENCE_STARS), rng);
+      const runs: BotRunResult[] = [];
+      for (const mapId of hardMaps) {
+        for (const f of BOTS) {
+          for (const seed of SEEDS) runs.push(runBot({ ...botData, skillNodes: build }, mapId, f, seed));
+        }
+      }
+      const share = pathShare(tree2, build);
+      const spentTotal = tree2.spent(build) || 1;
+      return {
+        win: (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100,
+        waves: runs.reduce((s, r) => s + r.wavesCleared, 0) / runs.length,
+        nodes: build.length,
+        share: Object.fromEntries(paths.map((p) => [p, ((share[p] ?? 0) / spentTotal) * 100])),
+      };
+    }).sort((a, b) => b.win - a.win);
+
+    const lines = rows.map(
+      (r) =>
+        `  ${`${r.win.toFixed(0)}%`.padStart(4)}  w${r.waves.toFixed(1).padStart(4)}  ` +
+        `${String(r.nodes).padStart(2)}n   ` +
+        paths.map((p) => `${p.slice(0, 2)} ${r.share[p]!.toFixed(0).padStart(2)}`).join('  '),
+    );
+
+    // Top third against bottom third. A path much heavier among winners is the
+    // one carrying, whatever its solo arm said.
+    const third = Math.max(1, Math.floor(rows.length / 3));
+    const avg = (set: typeof rows, p: string) => set.reduce((s, r) => s + r.share[p]!, 0) / set.length;
+    const top = rows.slice(0, third);
+    const bottom = rows.slice(-third);
+    const verdict = paths
+      .map((p) => {
+        const d = avg(top, p) - avg(bottom, p);
+        return (
+          `  ${p.padEnd(6)} top ${avg(top, p).toFixed(0).padStart(2)}%  ` +
+          `bottom ${avg(bottom, p).toFixed(0).padStart(2)}%  ` +
+          `${(d >= 0 ? '+' : '') + d.toFixed(0)}pp` +
+          (Math.abs(d) >= 12 ? (d > 0 ? '   ← carries' : '   ← drags') : '')
+        );
+      })
+      .join('\n');
+
+    const wins = rows.map((r) => r.win);
+    console.log(
+      `\n[BUILD DIVERSITY]  ${SAMPLES} sampled builds at LV${REFERENCE_LEVEL}/${REFERENCE_STARS}★, ` +
+        `maps ${hardMaps.join(' + ')} × all bots × all seeds\n` +
+        `   win  waves  size   ${paths.map((p) => p.slice(0, 2)).join('   ')}  (% of points)\n` +
+        lines.join('\n') +
+        `\n  spread ${Math.min(...wins).toFixed(0)}-${Math.max(...wins).toFixed(0)}%  ` +
+        `median ${wins[Math.floor(wins.length / 2)]!.toFixed(0)}%\n\n` +
+        '  Share of points, winning builds vs losing:\n' +
+        verdict +
+        '\n  Accept: no path more than ~12pp heavier among winners. A path that far\n' +
+        '  ahead is the one everybody has to take, whatever its solo arm measured.',
     );
   });
 

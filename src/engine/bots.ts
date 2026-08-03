@@ -829,6 +829,42 @@ export function spreadBuild(tree: SkillTree, points: number): readonly string[] 
   return allocated;
 }
 
+/**
+ * A random legal build at a given budget — the unit the diversity probe needs.
+ *
+ * The pure-path arms stopped answering the question they were built for. With
+ * power this conditional a single-path build is *supposed* to fail, so `wall
+ * 40%` says the design is working, not that Wall is weak. What is actually
+ * being asked — "is one way of playing superior?" — can only be answered over
+ * the space of builds a player would really assemble, which are mixed.
+ *
+ * Uniform over what is *affordable at each step* rather than over whole builds:
+ * enumerating legal builds is combinatorial, and a walk that picks fairly at
+ * every choice is both tractable and closer to how a player actually decides.
+ */
+export function randomBuild(tree: SkillTree, points: number, rng: () => number): readonly string[] {
+  let allocated: readonly string[] = [];
+  for (;;) {
+    const open = tree.nodes.filter((n) =>
+      tree.canAllocate(n.id, { allocated, pointsEarned: points }),
+    );
+    if (open.length === 0) break;
+    const pick = open[Math.min(open.length - 1, Math.floor(rng() * open.length))]!;
+    allocated = tree.allocate(pick.id, { allocated, pointsEarned: points });
+  }
+  return allocated;
+}
+
+/** How a build's points are split across paths — the shape the probe correlates on. */
+export function pathShare(tree: SkillTree, build: readonly string[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const id of build) {
+    const node = tree.node(id);
+    if (node) out[node.path] = (out[node.path] ?? 0) + node.cost;
+  }
+  return out;
+}
+
 // ─── Runner ───
 
 export interface BotRunResult {

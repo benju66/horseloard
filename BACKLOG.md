@@ -504,6 +504,24 @@ where the draft pop-up used to, at the same moment, with the same weight — min
 point it grants waits in the tree. `Simulation.onWaveClear` reports the payout and the renderer
 decides how to show it; the sim never blocks on a UI decision, and there is still no 'draft'
 phase for the day/night cycle to trip over.
+[x] **M7.9 — The build diversity probe** (2026-08-03). Samples N legal builds at the reference
+budget off a fixed seed, runs each, and reports the win spread plus **path share in the top third
+against the bottom**.
+**the pure-path probe had stopped asking a real question.** Once a node's value depends on what
+else you built, a single-path build is *supposed* to fail — `wall 40%` reports the design working,
+not Wall being weak. The question that survives is the one that was always meant: is one way of
+*playing* superior? That can only be asked over builds a player would actually assemble.
+**and it inverted the answer.** First reading: ride +15pp among winners (carries), host −15pp
+(drags), wall +10, storm +3, crown −3, **hunt −10pp** — the path the solo arm scored at 100%.
+Hunt's power is conditional on towers covering the target and a Hunt-heavy build has no towers,
+so the solo arm was measuring a build nobody would ever make. Six probes in, the same lesson:
+**an arm that cannot exercise its subject is not evidence about it.**
+**spread 1-75%, median 26%** at a 10-point reference on the hard maps. Wide, which means build
+choice matters — but a 1% build is a trap, not a choice, and the floor wants raising.
+**Caveat recorded rather than tuned away:** 14 samples of ~9 nodes is a small sample, and at 10
+points a build is two or three nodes' worth of difference. Read the direction, not the digits,
+and re-run before acting on any single number.
+
 [ ] **M7.3 — Retune the campaign against the curve.** State as of the single-budget change, at
 a first-clear reference of LV8/2★ = 10 points: **100 / 100 / 81 / 11** against 90-100 / 70-95 /
 45-75 / 25-55. Maps 2-3 too easy, map 4 too hard — the *spread* between them is too wide, which
