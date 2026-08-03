@@ -109,7 +109,7 @@ function summarize(runs: readonly BotRunResult[]): string {
  * curve change cannot leave the probes measuring a budget the game stopped
  * granting.
  */
-const REFERENCE_LEVEL = 12;
+const REFERENCE_LEVEL = 8;
 /**
  * Maps three-starred at that point. Two, not four: three-starring scores on
  * damage *taken*, so a player clearing the campaign for the first time does not
@@ -141,7 +141,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
   const at = (level: number, stars: number) => tree.pointsAt(level, stars);
   const referenceBuild = spreadBuild(tree, at(REFERENCE_LEVEL, REFERENCE_STARS));
   const FULL_POINTS = at(data.skillTree.maxLevel, Object.keys(data.maps).length);
-  const total = (p: ReturnType<typeof at>) => Object.values(p).reduce((a, b) => a + b, 0);
+  const total = (p: number) => p;
 
   const botData = {
     towers: data.towers,
@@ -547,10 +547,10 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     // actually lived, not a level sweep at a fixed ceiling.
     const stages: ReadonlyArray<readonly [number, number]> = [
       [0, 0],
-      [6, 1],
+      [4, 1],
       [REFERENCE_LEVEL, REFERENCE_STARS],
-      [24, 3],
-      [40, 4],
+      [14, 3],
+      [22, 4],
       [data.skillTree.maxLevel, 4],
     ];
     const lines: string[] = [
@@ -591,22 +591,20 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * the next batch of nodes trips it.
    */
   it('reports the allocatable fraction at max level, per pool', () => {
-    // Per pool, because a combined figure passes happily while one pool is 60%
-    // reachable and the other 15% — the exact failure the split was made to
-    // avoid, and a half of the tree nobody has to choose within.
-    const lines = tree.pools.map((pool) => {
-      const cost = tree.totalCost(pool);
-      const budget = FULL_POINTS[pool] ?? 0;
-      return (
-        `  ${tree.poolName(pool).padEnd(8)} ${String(cost).padStart(3)}pt of nodes  ` +
-        `budget ${String(budget).padStart(2)}pt → ${((budget / cost) * 100).toFixed(1)}%`
-      );
-    });
+    // Reported per half as well as overall — not as a second gate (one budget
+    // buys anywhere now) but because a half nobody can afford to enter is still
+    // a design problem, just a different one.
+    const lines = tree.pools.map(
+      (pool) =>
+        `  ${tree.poolName(pool).padEnd(8)} ${String(tree.totalCost(pool)).padStart(3)}pt of nodes  ` +
+        `(${((tree.totalCost(pool) / tree.totalCost()) * 100).toFixed(0)}% of the tree)`,
+    );
     console.log(
       `\n[BUDGET PROBE — SKILLTREE.md Part F.2]  tree ${tree.nodes.length} nodes / ` +
         `${tree.totalCost()}pt\n` +
+        `  budget ${FULL_POINTS}pt → ${((FULL_POINTS / tree.totalCost()) * 100).toFixed(1)}% allocatable\n` +
         lines.join('\n') +
-        '\n  Accept: ≤35% in every pool. Above that a pool stops being a set of choices.',
+        '\n  Accept: ≤35%. Above that the tree stops being a set of choices.',
     );
   });
 

@@ -1,17 +1,11 @@
 {
-  "pools": {
-    "hero": {
-      "name": "Hero",
-      "levelsPerPoint": 4,
-      "pointsPerThreeStar": 1
-    },
-    "kingdom": {
-      "name": "Kingdom",
-      "levelsPerPoint": 4,
-      "pointsPerThreeStar": 1
-    }
+  "pointsPerLevel": 1,
+  "maxLevel": 44,
+  "pointsPerThreeStar": 1,
+  "poolNames": {
+    "hero": "Hero",
+    "kingdom": "Kingdom"
   },
-  "maxLevel": 80,
   "maxAllocatableFraction": 0.35,
   "nodes": [
     {

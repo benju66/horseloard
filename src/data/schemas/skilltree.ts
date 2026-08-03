@@ -29,9 +29,12 @@ export const SkillPathSchema = z.enum(['hunt', 'ride', 'storm', 'wall', 'host', 
 export type SkillPath = z.infer<typeof SkillPathSchema>;
 
 /**
- * Which budget a path spends from. Ids are data, not engine vocabulary — the
- * allocator groups by whatever strings it finds here, so a third pool would be
- * a JSON change (CLAUDE.md #1).
+ * Which half of the game a path belongs to. **Not a budget** — points are one
+ * pool spent anywhere.
+ *
+ * It survives the retirement of the two-budget experiment because it is still
+ * true and still useful: it groups the tabs, and it is what the balance probes
+ * slice by. What it no longer does is stop you spending.
  */
 export const SkillPoolSchema = z.enum(['hero', 'kingdom']);
 export type SkillPool = z.infer<typeof SkillPoolSchema>;
@@ -93,25 +96,26 @@ export type SkillNode = z.infer<typeof SkillNodeSchema>;
 export const SkillTreeFileSchema = z
   .object({
     /**
-     * How each pool earns. **Scarcity is the whole mechanism** — a tree you can
-     * finish is a checklist — so every pool's reachable budget must sit far
-     * below the cost of the nodes it can buy. Checked per pool below, because a
-     * combined check would let a fat pool hide a thin one.
+     * **One point per level, every level, spendable anywhere.**
      *
-     * `levelsPerPoint` rather than points-per-level: the interesting rates are
-     * slower than one per level, and a fraction here would be a rounding bug
-     * waiting to be argued about.
+     * This replaced a two-budget version that fenced hero nodes off from
+     * kingdom nodes. The fence bought one thing — you could never starve your
+     * towers to feed your bow — and cost three: it made three level-ups in
+     * every four hand out nothing, it took away the freedom to build what you
+     * want, and it quietly propped up the weak paths by forcing you to spend
+     * in their half. Free respec covers the case the fence was built for: a
+     * starved build is a lesson, never a trap.
+     *
+     * Scarcity is unaffected and remains the whole mechanism — a tree you can
+     * finish is a checklist, so the reachable budget must sit far below the
+     * tree's total cost. Enforced below.
      */
-    pools: z.record(
-      SkillPoolSchema,
-      z.object({
-        /** Shown in the tree header beside the count. */
-        name: z.string().min(1),
-        levelsPerPoint: z.number().int().positive().default(1),
-        pointsPerThreeStar: z.number().int().nonnegative().default(1),
-      }),
-    ),
+    pointsPerLevel: z.number().int().positive().default(1),
     maxLevel: z.number().int().positive(),
+    /** Bonus points for campaign milestones — one per map three-starred. */
+    pointsPerThreeStar: z.number().int().nonnegative().default(1),
+    /** Display names for the two halves. Grouping only; they share one budget. */
+    poolNames: z.record(SkillPoolSchema, z.string().min(1)),
     /**
      * The hard ceiling on how much of the tree a maxed player may hold.
      * Checked at load against the real node costs, so adding nodes without
@@ -165,17 +169,15 @@ export const SkillTreeFileSchema = z
       });
     });
 
-    // A path spends from exactly one pool. Mixing them inside a column would
-    // make the header's two counters unreadable — you could not tell which
-    // number a node was about to spend.
+    // A path sits in exactly one half. Mixing them inside a column would make
+    // the tab grouping meaningless and the probes' slices incoherent.
     for (const path of SkillPathSchema.options) {
-      const inPath = file.nodes.filter((n) => n.path === path);
-      const pools = new Set(inPath.map((n) => n.pool));
+      const pools = new Set(file.nodes.filter((n) => n.path === path).map((n) => n.pool));
       if (pools.size > 1) {
         ctx.addIssue({
           code: 'custom',
           path: ['nodes'],
-          message: `path "${path}" spans pools ${[...pools].join(' and ')}; a column spends from one budget`,
+          message: `path "${path}" spans ${[...pools].join(' and ')}; a column belongs to one half`,
         });
       }
     }
@@ -200,33 +202,25 @@ export const SkillTreeFileSchema = z
       }
     }
 
-    // Scarcity, enforced **per pool**. A combined check passes happily while one
-    // pool is 60% reachable and the other 15%, which is the exact failure the
-    // split was made to avoid: a half of the tree nobody has to choose within.
-    //
-    // Three-starring every map is the ceiling, so the budget assumes all four.
-    for (const [poolId, pool] of Object.entries(file.pools)) {
-      const nodes = file.nodes.filter((n) => n.pool === poolId);
-      if (nodes.length === 0) continue;
-      const total = nodes.reduce((s, n) => s + n.cost, 0);
-      const budget =
-        Math.floor(file.maxLevel / pool.levelsPerPoint) + 4 * pool.pointsPerThreeStar;
-      if (budget > total * file.maxAllocatableFraction) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['pools', poolId],
-          message:
-            `"${poolId}" budget ${budget} is ${((budget / total) * 100).toFixed(0)}% of its ` +
-            `${total} points, over the ${(file.maxAllocatableFraction * 100).toFixed(0)}% ceiling — ` +
-            `a pool a player can mostly finish is a checklist, not a build`,
-        });
-      }
+    // Scarcity, enforced. Three-starring every map is the ceiling, so the
+    // budget assumes all four.
+    const total = file.nodes.reduce((s, n) => s + n.cost, 0);
+    const budget = file.maxLevel * file.pointsPerLevel + 4 * file.pointsPerThreeStar;
+    if (budget > total * file.maxAllocatableFraction) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['maxLevel'],
+        message:
+          `budget ${budget} is ${((budget / total) * 100).toFixed(0)}% of the tree's ${total} ` +
+          `points, over the ${(file.maxAllocatableFraction * 100).toFixed(0)}% ceiling — ` +
+          `a tree a player can mostly finish is a checklist, not a build`,
+      });
     }
 
-    // A node whose pool has no config would be unbuyable with no way to say why.
+    // A node in a half with no display name would render an untitled tab.
     file.nodes.forEach((n, i) => {
-      if (!file.pools[n.pool]) {
-        ctx.addIssue({ code: 'custom', path: ['nodes', i, 'pool'], message: `unknown pool "${n.pool}"` });
+      if (!file.poolNames[n.pool]) {
+        ctx.addIssue({ code: 'custom', path: ['nodes', i, 'pool'], message: `unknown half "${n.pool}"` });
       }
     });
   });

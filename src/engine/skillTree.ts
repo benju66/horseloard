@@ -1,14 +1,11 @@
 import type { SkillNode, SkillTreeFile } from '../data/schemas';
 import { applyEffectInPlace, type ModifiableData } from './effects';
 
-/** Points per pool, keyed by pool id. Pool ids come from the data, never from here. */
-export type PoolPoints = Readonly<Record<string, number>>;
-
 export interface SkillTreeState {
   /** Node ids currently held. Order is irrelevant — effects compose. */
   allocated: readonly string[];
-  /** Points earned across the whole career, per pool, spent or not. */
-  pointsEarned: PoolPoints;
+  /** Points earned across the whole career, spent or not. One budget, spent anywhere. */
+  pointsEarned: number;
 }
 
 export type AllocationRefusal =
@@ -46,50 +43,43 @@ export class SkillTree {
     return this.byId.get(id);
   }
 
-  /** Pool ids, in declaration order — what the header renders and probes iterate. */
+  /** The two halves, in declaration order — tab groups, not budgets. */
   get pools(): readonly string[] {
-    return Object.keys(this.file.pools);
+    return Object.keys(this.file.poolNames);
   }
 
   poolName(pool: string): string {
-    return this.file.pools[pool as keyof typeof this.file.pools]?.name ?? pool;
+    return this.file.poolNames[pool as keyof typeof this.file.poolNames] ?? pool;
   }
 
-  /** Total cost of every node in the tree, or of one pool's nodes. */
+  /** Total cost of every node in the tree, or of one half's nodes. */
   totalCost(pool?: string): number {
     return this.file.nodes
       .filter((n) => pool === undefined || n.pool === pool)
       .reduce((s, n) => s + n.cost, 0);
   }
 
-  /** Points a career has at `level`, per pool, plus the three-star bonuses. */
-  pointsAt(level: number, threeStarredMaps: number): PoolPoints {
+  /**
+   * Points a career has at `level`, plus one per map three-starred.
+   *
+   * One per level, every level — the cadence matters as much as the total. A
+   * schedule that skips levels means most level-ups hand out nothing, which is
+   * the worst possible shape for a game whose whole spine is levelling.
+   */
+  pointsAt(level: number, threeStarredMaps: number): number {
     const capped = Math.min(level, this.file.maxLevel);
-    const out: Record<string, number> = {};
-    for (const [id, pool] of Object.entries(this.file.pools)) {
-      out[id] =
-        Math.floor(capped / pool.levelsPerPoint) + threeStarredMaps * pool.pointsPerThreeStar;
-    }
-    return out;
+    return capped * this.file.pointsPerLevel + threeStarredMaps * this.file.pointsPerThreeStar;
   }
 
-  /** What is spent, per pool. Pools absent from the allocation report zero. */
-  spent(allocated: readonly string[]): PoolPoints {
-    const out: Record<string, number> = {};
-    for (const id of this.pools) out[id] = 0;
-    for (const id of allocated) {
-      const node = this.byId.get(id);
-      if (node) out[node.pool] = (out[node.pool] ?? 0) + node.cost;
-    }
-    return out;
+  spent(allocated: readonly string[]): number {
+    let n = 0;
+    for (const id of allocated) n += this.byId.get(id)?.cost ?? 0;
+    return n;
   }
 
-  /** Unspent points, per pool — the number the header leads with. */
-  free(allocated: readonly string[], earned: PoolPoints): PoolPoints {
-    const spent = this.spent(allocated);
-    const out: Record<string, number> = {};
-    for (const id of this.pools) out[id] = (earned[id] ?? 0) - (spent[id] ?? 0);
-    return out;
+  /** Unspent points — the number the header leads with. */
+  free(allocated: readonly string[], earned: number): number {
+    return earned - this.spent(allocated);
   }
 
   /**
@@ -109,10 +99,7 @@ export class SkillTree {
     for (const ex of node.excludes) {
       if (state.allocated.includes(ex)) return 'excluded';
     }
-    // Against *this node's* pool only. The whole point of two budgets is that a
-    // bow node can never be priced out by what the walls cost.
-    const spent = this.spent(state.allocated)[node.pool] ?? 0;
-    if (spent + node.cost > (state.pointsEarned[node.pool] ?? 0)) return 'too-expensive';
+    if (this.spent(state.allocated) + node.cost > state.pointsEarned) return 'too-expensive';
     return null;
   }
 
@@ -167,7 +154,7 @@ export class SkillTree {
    * "legal" depends on what else is held and a single pass over an illegal set
    * can leave a different illegal set.
    */
-  reconcile(allocated: readonly string[], pointsEarned: PoolPoints): readonly string[] {
+  reconcile(allocated: readonly string[], pointsEarned: number): readonly string[] {
     const out: string[] = [];
     let changed = true;
     while (changed) {

@@ -479,20 +479,30 @@ Direction set 2026-08-03: this is a **long game**. The tree, the maps and the XP
 progression spine, not a difficulty knob, and the thing being designed is the *reward cadence*
 — the psychology of unlocking and levelling — not just the balance.
 
-[ ] **M7.1 — Fix the reward cadence.** Both pools currently grant a point every 4 levels **on
-the same schedule**, so levels 4/8/12 hand out two points at once and three level-ups in every
-four hand out nothing. That is the worst possible shape for a progression game. Stagger them —
-Hero on odd levels, Kingdom on even — for an identical power curve with **twice the reward
-moments** and two alternating heartbeats instead of one. One offset in `pools`, no rebalance.
+[x] **M7.1 — Fix the reward cadence** (2026-08-03) — **solved by deleting the two pools, not by
+staggering them.** Points are now one budget, one per level, every level, spent anywhere.
+**the fence was buying less than it cost.** Two budgets guaranteed you always held some towers
+and some hero. They also made three level-ups in every four hand out nothing, took away the
+freedom to build what you want, and propped up Host and Crown by forcing you to spend in their
+half. Free respec covers the case the fence was for: a starved build is a lesson, not a trap.
+**scarcity never depended on it** — 48 points against 145 is 33% reachable, the same fraction
+the two-budget version reached. The Hero/Kingdom split survives as tab grouping only.
+**and it exposed the balance problem it had been hiding.** With free choice the path probe says
+Hunt and Wall get taken and Host and Crown do not. Better visible than papered over, but it is
+now real work rather than a note.
 [ ] **M7.2 — In-run XP leads nowhere.** Cutting the draft was right; it also left the run's XP
 bar counting toward nothing, so there is no moment-to-moment payoff during play at all. That is
 the loop Vampire Survivors gets almost all of its pull from. The constraint stands — **nothing
 mid-run may change what you can do** — so the answer is reward *without* interruption: banked
 unlocks that announce at wave clear, visible "+2 Hero" on the results screen, milestones you can
 see approaching. Design it as feedback, never as a decision.
-[ ] **M7.3 — Retune the XP curve** against the above. Deferred deliberately: staggering the
-grant and adding the feedback layer both change what the curve should be, so tuning it first
-would be tuning it twice.
+[ ] **M7.3 — Retune the campaign against the curve.** State as of the single-budget change, at
+a first-clear reference of LV8/2★ = 10 points: **100 / 100 / 81 / 11** against 90-100 / 70-95 /
+45-75 / 25-55. Maps 2-3 too easy, map 4 too hard — the *spread* between them is too wide, which
+is map tuning rather than tree tuning. The career ramp itself is now deliberately slow: ~4 runs
+to LV8, ~23 to LV22, ~152 to LV44, which is the long-game shape.
+Still deferred until M7.2 lands, for the original reason: the feedback layer changes what the
+curve should be, so tuning first means tuning twice.
 [ ] **M7.4 — More maps.** Four is not a campaign for a long game. Wave sets and maps are pure
 JSON (CLAUDE.md #1), so this is authoring, not engineering — the constraint is that each map
 must ask a *new question*, not restate an old one at higher HP.

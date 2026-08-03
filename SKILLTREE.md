@@ -95,29 +95,32 @@ tree that cut across them would fight it.
 | **Kingdom** | The Host | army (exposure) | the commander | barracks, garrisons, the Muster |
 | **Kingdom** | The Crown | support | the sovereign | gold, coins, the gate |
 
-### C.1a Two pools — the revision that matters (2026-08-03)
+### C.1a One budget, spent anywhere (2026-08-03)
 
-**Hero paths and Kingdom paths spend separate points.** Career levels grant one of each; a
-bow node can never be priced out by what the walls cost, and vice versa.
+**Points are a single pool. One per level, every level, plus one per map three-starred.**
+The Hero/Kingdom split is navigation and nothing more — it groups six paths into two sets of
+three tabs, because six tabs do not fit a phone. It does not gate spending.
 
-The first version had one budget across five paths. It was wrong for a reason worth
-recording: **it made the pillar invariant a punishment instead of a guarantee.** With one
-purse a player could sink everything into the hero, arrive at map 4 structurally unable to
-hold the road, and the game's only answer was to let them lose and hope they inferred why.
-Two purses mean you always hold some of both, and the choice *inside* each half stays
-completely real — which is the same move as M5's offer rule, the single change that beat
-four milestones of tuning by constraining shape rather than numbers.
+This replaced a two-budget version that fenced hero nodes off from kingdom nodes. That fence
+bought exactly one thing: you could never starve your towers to feed your bow. It cost three:
 
-The split forced a second correction. Two Hero paths (48 points of nodes) against three
-Kingdom paths (73) cannot be equally scarce under any sane grant schedule — a budget large
-enough to feel like progression put the Hero pool over 45% reachable while Kingdom sat near
-25%. **The hero side was simply thin**, which no rate could fix. Hence The Storm: caltrops
-and aerostorm left The Hunt and The Ride, where they had always been slightly foreign, and
-became a third hero verb that is neither *shoot harder* nor *ride harder*. Both pools now
-sit at 72/73 points and **33% reachable each**.
+1. **It wrecked the reward cadence.** Two budgets at a sustainable rate meant a point every
+   four levels — so three level-ups in every four handed out nothing, in a game whose whole
+   spine is levelling. One budget at one-per-level means **every level-up grants something**.
+2. **It took away the freedom to build what you want**, which is the reason a tree beats a
+   draft in the first place.
+3. **It propped up the weak paths.** Forced to spend in the kingdom half, you took Host and
+   Crown whether or not they earned it. That hid a real balance problem behind a budget rule.
 
-**The pillar invariant survives, and is now cheap.** The tree changes *which* pillar you
-lean on within a half, not whether you have the other half at all.
+The case the fence was built for — arriving at map 4 unable to hold the road — is covered by
+**free respec**: a starved build is a lesson, never a trap.
+
+Scarcity is untouched: 48 points against a 145-point tree is **33% reachable**, the same
+fraction the two-budget version reached. Rule 1 never depended on the fence.
+
+**The cost is now visible and has to be paid properly.** With free choice the path probe says
+Hunt and Wall are taken and Host and Crown are not. That is a balance problem rather than a
+structural one, and it is better exposed than papered over — but it is real work, not a note.
 
 ### C.2 Node types
 
@@ -130,17 +133,13 @@ lean on within a half, not whether you have the other half at all.
 
 ### C.3 Budget — the scarcity rule, in numbers
 
-- **40 career levels**, one point *per pool* every two levels → 20 each.
-- **+4 points per pool**, one per map 3-starred.
-- **24 Hero points and 24 Kingdom points, ever.**
-- The tree holds **72 nodes costing 145 points** — 72 Hero, 73 Kingdom.
+- **44 career levels**, one point each — no level grants nothing.
+- **+4 points**, one per map 3-starred.
+- **48 points total, ever**, spendable on any path.
+- The tree holds **72 nodes costing 145 points**, split 72 Hero / 73 Kingdom.
 
-**You will ever allocate about 33% of each pool**, checked at load, per pool. A combined
-check would pass happily while one pool sat at 60% and the other at 15% — a half of the
-tree nobody has to choose within, which is the failure the split exists to prevent.
-
-A second campaign down different paths is a genuinely different game, which is rule 3 doing
-its job.
+**You will ever allocate about 33% of the tree.** A second campaign down different paths is a
+genuinely different game, which is rule 3 doing its job.
 
 ### C.4 Levels and XP
 

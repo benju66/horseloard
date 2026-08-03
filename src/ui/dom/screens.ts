@@ -1,6 +1,6 @@
 import type { GameData } from '../../data/loader';
 import type { Ability, SkillPath } from '../../data/schemas';
-import { SkillTree, type AllocationRefusal, type PoolPoints } from '../../engine/skillTree';
+import { SkillTree, type AllocationRefusal } from '../../engine/skillTree';
 import {
   careerProgress,
   equipSlots,
@@ -98,22 +98,14 @@ export class MapSelectScreen {
     title.textContent = 'HORSE LORD';
     const tree = new SkillTree(data.skillTree);
     const { level } = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel);
-    const free = tree.free(save.build, tree.pointsAt(level, threeStarredMaps(save)));
-    const freeTotal = Object.values(free).reduce((a, b) => a + b, 0);
+    const freeTotal = tree.free(save.build, tree.pointsAt(level, threeStarredMaps(save)));
     const sub = document.createElement('div');
     sub.className = 'screen-sub';
     // Unspent points lead, because that is the number that pulls a player back
     // into the tree. Level alone reads as a badge; "3 points" reads as a task.
-    // Broken out by pool, because "2 hero" and "2 kingdom" are two different
-    // errands and a combined "4" would send a player to the wrong column.
     sub.textContent =
       freeTotal > 0
-        ? `LV ${level} · ` +
-          tree.pools
-            .filter((p) => (free[p] ?? 0) > 0)
-            .map((p) => `${free[p]} ${tree.poolName(p).toLowerCase()}`)
-            .join(' · ') +
-          ' to spend'
+        ? `LV ${level} · ${freeTotal} point${freeTotal > 1 ? 's' : ''} to spend`
         : `LV ${level}`;
     this.root.append(title, sub);
 
@@ -251,8 +243,8 @@ export class SkillTreeScreen {
     return PATH_ORDER.filter((p) => this.tree.nodes.some((n) => n.path === p && n.pool === pool));
   }
 
-  /** Points the career has earned per pool, and what is left after the build. */
-  private budget(): { level: number; earned: PoolPoints; spent: PoolPoints; free: PoolPoints } {
+  /** Points the career has earned, and what is left after the build. */
+  private budget(): { level: number; earned: number; spent: number; free: number } {
     const { save, data } = this.host;
     const { level } = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel);
     const earned = this.tree.pointsAt(level, threeStarredMaps(save));
@@ -300,7 +292,7 @@ export class SkillTreeScreen {
     respec.setAttribute('data-ui', '');
     respec.textContent = '↺';
     respec.title = 'Respec — free, always';
-    respec.disabled = Object.values(spent).every((n) => n === 0);
+    respec.disabled = spent === 0;
     respec.addEventListener('click', () => {
       const next: SaveData = structuredClone(this.host.save);
       next.build = [...this.tree.respec()];
@@ -312,20 +304,16 @@ export class SkillTreeScreen {
     header.append(back, lvl, bar, respec);
     this.root.append(header);
 
-    // ── Pool selector: the two budgets, always both, always in this order ──
+    // ── Halves: navigation only. Six paths is too many tabs for a phone, so
+    // this splits them three and three. It does not gate anything — one budget,
+    // spent wherever you like.
     const pools = document.createElement('div');
     pools.className = 'tree-pools';
     for (const pool of this.tree.pools) {
       const btn = document.createElement('button');
       btn.className = `tree-pooltab pool-${pool}` + (pool === this.pool ? ' on' : '');
       btn.setAttribute('data-ui', '');
-      const nm = document.createElement('span');
-      nm.textContent = this.tree.poolName(pool);
-      const ct = document.createElement('em');
-      ct.className = (free[pool] ?? 0) > 0 ? 'has-free' : '';
-      ct.textContent = `${free[pool] ?? 0}`;
-      ct.title = `${spent[pool] ?? 0} spent of ${earned[pool] ?? 0} earned`;
-      btn.append(nm, ct);
+      btn.append(document.createTextNode(this.tree.poolName(pool)));
       btn.addEventListener('click', () => {
         this.pool = pool;
         if (!this.pathsIn(pool).includes(this.path)) this.path = this.pathsIn(pool)[0]!;
@@ -367,7 +355,7 @@ export class SkillTreeScreen {
    * its row and its prerequisites, and where it *sits* is a rendering decision.
    * Authoring x/y in JSON would mean every content edit is also a layout edit.
    */
-  private renderBoard(free: PoolPoints): void {
+  private renderBoard(free: number): void {
     const nodes = this.tree.nodes.filter((n) => n.path === this.path);
     const rows = [...new Set(nodes.map((n) => n.row))].sort((a, b) => a - b);
 
@@ -460,7 +448,7 @@ export class SkillTreeScreen {
    * The detail sheet. Descriptions live here rather than on the tiles, because
    * a board carrying 12 paragraphs stops being a board.
    */
-  private renderSheet(id: string, free: PoolPoints): HTMLDivElement {
+  private renderSheet(id: string, free: number): HTMLDivElement {
     const node = this.tree.node(id)!;
     const taken = this.host.save.build.includes(id);
     const refusal = this.tree.refusal(id, {
@@ -482,7 +470,7 @@ export class SkillTreeScreen {
     nm.textContent = node.name;
     const kind = document.createElement('div');
     kind.className = 'tree-sheet-kind';
-    kind.textContent = `${node.kind} · ${node.cost} ${this.tree.poolName(node.pool)} point${node.cost > 1 ? 's' : ''}`;
+    kind.textContent = `${node.kind} · ${node.cost} point${node.cost > 1 ? 's' : ''}`;
     titles.append(nm, kind);
     head.append(ico, titles);
 
@@ -705,13 +693,10 @@ export function screensCss(): string {
 /* Pool = budget. Two chips, always both, always this order. */
 .tree-pools { display: flex; gap: 8px; padding: 0 14px 10px; background: #141d10; flex: 0 0 auto; }
 .tree-pooltab {
-  flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
-  padding: 9px 10px; border-radius: 11px; pointer-events: auto;
+  flex: 1; padding: 9px 10px; border-radius: 11px; pointer-events: auto;
   background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
   color: #9aa093; font: 700 12px ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase;
 }
-.tree-pooltab em { font-style: normal; font-size: 13px; opacity: .75; }
-.tree-pooltab em.has-free { opacity: 1; }
 .tree-pooltab.pool-hero.on { color: #ffce6b; border-color: #d98b3a; background: rgba(217,139,58,.16); }
 .tree-pooltab.pool-kingdom.on { color: #bfe0ff; border-color: #5f9fd4; background: rgba(95,159,212,.16); }
 

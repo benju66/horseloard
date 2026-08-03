@@ -277,7 +277,7 @@ function startMap(mapId: string, endless = false): void {
     // Refunding for affordability here would silently strip a build the moment
     // a curve was retuned, which is the tree screen's job to surface, not the
     // run's job to do behind the player's back.
-    Object.fromEntries(skillTree.pools.map((p) => [p, Number.MAX_SAFE_INTEGER])),
+    Number.MAX_SAFE_INTEGER,
   );
   const modded = skillTree.applyTo(
     {

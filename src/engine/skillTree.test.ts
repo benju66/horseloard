@@ -23,11 +23,10 @@ const bump = (stat: 'bowDamage') => [
  *   k1 (3) ← b ⊗ k2      k2 (3) ← b ⊗ k1
  */
 const FILE: SkillTreeFile = {
-  pools: {
-    hero: { name: 'Hero', levelsPerPoint: 1, pointsPerThreeStar: 1 },
-    kingdom: { name: 'Kingdom', levelsPerPoint: 2, pointsPerThreeStar: 0 },
-  },
+  pointsPerLevel: 1,
   maxLevel: 10,
+  pointsPerThreeStar: 1,
+  poolNames: { hero: 'Hero', kingdom: 'Kingdom' },
   maxAllocatableFraction: 0.9,
   nodes: [
     { id: 'a', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'minor', name: 'A', description: 'a', cost: 1, row: 0, requires: [], excludes: [], effects: bump('bowDamage') },
@@ -41,31 +40,28 @@ const FILE: SkillTreeFile = {
 };
 
 const tree = new SkillTree(FILE);
-const state = (allocated: string[], hero = 20): SkillTreeState => ({
-  allocated,
-  pointsEarned: { hero, kingdom: 0 },
-});
+const state = (allocated: string[], pointsEarned = 20): SkillTreeState => ({ allocated, pointsEarned });
 
 describe('points', () => {
-  it('grants per pool at that pool\'s own rate', () => {
-    // hero earns one a level, kingdom one every two — the rates that let two
-    // pools of different size stay equally scarce.
-    expect(tree.pointsAt(6, 2)).toEqual({ hero: 8, kingdom: 3 });
+  it('grants one a level, every level, plus one per map three-starred', () => {
+    // Cadence is the point: a schedule that skips levels means most level-ups
+    // hand out nothing, in a game whose whole spine is levelling.
+    expect(tree.pointsAt(6, 2)).toBe(8);
   });
 
   it('stops granting past maxLevel — the scarcity ceiling is the whole design', () => {
-    expect(tree.pointsAt(999, 0)).toEqual({ hero: 10, kingdom: 5 });
+    expect(tree.pointsAt(999, 0)).toBe(10);
   });
 
-  it('sums the cost of what is held, per pool, ignoring ids it does not know', () => {
-    expect(tree.spent(['a', 'b', 'd', 'ghost'])).toEqual({ hero: 4, kingdom: 0 });
+  it('sums the cost of what is held, ignoring ids it does not know', () => {
+    expect(tree.spent(['a', 'b', 'd', 'ghost'])).toBe(4);
   });
 
-  it('reports what is left per pool', () => {
-    expect(tree.free(['a', 'b'], { hero: 10, kingdom: 4 })).toEqual({ hero: 7, kingdom: 4 });
+  it('reports what is left', () => {
+    expect(tree.free(['a', 'b'], 10)).toBe(7);
   });
 
-  it('totals a single pool\'s node cost for the scarcity denominator', () => {
+  it('totals a single half\'s node cost, for reporting rather than for gating', () => {
     expect(tree.totalCost('hero')).toBe(tree.totalCost());
   });
 });
@@ -93,13 +89,12 @@ describe('refusal reports which wall you hit', () => {
     expect(tree.refusal('c', state(['a', 'b'], 6))).toBeNull();
   });
 
-  it('prices a node against its own pool only', () => {
-    // The whole point of two budgets: an empty hero purse cannot be rescued by
-    // a full kingdom one, and a full kingdom purse cannot price out a bow node.
-    expect(tree.refusal('a', { allocated: [], pointsEarned: { hero: 0, kingdom: 99 } })).toBe(
-      'too-expensive',
-    );
-    expect(tree.refusal('a', { allocated: [], pointsEarned: { hero: 1, kingdom: 0 } })).toBeNull();
+  it('spends one budget across both halves', () => {
+    // A kingdom node and a hero node draw on the same points — freedom to build
+    // what you want is the whole reason the two-budget version was retired.
+    const held = tree.allocate('d', state([], 3));
+    expect(tree.refusal('a', { allocated: held, pointsEarned: 3 })).toBeNull();
+    expect(tree.spent(held)).toBe(1);
   });
 
   it('allows a root node in any path at any time', () => {
@@ -151,25 +146,25 @@ describe('respec', () => {
 
 describe('reconcile', () => {
   it('keeps a build that is still legal, in a buildable order', () => {
-    expect(tree.reconcile(['c', 'b', 'a'], { hero: 20, kingdom: 20 })).toEqual(['a', 'b', 'c']);
+    expect(tree.reconcile(['c', 'b', 'a'], 20)).toEqual(['a', 'b', 'c']);
   });
 
   it('drops nodes whose prerequisites are missing', () => {
     // Rebuilt forward from nothing, so an orphan cannot survive by being
     // checked against the very set it belongs to.
-    expect(tree.reconcile(['b', 'c'], { hero: 20, kingdom: 20 })).toEqual([]);
+    expect(tree.reconcile(['b', 'c'], 20)).toEqual([]);
   });
 
   it('drops the second of two mutually exclusive keystones', () => {
-    expect(tree.reconcile(['a', 'b', 'k1', 'k2'], { hero: 20, kingdom: 20 })).toEqual(['a', 'b', 'k1']);
+    expect(tree.reconcile(['a', 'b', 'k1', 'k2'], 20)).toEqual(['a', 'b', 'k1']);
   });
 
   it('drops what a shrunken budget can no longer pay for', () => {
-    expect(tree.reconcile(['a', 'b', 'c'], { hero: 3, kingdom: 0 })).toEqual(['a', 'b']);
+    expect(tree.reconcile(['a', 'b', 'c'], 3)).toEqual(['a', 'b']);
   });
 
   it('ignores ids that no longer exist in the data', () => {
-    expect(tree.reconcile(['a', 'retired-node'], { hero: 20, kingdom: 20 })).toEqual(['a']);
+    expect(tree.reconcile(['a', 'retired-node'], 20)).toEqual(['a']);
   });
 });
 
