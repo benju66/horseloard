@@ -2,7 +2,7 @@
   "mapId": "the-ford",
   "waves": [
     {
-      "hpMultiplier": 1.254,
+      "hpMultiplier": 2.116,
       "entries": [
         {
           "enemyId": "grunt",
@@ -21,7 +21,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.443,
+      "hpMultiplier": 2.4348,
       "entries": [
         {
           "enemyId": "grunt",
@@ -40,7 +40,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.693,
+      "hpMultiplier": 2.8567,
       "entries": [
         {
           "enemyId": "grunt",
@@ -66,7 +66,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.944,
+      "hpMultiplier": 3.2803,
       "entries": [
         {
           "enemyId": "grunt",
@@ -77,7 +77,7 @@
         },
         {
           "enemyId": "grunt",
-          "count": 6,
+          "count": 4,
           "spacing": 3.5,
           "laneId": "west",
           "delay": 1.5
@@ -92,11 +92,11 @@
       ]
     },
     {
-      "hpMultiplier": 2.258,
+      "hpMultiplier": 3.8101,
       "entries": [
         {
           "enemyId": "grunt",
-          "count": 5,
+          "count": 4,
           "spacing": 2.2,
           "laneId": "west",
           "delay": 0
@@ -118,7 +118,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.634,
+      "hpMultiplier": 4.4446,
       "archetypeId": "raid",
       "entries": [
         {
@@ -145,11 +145,11 @@
       ]
     },
     {
-      "hpMultiplier": 3.073,
+      "hpMultiplier": 5.1853,
       "entries": [
         {
           "enemyId": "swarm",
-          "count": 35,
+          "count": 17,
           "spacing": 2.4,
           "laneId": "east",
           "delay": 0
@@ -170,14 +170,14 @@
         },
         {
           "enemyId": "swarm",
-          "count": 10,
+          "count": 6,
           "spacing": 3,
           "laneId": "west",
           "delay": 5
         },
         {
           "enemyId": "looter",
-          "count": 4,
+          "count": 3,
           "spacing": 1.4,
           "laneId": "east",
           "delay": 4
@@ -185,7 +185,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.575,
+      "hpMultiplier": 6.0324,
       "archetypeId": "horde",
       "entries": [
         {
@@ -226,40 +226,40 @@
       ]
     },
     {
-      "hpMultiplier": 4.14,
+      "hpMultiplier": 6.9859,
       "archetypeId": "war-party",
       "entries": [
         {
           "enemyId": "grunt",
-          "count": 7,
+          "count": 6,
           "spacing": 1.6,
           "laneId": "west",
           "delay": 0
         },
         {
           "enemyId": "grunt",
-          "count": 16,
+          "count": 10,
           "spacing": 1.8,
           "laneId": "west",
           "delay": 1
         },
         {
           "enemyId": "swarm",
-          "count": 14,
+          "count": 9,
           "spacing": 1.8,
           "laneId": "east",
           "delay": 3
         },
         {
           "enemyId": "swarm",
-          "count": 35,
+          "count": 17,
           "spacing": 2,
           "laneId": "east",
           "delay": 4.5
         },
         {
           "enemyId": "grunt",
-          "count": 10,
+          "count": 5,
           "spacing": 2.4,
           "laneId": "west",
           "delay": 5
@@ -267,18 +267,18 @@
       ]
     },
     {
-      "hpMultiplier": 4.767,
+      "hpMultiplier": 8.0439,
       "entries": [
         {
           "enemyId": "grunt",
-          "count": 19,
+          "count": 12,
           "spacing": 1.4,
           "laneId": "west",
           "delay": 0.5
         },
         {
           "enemyId": "swarm",
-          "count": 52,
+          "count": 26,
           "spacing": 1.4,
           "laneId": "east",
           "delay": 0.5
@@ -306,7 +306,7 @@
         },
         {
           "enemyId": "grunt",
-          "count": 5,
+          "count": 4,
           "spacing": 2,
           "laneId": "east",
           "delay": 13

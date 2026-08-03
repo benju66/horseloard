@@ -495,3 +495,70 @@ M8.5 (author eight maps) is **not** unblocked by this. The order changes:
 | **M8.4.1** | Make the campaign winnable again. Steppe at 0% and Iron at 44% are off-band on every map the player can currently reach, and the game is deployed. |
 | **M8.4.2** | Fix the army leg, or stop calling it a pillar. One barracks must beat one combat tower on a shared board. |
 | **M8.5** | Then author the maps — against a triangle that closes. |
+
+---
+
+## Part N — M8.4.1: the retune, and why the substitution was wrong
+
+The campaign came out of M8.1–8.3 reading **100 / 100 / 44 / 0**. Map 4 was unwinnable and map 2
+was free. This is the pass that fixed it, and the interesting part is *why* it was broken.
+
+### N.1 HP is not the currency of difficulty
+
+The wave sets were rebuilt for the biome pools by **HP-normalised substitution**: swap the
+species, rescale the count so each entry carries the same total hit points it did before. That
+sounds conservative and is not. A tower kills at a rate, so what a wave costs is not its hit
+points but **hit points per second of exposure** — and time in range is `range / speed`. Trading
+a 42-speed grunt for an 88-speed wolf-rider at equal HP roughly halves the seconds a tower has
+to spend them.
+
+Measured on the exposure-weighted load `Σ count × hp × speed`, the "conservative" substitution
+had moved the campaign by **−32% to +36%**:
+
+```
+  meadow-road     ×1.36     crossroads       ×0.68
+  the-ford        ×1.27     warlords-march   ×1.16
+```
+
+Warlords was carrying +16% more load with a pool of 58–88 speed enemies, under `open-country`'s
+further ×1.12. Re-normalising the counts on `hp × speed` instead put all four back within 2.3%
+of their pre-biome load.
+
+### N.2 The formula is a starting point, not a dial
+
+Re-normalising did **not** fix the curve — crossroads got *worse*, 44% → 17%. `hp × speed` prices
+a body; it does not price a trait. A juggernaut takes 20% damage while it is moving freely, a
+shieldbearer blocks frontally, an outrider walks through soldiers, a wolf-rider ignores every
+slow. Those are worth multiples of their exposure and no closed form was going to say so.
+
+So: the formula sets the base, measurement sets the dial. One scalar per map on `hpMultiplier`,
+three passes:
+
+```
+  crossroads       ×0.70 → ×0.85            (44% → 17% → 33% → 50%)
+  warlords-march   ×0.65 → ×1.08 → ×0.93    ( 0% → 53% → 25% → 42%)
+  the-ford         ×1.18 → ×1.30 → ×1.10    (100% → 97% → 94%)
+```
+
+**Final: 100 / 94 / 50 / 42 — ON TARGET on all four.**
+
+### N.3 What the retune did to the probes
+
+Both M8.4 reads improved, and one of them changed character:
+
+- **Green became readable.** At 100% win it had no losers to compare winners against and the
+  probe refused to report a carrier. At 64–100% it separates, and reads `wall`. The saturation
+  Part L.2 flagged as unfixable-from-here was a tuning problem after all.
+- **Three readable rows, three distinct carrying paths** — `wall` / `storm` / `ride`. The thesis
+  is now supported on real content at full strength rather than on two rows out of three.
+- **No pillar is sufficient alone in any biome**, unchanged.
+
+One honest caveat: Iron's separation is thin. Its spread is wide enough to read, but its largest
+path delta is +7pp against Green's +23 and Steppe's +37. "Iron carries storm" is the direction
+the numbers point, not a result to build on. A readability gate on *spread* alone lets a flat row
+through, and a future pass should probably require a minimum delta as well.
+
+### N.4 Still open
+
+The army leg is untouched by any of this — still +0pp on Green, **−25pp on Iron**, −1pp on
+Steppe. M.3 remains the top balance item, and it is older than this milestone.
