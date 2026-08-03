@@ -504,7 +504,7 @@ export class SkillTreeScreen {
 
     const desc = document.createElement('div');
     desc.className = 'tree-sheet-desc';
-    desc.textContent = node.description;
+    desc.textContent = rankedText(node);
 
     // What a scaling node is actually worth, at a few board sizes.
     //
@@ -676,6 +676,26 @@ export class LoadoutScreen {
     back.addEventListener('click', () => this.onBack());
     this.root.append(back);
   }
+}
+
+/**
+ * A node's text, with "per rank" appended when it can be bought more than once.
+ *
+ * Added in the UI rather than written into the 72 descriptions on purpose: a
+ * label derived from `maxRank` cannot drift out of step with `maxRank`, where
+ * seventy-two hand-written strings certainly would.
+ *
+ * This is the third time this project has shipped a description that promised
+ * something the effects did not do — `Heavy Draw` named a downside it never
+ * applied, `Shieldwall` claimed "one fewer soldier" while changing the squad by
+ * zero, and "Arrows hit 20% harder" on a three-rank node is really ×1.73. Text
+ * that lies about a node is indistinguishable, from inside the game, from a
+ * node that is broken.
+ */
+function rankedText(node: SkillNode): string {
+  if (node.maxRank <= 1) return node.description;
+  const sep = node.description.endsWith('.') ? ' ' : '. ';
+  return `${node.description}${sep}Per rank, up to ${node.maxRank}.`;
 }
 
 /**
