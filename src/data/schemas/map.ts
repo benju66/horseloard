@@ -114,19 +114,27 @@ export const DayLightSchema = lightPreset({
  * Dark enough to be a different time of day, bright enough to fight in — the
  * failure mode is a night nobody can read, and a phone at half brightness in
  * daylight is the real viewing condition, not a monitor in a dim room.
+ *
+ * **Lifted 2026-08-03 on the first real phone playtest**, which reported
+ * exactly the failure this comment predicted: the wave phase was too dark to
+ * read. Ambient and key both up (~28% and ~23%), fog density down, and every
+ * colour moved toward white — the ground and the road most, because they are
+ * what you actually have to see, and the sky least, because lifting that too
+ * far stops it being night at all. Hues are untouched, so it still reads cold
+ * and blue against the warm day.
  */
 export const NightLightSchema = lightPreset({
-  skyColor: '#3a5c96',
-  groundColor: '#161f30',
-  ambientIntensity: 0.98,
-  sunColor: '#a8c0e8',
-  sunIntensity: 1.4,
+  skyColor: '#4a6aa0',
+  groundColor: '#26303f',
+  ambientIntensity: 1.25,
+  sunColor: '#b6cbec',
+  sunIntensity: 1.72,
   sunElevation: 46,
-  background: '#16233a',
-  fogColor: '#1a2740',
-  fogDensity: 0.45,
-  groundTint: '#33544f',
-  pathTint: '#8a8172',
+  background: '#2a3752',
+  fogColor: '#2e3a56',
+  fogDensity: 0.38,
+  groundTint: '#587771',
+  pathTint: '#a49d91',
 });
 
 /**

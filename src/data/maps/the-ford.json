@@ -171,11 +171,11 @@
       "fogDensity": 0.5
     },
     "night": {
-      "groundTint": "#25514f",
-      "pathTint": "#7a7f78",
-      "skyColor": "#2f6a86",
-      "background": "#0f2530",
-      "fogColor": "#153039",
+      "groundTint": "#5e7e7d",
+      "pathTint": "#9da09b",
+      "skyColor": "#487c95",
+      "background": "#354851",
+      "fogColor": "#3f555d",
       "fogDensity": 0.62
     }
   }
