@@ -86,6 +86,16 @@ export class Simulation {
    */
   readonly xp: XpSystem;
   readonly endless: boolean;
+  /**
+   * Fired when a wave is cleared, with the wave number and the XP it paid.
+   *
+   * Reporting, never asking. The run's XP is the only thing a player earns
+   * while playing, and before this it arrived silently — the bar moved and
+   * nothing said so. A wave is the natural beat to say it on: frequent enough
+   * to be a rhythm, rare enough not to be noise.
+   */
+  readonly onWaveClear: Array<(wave: number, xpEarned: number) => void> = [];
+  private xpAtWaveStart = 0;
   private readonly enemiesFile: EnemiesFile;
   private readonly mapDef: MapDef;
   private readonly rng: () => number;
@@ -263,21 +273,21 @@ export class Simulation {
     const { base, perWave } = this.economy.config.waveClearBonus;
     this.economy.gold += base + perWave * this.waveRunner.waveNumber;
     this.economy.sweep();
+    const wave = this.waveRunner.waveNumber;
+    const earned = this.xp.totalXp - this.xpAtWaveStart;
+    this.xpAtWaveStart = this.xp.totalXp;
     this.phase = nextPhase;
     this.buildElapsed = 0;
 
-    // No draft here any more. Cards come from levels (TRIANGLE.md §B.4), which
-    // means they come from kills, which means they come from riding out to
-    // fight — DESIGN §1's first pillar wired to the reward loop instead of
-    // sitting beside it. A wave-clear card rewarded surviving; this rewards
-    // playing.
+    // Nothing is offered here. A wave clear *reports* — how much the fighting
+    // was worth — and the renderer decides how to show it. That distinction is
+    // the whole redesign: the run may tell you anything and ask you nothing.
     //
-    // The rest of the old note still holds and is why levels `queue()` rather
-    // than gate: there is deliberately no 'draft' phase. The phase enum is
-    // consumed well beyond the engine — the renderer's day/night cycle keys off
+    // There is deliberately still no 'draft' phase. The phase enum is consumed
+    // well beyond the engine — the renderer's day/night cycle keys off
     // `phase === 'wave'` — so a fifth value would silently change how the game
-    // *looks*, and the sim must never block on a UI decision. An offer sits in
-    // hand until it is answered, mid-wave or not.
+    // *looks*.
+    for (const fn of this.onWaveClear) fn(wave, earned);
   }
 
   /**

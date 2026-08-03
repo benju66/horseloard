@@ -16,6 +16,7 @@ const SPEED_KEY = 'horse-lord:speed';
 export class RunOverlay {
   private readonly panel: HTMLDivElement;
   private readonly title: HTMLDivElement;
+  private readonly reward_el: HTMLDivElement;
   private readonly stats: HTMLDivElement;
   private readonly again: HTMLButtonElement;
   private readonly speedBtn: HTMLButtonElement;
@@ -50,6 +51,9 @@ export class RunOverlay {
     this.panel.style.display = 'none';
     this.title = document.createElement('div');
     this.title.className = 'run-title';
+    this.reward_el = document.createElement('div');
+    this.reward_el.className = 'run-reward';
+    this.reward_el.style.display = 'none';
     this.stats = document.createElement('div');
     this.stats.className = 'run-stats';
     this.again = document.createElement('button');
@@ -70,7 +74,7 @@ export class RunOverlay {
       this.hide();
       this.onExit?.();
     });
-    this.panel.append(this.title, this.stats, this.again, this.exit);
+    this.panel.append(this.title, this.stats, this.reward_el, this.again, this.exit);
 
     this.bannerEl = document.createElement('div');
     this.bannerEl.className = 'wave-banner';
@@ -93,6 +97,20 @@ export class RunOverlay {
   }
 
   /** Show the summary once the run resolves; idempotent per outcome. */
+  /**
+   * What the run paid the career, set by the host once the run has settled.
+   *
+   * Passed in rather than computed here: `settleRun` already knows, and two
+   * counts of the same reward is one count too many — the results screen and
+   * the save must never be able to disagree about what you earned.
+   */
+  private reward: { xp: number; levels: number; points: number } | null = null;
+
+  showReward(xp: number, levels: number, points: number): void {
+    this.reward = { xp, levels, points };
+    this.shownFor = null; // force a re-render now the numbers are known
+  }
+
   sync(sim: Simulation, leaks: number): void {
     const over = sim.phase === 'done' || sim.phase === 'defeat';
     if (!over) {
@@ -112,6 +130,21 @@ export class RunOverlay {
       `waves ${sim.waveRunner.waveNumber}/${sim.waveRunner.totalWaves}  ·  ` +
       `kills ${sim.kills}  ·  damage taken ${Math.round(sim.gate.totalDamageTaken)}  ·  leaks ${leaks}`;
     this.speedBtn.style.display = 'none';
+
+    // The payout, stated plainly. A defeat pays too — a failed run is progress
+    // (DESIGN §7), and saying so is the difference between a loss that stings
+    // and a loss that stops you playing.
+    if (this.reward) {
+      const r = this.reward;
+      const parts = [`+${r.xp} XP`];
+      if (r.levels > 0) parts.push(`${r.levels} level${r.levels > 1 ? 's' : ''} gained`);
+      if (r.points > 0) parts.push(`${r.points} point${r.points > 1 ? 's' : ''} to spend`);
+      this.reward_el.textContent = parts.join('  ·  ');
+      this.reward_el.style.display = '';
+      this.reward_el.classList.toggle('has-points', r.points > 0);
+    } else {
+      this.reward_el.style.display = 'none';
+    }
   }
 
   /**
@@ -150,6 +183,14 @@ export class RunOverlay {
 .run-title { font: 700 34px/1.15 Georgia, serif; color: #f6c945; }
 .run-panel.is-defeat .run-title { color: #e5484d; }
 .run-stats { font: 600 14px/1.6 ui-monospace, monospace; color: #cdc6b4; max-width: 320px; }
+/* The payout. Gold only when there is something waiting to be spent, so the
+   colour itself is the call back into the tree. */
+.run-reward {
+  margin-top: 4px; padding: 8px 16px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.16); color: #9fe3b8;
+  font: 700 13px ui-monospace, monospace; letter-spacing: .03em;
+}
+.run-reward.has-points { color: #f6c945; border-color: #f6c945; }
 .run-again {
   margin-top: 10px; padding: 14px 30px; border-radius: 16px; border: 0;
   background: rgba(46,120,120,.92); color: #f2ecdd; font: 700 16px ui-monospace, monospace;

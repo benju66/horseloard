@@ -1,7 +1,14 @@
 import * as THREE from 'three';
 import { loadGameData } from '../data/loader';
 import { SaveManager } from '../data/saveManager';
-import { equipSlots, newSave, settleRun, type SaveData } from '../engine/progression';
+import {
+  careerProgress,
+  equipSlots,
+  threeStarredMaps,
+  newSave,
+  settleRun,
+  type SaveData,
+} from '../engine/progression';
 import { SkillTree } from '../engine/skillTree';
 import { Simulation } from '../engine/simulation';
 import { AbilityBar } from '../ui/dom/abilityBar';
@@ -35,6 +42,16 @@ const overlay = document.getElementById('overlay') as HTMLDivElement;
 const data = loadGameData();
 const saves = new SaveManager(data.economy);
 const skillTree = new SkillTree(data.skillTree);
+/**
+ * `?points=N` — grants a career level high enough to hold N points, for looking
+ * at the tree without grinding to it. Dev convenience, same category as WASD:
+ * it never persists, because it writes nothing to the save.
+ */
+const devPoints = (() => {
+  const raw = new URLSearchParams(location.search).get('points');
+  const n = raw === null ? NaN : Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.min(n, data.skillTree.maxLevel) : 0;
+})();
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, PIXEL_RATIO_CAP));
@@ -75,11 +92,48 @@ style.textContent =
   left: 50%; transform: translateX(-50%); width: min(58vw, 300px); height: 12px;
   border-radius: 7px; background: rgba(20,30,24,.62);
   box-shadow: inset 0 1px 3px rgba(0,0,0,.5); overflow: hidden; }
+/* Two fills. The dim one is the career you brought in; the bright one is what
+   this run has added, so a run that moves the bar 40% of a level still shows
+   you the 40% it moved — which is the whole point when levels are rare. */
 #xpfill { position: absolute; inset: 0 auto 0 0; width: 0%;
-  background: linear-gradient(90deg, #6ec8a8, #9fe3b8); transition: width .18s ease-out; }
+  background: rgba(110,200,168,.45); transition: width .18s ease-out; }
+#xprun { position: absolute; inset: 0 auto 0 0; width: 0%;
+  background: linear-gradient(90deg, #6ec8a8, #9fe3b8); transition: width .18s ease-out;
+  box-shadow: 0 0 8px rgba(159,227,184,.7); }
 #xplabel { position: absolute; inset: 0; display: grid; place-items: center;
   font: 700 9px/1 ui-monospace, monospace; letter-spacing: .06em;
-  color: #10201a; text-shadow: 0 1px 0 rgba(255,255,255,.25); }
+  color: #eafaf1; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
+/* Wave payout, floating up off the bar. Reports, never asks. */
+#xptoast { position: absolute; top: calc(env(safe-area-inset-top, 6px) + 46px);
+  left: 50%; transform: translateX(-50%); pointer-events: none;
+  font: 700 15px ui-monospace, monospace; color: #9fe3b8;
+  text-shadow: 0 2px 6px rgba(0,0,0,.8); opacity: 0; }
+#xptoast.on { animation: xprise 1.5s ease-out forwards; }
+@keyframes xprise {
+  0% { opacity: 0; transform: translate(-50%, 6px) scale(.9); }
+  18% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -16px); }
+}
+/* The level-up moment. Large, brief, and completely non-interactive — this is
+   the beat the draft pop-up used to occupy, minus the decision. */
+#levelup { position: absolute; top: 26%; left: 50%; transform: translateX(-50%);
+  pointer-events: none; text-align: center; opacity: 0; }
+#levelup.on { animation: lvlpop 2.2s ease-out forwards; }
+#levelup b { display: block; font: 700 34px/1 Georgia, serif; color: #f6c945;
+  text-shadow: 0 3px 12px rgba(0,0,0,.85), 0 0 26px rgba(246,201,69,.5); }
+#levelup span { display: block; margin-top: 5px; font: 700 12px ui-monospace, monospace;
+  letter-spacing: .12em; color: #eafaf1; text-shadow: 0 2px 6px rgba(0,0,0,.9); }
+@keyframes lvlpop {
+  0% { opacity: 0; transform: translate(-50%, 14px) scale(.86); }
+  12% { opacity: 1; transform: translate(-50%, 0) scale(1.06); }
+  22% { transform: translate(-50%, 0) scale(1); }
+  78% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -10px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #xptoast.on, #levelup.on { animation-duration: .01ms; opacity: 1; }
+}
 #startbtn { position: absolute; bottom: calc(env(safe-area-inset-bottom, 12px) + 18px);
   left: 50%; transform: translateX(-50%); pointer-events: auto;
   padding: 14px 26px; border-radius: 16px; border: 0;
@@ -110,14 +164,24 @@ const xpBar = document.createElement('div');
 xpBar.id = 'xpbar';
 const xpFill = document.createElement('div');
 xpFill.id = 'xpfill';
+const xpRun = document.createElement('div');
+xpRun.id = 'xprun';
 const xpLabel = document.createElement('span');
 xpLabel.id = 'xplabel';
-xpBar.append(xpFill, xpLabel);
+xpBar.append(xpFill, xpRun, xpLabel);
+
+const xpToast = document.createElement('div');
+xpToast.id = 'xptoast';
+const levelUp = document.createElement('div');
+levelUp.id = 'levelup';
+const levelUpN = document.createElement('b');
+const levelUpSub = document.createElement('span');
+levelUp.append(levelUpN, levelUpSub);
 const startBtn = document.createElement('button');
 startBtn.id = 'startbtn';
 startBtn.setAttribute('data-ui', '');
 startBtn.textContent = 'Start wave';
-hud.append(topbar, xpBar, startBtn);
+hud.append(topbar, xpBar, xpToast, levelUp, startBtn);
 overlay.append(hud);
 
 const audio = new AudioManager();
@@ -167,6 +231,22 @@ const bubbleScreens: Array<{ x: number; y: number }> = [];
 // ─── Run state ───
 
 let save: SaveData = newSave();
+/**
+ * Career level as of the last frame, so a crossing can be detected and
+ * announced. The career levels **live during a run** — the points it grants
+ * cannot be spent until you are back in the menu, so this informs without ever
+ * asking, which is the line the whole redesign is drawn on.
+ */
+let shownCareerLevel = 1;
+let toastTimer = 0;
+let bannerTimer = 0;
+
+/** Fire a one-shot CSS animation by re-adding the class. */
+function replay(el: HTMLElement): void {
+  el.classList.remove('on');
+  void el.offsetWidth; // force reflow so the animation restarts
+  el.classList.add('on');
+}
 let world: World | null = null;
 let fx: FxLayer | null = null;
 let instanced: InstancedEntities | null = null;
@@ -207,6 +287,18 @@ const heroScaleOverride = (() => {
 const host = {
   data,
   get save(): SaveData {
+    // The dev flag is layered on read rather than written into the save, so
+    // looking at a maxed tree can never leave a maxed career on disk.
+    if (devPoints > 0) {
+      const { base, growth } = data.economy.career.level;
+      let xp = 0;
+      let need = base;
+      for (let lv = 1; lv < devPoints; lv++) {
+        xp += need;
+        need *= growth;
+      }
+      return { ...save, careerXp: Math.max(save.careerXp, Math.ceil(xp)) };
+    }
     return save;
   },
   onPlay: (mapId: string, endless: boolean) => startMap(mapId, endless),
@@ -318,6 +410,15 @@ function startMap(mapId: string, endless = false): void {
     endless,
   });
   sim.enemySystem.onReachEnd.push(() => leaks++);
+  // What the wave was worth, said out loud. Waves are the natural beat for this
+  // — frequent enough to be a rhythm, rare enough not to be noise.
+  sim.onWaveClear.push((_wave, xpEarned) => {
+    if (xpEarned <= 0) return;
+    xpToast.textContent = `+${xpEarned} XP`;
+    replay(xpToast);
+    toastTimer = 1.5;
+  });
+  shownCareerLevel = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel).level;
   flashUntil.clear();
   simClock = 0;
   sim.enemySystem.onDamaged.push((e) => flashUntil.set(e.id, simClock + FLASH_SECONDS));
@@ -532,6 +633,8 @@ function step(dt: number): void {
   // without touching this file.
   audio.setMusicPhase(sim.phase === 'wave' ? 'tension' : 'calm');
   audio.setMusicBoss(sim.enemySystem.enemies.some((e) => e.config.warCry !== undefined));
+  if (toastTimer > 0 && (toastTimer -= dt) <= 0) xpToast.classList.remove('on');
+  if (bannerTimer > 0 && (bannerTimer -= dt) <= 0) levelUp.classList.remove('on');
   instanced?.update(sim, dt);
   fx.update(sim, world.camera, dt);
   renderer.render(scene, world.camera);
@@ -588,8 +691,15 @@ function settleIfNeeded(): void {
     data.economy,
     sim.xp.totalXp,
   );
+  const beforeLv = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel).level;
   save = result.save;
+  const afterLv = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel).level;
   void saves.save(save);
+  runOverlay.showReward(
+    result.xpEarned,
+    afterLv - beforeLv,
+    skillTree.free(save.build, skillTree.pointsAt(afterLv, threeStarredMaps(save))),
+  );
 }
 
 function syncHud(): void {
@@ -601,14 +711,35 @@ function syncHud(): void {
     `${sim.gold}g · gate ${Math.ceil(sim.gate.hp)}/${sim.gate.maxHp} · ` +
     `w${sim.waveRunner.waveNumber}/${sim.waveRunner.totalWaves} · bow L${sim.hero.bowLevel} · ${fps}fps`;
 
-  const pct = `${(sim.xp.fraction * 100).toFixed(1)}%`;
-  if (xpFill.style.width !== pct) xpFill.style.width = pct;
-  // The raw XP banked, not a level. In-run levels stopped meaning anything the
-  // day the draft was cut, and a number that ticks up but changes nothing is
-  // worse than no number — this one is the run's actual contribution to the
-  // tree, which is the thing the player is here for.
-  const label = `+${sim.xp.totalXp} XP`;
+  // The career bar, live. Two fills: what you walked in with, and what this run
+  // has added on top of it — because at a long career's pace a single run often
+  // moves the bar less than a level, and an unsegmented bar would make that look
+  // like nothing happened.
+  const run = sim.xp.totalXp;
+  const before = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel);
+  const now = careerProgress(save.careerXp + run, data.economy, data.skillTree.maxLevel);
+  const denom = now.needed > 0 ? now.needed : 1;
+  const base = now.level > before.level ? 0 : before.into;
+  const basePct = `${Math.min(100, (base / denom) * 100).toFixed(1)}%`;
+  const runPct = `${Math.min(100, (now.into / denom) * 100).toFixed(1)}%`;
+  if (xpFill.style.width !== basePct) xpFill.style.width = basePct;
+  if (xpRun.style.width !== runPct) xpRun.style.width = runPct;
+
+  const label = now.needed > 0 ? `LV ${now.level}  ·  +${run} XP` : `LV ${now.level}  ·  MAX`;
   if (xpLabel.textContent !== label) xpLabel.textContent = label;
+
+  // Crossing a career level mid-run is the beat the draft pop-up used to hold.
+  // It announces and vanishes; the point it grants waits in the tree, which is
+  // what keeps this feedback rather than a decision.
+  if (now.level > shownCareerLevel) {
+    const gained = now.level - shownCareerLevel;
+    shownCareerLevel = now.level;
+    levelUpN.textContent = `LEVEL ${now.level}`;
+    levelUpSub.textContent = gained > 1 ? `+${gained} SKILL POINTS` : '+1 SKILL POINT';
+    replay(levelUp);
+    bannerTimer = 2.2;
+    audio.play('upgrade');
+  }
 
   // Ride close → bubble → tap. Anchors projected from sim space each frame.
   const actions = bubbleActions(sim, world.map);

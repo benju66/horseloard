@@ -490,12 +490,20 @@ the two-budget version reached. The Hero/Kingdom split survives as tab grouping 
 **and it exposed the balance problem it had been hiding.** With free choice the path probe says
 Hunt and Wall get taken and Host and Crown do not. Better visible than papered over, but it is
 now real work rather than a note.
-[ ] **M7.2 — In-run XP leads nowhere.** Cutting the draft was right; it also left the run's XP
-bar counting toward nothing, so there is no moment-to-moment payoff during play at all. That is
-the loop Vampire Survivors gets almost all of its pull from. The constraint stands — **nothing
-mid-run may change what you can do** — so the answer is reward *without* interruption: banked
-unlocks that announce at wave clear, visible "+2 Hero" on the results screen, milestones you can
-see approaching. Design it as feedback, never as a decision.
+[x] **M7.2 — The in-run reward loop** (2026-08-03). Four beats, none of them a decision:
+the HUD bar is now the **career** bar and levels live during a run; a wave clear floats the XP
+it paid; crossing a career level fires a large, brief, non-interactive `LEVEL n · +1 SKILL
+POINT`; the results screen states the payout and turns gold when points are waiting. Plus a
+`?points=N` dev flag for reviewing the tree without grinding to it.
+**the bar had to be segmented or a long career would read as nothing happening.** At this pace a
+single run often moves the career bar less than one level, so an unsegmented fill looks static.
+Two fills — what you walked in with, dim; what this run added, bright and glowing — make a 40%
+run visibly a 40% run.
+**and the line to hold is "tells you anything, asks you nothing".** The level banner sits exactly
+where the draft pop-up used to, at the same moment, with the same weight — minus the menu. The
+point it grants waits in the tree. `Simulation.onWaveClear` reports the payout and the renderer
+decides how to show it; the sim never blocks on a UI decision, and there is still no 'draft'
+phase for the day/night cycle to trip over.
 [ ] **M7.3 — Retune the campaign against the curve.** State as of the single-budget change, at
 a first-clear reference of LV8/2★ = 10 points: **100 / 100 / 81 / 11** against 90-100 / 70-95 /
 45-75 / 25-55. Maps 2-3 too easy, map 4 too hard — the *spread* between them is too wide, which
