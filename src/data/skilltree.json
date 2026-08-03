@@ -17,7 +17,9 @@
       "description": "Arrows hit 20% harder.",
       "icon": "\ud83c\udfaf",
       "cost": 1,
+      "maxRank": 3,
       "row": 0,
+      "unlockAt": 0,
       "requires": [],
       "excludes": [],
       "effects": [
@@ -38,7 +40,9 @@
       "description": "Your bow reaches 20% further.",
       "icon": "\ud83c\udff9",
       "cost": 1,
+      "maxRank": 3,
       "row": 0,
+      "unlockAt": 0,
       "requires": [],
       "excludes": [],
       "effects": [
@@ -59,10 +63,10 @@
       "description": "Volley falls over a 30% larger circle and hits 25% harder.",
       "icon": "\u2604\ufe0f",
       "cost": 2,
+      "maxRank": 2,
       "row": 1,
-      "requires": [
-        "hunt-steady"
-      ],
+      "unlockAt": 2,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -90,10 +94,10 @@
       "description": "Your arrows crit 18% of the time for double.",
       "icon": "\ud83d\udc41\ufe0f",
       "cost": 2,
+      "maxRank": 2,
       "row": 1,
-      "requires": [
-        "hunt-longdraw"
-      ],
+      "unlockAt": 2,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -119,10 +123,10 @@
       "description": "Unlock Heavy Shaft \u2014 one arrow through a column.",
       "icon": "\ud83d\udde1\ufe0f",
       "cost": 2,
+      "maxRank": 1,
       "row": 2,
-      "requires": [
-        "hunt-volley-wide"
-      ],
+      "unlockAt": 4,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -140,10 +144,10 @@
       "description": "Your bow deals +7% for every tower whose range covers your target.",
       "icon": "\ud83c\udfaf",
       "cost": 2,
+      "maxRank": 1,
       "row": 2,
-      "requires": [
-        "hunt-keen"
-      ],
+      "unlockAt": 4,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -163,10 +167,10 @@
       "description": "Unlock Rapid Fire \u2014 draw without pause.",
       "icon": "\u26a1",
       "cost": 2,
+      "maxRank": 1,
       "row": 3,
-      "requires": [
-        "hunt-shaft"
-      ],
+      "unlockAt": 7,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -184,10 +188,10 @@
       "description": "A shot that kills carries on to the enemy behind it.",
       "icon": "\ud83e\udd32",
       "cost": 2,
+      "maxRank": 1,
       "row": 3,
-      "requires": [
-        "hunt-killing"
-      ],
+      "unlockAt": 7,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -205,10 +209,10 @@
       "description": "Every shot at a slowed or held enemy is a critical hit.",
       "icon": "\ud83d\udd3a",
       "cost": 2,
+      "maxRank": 1,
       "row": 4,
-      "requires": [
-        "hunt-rapid"
-      ],
+      "unlockAt": 10,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -226,10 +230,10 @@
       "description": "Your bow deals a further +6% for every tower covering your target.",
       "icon": "\ud83c\udfaf",
       "cost": 2,
+      "maxRank": 1,
       "row": 4,
-      "requires": [
-        "hunt-hands"
-      ],
+      "unlockAt": 10,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -249,10 +253,10 @@
       "description": "+10% bow damage per tower covering your target, up to triple. \u221235% bow range.",
       "icon": "\ud83c\udf96\ufe0f",
       "cost": 3,
+      "maxRank": 1,
       "row": 5,
-      "requires": [
-        "hunt-broadhead"
-      ],
+      "unlockAt": 14,
+      "requires": [],
       "excludes": [
         "hunt-skirmisher"
       ],
@@ -280,10 +284,10 @@
       "description": "+45% fire rate and +15% speed. \u221230% bow damage.",
       "icon": "\ud83c\udfc3",
       "cost": 3,
+      "maxRank": 1,
       "row": 5,
-      "requires": [
-        "hunt-execution"
-      ],
+      "unlockAt": 14,
+      "requires": [],
       "excludes": [
         "hunt-deadeye"
       ],
@@ -317,7 +321,9 @@
       "description": "Trampling deals 50% more.",
       "icon": "\ud83e\uddf2",
       "cost": 1,
+      "maxRank": 3,
       "row": 0,
+      "unlockAt": 0,
       "requires": [],
       "excludes": [],
       "effects": [
@@ -338,7 +344,9 @@
       "description": "You ride 15% faster.",
       "icon": "\ud83d\udc0e",
       "cost": 1,
+      "maxRank": 3,
       "row": 0,
+      "unlockAt": 0,
       "requires": [],
       "excludes": [],
       "effects": [
@@ -359,10 +367,10 @@
       "description": "Unlock Whirling Blades \u2014 steel circles you.",
       "icon": "\ud83c\udf00",
       "cost": 2,
+      "maxRank": 1,
       "row": 1,
-      "requires": [
-        "ride-shoes"
-      ],
+      "unlockAt": 2,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -380,10 +388,10 @@
       "description": "The grace after a shove lasts 70% longer.",
       "icon": "\ud83d\udee1\ufe0f",
       "cost": 2,
+      "maxRank": 2,
       "row": 1,
-      "requires": [
-        "ride-footing"
-      ],
+      "unlockAt": 2,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -403,10 +411,10 @@
       "description": "Trampling hits 45% harder.",
       "icon": "\ud83d\udca5",
       "cost": 2,
+      "maxRank": 2,
       "row": 2,
-      "requires": [
-        "ride-blades"
-      ],
+      "unlockAt": 4,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -426,7 +434,9 @@
       "description": "Blades cut 40% deeper.",
       "icon": "\u2694\ufe0f",
       "cost": 2,
+      "maxRank": 2,
       "row": 2,
+      "unlockAt": 4,
       "requires": [
         "ride-blades"
       ],
@@ -450,10 +460,10 @@
       "description": "Your bow hits +3% harder for every coin still lying on the field.",
       "icon": "\ud83e\ude99",
       "cost": 2,
+      "maxRank": 1,
       "row": 3,
-      "requires": [
-        "ride-impact"
-      ],
+      "unlockAt": 7,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -473,9 +483,11 @@
       "description": "One more blade, circling 20% wider.",
       "icon": "\ud83d\udd04",
       "cost": 2,
+      "maxRank": 2,
       "row": 3,
+      "unlockAt": 7,
       "requires": [
-        "ride-honed"
+        "ride-blades"
       ],
       "excludes": [],
       "effects": [
@@ -504,10 +516,10 @@
       "description": "Caltrops last 50% longer and bite harder.",
       "icon": "\ud83d\udd73\ufe0f",
       "cost": 2,
+      "maxRank": 2,
       "row": 4,
-      "requires": [
-        "ride-warhorse"
-      ],
+      "unlockAt": 10,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -535,9 +547,11 @@
       "description": "Blades hold for 40% longer.",
       "icon": "\ud83d\udd25",
       "cost": 2,
+      "maxRank": 2,
       "row": 4,
+      "unlockAt": 10,
       "requires": [
-        "ride-arc"
+        "ride-blades"
       ],
       "excludes": [],
       "effects": [
@@ -559,10 +573,10 @@
       "description": "Nothing can stagger you and trampling hits three times as hard. \u221235% bow damage, \u221215% speed.",
       "icon": "\ud83d\udc17",
       "cost": 3,
+      "maxRank": 1,
       "row": 5,
-      "requires": [
-        "ride-broken"
-      ],
+      "unlockAt": 14,
+      "requires": [],
       "excludes": [
         "ride-outrider"
       ],
@@ -602,10 +616,10 @@
       "description": "+60% speed, coins fly to you from far off and linger. Trampling hits half as hard.",
       "icon": "\ud83d\udca8",
       "cost": 3,
+      "maxRank": 1,
       "row": 5,
-      "requires": [
-        "ride-relentless"
-      ],
+      "unlockAt": 14,
+      "requires": [],
       "excludes": [
         "ride-cataphract"
       ],
@@ -645,7 +659,9 @@
       "description": "Every tower hits 18% harder.",
       "icon": "\ud83c\udff9",
       "cost": 1,
+      "maxRank": 3,
       "row": 0,
+      "unlockAt": 0,
       "requires": [],
       "excludes": [],
       "effects": [
@@ -667,7 +683,9 @@
       "description": "Towers cost 18% less to raise.",
       "icon": "\ud83e\uddf1",
       "cost": 1,
+      "maxRank": 3,
       "row": 0,
+      "unlockAt": 0,
       "requires": [],
       "excludes": [],
       "effects": [
@@ -689,10 +707,10 @@
       "description": "Archer towers crit 22% of the time for \u00d72.2.",
       "icon": "\ud83c\udfaf",
       "cost": 2,
+      "maxRank": 2,
       "row": 1,
-      "requires": [
-        "wall-fletchers"
-      ],
+      "unlockAt": 2,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -715,10 +733,10 @@
       "description": "Upgrades cost 22% less.",
       "icon": "\u26cf\ufe0f",
       "cost": 2,
+      "maxRank": 2,
       "row": 1,
-      "requires": [
-        "wall-masonry"
-      ],
+      "unlockAt": 2,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -739,10 +757,10 @@
       "description": "Unlock Rally Horn \u2014 every tower fires faster for a while.",
       "icon": "\ud83d\udcef",
       "cost": 2,
+      "maxRank": 1,
       "row": 2,
-      "requires": [
-        "wall-oath"
-      ],
+      "unlockAt": 4,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -760,10 +778,10 @@
       "description": "Bombards hit 35% harder.",
       "icon": "\ud83d\udca3",
       "cost": 2,
+      "maxRank": 2,
       "row": 2,
-      "requires": [
-        "wall-oath"
-      ],
+      "unlockAt": 4,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -784,10 +802,10 @@
       "description": "Frost spires hold 25% more ground.",
       "icon": "\u2744\ufe0f",
       "cost": 2,
+      "maxRank": 2,
       "row": 2,
-      "requires": [
-        "wall-foundations"
-      ],
+      "unlockAt": 4,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -808,10 +826,10 @@
       "description": "Every tower hits a further +5% per soldier standing.",
       "icon": "\ud83d\udce3",
       "cost": 2,
+      "maxRank": 1,
       "row": 3,
-      "requires": [
-        "wall-powder"
-      ],
+      "unlockAt": 7,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -831,10 +849,10 @@
       "description": "Every tower hits +6% harder for each soldier standing on the field.",
       "icon": "\ud83d\udee1\ufe0f",
       "cost": 2,
+      "maxRank": 1,
       "row": 3,
-      "requires": [
-        "wall-winter"
-      ],
+      "unlockAt": 7,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -854,10 +872,10 @@
       "description": "Towers lend neighbours +30% damage across a wide circle. Build them close.",
       "icon": "\u2716\ufe0f",
       "cost": 2,
+      "maxRank": 1,
       "row": 4,
-      "requires": [
-        "wall-reload"
-      ],
+      "unlockAt": 10,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -880,10 +898,10 @@
       "description": "The first tower you raise each night costs nothing.",
       "icon": "\ud83d\udd2d",
       "cost": 2,
+      "maxRank": 1,
       "row": 4,
-      "requires": [
-        "wall-beacon"
-      ],
+      "unlockAt": 10,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -901,10 +919,10 @@
       "description": "+55% tower damage. \u221228% tower range. Few, deadly, close.",
       "icon": "\ud83c\udff9",
       "cost": 3,
+      "maxRank": 1,
       "row": 5,
-      "requires": [
-        "wall-crossfire"
-      ],
+      "unlockAt": 14,
+      "requires": [],
       "excludes": [
         "wall-curtain"
       ],
@@ -934,10 +952,10 @@
       "description": "+40% tower range, \u221235% build cost. \u221222% tower damage.",
       "icon": "\ud83c\udfef",
       "cost": 3,
+      "maxRank": 1,
       "row": 5,
-      "requires": [
-        "wall-longwatch"
-      ],
+      "unlockAt": 14,
+      "requires": [],
       "excludes": [
         "wall-siege"
       ],
@@ -974,7 +992,9 @@
       "description": "Unlock the barracks. Soldiers hold the road.",
       "icon": "\ud83c\udfdb\ufe0f",
       "cost": 2,
+      "maxRank": 1,
       "row": 0,
+      "unlockAt": 0,
       "requires": [],
       "excludes": [],
       "effects": [
@@ -993,10 +1013,10 @@
       "description": "One more soldier in every garrison.",
       "icon": "\ud83d\udcdc",
       "cost": 1,
+      "maxRank": 3,
       "row": 1,
-      "requires": [
-        "host-barracks"
-      ],
+      "unlockAt": 2,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1020,10 +1040,10 @@
       "description": "Every soldier hits +11% harder for each other soldier standing.",
       "icon": "\ud83e\udd1d",
       "cost": 2,
+      "maxRank": 1,
       "row": 1,
-      "requires": [
-        "host-barracks"
-      ],
+      "unlockAt": 2,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1043,10 +1063,10 @@
       "description": "Every fallen soldier returns the moment a wave is cleared.",
       "icon": "\ud83d\udce3",
       "cost": 2,
+      "maxRank": 1,
       "row": 2,
-      "requires": [
-        "host-levy"
-      ],
+      "unlockAt": 4,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1064,10 +1084,10 @@
       "description": "Enemies killed while a soldier holds them pay a bounty in coin.",
       "icon": "\u2692\ufe0f",
       "cost": 2,
+      "maxRank": 1,
       "row": 2,
-      "requires": [
-        "host-mail"
-      ],
+      "unlockAt": 4,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1085,10 +1105,10 @@
       "description": "Garrisons hold 25% more road, and towers reach 12% further.",
       "icon": "\ud83d\udea7",
       "cost": 2,
+      "maxRank": 1,
       "row": 3,
-      "requires": [
-        "host-orders"
-      ],
+      "unlockAt": 7,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1120,10 +1140,10 @@
       "description": "Unlock the Muster \u2014 the gates open.",
       "icon": "\ud83c\udfba",
       "cost": 2,
+      "maxRank": 1,
       "row": 3,
-      "requires": [
-        "host-drill"
-      ],
+      "unlockAt": 7,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1141,10 +1161,10 @@
       "description": "Soldiers hit a further +9% each. A thin line is worth little; a wall is worth everything.",
       "icon": "\ud83d\udea9",
       "cost": 2,
+      "maxRank": 1,
       "row": 4,
-      "requires": [
-        "host-muster"
-      ],
+      "unlockAt": 10,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1164,10 +1184,10 @@
       "description": "Your bow deals +25% to slowed or held enemies. Every tower hits 12% harder.",
       "icon": "\u2693",
       "cost": 2,
+      "maxRank": 1,
       "row": 4,
-      "requires": [
-        "host-picket"
-      ],
+      "unlockAt": 10,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1194,10 +1214,10 @@
       "description": "Soldiers take 140% more punishment and hold longer. They deal 45% less.",
       "icon": "\ud83d\udee1\ufe0f",
       "cost": 3,
+      "maxRank": 1,
       "row": 5,
-      "requires": [
-        "host-anvil"
-      ],
+      "unlockAt": 14,
+      "requires": [],
       "excludes": [
         "host-thelevy"
       ],
@@ -1223,10 +1243,10 @@
       "description": "+3 soldiers, respawn halved. \u221245% soldier hp. Bodies are cheap.",
       "icon": "\ud83d\udc65",
       "cost": 3,
+      "maxRank": 1,
       "row": 5,
-      "requires": [
-        "host-banner"
-      ],
+      "unlockAt": 14,
+      "requires": [],
       "excludes": [
         "host-shieldwall"
       ],
@@ -1253,7 +1273,9 @@
       "description": "Coins fly to you from 40% further.",
       "icon": "\ud83e\uddf2",
       "cost": 1,
+      "maxRank": 3,
       "row": 0,
+      "unlockAt": 0,
       "requires": [],
       "excludes": [],
       "effects": [
@@ -1274,7 +1296,9 @@
       "description": "Start every run with 20 more gold.",
       "icon": "\ud83d\udcb0",
       "cost": 1,
+      "maxRank": 3,
       "row": 0,
+      "unlockAt": 0,
       "requires": [],
       "excludes": [],
       "effects": [
@@ -1295,10 +1319,10 @@
       "description": "The keep withstands 45 more damage.",
       "icon": "\ud83d\udeaa",
       "cost": 2,
+      "maxRank": 2,
       "row": 1,
-      "requires": [
-        "crown-coffers"
-      ],
+      "unlockAt": 2,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1318,10 +1342,10 @@
       "description": "Coins on the ground never expire, even mid-fight.",
       "icon": "\ud83d\udee4\ufe0f",
       "cost": 2,
+      "maxRank": 1,
       "row": 1,
-      "requires": [
-        "crown-lodestone"
-      ],
+      "unlockAt": 2,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1339,10 +1363,10 @@
       "description": "Every tower hits +8% harder for each 100 gold you are holding.",
       "icon": "\ud83e\ude99",
       "cost": 2,
+      "maxRank": 1,
       "row": 2,
-      "requires": [
-        "crown-roads"
-      ],
+      "unlockAt": 4,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1362,10 +1386,10 @@
       "description": "Selling a tower returns everything you put into it.",
       "icon": "\ud83d\uddff",
       "cost": 2,
+      "maxRank": 1,
       "row": 2,
-      "requires": [
-        "crown-gate"
-      ],
+      "unlockAt": 4,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1383,10 +1407,10 @@
       "description": "Towers hit a further +6% per 100 gold held. Spending is no longer free.",
       "icon": "\ud83d\udc8e",
       "cost": 2,
+      "maxRank": 1,
       "row": 3,
-      "requires": [
-        "crown-tithe"
-      ],
+      "unlockAt": 7,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1406,10 +1430,10 @@
       "description": "See two waves ahead instead of one.",
       "icon": "\ud83d\udd25",
       "cost": 2,
+      "maxRank": 2,
       "row": 3,
-      "requires": [
-        "crown-stones"
-      ],
+      "unlockAt": 7,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1429,10 +1453,10 @@
       "description": "Towers cost 15% less and the keep holds 35 more.",
       "icon": "\u26f0\ufe0f",
       "cost": 2,
+      "maxRank": 1,
       "row": 4,
-      "requires": [
-        "crown-ransom"
-      ],
+      "unlockAt": 10,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1459,10 +1483,10 @@
       "description": "The muster pays 35% more.",
       "icon": "\ud83c\udf3e",
       "cost": 2,
+      "maxRank": 2,
       "row": 4,
-      "requires": [
-        "crown-watchfire"
-      ],
+      "unlockAt": 10,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1482,10 +1506,10 @@
       "description": "+95 starting gold. Wave clears pay half. Front-load everything.",
       "icon": "\ud83c\udf81",
       "cost": 3,
+      "maxRank": 1,
       "row": 5,
-      "requires": [
-        "crown-quarry"
-      ],
+      "unlockAt": 14,
+      "requires": [],
       "excludes": [
         "crown-longsiege"
       ],
@@ -1513,10 +1537,10 @@
       "description": "Wave clears pay +90%. \u221230 starting gold, \u221240 gate hp.",
       "icon": "\u23f1\ufe0f",
       "cost": 3,
+      "maxRank": 1,
       "row": 5,
-      "requires": [
-        "crown-granary"
-      ],
+      "unlockAt": 14,
+      "requires": [],
       "excludes": [
         "crown-warchest"
       ],
@@ -1550,7 +1574,9 @@
       "description": "Caltrops bite 25% harder.",
       "icon": "\ud83e\udea8",
       "cost": 1,
+      "maxRank": 3,
       "row": 0,
+      "unlockAt": 0,
       "requires": [],
       "excludes": [],
       "effects": [
@@ -1572,7 +1598,9 @@
       "description": "Caltrops cover 25% more ground.",
       "icon": "\u2733\ufe0f",
       "cost": 1,
+      "maxRank": 3,
       "row": 0,
+      "unlockAt": 0,
       "requires": [],
       "excludes": [],
       "effects": [
@@ -1594,10 +1622,10 @@
       "description": "Unlock Caltrops \u2014 iron on the road behind you.",
       "icon": "\u2699\ufe0f",
       "cost": 2,
+      "maxRank": 1,
       "row": 1,
-      "requires": [
-        "storm-grit"
-      ],
+      "unlockAt": 2,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1615,10 +1643,10 @@
       "description": "Ground patches last 40% longer.",
       "icon": "\ud83d\udd70\ufe0f",
       "cost": 2,
+      "maxRank": 2,
       "row": 1,
-      "requires": [
-        "storm-scatter"
-      ],
+      "unlockAt": 2,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1646,10 +1674,10 @@
       "description": "Unlock Aerostorm \u2014 a killing wind walks the road.",
       "icon": "\ud83c\udf2a\ufe0f",
       "cost": 2,
+      "maxRank": 1,
       "row": 2,
-      "requires": [
-        "storm-caltrops"
-      ],
+      "unlockAt": 4,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1667,10 +1695,10 @@
       "description": "Your ground hits +9% harder for every enemy standing in it.",
       "icon": "\u26c8\ufe0f",
       "cost": 2,
+      "maxRank": 1,
       "row": 2,
-      "requires": [
-        "storm-lingering"
-      ],
+      "unlockAt": 4,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1690,9 +1718,12 @@
       "description": "Your storms come round 20% sooner.",
       "icon": "\ud83c\udf25\ufe0f",
       "cost": 2,
+      "maxRank": 2,
       "row": 3,
+      "unlockAt": 7,
       "requires": [
-        "storm-aero"
+        "storm-aero",
+        "storm-caltrops"
       ],
       "excludes": [],
       "effects": [
@@ -1721,10 +1752,10 @@
       "description": "You deal 22% more to anything slowed or held. Pairs with frost and with soldiers.",
       "icon": "\ud83e\udee7",
       "cost": 2,
+      "maxRank": 1,
       "row": 3,
-      "requires": [
-        "storm-thunder"
-      ],
+      "unlockAt": 7,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1744,10 +1775,10 @@
       "description": "Anything standing in your ground loses its armour.",
       "icon": "\ud83c\udf0a",
       "cost": 2,
+      "maxRank": 1,
       "row": 4,
-      "requires": [
-        "storm-gathering"
-      ],
+      "unlockAt": 10,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1765,10 +1796,10 @@
       "description": "Your ground hits a further +7% per enemy caught. Crowds are the point.",
       "icon": "\ud83c\udf0a",
       "cost": 2,
+      "maxRank": 1,
       "row": 4,
-      "requires": [
-        "storm-quagmire"
-      ],
+      "unlockAt": 10,
+      "requires": [],
       "excludes": [],
       "effects": [
         {
@@ -1788,9 +1819,12 @@
       "description": "Storms hit 70% harder and come round twice as often. They cover 35% less ground.",
       "icon": "\ud83c\udf29\ufe0f",
       "cost": 3,
+      "maxRank": 1,
       "row": 5,
+      "unlockAt": 14,
       "requires": [
-        "storm-deluge"
+        "storm-caltrops",
+        "storm-aero"
       ],
       "excludes": [
         "storm-scorched"
@@ -1849,9 +1883,12 @@
       "description": "Storms cover 60% more ground and last 80% longer. They hit 40% softer.",
       "icon": "\ud83d\udd25",
       "cost": 3,
+      "maxRank": 1,
       "row": 5,
+      "unlockAt": 14,
       "requires": [
-        "storm-attrition"
+        "storm-caltrops",
+        "storm-aero"
       ],
       "excludes": [
         "storm-tempest"

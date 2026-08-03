@@ -558,11 +558,38 @@ generalist. Some of that is correct — a *pure* complement build should lose �
 instrument, because the bot converts rate well and exposure and greed badly. Distinguishing
 those two needs a probe that scores a build's *contribution* rather than its solo win rate.
 
-[ ] **M7.7 — Ranks and tier gating.** Now worth doing, and not before: ranks are a multiplier on
-node *quality*, so they had to land on nodes worth ranking. Two parts — a node buyable N times,
-and "spend N points in this path to open the next row" replacing the current rigid chains, which
-force a specific order and make some nodes mandatory tolls. Rules stay rank-blind: a rule that
-applied "1.4 times" would not be a rule.
+[x] **M7.7 — Ranks, tier gating, and making conditional power legible** (2026-08-03).
+**Ranks needed no save migration.** `build` was already `string[]`, so a node at rank 3 is its id
+three times over — and a v3 save written before ranks reads as every node at rank 1, which is
+exactly what it was. Minors rank ×3, notables ×2; abilities, synergies and keystones are one-offs
+by nature; **rules cannot rank at all** and the schema refuses a data edit that tries, because a
+rule applied 1.4 times is not a rule.
+**Tier gating replaced the chains outright.** 63 of 72 per-node prerequisites are gone, swapped
+for "spend N points in this path" (0/2/4/7/10/14 by row). A chain forces one order and makes
+every node above the one you want a toll; a total keeps the commitment and gives back the freedom
+to walk it your own way. The nine prerequisites left are real: a node that sharpens an ability
+needs the node that unlocks it. Cross-path ones were dropped rather than kept — a Ride node that
+sharpens a Storm ability should stay buyable and simply be worth nothing until you own it, which
+is the same bargain every scaling node makes.
+**and conditional power was invisible, which defeated the whole point of M7.8.** The tree said
+"+6% per soldier standing" and nothing about the payoff, and a bonus you cannot picture is one
+you cannot build toward. Two readouts now: the tree sheet shows worked values at three plausible
+board sizes (a preview, deliberately — the tree is opened between runs when nothing is standing,
+so "currently ×1.0" would be true and useless), and the HUD carries live `TWR ×1.34` chips during
+a run, computed from the same reads `Scaling` makes at damage time so the bar and the shot can
+never drift.
+**the bot's tower valuation did not know scaling existed**, so it priced a barracks purely on
+exposure while the build's own nodes made it partly a damage purchase — systematically
+undervaluing the exact synergies M7.8 added. New `scalingValue`, read off the live specs. Fifth
+time a harness shortcut silently became a lie about the game once a mechanic changed under it.
+**and `totalCost` was counting each node once**, so the scarcity gauge read 33% when the tree
+with ranks is 24% reachable. A rule reading its own gauge wrong is worse than no gauge.
+
+**Measured after all of it:** path probe max **+0pp** — no path beats a generalist, which is
+F.1's criterion. But the pure-path arms have stopped being the useful question: with power this
+conditional a single-path build is *supposed* to fail, and Wall duly fell 68% → 40% because a
+Wall build has no soldiers for its own scaling to count. What is needed instead is a probe over
+*mixed* builds, scoring diversity rather than solo survival. Recorded, not built.
 
 [ ] **M7.5 — More to unlock.** The tree is the only unlock surface today. A long game wants
 more kinds of thing arriving over time — towers, enemies, abilities, maps, cosmetics — on a

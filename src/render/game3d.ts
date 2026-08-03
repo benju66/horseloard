@@ -104,6 +104,15 @@ style.textContent =
   font: 700 9px/1 ui-monospace, monospace; letter-spacing: .06em;
   color: #eafaf1; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
 /* Wave payout, floating up off the bar. Reports, never asks. */
+/* Live scaling. The other half of making conditional power legible: the tree
+   shows what a node *would* be worth, this shows what it *is* worth right now,
+   which is the number that teaches you to keep soldiers alive. */
+#scalebar { position: absolute; top: calc(env(safe-area-inset-top, 6px) + 46px);
+  left: 50%; transform: translateX(-50%); display: flex; gap: 6px; pointer-events: none; }
+#scalebar span { padding: 2px 7px; border-radius: 999px; font: 700 10px ui-monospace, monospace;
+  background: rgba(20,30,24,.72); color: #9fe3b8; letter-spacing: .03em;
+  font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px rgba(0,0,0,.8); }
+#scalebar span.hot { color: #f6c945; }
 #xptoast { position: absolute; top: calc(env(safe-area-inset-top, 6px) + 46px);
   left: 50%; transform: translateX(-50%); pointer-events: none;
   font: 700 15px ui-monospace, monospace; color: #9fe3b8;
@@ -170,6 +179,8 @@ const xpLabel = document.createElement('span');
 xpLabel.id = 'xplabel';
 xpBar.append(xpFill, xpRun, xpLabel);
 
+const scaleBar = document.createElement('div');
+scaleBar.id = 'scalebar';
 const xpToast = document.createElement('div');
 xpToast.id = 'xptoast';
 const levelUp = document.createElement('div');
@@ -181,7 +192,7 @@ const startBtn = document.createElement('button');
 startBtn.id = 'startbtn';
 startBtn.setAttribute('data-ui', '');
 startBtn.textContent = 'Start wave';
-hud.append(topbar, xpBar, xpToast, levelUp, startBtn);
+hud.append(topbar, xpBar, scaleBar, xpToast, levelUp, startBtn);
 overlay.append(hud);
 
 const audio = new AudioManager();
@@ -704,6 +715,39 @@ function settleIfNeeded(): void {
   );
 }
 
+/**
+ * The multipliers a build is earning right now.
+ *
+ * Recomputed rather than cached: these are the same reads `Scaling` makes at
+ * damage time, so what the bar says and what the shot does can never drift.
+ * Rounded to two places and written only on change, because this runs every
+ * frame and a DOM write per frame is the thing that costs a phone its 60fps.
+ */
+function syncScaleBar(): void {
+  if (!sim || sim.scaling.isEmpty) {
+    if (scaleBar.childElementCount > 0) scaleBar.replaceChildren();
+    return;
+  }
+  const all: Array<[string, number]> = [
+    ['TWR', sim.scaling.towerDamage()],
+    ['BOW', sim.scaling.bowDamage(sim.hero.x, sim.hero.y)],
+    ['MEN', sim.scaling.soldierDamage()],
+  ];
+  // Only what is actually paying. A chip reading ×1.00 is a node you took and
+  // are getting nothing from, which the tree screen is the place to explain.
+  const shown = all.filter(([, v]) => v > 1.001);
+
+  if (shown.length !== scaleBar.childElementCount) {
+    scaleBar.replaceChildren(...shown.map(() => document.createElement('span')));
+  }
+  shown.forEach(([label, value], i) => {
+    const el = scaleBar.children[i] as HTMLSpanElement;
+    const text = `${label} ×${value.toFixed(2)}`;
+    if (el.textContent !== text) el.textContent = text;
+    el.classList.toggle('hot', value >= 1.5);
+  });
+}
+
 function syncHud(): void {
   if (!sim || !world) return;
   const bonus = sim.earlyStartBonus();
@@ -729,6 +773,11 @@ function syncHud(): void {
 
   const label = now.needed > 0 ? `LV ${now.level}  ·  +${run} XP` : `LV ${now.level}  ·  MAX`;
   if (xpLabel.textContent !== label) xpLabel.textContent = label;
+
+  // Live scaling, only for the relationships this build actually holds. A row
+  // of ×1.00 chips for nodes you never took would be noise; the bar is empty
+  // for a build with no scaling at all.
+  syncScaleBar();
 
   // Crossing a career level mid-run is the beat the draft pop-up used to hold.
   // It announces and vanishes; the point it grants waits in the tree, which is

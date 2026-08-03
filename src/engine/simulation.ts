@@ -106,6 +106,12 @@ export class Simulation {
   /** Power that grows with the board. Read live; see `scaling.ts`. */
   readonly scaling: Scaling;
   /**
+   * The raw specs behind `scaling`, for anything that has to *reason* about the
+   * build rather than apply it — the bot's tower valuation, which otherwise
+   * prices a barracks as if the synergy the player bought did not exist.
+   */
+  readonly scalingSpecs: Readonly<Record<string, ScaleSpec>>;
+  /**
    * Fired when a wave is cleared, with the wave number and the XP it paid.
    *
    * Reporting, never asking. The run's XP is the only thing a player earns
@@ -200,7 +206,8 @@ export class Simulation {
     // Every source the sim can count, in one place. Arrow functions rather than
     // captured values: the whole point is that these are read at the moment the
     // number is used, not at construction.
-    this.scaling = new Scaling(data.scaling ?? {}, {
+    this.scalingSpecs = data.scaling ?? {};
+    this.scaling = new Scaling(this.scalingSpecs, {
       soldiersStanding: () => this.army.standingCount,
       gold: () => this.economy.gold,
       towersCovering: (x, y) => this.towerSystem.countCovering(x, y),

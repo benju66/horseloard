@@ -69,14 +69,40 @@ export const SkillNodeSchema = z.object({
    * all, and a grid of identical squares is a list wearing a costume.
    */
   icon: z.string().min(1).max(8),
-  cost: z.number().int().positive(),
+  cost: z.number().int().positive().describe('per rank'),
+  /**
+   * How many times this node may be bought. 1 = a one-off.
+   *
+   * Ranks let a build go *deep* where the budget otherwise forces it wide — 48
+   * points across 72 nodes is ~24 nodes, all shallow. They are also what
+   * guarantees there is always something worth spending a level-up on.
+   *
+   * **Rules are always rank 1**, enforced below: a rule that applied "1.4 times"
+   * would not be a rule, and the distinction between a rule and a stat is the
+   * thing that stops the tree collapsing back into a spreadsheet.
+   */
+  maxRank: z.number().int().positive().default(1),
   /**
    * Row in its column, 0 at the top. The tree renders as five vertical
    * columns, one per phone screen, so a path reads top-to-bottom as a single
    * line of commitment — no pan-and-zoom graph on a phone.
    */
   row: z.number().int().nonnegative(),
-  /** Node ids that must be taken first. Empty = available from the start of the path. */
+  /**
+   * Points already spent *in this path* before the node opens.
+   *
+   * Tier gating, and it replaced per-node prerequisite chains for a reason: a
+   * chain forces one specific order, which makes every node above the one you
+   * want a toll rather than a choice. Gating on a total keeps the commitment —
+   * you still have to walk the path — and gives back the freedom to walk it
+   * your own way.
+   */
+  unlockAt: z.number().int().nonnegative().default(0),
+  /**
+   * Node ids that must be held first. Kept only for genuine dependencies — a
+   * node that sharpens an ability needs the node that unlocks it. Everything
+   * that used to be a chain is `unlockAt` now.
+   */
   requires: z.array(IdSchema).default([]),
   /**
    * Node ids this one locks out, and which lock this one out.
@@ -169,6 +195,31 @@ export const SkillTreeFileSchema = z
       });
     });
 
+    // A rule cannot be ranked — see `maxRank`. Caught here rather than trusted,
+    // because "buy the rule twice" is a tempting-looking data edit that would
+    // quietly turn the one effect type that is not a number back into one.
+    file.nodes.forEach((n, i) => {
+      if (n.maxRank > 1 && n.effects.some((e) => e.type === 'rule')) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['nodes', i, 'maxRank'],
+          message: `"${n.id}" carries a rule and cannot have ranks — a rule applied 1.4 times is not a rule`,
+        });
+      }
+      // A node gated above what its own path can afford is unreachable and
+      // would render as permanently locked with no way to find out why.
+      const pathTotal = file.nodes
+        .filter((m) => m.path === n.path && m.id !== n.id)
+        .reduce((s2, m) => s2 + m.cost * m.maxRank, 0);
+      if (n.unlockAt > pathTotal) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['nodes', i, 'unlockAt'],
+          message: `"${n.id}" opens at ${n.unlockAt} points but its path only holds ${pathTotal}`,
+        });
+      }
+    });
+
     // A path sits in exactly one half. Mixing them inside a column would make
     // the tab grouping meaningless and the probes' slices incoherent.
     for (const path of SkillPathSchema.options) {
@@ -204,7 +255,7 @@ export const SkillTreeFileSchema = z
 
     // Scarcity, enforced. Three-starring every map is the ceiling, so the
     // budget assumes all four.
-    const total = file.nodes.reduce((s, n) => s + n.cost, 0);
+    const total = file.nodes.reduce((s, n) => s + n.cost * n.maxRank, 0);
     const budget = file.maxLevel * file.pointsPerLevel + 4 * file.pointsPerThreeStar;
     if (budget > total * file.maxAllocatableFraction) {
       ctx.addIssue({

@@ -141,6 +141,37 @@ export function incomeValue(
 }
 
 /**
+ * What a garrison is worth *to the build*, on top of what it holds.
+ *
+ * A scaling node like "towers hit +6% harder per soldier standing" makes a
+ * barracks partly a *damage* purchase, and a scorer that only knows about
+ * exposure will systematically undervalue it. That is the same class of error
+ * as the coverage-blind valuation and the pre-equip-cap roster: a bot shortcut
+ * that was true until a mechanic changed underneath it, and then quietly became
+ * a lie about the game.
+ *
+ * Read straight off the build's own specs, so it stays honest as those change
+ * and names no content (CLAUDE.md #1) — it knows about soldiers, not barracks.
+ */
+export function scalingValue(
+  stats: TowerStats,
+  boardCombat: number,
+  scaling: Record<string, { perUnit: number; max: number }>,
+): number {
+  const g = stats.garrison;
+  if (!g) return 0;
+  const perSoldier = scaling['tower-damage-per-soldier']?.perUnit ?? 0;
+  const selfBuff = scaling['soldier-damage-per-soldier']?.perUnit ?? 0;
+  if (perSoldier <= 0 && selfBuff <= 0) return 0;
+  // Each soldier this plot posts lifts every tower already on the board, and
+  // lifts its own squad. Scored against combat that exists rather than combat
+  // that might — the same no-projection rule `exposureValue` learned the hard
+  // way when a projected complement made the bot open with a barracks and die
+  // on wave 1.
+  return g.squad * perSoldier * boardCombat + g.squad * selfBuff * ASSUMED_SIEGE_DPS;
+}
+
+/**
  * What a garrison is worth: not what it kills, but what it *holds still*.
  *
  * Exposure is a different factor from rate (TRIANGLE.md §B.2), so it cannot be
@@ -194,6 +225,10 @@ interface Valuation {
   valuePerGold: number;
   /** combat value already standing within a given radius of a point */
   neighbourCombat: (x: number, y: number, radius: number) => number;
+  /** Everything on the board that shoots — the multiplicand for scaling nodes. */
+  boardCombat: number;
+  /** The build's live scaling specs, so a synergy the player bought is priced. */
+  scaling: Record<string, { perUnit: number; max: number }>;
 }
 
 function totalValue(
@@ -213,7 +248,8 @@ function totalValue(
         ? v.neighbourCombat(plot.x, plot.y, stats.garrison.rallyRange + stats.garrison.engageRadius)
         : 0,
       ASSUMED_SIEGE_DPS,
-    )
+    ) +
+    scalingValue(stats, v.boardCombat, v.scaling)
   );
 }
 
@@ -245,20 +281,26 @@ function valuation(sim: Simulation, file: TowersFile): Valuation {
     if (rate > valuePerGold) valuePerGold = rate;
   }
 
+  const combatAt = (x: number, y: number, radius: number): number => {
+    let sum = 0;
+    const rSq = radius * radius;
+    for (const p of sim.towerSystem.plots) {
+      if (p.towerId === null) continue;
+      if ((p.x - x) ** 2 + (p.y - y) ** 2 > rSq) continue;
+      const stats = sim.towerSystem.stats(p);
+      if (stats) sum += combatValue(stats, sim.towerSystem.projectileDef(p));
+    }
+    return sum;
+  };
+
   return {
     horizonSeconds: perWave * wavesLeft,
     valuePerGold,
-    neighbourCombat: (x, y, radius) => {
-      let sum = 0;
-      const rSq = radius * radius;
-      for (const p of sim.towerSystem.plots) {
-        if (p.towerId === null) continue;
-        if ((p.x - x) ** 2 + (p.y - y) ** 2 > rSq) continue;
-        const stats = sim.towerSystem.stats(p);
-        if (stats) sum += combatValue(stats, sim.towerSystem.projectileDef(p));
-      }
-      return sum;
-    },
+    neighbourCombat: combatAt,
+    // Everything standing, anywhere: a scaling node lifts the whole board, not
+    // just what happens to sit near the plot being priced.
+    boardCombat: combatAt(0, 0, Infinity),
+    scaling: sim.scalingSpecs,
   };
 }
 

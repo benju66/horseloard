@@ -1,5 +1,5 @@
 import type { GameData } from '../../data/loader';
-import type { Ability, SkillPath } from '../../data/schemas';
+import type { Ability, SkillNode, SkillPath } from '../../data/schemas';
 import { SkillTree, type AllocationRefusal } from '../../engine/skillTree';
 import {
   careerProgress,
@@ -49,8 +49,9 @@ const PATH_BLURBS: Record<SkillPath, string> = {
 /** Why a node is greyed out, in words a player can act on. */
 const REFUSAL_TEXT: Record<AllocationRefusal, string> = {
   unknown: 'missing',
-  'already-taken': 'taken',
-  'missing-prerequisite': 'locked',
+  maxed: 'fully learned',
+  'path-locked': 'spend more in this path',
+  'missing-prerequisite': 'needs the node above',
   excluded: 'forgone',
   'too-expensive': 'not enough points',
 };
@@ -406,13 +407,25 @@ export class SkillTreeScreen {
     }
     canvas.append(svg);
 
+    const spentHere = this.tree.spentInPath(this.path, this.host.save.build);
+
     for (const node of nodes) {
-      const taken = this.host.save.build.includes(node.id);
+      const rank = this.tree.rankOf(node.id, this.host.save.build);
+      const taken = rank > 0;
       const refusal = this.tree.refusal(node.id, {
         allocated: this.host.save.build,
         pointsEarned: this.budget().earned,
       });
-      const state = taken ? 'taken' : refusal === null ? 'open' : refusal === 'excluded' ? 'forgone' : 'locked';
+      const state =
+        refusal === 'maxed'
+          ? 'maxed'
+          : taken
+            ? 'taken'
+            : refusal === null
+              ? 'open'
+              : refusal === 'excluded'
+                ? 'forgone'
+                : 'locked';
 
       const cell = document.createElement('button');
       cell.className = `tree-cell kind-${node.kind} is-${state}` + (this.selected === node.id ? ' sel' : '');
@@ -426,13 +439,25 @@ export class SkillTreeScreen {
 
       const badge = document.createElement('span');
       badge.className = 'tree-badge';
-      badge.textContent = taken ? '✓' : `${node.cost}`;
+      // A ranked node reads as a fraction so the ceiling is visible before you
+      // buy in — "2/3" is a plan, where a bare tick is a dead end you find later.
+      badge.textContent =
+        node.maxRank > 1 ? `${rank}/${node.maxRank}` : taken ? '✓' : `${node.cost}`;
 
       const label = document.createElement('span');
       label.className = 'tree-cell-name';
       label.textContent = node.name;
 
       cell.append(hex, badge, label);
+      // The gate, on the node that is behind it. Stated as the number still
+      // owed rather than the threshold, because "3 more" is actionable and
+      // "opens at 10" needs arithmetic.
+      if (refusal === 'path-locked') {
+        const gate = document.createElement('span');
+        gate.className = 'tree-gate';
+        gate.textContent = `🔒 ${node.unlockAt - spentHere} more`;
+        cell.append(gate);
+      }
       cell.addEventListener('click', () => {
         this.selected = this.selected === node.id ? null : node.id;
         this.render();
@@ -468,15 +493,26 @@ export class SkillTreeScreen {
     const nm = document.createElement('div');
     nm.className = 'tree-sheet-name';
     nm.textContent = node.name;
+    const rank = this.tree.rankOf(id, this.host.save.build);
     const kind = document.createElement('div');
     kind.className = 'tree-sheet-kind';
-    kind.textContent = `${node.kind} · ${node.cost} point${node.cost > 1 ? 's' : ''}`;
+    kind.textContent =
+      `${node.kind} · ${node.cost} point${node.cost > 1 ? 's' : ''}` +
+      (node.maxRank > 1 ? ` · rank ${rank}/${node.maxRank}` : '');
     titles.append(nm, kind);
     head.append(ico, titles);
 
     const desc = document.createElement('div');
     desc.className = 'tree-sheet-desc';
     desc.textContent = node.description;
+
+    // What a scaling node is actually worth, at a few board sizes.
+    //
+    // Without this the whole conditional-power design is illegible: "+6% per
+    // soldier standing" tells a player the rate and nothing about the payoff,
+    // and a bonus you cannot picture is one you cannot build toward. The table
+    // turns the node from a rate into a plan.
+    const worked = scalingPreview(node, rank || 1);
 
     const act = document.createElement('button');
     act.className = 'tree-sheet-act';
@@ -499,7 +535,22 @@ export class SkillTreeScreen {
       this.render();
     });
 
-    sheet.append(head, desc, act);
+    sheet.append(head, desc);
+    if (worked) {
+      const table = document.createElement('div');
+      table.className = 'tree-sheet-scale';
+      for (const [label, value] of worked) {
+        const row = document.createElement('span');
+        const k = document.createElement('em');
+        k.textContent = label;
+        const v = document.createElement('b');
+        v.textContent = value;
+        row.append(k, v);
+        table.append(row);
+      }
+      sheet.append(table);
+    }
+    sheet.append(act);
     void free;
     return sheet;
   }
@@ -627,6 +678,43 @@ export class LoadoutScreen {
   }
 }
 
+/**
+ * What a scaling node is worth at a few plausible board sizes.
+ *
+ * The counterpart to `Scaling` in the engine, and deliberately a *preview*
+ * rather than a live reading: the tree is opened between runs, when there are no
+ * soldiers standing and no coins on the ground, so "currently ×1.0" would be
+ * both true and useless. Three sample boards let a player see the shape of the
+ * curve and decide whether they intend to build it.
+ *
+ * Returns null for every other kind of node, so the sheet stays clean.
+ */
+const SCALE_UNITS: Record<string, { unit: string; samples: readonly number[] }> = {
+  'tower-damage-per-soldier': { unit: 'soldiers', samples: [2, 5, 9] },
+  'tower-damage-per-100-gold': { unit: 'gold', samples: [100, 300, 600] },
+  'bow-damage-per-covering-tower': { unit: 'towers on target', samples: [1, 2, 4] },
+  'zone-damage-per-enemy-inside': { unit: 'enemies caught', samples: [3, 6, 12] },
+  'soldier-damage-per-soldier': { unit: 'soldiers', samples: [2, 5, 9] },
+  'bow-damage-per-loose-coin': { unit: 'coins out', samples: [3, 8, 16] },
+};
+
+function scalingPreview(node: SkillNode, rank: number): Array<[string, string]> | null {
+  const rows: Array<[string, string]> = [];
+  for (const fx of node.effects) {
+    if (fx.type !== 'scaling') continue;
+    const meta = SCALE_UNITS[fx.scale];
+    if (!meta) continue;
+    for (const n of meta.samples) {
+      // Gold is counted in whole hundreds by the engine; mirror that here or
+      // the preview would promise more than the run pays.
+      const units = fx.scale === 'tower-damage-per-100-gold' ? Math.floor(n / 100) : n;
+      const factor = Math.min(fx.max, 1 + fx.perUnit * rank * units);
+      rows.push([`${n} ${meta.unit}`, `×${factor.toFixed(2)}`]);
+    }
+  }
+  return rows.length > 0 ? rows : null;
+}
+
 /** How an ability fires, in one line. Abilities are automatic — no button. */
 function triggerText(trigger: Ability['trigger'], cooldown: number): string {
   const every = `every ${cooldown}s at most`;
@@ -736,6 +824,16 @@ export function screensCss(): string {
   background: #141d10; border: 1px solid rgba(255,255,255,.2); color: #cdc6b4;
 }
 .tree-cell-name { font: 600 10px/1.15 Georgia, serif; color: #8a8f85; text-align: center; max-width: 84px; }
+.tree-gate { font: 700 9px ui-monospace, monospace; color: #d98b3a; letter-spacing: .03em; }
+.tree-cell.is-maxed .tree-hex { filter: none; background: #4a6a33; border-color: #f6c945; }
+.tree-cell.is-maxed .tree-badge { color: #f6c945; border-color: #f6c945; }
+.tree-cell.is-maxed .tree-cell-name { color: #f5ead0; }
+/* Worked values for a scaling node — the whole reason conditional power reads. */
+.tree-sheet-scale { display: flex; flex-direction: column; gap: 2px; }
+.tree-sheet-scale span { display: flex; justify-content: space-between; gap: 12px;
+  font: 600 12px ui-monospace, monospace; color: #cdc6b4; }
+.tree-sheet-scale em { font-style: normal; opacity: .75; }
+.tree-sheet-scale b { color: #9fe3b8; font-variant-numeric: tabular-nums; }
 
 .tree-cell.is-open .tree-hex { filter: none; border-color: #f6c945; box-shadow: 0 0 0 4px rgba(246,201,69,.14); }
 .tree-cell.is-open .tree-badge { color: #f6c945; border-color: #f6c945; }

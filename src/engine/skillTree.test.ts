@@ -16,11 +16,17 @@ const bump = (stat: 'bowDamage') => [
 ];
 
 /**
- *   hunt          ride
- *   a (1)         d (1)
- *   b (2) ← a     e (2) ← d
- *   c (3) ← b
- *   k1 (3) ← b ⊗ k2      k2 (3) ← b ⊗ k1
+ * ```
+ *   hunt                                ride
+ *   row 0  a  (1pt, ×3 ranks)           row 0  d  (1pt)
+ *   row 1  b  (2pt, ×2)   opens at 2    row 1  e  (2pt) ← d
+ *   row 2  c  (3pt)       opens at 4
+ *   row 3  k1 (3pt) ⊗ k2  opens at 6
+ *          k2 (3pt) ⊗ k1  opens at 6
+ * ```
+ * `a` is ranked so the rank arithmetic is exercised; `c` and the keystones are
+ * gated on points-in-path so tier gating is; `e` keeps a real prerequisite
+ * because it sharpens the ability `d` unlocks.
  */
 const FILE: SkillTreeFile = {
   pointsPerLevel: 1,
@@ -29,17 +35,34 @@ const FILE: SkillTreeFile = {
   poolNames: { hero: 'Hero', kingdom: 'Kingdom' },
   maxAllocatableFraction: 0.9,
   nodes: [
-    { id: 'a', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'minor', name: 'A', description: 'a', cost: 1, row: 0, requires: [], excludes: [], effects: bump('bowDamage') },
-    { id: 'b', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'notable', name: 'B', description: 'b', cost: 2, row: 1, requires: ['a'], excludes: [], effects: bump('bowDamage') },
-    { id: 'c', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'notable', name: 'C', description: 'c', cost: 3, row: 2, requires: ['b'], excludes: [], effects: bump('bowDamage') },
-    { id: 'k1', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'keystone', name: 'K1', description: 'k1', cost: 3, row: 3, requires: ['b'], excludes: ['k2'], effects: bump('bowDamage') },
-    { id: 'k2', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'keystone', name: 'K2', description: 'k2', cost: 3, row: 3, requires: ['b'], excludes: ['k1'], effects: bump('bowDamage') },
-    { id: 'd', path: 'ride', pool: 'hero', icon: '⬢', kind: 'minor', name: 'D', description: 'd', cost: 1, row: 0, requires: [], excludes: [], effects: bump('bowDamage') },
-    { id: 'e', path: 'ride', pool: 'hero', icon: '⬢', kind: 'ability', name: 'E', description: 'e', cost: 2, row: 1, requires: ['d'], excludes: [], effects: [{ type: 'unlock-ability', abilityId: 'volley' }] },
+    { id: 'a', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'minor', name: 'A', description: 'a', cost: 1, maxRank: 3, row: 0, unlockAt: 0, requires: [], excludes: [], effects: bump('bowDamage') },
+    { id: 'b', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'notable', name: 'B', description: 'b', cost: 2, maxRank: 2, row: 1, unlockAt: 0, requires: ['a'], excludes: [], effects: bump('bowDamage') },
+    { id: 'c', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'notable', name: 'C', description: 'c', cost: 3, maxRank: 1, row: 2, unlockAt: 4, requires: ['b'], excludes: [], effects: bump('bowDamage') },
+    { id: 'k1', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'keystone', name: 'K1', description: 'k1', cost: 3, maxRank: 1, row: 3, unlockAt: 6, requires: ['b'], excludes: ['k2'], effects: bump('bowDamage') },
+    { id: 'k2', path: 'hunt', pool: 'hero', icon: '⬢', kind: 'keystone', name: 'K2', description: 'k2', cost: 3, maxRank: 1, row: 3, unlockAt: 6, requires: ['b'], excludes: ['k1'], effects: bump('bowDamage') },
+    { id: 'd', path: 'ride', pool: 'hero', icon: '⬢', kind: 'minor', name: 'D', description: 'd', cost: 1, maxRank: 1, row: 0, unlockAt: 0, requires: [], excludes: [], effects: bump('bowDamage') },
+    { id: 'e', path: 'ride', pool: 'hero', icon: '⬢', kind: 'ability', name: 'E', description: 'e', cost: 2, maxRank: 1, row: 1, unlockAt: 0, requires: ['d'], excludes: [], effects: [{ type: 'unlock-ability', abilityId: 'volley' }] },
   ],
 };
 
 const tree = new SkillTree(FILE);
+
+/** A minimal balance bundle for `applyTo`. Shared by the rank and effect tests. */
+const applyData = () =>
+  ({
+    hero: {
+      moveSpeed: 100,
+      bow: { levels: [{ damage: 10, range: 100, fireInterval: 1, cost: 0 }] },
+      trample: { damage: 5 },
+      stagger: { shoveDistance: 10, controlLossDuration: 0.4, immunityAfter: 0 },
+      crit: { chance: 0, multiplier: 2 },
+      damageVsHindered: 1,
+    },
+    economy: { startingGold: 100 },
+    towers: { towers: [], projectiles: [] },
+    map: { gate: { hp: 100 } },
+    abilities: [],
+  }) as never;
 const state = (allocated: string[], pointsEarned = 20): SkillTreeState => ({ allocated, pointsEarned });
 
 describe('points', () => {
@@ -64,6 +87,11 @@ describe('points', () => {
   it('totals a single half\'s node cost, for reporting rather than for gating', () => {
     expect(tree.totalCost('hero')).toBe(tree.totalCost());
   });
+
+  it('counts every rank in the total, because ranks are what the budget buys', () => {
+    // a 1pt×3 + b 2pt×2 + c 3 + k1 3 + k2 3 + d 1 + e 2 = 3+4+3+3+3+1+2
+    expect(tree.totalCost()).toBe(19);
+  });
 });
 
 describe('refusal reports which wall you hit', () => {
@@ -71,8 +99,26 @@ describe('refusal reports which wall you hit', () => {
     expect(tree.refusal('ghost', state([]))).toBe('unknown');
   });
 
-  it('refuses a node already held', () => {
-    expect(tree.refusal('a', state(['a']))).toBe('already-taken');
+  it('allows more ranks until the ceiling, then refuses', () => {
+    expect(tree.refusal('a', state(['a']))).toBeNull();
+    expect(tree.refusal('a', state(['a', 'a']))).toBeNull();
+    expect(tree.refusal('a', state(['a', 'a', 'a']))).toBe('maxed');
+  });
+
+  it('refuses a one-rank node the moment it is held', () => {
+    expect(tree.refusal('d', state(['d']))).toBe('maxed');
+  });
+
+  it('refuses a node behind a tier gate, and opens it once the path is paid', () => {
+    // c opens at 4 points in `hunt`; a+b is 3, a+a+b is 4.
+    expect(tree.refusal('c', state(['a', 'b']))).toBe('path-locked');
+    expect(tree.refusal('c', state(['a', 'a', 'b']))).toBeNull();
+  });
+
+  it('counts only the node\'s own path toward its gate', () => {
+    // Points sunk in `ride` must not open a `hunt` tier — that would make tier
+    // gating a global budget check, which is what it exists not to be.
+    expect(tree.refusal('c', state(['a', 'b', 'd', 'e']))).toBe('path-locked');
   });
 
   it('refuses a node whose prerequisite is not held', () => {
@@ -84,9 +130,15 @@ describe('refusal reports which wall you hit', () => {
   });
 
   it('refuses what the career cannot afford', () => {
-    // a(1) + b(2) = 3 spent, c costs 3, only 5 earned.
-    expect(tree.refusal('c', state(['a', 'b'], 5))).toBe('too-expensive');
-    expect(tree.refusal('c', state(['a', 'b'], 6))).toBeNull();
+    // a×2 + b = 4 spent, which clears c's gate; c costs 3 on top.
+    expect(tree.refusal('c', state(['a', 'a', 'b'], 6))).toBe('too-expensive');
+    expect(tree.refusal('c', state(['a', 'a', 'b'], 7))).toBeNull();
+  });
+
+  it('reports the gate before the price, because it is the one you can act on', () => {
+    // Both walls are up: 3 points in path (needs 4) and nothing earned. The
+    // gate is what a player can do something about, so it is what they are told.
+    expect(tree.refusal('c', state(['a', 'b'], 0))).toBe('path-locked');
   });
 
   it('spends one budget across both halves', () => {
@@ -111,6 +163,44 @@ describe('allocate', () => {
     // The screen calls this on every tap; a refusal is a normal outcome.
     const held = ['a'];
     expect(tree.allocate('c', state(held))).toBe(held);
+  });
+});
+
+describe('ranks', () => {
+  it('counts ranks from repeated ids, so the save shape never had to change', () => {
+    expect(tree.rankOf('a', ['a', 'a', 'b'])).toBe(2);
+    expect(tree.rankOf('b', ['a', 'a', 'b'])).toBe(1);
+    expect(tree.rankOf('c', ['a', 'a', 'b'])).toBe(0);
+  });
+
+  it('charges per rank', () => {
+    expect(tree.spent(['a', 'a', 'a'])).toBe(3);
+    expect(tree.spentInPath('hunt', ['a', 'a', 'b', 'd'])).toBe(4);
+  });
+
+  it('refunds one rank at a time, leaving what is below it standing', () => {
+    // b requires a. Dropping a from rank 2 to rank 1 must not take b with it —
+    // the prerequisite is still held.
+    const out = tree.deallocate('a', state(['a', 'a', 'b']));
+    expect(out).toEqual(['a', 'b']);
+  });
+
+  it('takes dependents with the last rank, because the prerequisite is gone', () => {
+    expect(tree.deallocate('a', state(['a', 'b']))).toEqual([]);
+  });
+
+  it('closes a tier behind a refund that drops the path total', () => {
+    // a×2 + b = 4 points, which is exactly c's gate. Refund one rank of a and
+    // the path falls to 3, so c can no longer be held.
+    const held = ['a', 'a', 'b', 'c'];
+    expect(tree.deallocate('a', state(held))).not.toContain('c');
+  });
+
+  it('applies a ranked node once at its rank, not once per rank', () => {
+    // 1.1 per rank, three ranks — compounding, not 1.1 applied to a clone three
+    // times from the same base.
+    const out = tree.applyTo(applyData(), ['a', 'a', 'a']);
+    expect(out.hero.bow.levels[0]!.damage).toBeCloseTo(10 * 1.1 ** 3);
   });
 });
 
@@ -146,7 +236,7 @@ describe('respec', () => {
 
 describe('reconcile', () => {
   it('keeps a build that is still legal, in a buildable order', () => {
-    expect(tree.reconcile(['c', 'b', 'a'], 20)).toEqual(['a', 'b', 'c']);
+    expect(tree.reconcile(['c', 'b', 'a', 'a'], 20)).toEqual(['a', 'a', 'b', 'c']);
   });
 
   it('drops nodes whose prerequisites are missing', () => {
@@ -156,7 +246,16 @@ describe('reconcile', () => {
   });
 
   it('drops the second of two mutually exclusive keystones', () => {
-    expect(tree.reconcile(['a', 'b', 'k1', 'k2'], 20)).toEqual(['a', 'b', 'k1']);
+    // k1/k2 open at 6 points in path, so the build has to pay its way there
+    // first — a×3 + b = 5, plus c = 8.
+    expect(tree.reconcile(['a', 'a', 'a', 'b', 'c', 'k1', 'k2'], 20)).toEqual([
+      'a',
+      'a',
+      'a',
+      'b',
+      'c',
+      'k1',
+    ]);
   });
 
   it('drops what a shrunken budget can no longer pay for', () => {
@@ -169,20 +268,7 @@ describe('reconcile', () => {
 });
 
 describe('applyTo', () => {
-  const data = () => ({
-    hero: {
-      moveSpeed: 100,
-      bow: { levels: [{ damage: 10, range: 100, fireInterval: 1, cost: 0 }] },
-      trample: { damage: 5 },
-      stagger: { shoveDistance: 10, controlLossDuration: 0.4, immunityAfter: 0 },
-      crit: { chance: 0, multiplier: 2 },
-      damageVsHindered: 1,
-    },
-    economy: { startingGold: 100 },
-    towers: { towers: [], projectiles: [] },
-    map: { gate: { hp: 100 } },
-    abilities: [],
-  }) as never;
+  const data = applyData;
 
   it('does not mutate the data it was handed', () => {
     const input = data();

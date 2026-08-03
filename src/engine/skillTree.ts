@@ -2,7 +2,13 @@ import type { SkillNode, SkillTreeFile } from '../data/schemas';
 import { applyEffectInPlace, type ModifiableData } from './effects';
 
 export interface SkillTreeState {
-  /** Node ids currently held. Order is irrelevant — effects compose. */
+  /**
+   * Node ids held, **one entry per rank**. A node at rank 3 appears three times.
+   *
+   * A list rather than a rank map so ranks needed no save migration: `build`
+   * was already `string[]`, and a v3 save written before ranks existed reads as
+   * every node at rank 1, which is exactly what it was.
+   */
   allocated: readonly string[];
   /** Points earned across the whole career, spent or not. One budget, spent anywhere. */
   pointsEarned: number;
@@ -10,7 +16,8 @@ export interface SkillTreeState {
 
 export type AllocationRefusal =
   | 'unknown'
-  | 'already-taken'
+  | 'maxed'
+  | 'path-locked'
   | 'missing-prerequisite'
   | 'excluded'
   | 'too-expensive';
@@ -52,11 +59,18 @@ export class SkillTree {
     return this.file.poolNames[pool as keyof typeof this.file.poolNames] ?? pool;
   }
 
-  /** Total cost of every node in the tree, or of one half's nodes. */
+  /**
+   * Total cost of the tree, or of one half — **every rank of every node**.
+   *
+   * Ranks are what the budget is actually spent against, so a denominator that
+   * counted each node once would have reported the tree as a third reachable
+   * when it is a quarter. That is the scarcity rule reading its own gauge wrong,
+   * which is worse than not having the gauge.
+   */
   totalCost(pool?: string): number {
     return this.file.nodes
       .filter((n) => pool === undefined || n.pool === pool)
-      .reduce((s, n) => s + n.cost, 0);
+      .reduce((s, n) => s + n.cost * n.maxRank, 0);
   }
 
   /**
@@ -77,6 +91,23 @@ export class SkillTree {
     return n;
   }
 
+  /** How many ranks of a node are held. */
+  rankOf(id: string, allocated: readonly string[]): number {
+    let n = 0;
+    for (const held of allocated) if (held === id) n++;
+    return n;
+  }
+
+  /** Points sunk into one path — the currency tier gating is priced in. */
+  spentInPath(path: string, allocated: readonly string[]): number {
+    let n = 0;
+    for (const id of allocated) {
+      const node = this.byId.get(id);
+      if (node?.path === path) n += node.cost;
+    }
+    return n;
+  }
+
   /** Unspent points — the number the header leads with. */
   free(allocated: readonly string[], earned: number): number {
     return earned - this.spent(allocated);
@@ -92,7 +123,11 @@ export class SkillTree {
   refusal(id: string, state: SkillTreeState): AllocationRefusal | null {
     const node = this.byId.get(id);
     if (!node) return 'unknown';
-    if (state.allocated.includes(id)) return 'already-taken';
+    if (this.rankOf(id, state.allocated) >= node.maxRank) return 'maxed';
+    // Tier gating before prerequisites: "walk further down this path" is a
+    // clearer instruction than "take some other node", and it is the one a
+    // player can act on without hunting for which node is missing.
+    if (this.spentInPath(node.path, state.allocated) < node.unlockAt) return 'path-locked';
     for (const req of node.requires) {
       if (!state.allocated.includes(req)) return 'missing-prerequisite';
     }
@@ -123,6 +158,18 @@ export class SkillTree {
    */
   deallocate(id: string, state: SkillTreeState): readonly string[] {
     if (!state.allocated.includes(id)) return state.allocated;
+
+    // Ranked nodes refund one rank at a time, and only the *last* rank can
+    // strand anything below — a node still held at rank 1 keeps paying its
+    // prerequisite and its tier points, so nothing cascades.
+    if (this.rankOf(id, state.allocated) > 1) {
+      const out = [...state.allocated];
+      out.splice(out.indexOf(id), 1);
+      // ...unless dropping that rank drops the path below a tier a node below
+      // it needed. Rebuilding forward is the only way to know.
+      return this.reconcile(out, state.pointsEarned);
+    }
+
     const dropped = new Set([id]);
     // Iterate to a fixed point: a node three deep in a path depends on the one
     // above it, which may only have been dropped on the previous pass.
@@ -138,7 +185,12 @@ export class SkillTree {
         }
       }
     }
-    return state.allocated.filter((n) => !dropped.has(n));
+    // Reconciled afterwards because losing a node also loses its cost from the
+    // path total, which can close a tier behind other nodes still held.
+    return this.reconcile(
+      state.allocated.filter((n) => !dropped.has(n)),
+      state.pointsEarned,
+    );
   }
 
   /** Free, always. A tree nobody dares experiment with forfeits its own point. */
@@ -156,12 +208,16 @@ export class SkillTree {
    */
   reconcile(allocated: readonly string[], pointsEarned: number): readonly string[] {
     const out: string[] = [];
+    const want = new Map<string, number>();
+    for (const id of allocated) want.set(id, (want.get(id) ?? 0) + 1);
+
     let changed = true;
     while (changed) {
       changed = false;
-      for (const id of allocated) {
-        if (out.includes(id)) continue;
-        if (this.canAllocate(id, { allocated: out, pointsEarned })) {
+      for (const [id, ranks] of want) {
+        // Rank by rank: a node wanted at rank 3 may only be affordable to 2,
+        // and half a node is a legal state where half a prerequisite is not.
+        while (this.rankOf(id, out) < ranks && this.canAllocate(id, { allocated: out, pointsEarned })) {
           out.push(id);
           changed = true;
         }
@@ -196,11 +252,18 @@ export class SkillTree {
     // two — a node that raises the ceiling is doing something worth paying for.
     const scaling: Record<string, { perUnit: number; max: number }> = {};
 
-    for (const id of allocated) {
+    // Grouped by id so a ranked node applies its rank once rather than N times.
+    // For `add` and `multiply` alike the two compose identically (see
+    // `applyEffectInPlace`), but a rule must fire once however many ranks the
+    // data claims, and scaling multiplies `perUnit` by the rank.
+    const ranks = new Map<string, number>();
+    for (const id of allocated) ranks.set(id, (ranks.get(id) ?? 0) + 1);
+
+    for (const [id, rank] of ranks) {
       const node = this.byId.get(id);
       if (!node) continue;
       for (const fx of node.effects) {
-        const r = applyEffectInPlace(out, fx, 1);
+        const r = applyEffectInPlace(out, fx, rank);
         if (r.unlockAbilityId) unlockedAbilityIds.push(r.unlockAbilityId);
         if (r.unlockTowerId) unlockedTowerIds.push(r.unlockTowerId);
         if (r.rule) rules.push(r.rule);
