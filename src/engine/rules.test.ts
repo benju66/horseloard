@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SIM_DT, Simulation, type SimData } from './simulation';
 import type { EnemiesFile, WaveSet } from '../data/schemas';
 import { TEST_ECONOMY, TEST_HERO, TEST_RNG, makeEnemy, makeMap, makeTowersFile } from './testFixtures';
+import { Scaling, noScaling } from './scaling';
 
 /**
  * The rule effects (SKILLTREE.md) — nodes that change what the game *does*.
@@ -208,5 +209,69 @@ describe('soldiers-reform', () => {
     sim.startNextWave();
     advance(sim, 60);
     for (const s of sim.army.soldiers) expect(s.respawnIn).toBe(0);
+  });
+});
+
+/**
+ * Scaling — power that grows with what else you built.
+ *
+ * Tested against `Scaling` directly rather than through a run, because what
+ * matters is the arithmetic and the clamp: a scaling node's whole job is to be
+ * worth nothing on an empty board and a great deal on a full one, and a run
+ * cannot show both ends of that in one go.
+ */
+describe('scaling', () => {
+  const build = (specs: Record<string, { perUnit: number; max: number }>, counts: Partial<{ soldiers: number; gold: number; covering: number; coins: number }>) =>
+    new Scaling(specs, {
+      soldiersStanding: () => counts.soldiers ?? 0,
+      gold: () => counts.gold ?? 0,
+      towersCovering: () => counts.covering ?? 0,
+      looseCoins: () => counts.coins ?? 0,
+    });
+
+  it('is exactly 1 for a key nothing granted, so call sites multiply unconditionally', () => {
+    expect(noScaling().towerDamage()).toBe(1);
+    expect(noScaling().bowDamage(0, 0)).toBe(1);
+    expect(noScaling().soldierDamage()).toBe(1);
+    expect(noScaling().zoneDamage(9)).toBe(1);
+  });
+
+  it('is 1 on an empty board even when the node is held — the whole point', () => {
+    const s = build({ 'tower-damage-per-soldier': { perUnit: 0.06, max: 2.4 } }, { soldiers: 0 });
+    expect(s.towerDamage()).toBe(1);
+  });
+
+  it('pays per unit counted', () => {
+    const s = build({ 'tower-damage-per-soldier': { perUnit: 0.06, max: 2.4 } }, { soldiers: 5 });
+    expect(s.towerDamage()).toBeCloseTo(1.3);
+  });
+
+  it('clamps at the ceiling, so a runaway board cannot reach infinity', () => {
+    const s = build({ 'soldier-damage-per-soldier': { perUnit: 0.11, max: 2.6 } }, { soldiers: 999 });
+    expect(s.soldierDamage()).toBe(2.6);
+  });
+
+  it('counts gold in whole hundreds, so it rewards banking rather than ticking', () => {
+    const spec = { 'tower-damage-per-100-gold': { perUnit: 0.08, max: 2.5 } };
+    expect(build(spec, { gold: 99 }).towerDamage()).toBe(1);
+    expect(build(spec, { gold: 250 }).towerDamage()).toBeCloseTo(1.16);
+  });
+
+  it('multiplies two keys that hit the same number', () => {
+    // Wall's soldier scaling and Crown's gold scaling both land on tower damage;
+    // a build holding both should get both.
+    const s = build(
+      {
+        'tower-damage-per-soldier': { perUnit: 0.1, max: 3 },
+        'tower-damage-per-100-gold': { perUnit: 0.1, max: 3 },
+      },
+      { soldiers: 2, gold: 300 },
+    );
+    expect(s.towerDamage()).toBeCloseTo(1.2 * 1.3);
+  });
+
+  it('reports emptiness so hot paths can skip the work', () => {
+    expect(noScaling().isEmpty).toBe(true);
+    expect(build({ 'tower-damage-per-soldier': { perUnit: 1, max: 2 } }, {}).isEmpty).toBe(false);
   });
 });

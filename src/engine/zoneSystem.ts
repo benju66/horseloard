@@ -1,5 +1,6 @@
 import type { EnemySystem } from './enemySystem';
 import type { IdGenerator } from './ids';
+import { noScaling, type Scaling } from './scaling';
 
 /**
  * How often a zone actually deals its damage, in seconds.
@@ -65,6 +66,9 @@ export interface GroundZone {
  * means a tower or a wave event could drop one later with no changes.
  */
 export class ZoneSystem {
+  /** Live board scaling. Defaults to a no-op so engine tests need not supply one. */
+  scaling: Scaling = noScaling();
+
   /**
    * Rule `zones-strip-armor`: anything standing in your ground is unarmoured
    * while it stands there.
@@ -144,7 +148,9 @@ export class ZoneSystem {
       // Collected first, applied second: `applyDamage` can remove an enemy, and
       // EnemySystem swap-removes, so killing mid-iteration would skip whoever
       // got swapped into the dead index.
-      const damage = z.damagePerSecond * PULSE_INTERVAL;
+      // Scaled by how many the patch is actually catching, so area denial pays
+      // for being area denial rather than competing with the bow on raw dps.
+      const damage = z.damagePerSecond * PULSE_INTERVAL * this.scaling.zoneDamage(this.hits.length);
       for (const id of this.hits) this.enemies.applyDamage(id, damage);
 
       z.remaining -= dt;

@@ -536,6 +536,28 @@ shieldbearer's armour is irrelevant to the hero pillar entirely. Flipping it wou
 meaning against all three pillars and make an armour-piercing node worth having — but it is a
 real nerf and belongs in the retune, not in a vocabulary change.
 
+[x] **M7.8 — Conditional power: the `scaling` effect** (2026-08-03). A third effect shape —
+value that grows with what else you built — plus `scaling.ts` and twelve rewritten nodes.
+**stats and rules are both unconditional, and that is why the paths were unbalanceable.** "+20%
+bow damage" is correct in every build that ever existed, so the paths supplying damage directly
+measured at 100% while the paths supplying gold and exposure measured at 13%. A complement can
+never win a contest scored on damage. This is the Slay the Spire lesson: you do not balance
+cards against each other, you make a card's value depend on the deck.
+**six relationships, each pointing at a different path**: towers +% per soldier standing (Wall
+wants Host), towers +% per 100 gold held (Crown becomes a build), bow +% per tower covering the
+target (Hunt wants Wall), zones +% per enemy caught (Storm wants crowds), soldiers +% per other
+soldier (Host wants Host), bow +% per loose coin (Ride is greed, priced).
+**measured, it did exactly what it was for.** Every pure path came down as its power moved onto
+boards it does not build: wall 86→68, storm 100→89, ride 46→24. Hunt stayed at 100% until its
+own nodes were converted too — it was the last unconditional path — and then landed at 97%,
+Δ +0pp against the generalist. **Path probe now: hunt +0, storm −8, wall −29, ride −74, crown
+−67, host −81.** No path beats a generalist, which is F.1's accept criterion, and the top three
+are within 8pp of each other where they used to span 94.
+**what is still open is the bottom, not the top.** Host, Crown and Ride sit far below a
+generalist. Some of that is correct — a *pure* complement build should lose — and some is the
+instrument, because the bot converts rate well and exposure and greed badly. Distinguishing
+those two needs a probe that scores a build's *contribution* rather than its solo win rate.
+
 [ ] **M7.7 — Ranks and tier gating.** Now worth doing, and not before: ranks are a multiplier on
 node *quality*, so they had to land on nodes worth ranking. Two parts — a node buyable N times,
 and "spend N points in this path to open the next row" replacing the current rigid chains, which

@@ -3,6 +3,7 @@ import type { EnemySystem } from './enemySystem';
 import type { IdGenerator } from './ids';
 import type { LanePath, MutableVec2 } from './path';
 import type { PlotState, TowerSystem } from './towerSystem';
+import { noScaling, type Scaling } from './scaling';
 
 /** How finely a lane is sampled when looking for the nearest point to a plot. */
 const LANE_SAMPLE_STEP = 8;
@@ -68,6 +69,9 @@ export interface Soldier {
  * soldiers, including one that gains a garrison by upgrading into it.
  */
 export class ArmySystem {
+  /** Live board scaling. Defaults to a no-op so engine tests need not supply one. */
+  scaling: Scaling = noScaling();
+
   private readonly towers: TowerSystem;
   private readonly enemies: EnemySystem;
   private readonly lanes: Map<string, LanePath>;
@@ -194,7 +198,7 @@ export class ArmySystem {
         // a soldier standing in front of a shield is exactly the case the
         // frontal block is for, and exempting the army would quietly delete a
         // counter DESIGN §6 spent real effort establishing.
-        this.enemies.applyDamage(target.id, combat.damage, s.x, s.y);
+        this.enemies.applyDamage(target.id, combat.damage * this.scaling.soldierDamage(), s.x, s.y);
       }
 
       // The enemy fights back on its own account. `siegeDps` is reused rather

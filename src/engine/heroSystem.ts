@@ -1,6 +1,7 @@
 import type { Hero, MapDef } from '../data/schemas';
 import type { EnemyInstance, EnemySystem } from './enemySystem';
 import type { ProjectileDef, ProjectileSystem } from './projectileSystem';
+import { noScaling, type Scaling } from './scaling';
 
 const INPUT_DEADZONE = 0.08; // prototype: ignore joystick magnitudes below this
 const BOW_MUZZLE_OFFSET_Y = -22; // arrows leave from the rider, not the hooves
@@ -18,6 +19,9 @@ export type HeroBuffStat = 'bowDamage' | 'bowFireRate' | 'moveSpeed';
  * instead (DESIGN §4). Consumes hero.json — no balance constants live here.
  */
 export class HeroSystem {
+  /** Live board scaling. Defaults to a no-op so engine tests need not supply one. */
+  scaling: Scaling = noScaling();
+
   /**
    * Rule `hero-ignores-armor`. Written to the shared projectile def, so it
    * applies to every arrow from the moment it is set — which is before wave 1,
@@ -284,7 +288,11 @@ export class HeroSystem {
     // impact would instead reward the enemy still being slowed a second later,
     // which is a different and much fiddlier thing to reason about.
     const hindered = target.slowRemaining > 0 || target.state === 'blocked';
-    let damage = stats.damage * this.buffFactor('bowDamage');
+    // Scaling reads the board at the moment of the shot — how many towers cover
+    // *this* target, how much loot is still lying out — which is why it cannot
+    // be folded into the bow stats the way a flat bonus is.
+    let damage =
+      stats.damage * this.buffFactor('bowDamage') * this.scaling.bowDamage(target.x, target.y);
     // Rule `crit-vs-hindered` turns the roll into a certainty against anything
     // frost slowed or a soldier is holding. A rule rather than "+crit chance"
     // on purpose: certainty is something you build a whole board around, where

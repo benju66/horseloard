@@ -11,6 +11,7 @@ import { GateSystem } from './gateSystem';
 import { AbilitySystem } from './abilitySystem';
 import { LooterSystem } from './looterSystem';
 import { ZoneSystem } from './zoneSystem';
+import { Scaling, type ScaleSpec } from './scaling';
 import { ArmySystem } from './armySystem';
 import { XpSystem } from './xpSystem';
 import { generateEndlessWave } from './endless';
@@ -52,6 +53,12 @@ export interface SimData {
    * read this set directly.
    */
   rules?: readonly string[];
+  /**
+   * Live scaling the build granted (`ScaleKeySchema` → spec). Unlike stats,
+   * these cannot be folded into the balance data — what they count changes
+   * every tick.
+   */
+  scaling?: Record<string, ScaleSpec>;
   /** endless mode: waves generate forever, victory never comes */
   endless?: boolean;
 }
@@ -96,6 +103,8 @@ export class Simulation {
   readonly endless: boolean;
   /** The rules this run is playing under. Fixed before wave 1, never changes. */
   readonly rules: ReadonlySet<string>;
+  /** Power that grows with the board. Read live; see `scaling.ts`. */
+  readonly scaling: Scaling;
   /**
    * Fired when a wave is cleared, with the wave number and the XP it paid.
    *
@@ -185,8 +194,22 @@ export class Simulation {
 
     this.looters = new LooterSystem(this.enemySystem, this.economy, this.lanes);
 
-    // ─── Rules (SKILLTREE.md — effects that change what the game does) ───
+    // ─── Rules and scaling (SKILLTREE.md) ───
     this.rules = new Set(data.rules ?? []);
+
+    // Every source the sim can count, in one place. Arrow functions rather than
+    // captured values: the whole point is that these are read at the moment the
+    // number is used, not at construction.
+    this.scaling = new Scaling(data.scaling ?? {}, {
+      soldiersStanding: () => this.army.standingCount,
+      gold: () => this.economy.gold,
+      towersCovering: (x, y) => this.towerSystem.countCovering(x, y),
+      looseCoins: () => this.economy.coins.length,
+    });
+    this.towerSystem.scaling = this.scaling;
+    this.hero.scaling = this.scaling;
+    this.zones.scaling = this.scaling;
+    this.army.scaling = this.scaling;
 
     if (this.rules.has('crit-vs-hindered')) this.hero.critVsHindered = true;
     if (this.rules.has('pierce-on-kill')) this.projectileSystem.pierceOnKill = true;

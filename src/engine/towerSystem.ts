@@ -1,6 +1,7 @@
 import type { Plot, Projectile, TargetingMode, Tower, TowerBranch, TowerStats, TowersFile } from '../data/schemas';
 import type { EnemyInstance, EnemySystem } from './enemySystem';
 import type { ProjectileSystem } from './projectileSystem';
+import { noScaling, type Scaling } from './scaling';
 
 export interface PlotState {
   readonly plotId: string;
@@ -24,6 +25,9 @@ export interface PlotState {
  * entry + assets, zero edits here.
  */
 export class TowerSystem {
+  /** Live board scaling. Defaults to a no-op so engine tests need not supply one. */
+  scaling: Scaling = noScaling();
+
   private readonly towersById = new Map<string, Tower>();
   private readonly projectilesById = new Map<string, Projectile>();
   private readonly plotList: PlotState[] = [];
@@ -328,8 +332,22 @@ export class TowerSystem {
   }
 
   /** Crit roll (Sniper) × beacon auras from other plots (Beacon). */
+  /** Towers whose range covers a point — the source for `bow-damage-per-covering-tower`. */
+  countCovering(x: number, y: number): number {
+    let n = 0;
+    for (const plot of this.plotList) {
+      if (plot.towerId === null) continue;
+      const stats = this.stats(plot);
+      if (!stats || stats.damage <= 0) continue;
+      const dx = plot.x - x;
+      const dy = plot.y - y;
+      if (dx * dx + dy * dy <= stats.range * stats.range) n++;
+    }
+    return n;
+  }
+
   private rollDamage(plot: PlotState, stats: TowerStats): number {
-    let damage = stats.damage;
+    let damage = stats.damage * this.scaling.towerDamage();
     if (stats.crit && this.rng() < stats.crit.chance) damage *= stats.crit.multiplier;
     for (const other of this.plotList) {
       if (other === plot || other.towerId === null) continue;

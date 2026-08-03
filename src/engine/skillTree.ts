@@ -185,11 +185,16 @@ export class SkillTree {
     unlockedAbilityIds: string[];
     unlockedTowerIds: string[];
     rules: string[];
+    scaling: Record<string, { perUnit: number; max: number }>;
   } {
     const out: ModifiableData = structuredClone(data);
     const unlockedAbilityIds: string[] = [];
     const unlockedTowerIds: string[] = [];
     const rules: string[] = [];
+    // Same key from two nodes sums, so a path can deepen one relationship
+    // instead of scattering six shallow ones. The cap takes the loosest of the
+    // two — a node that raises the ceiling is doing something worth paying for.
+    const scaling: Record<string, { perUnit: number; max: number }> = {};
 
     for (const id of allocated) {
       const node = this.byId.get(id);
@@ -199,9 +204,15 @@ export class SkillTree {
         if (r.unlockAbilityId) unlockedAbilityIds.push(r.unlockAbilityId);
         if (r.unlockTowerId) unlockedTowerIds.push(r.unlockTowerId);
         if (r.rule) rules.push(r.rule);
+        if (r.scale) {
+          const cur = scaling[r.scale.key];
+          scaling[r.scale.key] = cur
+            ? { perUnit: cur.perUnit + r.scale.perUnit, max: Math.max(cur.max, r.scale.max) }
+            : { perUnit: r.scale.perUnit, max: r.scale.max };
+        }
       }
     }
 
-    return { ...out, unlockedAbilityIds, unlockedTowerIds, rules };
+    return { ...out, unlockedAbilityIds, unlockedTowerIds, rules, scaling };
   }
 }

@@ -104,6 +104,40 @@ export const RuleKeySchema = z.enum([
 ]);
 export type RuleKey = z.infer<typeof RuleKeySchema>;
 
+/**
+ * **Scaling.** Power that grows with something *else* you built.
+ *
+ * The third and last shape a node can take, and the one that decides whether
+ * six paths are six playstyles. Stats and rules are both unconditional: "+20%
+ * bow damage" is correct in every build that ever existed, which is precisely
+ * why the paths that supply damage directly measured at 100% and the paths that
+ * supply gold and exposure measured at 13%.
+ *
+ * A scaling node is worth nothing on its own and a great deal beside the right
+ * board. That is the Slay the Spire lesson — you do not balance cards against
+ * each other, you make a card's value depend on the deck — and it is the only
+ * mechanism that makes a *complement* path competitive with a *substitute* one
+ * without simply inflating its numbers.
+ *
+ * Evaluated live, every time the number is used, so these can never be folded
+ * into the balance data the way a stat is.
+ */
+export const ScaleKeySchema = z.enum([
+  /** Towers hit harder for every soldier currently standing. Wall wants Host. */
+  'tower-damage-per-soldier',
+  /** Towers hit harder per 100 gold banked. Crown becomes a build, not a convenience. */
+  'tower-damage-per-100-gold',
+  /** The bow hits harder for every tower covering its target. Hunt wants Wall. */
+  'bow-damage-per-covering-tower',
+  /** Ground zones hit harder for every enemy standing in them. Storm wants crowds. */
+  'zone-damage-per-enemy-inside',
+  /** Soldiers hit harder for every other soldier standing. Host wants Host. */
+  'soldier-damage-per-soldier',
+  /** The hero hits harder for every coin left lying on the ground. Greed, priced. */
+  'bow-damage-per-loose-coin',
+]);
+export type ScaleKey = z.infer<typeof ScaleKeySchema>;
+
 const statModFields = {
   perRank: z.number().describe('applied once per purchased rank'),
   mode: z.enum(['add', 'multiply']),
@@ -190,5 +224,17 @@ export const MetaEffectSchema = z.discriminatedUnion('type', [
    * rank-blind or the whole distinction collapses.
    */
   z.object({ type: z.literal('rule'), rule: RuleKeySchema }),
+  /**
+   * Scaling. `perUnit` is the fraction added per unit counted, so 0.04 is
+   * "+4% each". Multiple nodes on the same key sum, which is what lets a path
+   * deepen a single relationship rather than adding six unrelated ones.
+   */
+  z.object({
+    type: z.literal('scaling'),
+    scale: ScaleKeySchema,
+    perUnit: z.number().positive(),
+    /** Cap on the multiplier, so a runaway board cannot reach infinity. */
+    max: z.number().gt(1).default(3),
+  }),
 ]);
 export type MetaEffect = z.infer<typeof MetaEffectSchema>;

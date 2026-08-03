@@ -136,9 +136,9 @@
       "path": "hunt",
       "pool": "hero",
       "kind": "synergy",
-      "name": "Killing Ground",
-      "description": "+45% bow damage to enemies that are slowed or held.",
-      "icon": "\ud83d\udc80",
+      "name": "Crossfire Doctrine",
+      "description": "Your bow deals +7% for every tower whose range covers your target.",
+      "icon": "\ud83c\udfaf",
       "cost": 2,
       "row": 2,
       "requires": [
@@ -147,10 +147,10 @@
       "excludes": [],
       "effects": [
         {
-          "type": "hero-stat",
-          "stat": "bowDamageVsHindered",
-          "perRank": 1.45,
-          "mode": "multiply"
+          "type": "scaling",
+          "scale": "bow-damage-per-covering-tower",
+          "perUnit": 0.07,
+          "max": 2.2
         }
       ]
     },
@@ -222,9 +222,9 @@
       "path": "hunt",
       "pool": "hero",
       "kind": "synergy",
-      "name": "Execution",
-      "description": "Crits deal a further 60% to slowed or held enemies.",
-      "icon": "\u2620\ufe0f",
+      "name": "Enfilade",
+      "description": "Your bow deals a further +6% for every tower covering your target.",
+      "icon": "\ud83c\udfaf",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -233,16 +233,10 @@
       "excludes": [],
       "effects": [
         {
-          "type": "hero-stat",
-          "stat": "bowCritMultiplier",
-          "perRank": 3.2,
-          "mode": "add"
-        },
-        {
-          "type": "hero-stat",
-          "stat": "bowDamageVsHindered",
-          "perRank": 1.15,
-          "mode": "multiply"
+          "type": "scaling",
+          "scale": "bow-damage-per-covering-tower",
+          "perUnit": 0.06,
+          "max": 2.2
         }
       ]
     },
@@ -252,7 +246,7 @@
       "pool": "hero",
       "kind": "keystone",
       "name": "Deadeye",
-      "description": "+90% bow damage. \u221235% bow range. Ride into the teeth of it.",
+      "description": "+10% bow damage per tower covering your target, up to triple. \u221235% bow range.",
       "icon": "\ud83c\udf96\ufe0f",
       "cost": 3,
       "row": 5,
@@ -264,10 +258,10 @@
       ],
       "effects": [
         {
-          "type": "hero-stat",
-          "stat": "bowDamage",
-          "perRank": 1.9,
-          "mode": "multiply"
+          "type": "scaling",
+          "scale": "bow-damage-per-covering-tower",
+          "perUnit": 0.1,
+          "max": 3.0
         },
         {
           "type": "hero-stat",
@@ -452,9 +446,9 @@
       "path": "ride",
       "pool": "hero",
       "kind": "synergy",
-      "name": "Warhorse",
-      "description": "Trampling hits 25% harder, and the blades cut 25% deeper.",
-      "icon": "\ud83d\udc34",
+      "name": "The Loot Line",
+      "description": "Your bow hits +3% harder for every coin still lying on the field.",
+      "icon": "\ud83e\ude99",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -463,17 +457,10 @@
       "excludes": [],
       "effects": [
         {
-          "type": "hero-stat",
-          "stat": "trampleDamage",
-          "perRank": 1.25,
-          "mode": "multiply"
-        },
-        {
-          "type": "ability-stat",
-          "abilityId": "whirling-blades",
-          "stat": "damagePerSecond",
-          "perRank": 1.25,
-          "mode": "multiply"
+          "type": "scaling",
+          "scale": "bow-damage-per-loose-coin",
+          "perUnit": 0.03,
+          "max": 2.0
         }
       ]
     },
@@ -816,10 +803,10 @@
       "id": "wall-reload",
       "path": "wall",
       "pool": "kingdom",
-      "kind": "notable",
-      "name": "Rapid Reload",
-      "description": "Every tower looses 18% faster.",
-      "icon": "\u26a1",
+      "kind": "synergy",
+      "name": "Fire Discipline",
+      "description": "Every tower hits a further +5% per soldier standing.",
+      "icon": "\ud83d\udce3",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -828,11 +815,10 @@
       "excludes": [],
       "effects": [
         {
-          "type": "tower-stat",
-          "towerId": null,
-          "stat": "fireRate",
-          "perRank": 1.18,
-          "mode": "multiply"
+          "type": "scaling",
+          "scale": "tower-damage-per-soldier",
+          "perUnit": 0.05,
+          "max": 2.4
         }
       ]
     },
@@ -840,10 +826,10 @@
       "id": "wall-beacon",
       "path": "wall",
       "pool": "kingdom",
-      "kind": "notable",
-      "name": "Beacon Lore",
-      "description": "Towers lend neighbours +15% damage. Build them close.",
-      "icon": "\ud83d\udd26",
+      "kind": "synergy",
+      "name": "Covering Fire",
+      "description": "Every tower hits +6% harder for each soldier standing on the field.",
+      "icon": "\ud83d\udee1\ufe0f",
       "cost": 2,
       "row": 3,
       "requires": [
@@ -852,13 +838,10 @@
       "excludes": [],
       "effects": [
         {
-          "type": "tower-grant",
-          "towerId": null,
-          "grant": {
-            "kind": "aura",
-            "radius": 100,
-            "damageMultiplier": 1.15
-          }
+          "type": "scaling",
+          "scale": "tower-damage-per-soldier",
+          "perUnit": 0.06,
+          "max": 2.4
         }
       ]
     },
@@ -1032,10 +1015,10 @@
       "id": "host-mail",
       "path": "host",
       "pool": "kingdom",
-      "kind": "notable",
-      "name": "Mail and Shield",
-      "description": "Soldiers take 45% longer to fall.",
-      "icon": "\ud83d\udee1\ufe0f",
+      "kind": "synergy",
+      "name": "Shoulder to Shoulder",
+      "description": "Every soldier hits +11% harder for each other soldier standing.",
+      "icon": "\ud83e\udd1d",
       "cost": 2,
       "row": 1,
       "requires": [
@@ -1044,14 +1027,10 @@
       "excludes": [],
       "effects": [
         {
-          "type": "tower-grant",
-          "towerId": null,
-          "grant": {
-            "kind": "garrison",
-            "squad": 0,
-            "hpMultiplier": 1.45,
-            "damageMultiplier": 1.0
-          }
+          "type": "scaling",
+          "scale": "soldier-damage-per-soldier",
+          "perUnit": 0.11,
+          "max": 2.6
         }
       ]
     },
@@ -1157,9 +1136,9 @@
       "id": "host-banner",
       "path": "host",
       "pool": "kingdom",
-      "kind": "notable",
-      "name": "War Banner",
-      "description": "The host is three stronger and holds 35% longer.",
+      "kind": "synergy",
+      "name": "The Long Line",
+      "description": "Soldiers hit a further +9% each. A thin line is worth little; a wall is worth everything.",
       "icon": "\ud83d\udea9",
       "cost": 2,
       "row": 4,
@@ -1169,18 +1148,10 @@
       "excludes": [],
       "effects": [
         {
-          "type": "ability-stat",
-          "abilityId": "muster",
-          "stat": "squad",
-          "perRank": 3,
-          "mode": "add"
-        },
-        {
-          "type": "ability-stat",
-          "abilityId": "muster",
-          "stat": "lifetime",
-          "perRank": 1.35,
-          "mode": "multiply"
+          "type": "scaling",
+          "scale": "soldier-damage-per-soldier",
+          "perUnit": 0.09,
+          "max": 2.6
         }
       ]
     },
@@ -1363,9 +1334,9 @@
       "id": "crown-tithe",
       "path": "crown",
       "pool": "kingdom",
-      "kind": "notable",
-      "name": "Tithe",
-      "description": "Every tower pays 2 coins every 9 seconds.",
+      "kind": "synergy",
+      "name": "The Treasury",
+      "description": "Every tower hits +8% harder for each 100 gold you are holding.",
       "icon": "\ud83e\ude99",
       "cost": 2,
       "row": 2,
@@ -1375,13 +1346,10 @@
       "excludes": [],
       "effects": [
         {
-          "type": "tower-grant",
-          "towerId": null,
-          "grant": {
-            "kind": "income",
-            "value": 2,
-            "interval": 9
-          }
+          "type": "scaling",
+          "scale": "tower-damage-per-100-gold",
+          "perUnit": 0.08,
+          "max": 2.5
         }
       ]
     },
@@ -1411,8 +1379,8 @@
       "path": "crown",
       "pool": "kingdom",
       "kind": "synergy",
-      "name": "Ransom",
-      "description": "Coins reach 25% further and wave clears pay 15% more.",
+      "name": "Deep Coffers",
+      "description": "Towers hit a further +6% per 100 gold held. Spending is no longer free.",
       "icon": "\ud83d\udc8e",
       "cost": 2,
       "row": 3,
@@ -1422,16 +1390,10 @@
       "excludes": [],
       "effects": [
         {
-          "type": "kingdom-stat",
-          "stat": "coinMagnetRadius",
-          "perRank": 1.25,
-          "mode": "multiply"
-        },
-        {
-          "type": "kingdom-stat",
-          "stat": "waveClearBonus",
-          "perRank": 1.15,
-          "mode": "multiply"
+          "type": "scaling",
+          "scale": "tower-damage-per-100-gold",
+          "perUnit": 0.06,
+          "max": 2.5
         }
       ]
     },
@@ -1700,9 +1662,9 @@
       "id": "storm-thunder",
       "path": "storm",
       "pool": "hero",
-      "kind": "notable",
-      "name": "Rolling Thunder",
-      "description": "Aerostorm hits 35% harder over 20% more ground.",
+      "kind": "synergy",
+      "name": "Gathering Storm",
+      "description": "Your ground hits +9% harder for every enemy standing in it.",
       "icon": "\u26c8\ufe0f",
       "cost": 2,
       "row": 2,
@@ -1712,18 +1674,10 @@
       "excludes": [],
       "effects": [
         {
-          "type": "ability-stat",
-          "abilityId": "aero-storm",
-          "stat": "damagePerSecond",
-          "perRank": 1.35,
-          "mode": "multiply"
-        },
-        {
-          "type": "ability-stat",
-          "abilityId": "aero-storm",
-          "stat": "radius",
-          "perRank": 1.2,
-          "mode": "multiply"
+          "type": "scaling",
+          "scale": "zone-damage-per-enemy-inside",
+          "perUnit": 0.09,
+          "max": 2.8
         }
       ]
     },
@@ -1807,9 +1761,9 @@
       "path": "storm",
       "pool": "hero",
       "kind": "synergy",
-      "name": "Attrition",
-      "description": "Towers hit 15% harder, and coins linger 40% longer while you work the ground.",
-      "icon": "\u23f3",
+      "name": "Standing Water",
+      "description": "Your ground hits a further +7% per enemy caught. Crowds are the point.",
+      "icon": "\ud83c\udf0a",
       "cost": 2,
       "row": 4,
       "requires": [
@@ -1818,17 +1772,10 @@
       "excludes": [],
       "effects": [
         {
-          "type": "tower-stat",
-          "towerId": null,
-          "stat": "damage",
-          "perRank": 1.15,
-          "mode": "multiply"
-        },
-        {
-          "type": "kingdom-stat",
-          "stat": "coinExpiryTime",
-          "perRank": 1.4,
-          "mode": "multiply"
+          "type": "scaling",
+          "scale": "zone-damage-per-enemy-inside",
+          "perUnit": 0.07,
+          "max": 2.8
         }
       ]
     },

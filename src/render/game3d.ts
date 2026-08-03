@@ -403,6 +403,7 @@ function startMap(mapId: string, endless = false): void {
     abilities: modded.abilities,
     unlockedAbilityIds: modded.unlockedAbilityIds,
     rules: modded.rules,
+    scaling: modded.scaling,
     equipSlots: equipSlots(save, data.equipSlots, data.equipSlotGrants),
     loadout: save.loadout,
     lockedTowerIds: data.towers.towers

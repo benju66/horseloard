@@ -876,6 +876,7 @@ export function runBot(
           unlockedAbilityIds: [] as string[],
           unlockedTowerIds: [] as string[],
           rules: [] as string[],
+          scaling: {} as Record<string, { perUnit: number; max: number }>,
         };
 
   const map = built.map;
@@ -905,6 +906,7 @@ export function runBot(
       // player can assemble, and made every ability node a dead take.
       unlockedAbilityIds: built.unlockedAbilityIds,
       rules: built.rules,
+      scaling: built.scaling,
       // Tower unlocks are part of a build too. Ignoring them let every arm of
       // every probe build the whole roster, which quietly made a tree node that
       // grants a tower worth exactly nothing in the measurement — and made the
