@@ -17,6 +17,7 @@ import {
   towersOnly,
   withoutAbilities,
   withoutHeroDamage,
+  type BotFactory,
   type BotRunResult,
 } from './bots';
 
@@ -158,7 +159,6 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     economy: data.economy,
     maps: data.maps,
     waveSets: data.waveSets,
-    biomes: data.biomes,
   };
 
   const all: BotRunResult[] = [];
@@ -774,6 +774,207 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
         '\n\n  THE TEST: does the carrying path differ between pools?\n' +
         '  Same path all three → biomes would be palettes; cut the plan.\n' +
         '  Different paths → the thesis holds and twelve maps are worth authoring.',
+    );
+  });
+
+  /**
+   * **M8.4a — biome diversity, on the real thing.**
+   *
+   * The pool probe above is a laboratory: one map, reskinned, HP-normalised, no
+   * terrain rule. It answered "could pools ever matter" and that was the right
+   * question to ask before authoring anything. This probe asks the shipping
+   * question instead — *do the biomes as actually built still make different
+   * builds correct*, with their real maps, their real waves and their terrain
+   * rules folded in.
+   *
+   * It is the weaker instrument of the two and deliberately so. Biomes sit at
+   * different campaign positions, so difficulty is confounded with type and the
+   * win rates are not comparable across rows. Only the carrying path is.
+   *
+   * **It refuses to read a row it cannot read.** A biome whose sampled builds
+   * all win (or all lose) has no winners to compare against losers, and the
+   * path deltas there are noise wearing a number's clothes. Green is expected
+   * to land in exactly that state — it is the teaching biome — and printing
+   * "unreadable" is the honest result. Reading it anyway is the mistake this
+   * harness has now made six times.
+   */
+  it('reports whether the authored biomes make different builds correct', { timeout: 900_000 }, () => {
+    const SAMPLES = 10;
+    const paths = [...new Set(tree.nodes.map((n) => n.path))].sort();
+    /** Below this spread between best and worst build, a row is not evidence. */
+    const READABLE_SPREAD = 20;
+
+    // The same sampled builds for every biome, so a difference between biomes
+    // cannot be a difference between build samples.
+    const buildRng = makeRng(8484);
+    const builds = Array.from({ length: SAMPLES }, () =>
+      randomBuild(tree, at(REFERENCE_LEVEL, REFERENCE_STARS), buildRng),
+    );
+
+    const lines: string[] = [];
+    const carriers: string[] = [];
+    for (const biome of [...data.biomes].sort((a, b) => a.order - b.order)) {
+      const mapIds = Object.keys(data.maps).filter((id) => data.maps[id]!.biomeId === biome.id);
+      if (!mapIds.length) continue;
+
+      const rows = builds
+        .map((build) => {
+          const runs = mapIds.flatMap((mapId) =>
+            BOTS.flatMap((f) => SEEDS.map((seed) => runBot({ ...botData, skillNodes: build }, mapId, f, seed))),
+          );
+          const share = pathShare(tree, build);
+          const spent = tree.spent(build) || 1;
+          return {
+            win: (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100,
+            share: Object.fromEntries(paths.map((p) => [p, ((share[p] ?? 0) / spent) * 100])),
+          };
+        })
+        .sort((a, b) => b.win - a.win);
+
+      const wins = rows.map((r) => r.win);
+      const spread = Math.max(...wins) - Math.min(...wins);
+      const third = Math.max(1, Math.floor(rows.length / 3));
+      const avg = (set: typeof rows, p: string) => set.reduce((s, r) => s + r.share[p]!, 0) / set.length;
+      const deltas = paths.map((p) => avg(rows.slice(0, third), p) - avg(rows.slice(-third), p));
+      const readable = spread >= READABLE_SPREAD;
+      const best = paths[deltas.indexOf(Math.max(...deltas))]!;
+      if (readable) carriers.push(best);
+
+      lines.push(
+        `  ${biome.id.padEnd(12)}${(biome.terrainRule ?? '(control)').padEnd(14)}` +
+          `win ${Math.min(...wins).toFixed(0).padStart(3)}-${Math.max(...wins).toFixed(0).padStart(3)}%  ` +
+          paths.map((p, i) => `${p.slice(0, 2)} ${(deltas[i]! >= 0 ? '+' : '') + deltas[i]!.toFixed(0)}`.padEnd(8)).join('') +
+          (readable ? `  carries: ${best}` : `  unreadable (spread ${spread.toFixed(0)}pp)`) +
+          `\n${''.padEnd(16)}maps: ${mapIds.join(', ')}`,
+      );
+    }
+
+    const distinct = new Set(carriers).size;
+    console.log(
+      `\n[BIOME PROBE — M8.4a]  ${SAMPLES} shared builds at LV${REFERENCE_LEVEL}/${REFERENCE_STARS}★, ` +
+        'every authored map in each biome × all bots × all seeds\n' +
+        `  ${''.padEnd(26)}${''.padEnd(11)}${paths.map((p) => p.slice(0, 2).padEnd(8)).join('')}  (pp heavier among winners)\n` +
+        lines.join('\n') +
+        `\n\n  ${carriers.length} readable row(s), ${distinct} distinct carrying path(s).\n` +
+        '  Win rates are NOT comparable across rows — biomes sit at different campaign\n' +
+        '  positions. Only the carrying path is. Rows with too narrow a spread are not\n' +
+        '  evidence in either direction and say so rather than reporting a winner.',
+    );
+  });
+
+  /**
+   * **M8.4b — the triangle, per biome rather than per map.**
+   *
+   * TRIANGLE.md's invariant is stated over maps, and until now it was measured
+   * over maps. Biomes change what it is measuring: `narrow-cuts` takes 18% off
+   * every sightline and `open-country` speeds the enemy up, and either could
+   * push a pillar past the edges of the invariant in a way that a per-map read
+   * averages into invisibility.
+   *
+   * Two failures are possible and they are not symmetric:
+   *
+   * - **A pillar becomes sufficient alone** in some biome. That is the invariant
+   *   breaking, and it is the one the caps catch.
+   * - **A pillar becomes worthless** in some biome — towers under `narrow-cuts`
+   *   is the obvious candidate. No cap catches this, and it is arguably worse:
+   *   a biome where one third of the game does not participate is a biome that
+   *   plays itself. The `towers+army` row is the read for it.
+   *
+   * Runs before M8.5 authors eight more maps, because a terrain rule that
+   * breaks the triangle is much cheaper to change now than across twelve boards.
+   */
+  it('reports whether the triangle holds in every biome', { timeout: 900_000 }, () => {
+    const heroDisabled = withoutAbilities({ ...botData, hero: withoutHeroDamage(data.hero) });
+    const funded = withoutAbilities({
+      ...botData,
+      hero: withoutHeroDamage(data.hero),
+      // Same inflation as the complement probe, and for the same reason: on the
+      // shipped economy neither tower arm survives to build a barracks, so an
+      // unfunded comparison measures which arm starves first.
+      economy: { ...data.economy, startingGold: 260 },
+    });
+    const winOf = (runs: BotRunResult[]) =>
+      (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100;
+    const wavesOf = (runs: BotRunResult[]) =>
+      runs.reduce((s, r) => s + r.wavesCleared / Math.max(1, r.totalWaves), 0) / runs.length * 100;
+
+    const lines: string[] = [];
+    let sufficient = 0;
+    let inert = 0;
+    for (const biome of [...data.biomes].sort((a, b) => a.order - b.order)) {
+      const mapIds = Object.keys(data.maps).filter((id) => data.maps[id]!.biomeId === biome.id);
+      if (!mapIds.length) continue;
+      const across = (data: typeof botData, factory: BotFactory) =>
+        mapIds.flatMap((mapId) => SEEDS.map((s) => runBot(data, mapId, factory, s)));
+
+      // The funded pair and its control are printed rather than derived. An
+      // earlier cut compared the funded pair against the *unfunded* solo arm and
+      // reported the funding as if it were the army — the confound this harness
+      // keeps re-inventing. Both halves of a comparison have to be on the page.
+      const soloFunded = across(funded, combatTowersOnly);
+      const pairFunded = across(funded, towersAndArmy);
+      const arms: Array<[string, BotRunResult[]]> = [
+        ['towers only', across(heroDisabled, towersOnly)],
+        ['army only', across(heroDisabled, armyOnly)],
+        ['hero only', across(botData, heroOnly)],
+        ['towers only +gold', soloFunded],
+        ['towers+army +gold', pairFunded],
+        ['all three (ref)', mapIds.flatMap((m) => BOTS.flatMap((f) => SEEDS.map((s) => runBot(botData, m, f, s))))],
+      ];
+      // The cap is the loosest of the biome's maps: a biome is judged by whether
+      // a pillar can hold *any* of its boards, not the average of them.
+      const cap = Math.max(...mapIds.map((id) => DIFFICULTY_TARGETS[id]?.maxSinglePillarWinRate ?? 100));
+      const pairGain = winOf(pairFunded) - winOf(soloFunded);
+      // Wins decide, progress breaks the tie — the complement probe's rule. Two
+      // arms both pinned at 100% is a ceiling, not a finding, and two both at 0%
+      // still differ in how far they got.
+      const progressGain = wavesOf(pairFunded) - wavesOf(soloFunded);
+      const helps = pairGain > 0 || (pairGain === 0 && progressGain > 0);
+
+      const row = [
+        `  ${biome.id.padEnd(12)}${(biome.terrainRule ?? '(control)').padEnd(14)}` +
+          `single pillar must stay ≤ ${cap}%   maps: ${mapIds.join(', ')}`,
+      ];
+      for (const [label, runs] of arms) {
+        const isPillar = label.endsWith(' only');
+        const win = winOf(runs);
+        const over = isPillar && win > cap;
+        if (over) sufficient++;
+        // The composition, not just the count. "8 towers" hides the difference
+        // between a board with one barracks and a board that is half garrison,
+        // and those are opposite diagnoses: the first says exposure is not worth
+        // a plot, the second says the bot built a garrison farm and the arm
+        // never tested the pair at all.
+        const built = new Map<string, number>();
+        for (const r of runs) for (const t of r.towers) built.set(t, (built.get(t) ?? 0) + 1);
+        const mix = [...built]
+          .sort((a, b) => b[1] - a[1])
+          .map(([id, n]) => `${id}×${(n / runs.length).toFixed(1)}`)
+          .join(' ');
+        row.push(
+          `      ${label.padEnd(16)} win ${win.toFixed(0).padStart(3)}%  ` +
+            `progress ${wavesOf(runs).toFixed(0).padStart(3)}%  ` +
+            `kills ${String(Math.round(runs.reduce((s, r) => s + r.kills, 0) / runs.length)).padStart(3)}  ` +
+            `${mix || '(built nothing)'}` +
+            (over ? '   ← sufficient alone, invariant broken' : ''),
+        );
+      }
+      if (!helps) inert++;
+      row.push(
+        `      army over towers alone (both funded): ${pairGain >= 0 ? '+' : ''}${pairGain.toFixed(0)}pp win, ` +
+          `${progressGain >= 0 ? '+' : ''}${progressGain.toFixed(0)}pp progress` +
+          (helps ? '' : '   ← exposure buys nothing here'),
+      );
+      lines.push(row.join('\n'));
+    }
+
+    console.log(
+      `\n[TRIANGLE BY BIOME — M8.4b]  ${sufficient} pillar(s) sufficient alone, ` +
+        `${inert} biome(s) where the army adds nothing\n` +
+        lines.join('\n') +
+        '\n\n  Two ways to fail, and they need different fixes. A pillar sufficient alone is\n' +
+        '  the invariant breaking. A pillar worth nothing is a biome that plays itself —\n' +
+        '  no cap catches that one, so read the last line of each block.',
     );
   });
 

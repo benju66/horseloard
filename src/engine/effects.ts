@@ -64,9 +64,27 @@ export function applyTerrainRule(
   const out: ModifiableData = structuredClone(data);
   const foes: EnemiesFile = structuredClone(enemies);
 
+  /**
+   * Sightlines, and the rally point with them.
+   *
+   * `rallyRange` scales by the same factor and that is not a tuning choice — it
+   * is what the rule *means*. The design invariant is that soldiers hold the
+   * road **in front of the tower line**, so the rally point is defined relative
+   * to tower cover, not in absolute units. A rule that moves the tower line and
+   * leaves the rally point where it was posts soldiers outside cover, and a
+   * garrison holding enemies where nothing is shooting them makes a board
+   * strictly worse.
+   *
+   * That is not hypothetical: the first cut of `narrow-cuts` did exactly this,
+   * and the M8.4b probe read −83pp for adding a barracks — the pair arm losing
+   * to the solo arm, which is the triangle inverted.
+   */
   const scaleTowerRange = (f: number): void => {
     for (const tower of out.towers.towers) {
-      for (const st of [...tower.levels, ...tower.branches.map((b) => b.stats)]) st.range *= f;
+      for (const st of [...tower.levels, ...tower.branches.map((b) => b.stats)]) {
+        st.range *= f;
+        if (st.garrison) st.garrison.rallyRange *= f;
+      }
     }
   };
 

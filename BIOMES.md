@@ -401,3 +401,97 @@ Their moderate engine work never has to happen.
 - **Iron at 0–42% is hard**, possibly too hard. That is a band question for M8.7, not a reason
   to soften the Juggernaut — the trait is doing its job and the wave budget is the dial.
 - Twelve builds remains a small sample. The direction is decisive; the digits are not.
+
+---
+
+## Part M — M8.4: the biomes measured as built
+
+Part L measured a *hypothesis* — three pools reskinned onto one map, HP-normalised, no terrain
+rules. That was the right instrument for "could pools ever matter", and it said yes. M8.4 asks
+the shipping question instead: **do the biomes as actually authored still make different builds
+correct**, with their real maps, their real wave sets and their terrain rules folded in.
+
+Two probes, both in `bots.harness.test.ts`, both run before M8.5 authors a single new map.
+
+### M.1 Diversity — the thesis survives contact with real content
+
+```
+                                    cr    ho    hu    ri    st    wa    (pp heavier among winners)
+  green-road   (control)    100-100%  +13   +7    +3   -10   +10   -23    unreadable (spread 0pp)
+  iron-deeps   narrow-cuts    0- 42%  -13  +13   -10    -3    -3   +17    carries: wall
+  long-steppe  open-country   0- 39%   +7  -10   +10   -13   +13    -7    carries: storm
+```
+
+Two readable rows, two distinct carrying paths. The thesis holds.
+
+**The probe refuses to read Green, and that is the point.** Every sampled build clears it, so
+there are no losers to compare winners against and the path deltas are noise wearing a number's
+clothes — Green's `crown +13` means nothing whatsoever. This is the sixth time this project has
+been bitten by an instrument that could not exercise its subject, and the first time the
+instrument says so itself rather than printing a confident winner.
+
+Iron carrying `wall` and Steppe carrying `storm` is not the Part L result (`host` and `wall`).
+That is expected and not a contradiction: Part L held the map and terrain fixed and varied only
+species, while this varies the whole place. What both agree on — the only claim either was built
+to test — is that **the carrying path moves when the biome does**.
+
+### M.2 The triangle, per biome — one half holds, one half does not
+
+```
+  green-road    towers 0%   army 0%   hero 50%    towers+gold 100%  pair 100%  all-three 100%
+  iron-deeps    towers 0%   army 0%   hero  0%    towers+gold   0%  pair   0%  all-three  44%
+  long-steppe   towers 0%   army 0%   hero  0%    towers+gold   0%  pair   0%  all-three   0%
+```
+
+**No single pillar clears any biome.** The first half of TRIANGLE.md's invariant holds
+everywhere, comfortably, and the terrain rules did not break it in either direction.
+
+The second half — *any two together must* — does not hold, and the failure is not subtle:
+
+- **Iron needs all three.** Every two-pillar arm reads 0%; only the reference build clears, at
+  44%. A map that demands the full triangle is not the invariant working, it is the invariant
+  overshot: two pillars are supposed to be sufficient, not merely necessary.
+- **Steppe is unwinnable.** 0% with all three. That is the difficulty curve, not the triangle.
+- **The army leg buys nothing, anywhere.** Adding a barracks to a funded tower board is +0pp on
+  Green (both pinned at the ceiling), **−17pp progress on Iron**, −2pp on Steppe.
+
+### M.3 The army finding predates biomes
+
+Worth stating plainly, because the temptation is to blame the new thing. Run on the pre-biome
+tree (`dbaf0b6`), the per-map complement probe reports **"army helps on 0/4 maps"** — −8pp on
+crossroads, −1.3 waves on warlords-march. Biomes did not break the army leg. They made it
+*louder*, because a tower board against the Iron pool is stronger than it was against the old
+mixed pool, so the plot a barracks costs is worth more.
+
+The mechanism is visible in the composition breakdown the probe now prints. Both arms fill the
+same eight plots; the pair arm simply spends four of them on `barracks` instead of `bombard`, and
+kills fall from 89 to 69. **Plots are the scarce resource, not gold** — so for exposure to be
+worth taking, one barracks must beat one combat tower on a shared board. It does not, by a wide
+margin, and no amount of biome authoring will change that.
+
+This is now the top open balance item. It is a TRIANGLE.md §B.2 failure, it is older than this
+milestone, and authoring eight maps around a pillar that does not participate would bake it in.
+
+### M.4 Two things that were checked and were not the cause
+
+- **Rally geometry.** `narrow-cuts` shortens every sightline, and the design invariant defines
+  the rally point *relative to the tower line* — so the rule was scaling tower range while
+  leaving `rallyRange` fixed, posting soldiers outside the cover they exist to feed. The rule now
+  scales both, which is what it always meant. Measured, it changes nothing: iron reads identically
+  with and without. Kept because it is correct, not because it fixed anything.
+- **Harness determinism.** One earlier reading of Iron's funded-towers arm said 83% where it now
+  reproducibly says 0%. Every seed is fixed, `applyTo` and `applyTerrainRule` both clone, the
+  pillar helpers are pure, and two back-to-back invocations are byte-identical — so the current
+  numbers are the trustworthy ones and the outlier came from a tree state that could not be
+  reconstructed. Recorded rather than quietly dropped: an 83pp swing nobody can explain is the
+  kind of thing that should stay written down.
+
+### M.5 What this changes about the plan
+
+M8.5 (author eight maps) is **not** unblocked by this. The order changes:
+
+| | |
+|---|---|
+| **M8.4.1** | Make the campaign winnable again. Steppe at 0% and Iron at 44% are off-band on every map the player can currently reach, and the game is deployed. |
+| **M8.4.2** | Fix the army leg, or stop calling it a pillar. One barracks must beat one combat tower on a shared board. |
+| **M8.5** | Then author the maps — against a triangle that closes. |
