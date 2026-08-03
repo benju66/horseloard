@@ -1,13 +1,20 @@
 import type { GameData } from '../../data/loader';
-import { canBuyRank, spentTokens, unlockedMapIds, type SaveData } from '../../engine/progression';
+import type { SkillPath } from '../../data/schemas';
+import { SkillTree, type AllocationRefusal } from '../../engine/skillTree';
+import {
+  careerProgress,
+  threeStarredMaps,
+  unlockedMapIds,
+  type SaveData,
+} from '../../engine/progression';
 
 /**
- * Map select and meta tree, DOM overlay edition (MG.5).
+ * Map select and the career tree, DOM overlay edition.
  *
- * Both screens are pure presentation over `progression.ts` — unlock rules,
- * token costs, prerequisites and refunds all live in the engine and are already
- * tested there. Nothing here decides anything; it renders decisions and reports
- * taps back to the host.
+ * Both screens are pure presentation over the engine — unlock rules, point
+ * costs, prerequisites and the respec all live in `progression.ts` and
+ * `skillTree.ts` and are tested there. Nothing here decides anything; it
+ * renders decisions and reports taps back to the host.
  */
 
 export interface ScreenHost {
@@ -17,20 +24,46 @@ export interface ScreenHost {
   onSaveChanged(save: SaveData): void;
 }
 
+/** Column headers. Order is the read order; the data's `path` enum is unordered. */
+const PATH_ORDER: readonly SkillPath[] = ['hunt', 'ride', 'wall', 'host', 'crown'];
+const PATH_TITLES: Record<SkillPath, string> = {
+  hunt: 'The Hunt',
+  ride: 'The Ride',
+  wall: 'The Wall',
+  host: 'The Host',
+  crown: 'The Crown',
+};
+const PATH_BLURBS: Record<SkillPath, string> = {
+  hunt: 'Bow, crit, arrows from above',
+  ride: 'Speed, trample, steel in motion',
+  wall: 'Towers — rate, reach, range',
+  host: 'Soldiers holding the road',
+  crown: 'Gold, the gate, the long game',
+};
+
+/** Why a node is greyed out, in words a player can act on. */
+const REFUSAL_TEXT: Record<AllocationRefusal, string> = {
+  unknown: 'missing',
+  'already-taken': 'taken',
+  'missing-prerequisite': 'locked',
+  excluded: 'forgone',
+  'too-expensive': 'not enough points',
+};
+
 export class MapSelectScreen {
   private readonly root: HTMLDivElement;
   private readonly host: ScreenHost;
 
-  constructor(layer: HTMLElement, host: ScreenHost, openMetaTree: () => void) {
+  constructor(layer: HTMLElement, host: ScreenHost, openTree: () => void) {
     this.host = host;
     this.root = document.createElement('div');
     this.root.className = 'screen';
     this.root.style.display = 'none';
     layer.append(this.root);
-    this.openMetaTree = openMetaTree;
+    this.openTree = openTree;
   }
 
-  private readonly openMetaTree: () => void;
+  private readonly openTree: () => void;
 
   show(): void {
     this.render();
@@ -51,10 +84,15 @@ export class MapSelectScreen {
     const title = document.createElement('h1');
     title.className = 'screen-title';
     title.textContent = 'HORSE LORD';
-    const tokens = document.createElement('div');
-    tokens.className = 'screen-sub';
-    tokens.textContent = `⬢ ${save.tokens} tokens`;
-    this.root.append(title, tokens);
+    const tree = new SkillTree(data.skillTree);
+    const { level } = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel);
+    const free = tree.pointsAt(level, threeStarredMaps(save)) - tree.spent(save.build);
+    const sub = document.createElement('div');
+    sub.className = 'screen-sub';
+    // Unspent points lead, because that is the number that pulls a player back
+    // into the tree. Level alone reads as a badge; "3 points" reads as a task.
+    sub.textContent = free > 0 ? `LV ${level} · ${free} points to spend` : `LV ${level}`;
+    this.root.append(title, sub);
 
     const list = document.createElement('div');
     list.className = 'map-list';
@@ -114,25 +152,43 @@ export class MapSelectScreen {
     this.root.append(list);
 
     const meta = document.createElement('button');
-    meta.className = 'screen-action';
+    meta.className = 'screen-action' + (free > 0 ? '' : ' ghost');
     meta.setAttribute('data-ui', '');
-    meta.textContent = 'Meta tree';
-    meta.addEventListener('click', () => this.openMetaTree());
+    meta.textContent = free > 0 ? `Skill tree · ${free} ⬢` : 'Skill tree';
+    meta.addEventListener('click', () => this.openTree());
     this.root.append(meta);
   }
 }
 
-export class MetaTreeScreen {
+/**
+ * The career tree (SKILLTREE.md Part E).
+ *
+ * Five vertical columns, one path per phone screen, swiped sideways. A path
+ * reads top to bottom as a single line of commitment — which is the shape a
+ * phone actually wants. The alternative, a 2D graph you pan and zoom, is how
+ * every desktop skill tree looks and is unusable with one thumb.
+ *
+ * All the rules live in `SkillTree`; this renders them. In particular the
+ * refusal reason is asked for by name rather than reduced to a boolean, because
+ * "locked" with no explanation is the thing that makes players stop reading a
+ * tree.
+ */
+export class SkillTreeScreen {
   private readonly root: HTMLDivElement;
   private readonly host: ScreenHost;
   private readonly onBack: () => void;
+  private readonly tree: SkillTree;
+  private readonly columns: HTMLDivElement;
 
   constructor(layer: HTMLElement, host: ScreenHost, onBack: () => void) {
     this.host = host;
     this.onBack = onBack;
+    this.tree = new SkillTree(host.data.skillTree);
     this.root = document.createElement('div');
-    this.root.className = 'screen';
+    this.root.className = 'screen tree-screen';
     this.root.style.display = 'none';
+    this.columns = document.createElement('div');
+    this.columns.className = 'tree-columns';
     layer.append(this.root);
   }
 
@@ -145,74 +201,156 @@ export class MetaTreeScreen {
     this.root.style.display = 'none';
   }
 
+  /** Points the career has earned, and what is left after the current build. */
+  private budget(): { level: number; earned: number; spent: number; free: number } {
+    const { save, data } = this.host;
+    const { level } = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel);
+    const earned = this.tree.pointsAt(level, threeStarredMaps(save));
+    const spent = this.tree.spent(save.build);
+    return { level, earned, spent, free: earned - spent };
+  }
+
   private render(): void {
-    const { data, save } = this.host;
+    const { save, data } = this.host;
+    const { level, earned, spent, free } = this.budget();
+    const progress = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel);
+
+    // Preserve the scroll position across re-renders. Every tap rebuilds the
+    // list, and a column that jumps back to the top on each allocation makes
+    // walking a path feel like fighting the screen.
+    const scrollLeft = this.columns.scrollLeft;
+    const scrollTops = [...this.columns.children].map((c) => c.scrollTop);
+
     this.root.replaceChildren();
+    this.columns.replaceChildren();
 
-    const title = document.createElement('h1');
-    title.className = 'screen-title';
-    title.textContent = 'Meta tree';
-    const sub = document.createElement('div');
-    sub.className = 'screen-sub';
-    sub.textContent = `⬢ ${save.tokens} tokens · ${spentTokens(data.metaTree, save.meta.ranks)} spent`;
-    this.root.append(title, sub);
+    const header = document.createElement('div');
+    header.className = 'tree-header';
 
-    const list = document.createElement('div');
-    list.className = 'node-list';
-    for (const node of data.metaTree) {
-      const rank = save.meta.ranks[node.id] ?? 0;
-      const max = node.costPerRank.length;
-      const check = canBuyRank(node, data.metaTree, save.meta.ranks, save.tokens);
+    const title = document.createElement('div');
+    title.className = 'tree-level';
+    title.textContent = `LV ${level}`;
 
-      const row = document.createElement('button');
-      row.className = 'node-row';
-      row.setAttribute('data-ui', '');
-      row.disabled = !check.ok;
+    const bar = document.createElement('div');
+    bar.className = 'tree-xpbar';
+    const fill = document.createElement('div');
+    fill.className = 'tree-xpfill';
+    fill.style.width =
+      progress.needed > 0 ? `${Math.min(100, (progress.into / progress.needed) * 100)}%` : '100%';
+    bar.append(fill);
 
-      const name = document.createElement('div');
-      name.className = 'node-name';
-      name.textContent = `${node.name}  ${rank}/${max}`;
-      const desc = document.createElement('div');
-      desc.className = 'node-desc';
-      desc.textContent = node.description;
-      const cost = document.createElement('div');
-      cost.className = 'node-cost';
-      cost.textContent =
-        check.cost === null ? 'maxed' : check.ok ? `⬢ ${check.cost}` : `⬢ ${check.cost} · ${check.reason}`;
+    const points = document.createElement('div');
+    points.className = 'tree-points' + (free > 0 ? ' has-free' : '');
+    points.textContent = `${free} ⬢`;
+    points.title = `${spent} spent of ${earned} earned`;
 
-      row.append(name, desc, cost);
-      row.addEventListener('click', () => {
-        const fresh = canBuyRank(node, data.metaTree, this.host.save.meta.ranks, this.host.save.tokens);
-        if (!fresh.ok || fresh.cost === null) return;
-        const next: SaveData = structuredClone(this.host.save);
-        next.tokens -= fresh.cost;
-        next.meta.ranks[node.id] = (next.meta.ranks[node.id] ?? 0) + 1;
-        this.host.onSaveChanged(next);
-        this.render();
-      });
-      list.append(row);
-    }
-    this.root.append(list);
-
-    // Free respec (DESIGN §7) — refunds every token so experimenting is safe.
     const respec = document.createElement('button');
-    respec.className = 'screen-action ghost';
+    respec.className = 'tree-respec';
     respec.setAttribute('data-ui', '');
-    respec.textContent = 'Respec (free)';
+    respec.textContent = 'Respec';
+    // Free and always live (SKILLTREE.md C.6). A tree where a third of the
+    // nodes are reachable and mistakes are permanent is a tree nobody
+    // experiments with, which forfeits the point of having paths at all.
+    respec.disabled = spent === 0;
     respec.addEventListener('click', () => {
       const next: SaveData = structuredClone(this.host.save);
-      next.tokens += spentTokens(data.metaTree, next.meta.ranks);
-      next.meta.ranks = {};
+      next.build = [...this.tree.respec()];
       this.host.onSaveChanged(next);
       this.render();
     });
+
+    header.append(title, bar, points, respec);
+    this.root.append(header);
+
+    for (const path of PATH_ORDER) {
+      this.columns.append(this.renderColumn(path, free));
+    }
+    this.root.append(this.columns);
 
     const back = document.createElement('button');
     back.className = 'screen-action';
     back.setAttribute('data-ui', '');
     back.textContent = 'Back';
     back.addEventListener('click', () => this.onBack());
-    this.root.append(respec, back);
+    this.root.append(back);
+
+    this.columns.scrollLeft = scrollLeft;
+    [...this.columns.children].forEach((c, i) => {
+      c.scrollTop = scrollTops[i] ?? 0;
+    });
+  }
+
+  private renderColumn(path: SkillPath, free: number): HTMLDivElement {
+    const { save } = this.host;
+    const col = document.createElement('div');
+    col.className = 'tree-col';
+
+    const head = document.createElement('div');
+    head.className = 'tree-col-head';
+    const name = document.createElement('div');
+    name.className = 'tree-col-name';
+    name.textContent = PATH_TITLES[path];
+    const blurb = document.createElement('div');
+    blurb.className = 'tree-col-blurb';
+    blurb.textContent = PATH_BLURBS[path];
+    head.append(name, blurb);
+    col.append(head);
+
+    const nodes = this.tree.nodes
+      .filter((n) => n.path === path)
+      .slice()
+      .sort((a, b) => a.row - b.row);
+
+    for (const node of nodes) {
+      const taken = save.build.includes(node.id);
+      const state = { allocated: save.build, pointsEarned: this.budget().earned };
+      const refusal = this.tree.refusal(node.id, state);
+
+      const row = document.createElement('button');
+      row.className = `tree-node kind-${node.kind}`;
+      row.setAttribute('data-ui', '');
+      if (taken) row.classList.add('taken');
+      else if (refusal !== null) row.classList.add('locked');
+      // A taken node stays live: tapping it refunds, which is the only way to
+      // walk back up a path without nuking the whole build.
+      row.disabled = !taken && refusal !== null;
+
+      const nName = document.createElement('div');
+      nName.className = 'tree-node-name';
+      nName.textContent = node.name;
+      const nDesc = document.createElement('div');
+      // Keystone downsides are rendered in the *same* type as the upside —
+      // a trade-off written in small print is a lie (SKILLTREE.md Part E).
+      nDesc.className = 'tree-node-desc';
+      nDesc.textContent = node.description;
+      const nCost = document.createElement('div');
+      nCost.className = 'tree-node-cost';
+      nCost.textContent = taken
+        ? `✓ ${node.cost} ⬢ · tap to refund`
+        : refusal === null
+          ? `${node.cost} ⬢`
+          : `${node.cost} ⬢ · ${REFUSAL_TEXT[refusal]}`;
+
+      row.append(nName, nDesc, nCost);
+      row.addEventListener('click', () => {
+        const next: SaveData = structuredClone(this.host.save);
+        const fresh = { allocated: this.host.save.build, pointsEarned: this.budget().earned };
+        next.build = [
+          ...(taken
+            ? this.tree.deallocate(node.id, fresh)
+            : this.tree.allocate(node.id, fresh)),
+        ];
+        if (next.build.length === this.host.save.build.length) return;
+        this.host.onSaveChanged(next);
+        this.render();
+      });
+      col.append(row);
+    }
+
+    // A column that can afford nothing says so once, at the bottom, rather than
+    // repeating "not enough points" on every row above it.
+    if (free <= 0) col.classList.add('spent-out');
+    return col;
   }
 }
 
@@ -250,5 +388,55 @@ export function screensCss(): string {
   margin-top: 14px; padding: 13px 28px; border-radius: 14px; border: 0; pointer-events: auto;
   background: rgba(46,120,120,.92); color: #f2ecdd; font: 700 15px ui-monospace, monospace;
 }
-.screen-action.ghost { background: transparent; border: 1px solid rgba(255,255,255,.25); }`;
+.screen-action.ghost { background: transparent; border: 1px solid rgba(255,255,255,.25); }
+/* ─── Career tree: five columns, one path per screen, swipe sideways ─── */
+.tree-screen { padding: 0; gap: 0; align-items: stretch; }
+.tree-header {
+  display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px;
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  background: #16210f; border-bottom: 1px solid rgba(255,255,255,.08); flex: 0 0 auto;
+}
+.tree-level { font: 700 15px ui-monospace, monospace; color: #f6c945; }
+.tree-xpbar { flex: 1; height: 8px; border-radius: 5px; background: rgba(255,255,255,.12); overflow: hidden; }
+.tree-xpfill { height: 100%; background: linear-gradient(90deg, #6fc34a, #f6c945); }
+.tree-points { font: 700 15px ui-monospace, monospace; color: #8a8f85; }
+.tree-points.has-free { color: #f6c945; }
+.tree-respec {
+  padding: 7px 12px; border-radius: 10px; pointer-events: auto;
+  background: transparent; border: 1px solid rgba(255,255,255,.25); color: #f5ead0;
+  font: 700 11px ui-monospace, monospace;
+}
+.tree-respec[disabled] { opacity: .35; }
+/* One column fills the viewport and snaps; the row of columns is the swipe. */
+.tree-columns {
+  flex: 1 1 auto; display: flex; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+}
+.tree-col {
+  flex: 0 0 100%; scroll-snap-align: start; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 24px;
+}
+.tree-col-head { padding: 2px 0 6px; }
+.tree-col-name { font: 700 22px/1.1 Georgia, serif; color: #f6c945; }
+.tree-col-blurb { font: 400 12px sans-serif; color: #cdc6b4; opacity: .8; }
+.tree-node {
+  text-align: left; padding: 11px 13px; border-radius: 12px; pointer-events: auto;
+  background: #24361f; border: 2px solid #59a844; color: #f5ead0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.tree-node.taken { background: #2f4a26; border-color: #f6c945; }
+.tree-node.locked, .tree-node[disabled] { background: #1c2419; border-color: #333d30; color: #8a8f85; }
+.tree-node-name { font: 700 15px Georgia, serif; }
+.tree-node-desc { font: 400 12px/1.35 sans-serif; opacity: .9; }
+.tree-node-cost { font: 700 11px ui-monospace, monospace; color: #f6c945; margin-top: 2px; }
+.tree-node[disabled] .tree-node-cost { color: #8a8f85; }
+/* Keystones are visibly the end of a path — bigger, and the trade-off is not
+   in smaller type than the upside. */
+.tree-node.kind-keystone { padding: 15px 15px; border-width: 3px; border-color: #d98b3a; margin-top: 6px; }
+.tree-node.kind-keystone .tree-node-name { font-size: 19px; color: #ffce6b; }
+.tree-node.kind-keystone .tree-node-desc { font-size: 13px; }
+.tree-node.kind-keystone.taken { border-color: #ffce6b; background: #4a3520; }
+.tree-node.kind-ability { border-style: dashed; }
+.tree-node.kind-synergy { border-color: #5f9fd4; }
+.tree-screen .screen-action { margin: 0 16px calc(14px + env(safe-area-inset-bottom, 0px)); flex: 0 0 auto; }`;
 }

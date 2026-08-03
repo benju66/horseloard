@@ -88,7 +88,7 @@ describe('substrate rule', () => {
   }
   for (const e of data.enemies.enemies) add(e.id);
   for (const a of data.abilities) add(a.id);
-  for (const n of data.metaTree) add(n.id);
+  for (const n of data.skillTree.nodes) add(n.id);
   for (const a of data.archetypes) add(a.id);
   for (const m of data.models) {
     add(m.id);

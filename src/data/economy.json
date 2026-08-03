@@ -25,13 +25,17 @@
     "perKillDefault": 2,
     "eliteMultiplier": 3
   },
+  "career": {
+    "perStarFirstTime": 400,
+    "perWaveOnDefeat": 40,
+    "endlessMilestoneEvery": 10,
+    "perEndlessMilestone": 200,
+    "level": {
+      "base": 400,
+      "growth": 1.1
+    }
+  },
   "stars": {
     "twoStarMaxDamageFraction": 0.3
-  },
-  "tokens": {
-    "perStarFirstTime": 10,
-    "perWaveOnDefeat": 1,
-    "endlessMilestoneEvery": 10,
-    "perEndlessMilestone": 5
   }
 }

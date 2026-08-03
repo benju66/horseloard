@@ -1,15 +1,14 @@
 import * as THREE from 'three';
 import { loadGameData } from '../data/loader';
 import { SaveManager } from '../data/saveManager';
-import { applyMetaModifiers } from '../engine/metaModifiers';
 import { newSave, settleRun, type SaveData } from '../engine/progression';
+import { SkillTree } from '../engine/skillTree';
 import { Simulation } from '../engine/simulation';
 import { AbilityBar } from '../ui/dom/abilityBar';
 import { BubbleLayer, bubbleActions } from '../ui/dom/bubbles';
 import { DomJoystick } from '../ui/dom/joystick';
-import { DraftOverlay } from '../ui/dom/draftOverlay';
 import { RunOverlay } from '../ui/dom/runOverlay';
-import { MapSelectScreen, MetaTreeScreen, screensCss } from '../ui/dom/screens';
+import { MapSelectScreen, SkillTreeScreen, screensCss } from '../ui/dom/screens';
 import { ModelViewFactory, UNIT_HEIGHT } from './entityViews';
 import { FxLayer } from './fx';
 import { InstancedEntities } from './instancedEntities';
@@ -18,13 +17,14 @@ import { AudioManager } from '../audio/audioManager';
 import { buildWorld, simToWorld, type World } from './world';
 
 /**
- * The 3D build (MG.5): map select → run → results → back, with the meta tree
- * and persistence wired through.
+ * The 3D build: map select → tree → run → results → back, with persistence
+ * wired through.
  *
  * Data flows one way in each direction: input writes to the sim, the sim
- * decides, the renderer reads. The meta tree stays a pure data transform
+ * decides, the renderer reads. The career tree stays a pure data transform
  * applied *before* the Simulation exists, so the engine never learns it is
- * there — the same contract the Phaser build holds.
+ * there — the same contract the meta tree held, and the reason a run's power
+ * is fully settled before the first wave starts.
  */
 
 const PIXEL_RATIO_CAP = 2;
@@ -33,7 +33,8 @@ const canvas = document.getElementById('app') as HTMLCanvasElement;
 const overlay = document.getElementById('overlay') as HTMLDivElement;
 
 const data = loadGameData();
-const saves = new SaveManager();
+const saves = new SaveManager(data.economy);
+const skillTree = new SkillTree(data.skillTree);
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, PIXEL_RATIO_CAP));
@@ -63,7 +64,6 @@ style.textContent =
   BubbleLayer.css() +
   AbilityBar.css() +
   RunOverlay.css() +
-  DraftOverlay.css() +
   screensCss() +
   `
 #hud { position: fixed; inset: 0; pointer-events: none;
@@ -99,11 +99,12 @@ hud.style.display = 'none';
 const topbar = document.createElement('div');
 topbar.id = 'topbar';
 /**
- * The XP bar (TRIANGLE.md §B.4). It sits directly under the top row because it
- * is now the *primary* progression read — levels deal the drafts, so this bar
- * filling is the thing a player watches, ahead of gold and ahead of the wave
- * counter. A card arriving with no visible reason it arrived would read as
- * random.
+ * The XP bar. It sits directly under the top row because it is the *career*
+ * read: XP no longer changes anything mid-run (SKILLTREE.md), it banks into the
+ * points that buy the tree between runs. That makes the bar a record of what
+ * this run is earning rather than a countdown to a card — which is exactly what
+ * it should have been all along, since a run's power is now settled before the
+ * first wave.
  */
 const xpBar = document.createElement('div');
 xpBar.id = 'xpbar';
@@ -161,7 +162,6 @@ hud.append(muteBtn);
 const joystick = new DomJoystick(canvas, overlay);
 const bubbles = new BubbleLayer(hud);
 const runOverlay = new RunOverlay(overlay);
-const draftOverlay = new DraftOverlay(overlay);
 const bubbleScreens: Array<{ x: number; y: number }> = [];
 
 // ─── Run state ───
@@ -218,10 +218,10 @@ const host = {
 
 const mapSelect = new MapSelectScreen(overlay, host, () => {
   mapSelect.hide();
-  metaTree.show();
+  treeScreen.show();
 });
-const metaTree = new MetaTreeScreen(overlay, host, () => {
-  metaTree.hide();
+const treeScreen = new SkillTreeScreen(overlay, host, () => {
+  treeScreen.hide();
   mapSelect.show();
 });
 
@@ -247,15 +247,19 @@ function releaseViews(): void {
 
 function startMap(mapId: string, endless = false): void {
   mapSelect.hide();
-  metaTree.hide();
+  treeScreen.hide();
   runOverlay.hide();
   releaseViews();
   world?.dispose();
   fx?.dispose();
   instanced?.dispose();
 
-  // The meta tree rewrites copies of the balance data before the sim exists.
-  const modded = applyMetaModifiers(
+  // The career build rewrites copies of the balance data before the sim exists.
+  // `reconcile` first, because a save may hold nodes a data change has since
+  // made unreachable — dropping them here is the difference between a build
+  // that quietly grants more than it should and one that matches the screen.
+  const build = skillTree.reconcile(save.build, Number.MAX_SAFE_INTEGER);
+  const modded = skillTree.applyTo(
     {
       hero: data.hero,
       economy: data.economy,
@@ -263,8 +267,7 @@ function startMap(mapId: string, endless = false): void {
       map: data.maps[mapId]!,
       abilities: data.abilities,
     },
-    data.metaTree,
-    save.meta.ranks,
+    build,
   );
 
   activeMapId = mapId;
@@ -288,15 +291,9 @@ function startMap(mapId: string, endless = false): void {
     abilities: modded.abilities,
     unlockedAbilityIds: modded.unlockedAbilityIds,
     equipSlots: data.equipSlots,
-    // The meta tree grants no stats now (TRIANGLE.md §B.6) — it decides what is
-    // *eligible*, and the draft decides what you actually get.
-    unlockedPerkIds: modded.unlockedPerkIds,
     lockedTowerIds: data.towers.towers
       .filter((t) => !t.unlockedByDefault && !modded.unlockedTowerIds.includes(t.id))
       .map((t) => t.id),
-    // Cloned like the wave set: PerkSystem mutates balance data in place, and
-    // the loaded pool is shared across every run of the session.
-    perks: structuredClone(data.perks),
     endless,
   });
   sim.enemySystem.onReachEnd.push(() => leaks++);
@@ -568,6 +565,7 @@ function settleIfNeeded(): void {
       endless: activeEndless,
     },
     data.economy,
+    sim.xp.totalXp,
   );
   save = result.save;
   void saves.save(save);
@@ -584,11 +582,11 @@ function syncHud(): void {
 
   const pct = `${(sim.xp.fraction * 100).toFixed(1)}%`;
   if (xpFill.style.width !== pct) xpFill.style.width = pct;
-  // Queued cards are shown rather than hidden: levelling twice mid-charge is
-  // common now, and a player who cannot see they are owed a second card has no
-  // reason to open the draft again.
-  const queued = sim.perks?.queuedDrafts ?? 0;
-  const label = `LV ${sim.xp.level}${queued > 0 ? `  ·  +${queued} card${queued > 1 ? 's' : ''}` : ''}`;
+  // The raw XP banked, not a level. In-run levels stopped meaning anything the
+  // day the draft was cut, and a number that ticks up but changes nothing is
+  // worse than no number — this one is the run's actual contribution to the
+  // tree, which is the thing the player is here for.
+  const label = `+${sim.xp.totalXp} XP`;
   if (xpLabel.textContent !== label) xpLabel.textContent = label;
 
   // Ride close → bubble → tap. Anchors projected from sim space each frame.
@@ -613,7 +611,6 @@ function syncHud(): void {
   }
   bubbles.render(actions, bubbleScreens);
   abilityBar?.sync();
-  draftOverlay.sync(sim);
   settleIfNeeded();
   runOverlay.sync(sim, leaks);
 }

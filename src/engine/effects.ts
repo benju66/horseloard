@@ -4,7 +4,6 @@ import type {
   Hero,
   MapDef,
   MetaEffect,
-  MetaNode,
   TowersFile,
 } from '../data/schemas';
 
@@ -28,11 +27,11 @@ const apply = (base: number, perRank: number, mode: 'add' | 'multiply', rank: nu
 /**
  * Apply one stat effect to a balance-data bundle, mutating it in place.
  *
- * Extracted from `applyMetaModifiers` so the in-run perk draft can reuse the
- * exact same vocabulary and arithmetic. Two callers, one meaning: a rank of a
- * meta node and a stack of a perk modify a stat identically, which is the point
- * — a perk that reads "+15% bow damage" must not quietly differ from the tree
- * node that reads the same.
+ * The single arithmetic for every effect in the game. It has had three callers
+ * over the project's life — the meta tree, the in-run draft, and now the career
+ * tree — and the reason it is shared has held through all of them: a node that
+ * reads "+15% bow damage" must not quietly differ from another node that reads
+ * the same, on any screen, ever.
  *
  * **Incremental application is exact, not an approximation.** Applying rank 1
  * repeatedly composes to applying rank N once, for both modes: `add` accumulates
@@ -40,23 +39,26 @@ const apply = (base: number, perRank: number, mode: 'add' | 'multiply', rank: nu
  * is `perRank^N`. That is what lets the perk system hand out one stack at a time
  * mid-run while the meta tree applies all ranks at once before the sim exists.
  *
- * Returns the ability id for `unlock-ability`, since that is a decision for the
- * caller rather than a number to mutate.
+ * Returns the unlock ids rather than applying them, since an unlock is a
+ * decision for a system rather than a number to mutate.
  */
 export function applyEffectInPlace(
   data: ModifiableData,
   fx: MetaEffect,
   rank: number,
-): { unlockAbilityId?: string; unlockPerkId?: string; unlockTowerId?: string } {
+): { unlockAbilityId?: string; unlockTowerId?: string } {
   // Unlocks are decisions for a system, not numbers to mutate, so they are
   // returned rather than applied. All three are routed by the caller.
   if (fx.type === 'unlock-ability') return { unlockAbilityId: fx.abilityId };
-  if (fx.type === 'unlock-perk') return { unlockPerkId: fx.perkId };
   if (fx.type === 'unlock-tower') return { unlockTowerId: fx.towerId };
 
   if (fx.type === 'hero-stat') {
     const h = data.hero;
     if (fx.stat === 'moveSpeed') h.moveSpeed = apply(h.moveSpeed, fx.perRank, fx.mode, rank);
+    else if (fx.stat === 'staggerImmunity') h.stagger.immunityAfter = apply(h.stagger.immunityAfter, fx.perRank, fx.mode, rank);
+    else if (fx.stat === 'bowCritChance') h.crit.chance = Math.min(1, apply(h.crit.chance, fx.perRank, fx.mode, rank));
+    else if (fx.stat === 'bowCritMultiplier') h.crit.multiplier = Math.max(h.crit.multiplier, apply(h.crit.multiplier, fx.perRank, fx.mode, rank));
+    else if (fx.stat === 'bowDamageVsHindered') h.damageVsHindered = apply(h.damageVsHindered, fx.perRank, fx.mode, rank);
     else if (fx.stat === 'trampleDamage') h.trample.damage = apply(h.trample.damage, fx.perRank, fx.mode, rank);
     else if (fx.stat === 'staggerResist') {
       // resist shrinks the shove and the control loss
@@ -159,39 +161,4 @@ export function applyEffectInPlace(
     }
   }
   return {};
-}
-
-/**
- * The meta tree as a pure data transform: purchased ranks rewrite copies of
- * the balance data BEFORE the Simulation is built. The engine never knows
- * the meta tree exists — the substrate rule holds.
- */
-export function applyMetaModifiers(
-  data: ModifiableData,
-  nodes: readonly MetaNode[],
-  ranks: Record<string, number>,
-): ModifiableData & {
-  unlockedAbilityIds: string[];
-  unlockedPerkIds: string[];
-  unlockedTowerIds: string[];
-} {
-  const out: ModifiableData = structuredClone(data);
-  const unlockedAbilityIds: string[] = [];
-  const unlockedPerkIds: string[] = [];
-  const unlockedTowerIds: string[] = [];
-
-  for (const node of nodes) {
-    const rank = ranks[node.id] ?? 0;
-    if (rank <= 0) continue;
-    const { unlockAbilityId, unlockPerkId, unlockTowerId } = applyEffectInPlace(
-      out,
-      node.effect,
-      rank,
-    );
-    if (unlockAbilityId) unlockedAbilityIds.push(unlockAbilityId);
-    if (unlockPerkId) unlockedPerkIds.push(unlockPerkId);
-    if (unlockTowerId) unlockedTowerIds.push(unlockTowerId);
-  }
-
-  return { ...out, unlockedAbilityIds, unlockedPerkIds, unlockedTowerIds };
 }

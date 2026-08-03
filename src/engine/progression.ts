@@ -1,40 +1,91 @@
-import type { Economy, MetaNode } from '../data/schemas';
+import type { Economy } from '../data/schemas';
 
 /** The current save schema version. Bump with every shape or meaning change. */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /**
- * Save schema v2 — versioned from the first write (CLAUDE.md #4). No derived state.
+ * Save schema v3 — versioned from the first write (CLAUDE.md #4). No derived state.
  *
- * The shape is unchanged from v1; the *meaning* of `meta.ranks` is not. MG5.7
- * retired every stat node in the meta tree in favour of unlocks, so a v1 save
- * holds ranks in nodes that no longer exist. `SaveManager.migrate` refunds
- * those and drops the keys — see the note there for why that is a migration and
- * not something to leave to `applyMetaModifiers` quietly ignoring them.
+ * v3 is the career-tree save (SKILLTREE.md). Two fields died with the meta
+ * tree: `tokens` and `meta.ranks`. What replaces them is deliberately smaller —
+ * **career XP and a list of node ids** — because everything else about a career
+ * is derivable from those two plus the campaign record. Level, points earned,
+ * points spent and points free are all computed on read, so no two fields in
+ * this file can ever disagree with each other.
  */
 export interface SaveData {
   schemaVersion: number;
   updatedAt: string;
-  tokens: number;
+  /** Total career XP ever earned. Never spent — points come from the level it implies. */
+  careerXp: number;
   campaign: Record<string, { stars: 0 | 1 | 2 | 3; bestWavesCleared: number; completed: boolean }>;
   endlessBest: Record<string, number>;
-  meta: { ranks: Record<string, number> };
+  /** Skill-tree node ids held. The build, and the only thing points buy. */
+  build: string[];
+  /** Ability ids equipped, in bar order. Capped by the campaign, not the tree. */
+  loadout: string[];
 }
 
 export function newSave(): SaveData {
   return {
     schemaVersion: SAVE_VERSION,
     updatedAt: new Date().toISOString(),
-    tokens: 0,
+    careerXp: 0,
     campaign: {},
     endlessBest: {},
-    meta: { ranks: {} },
+    build: [],
+    loadout: [],
   };
 }
 
 /**
- * The nodes MG5.7 retired, with what each rank cost. Frozen here rather than
- * read from `metatree.json`, because the file no longer contains them — a
+ * Career level from total XP. Level n costs `base × growth^(n-2)`, so the
+ * threshold for level L is the geometric sum below it.
+ *
+ * Iterative rather than closed-form on purpose: the closed form is one
+ * `Math.log` away from an off-by-one at every exact threshold, and this runs
+ * once per screen open, not once per frame.
+ */
+export function careerLevel(careerXp: number, economy: Economy, maxLevel: number): number {
+  const { base, growth } = economy.career.level;
+  let level = 1;
+  let need = base;
+  let spent = 0;
+  while (level < maxLevel && careerXp >= spent + need) {
+    spent += need;
+    need *= growth;
+    level++;
+  }
+  return level;
+}
+
+/** XP into the current level, and what the next one costs. For the bar. */
+export function careerProgress(
+  careerXp: number,
+  economy: Economy,
+  maxLevel: number,
+): { level: number; into: number; needed: number } {
+  const { base, growth } = economy.career.level;
+  let level = 1;
+  let need = base;
+  let spent = 0;
+  while (level < maxLevel && careerXp >= spent + need) {
+    spent += need;
+    need *= growth;
+    level++;
+  }
+  if (level >= maxLevel) return { level: maxLevel, into: 0, needed: 0 };
+  return { level, into: careerXp - spent, needed: need };
+}
+
+/** Maps three-starred — the campaign half of the points budget. */
+export function threeStarredMaps(save: SaveData): number {
+  return Object.values(save.campaign).filter((c) => c.stars === 3).length;
+}
+
+/**
+ * The v1 nodes MG5.7 retired, with what each rank cost. Frozen here rather than
+ * read from `metatree.json`, because that file no longer exists at all — a
  * migration has to know the *old* world, and looking it up in the new one is
  * how refunds silently become zero.
  */
@@ -48,32 +99,100 @@ const RETIRED_V1_NODES: Record<string, readonly number[]> = {
   lodestone: [10, 20],
 };
 
+/** Every v2 meta node and its rank costs — the other half of what a v2 save may hold. */
+const V2_NODE_COSTS: Record<string, readonly number[]> = {
+  'learn-volley': [8],
+  'learn-rally-horn': [12],
+  'learn-rapid-fire': [16],
+  'learn-heavy-shaft': [16],
+  'learn-caltrops': [14],
+  'veteran-drills': [12],
+  'raise-barracks': [20],
+  'levy-writ': [14],
+  'the-muster': [18],
+  'master-fletchers': [16],
+  'beacon-lore': [16],
+  'the-tithe': [12],
+  'hoarders-bargain': [14],
+  'standing-stones': [18],
+};
+
+/** Shape of a pre-v3 save, for the migration to read without `any`. */
+interface LegacySave {
+  schemaVersion: number;
+  updatedAt: string;
+  tokens?: number;
+  campaign: SaveData['campaign'];
+  endlessBest: SaveData['endlessBest'];
+  meta?: { ranks: Record<string, number> };
+}
+
 /**
- * v1 → v2: the meta tree stopped granting stats (TRIANGLE.md §B.6).
+ * v1 → v2: the meta tree stopped granting stats (TRIANGLE.md §B.6). Every stat
+ * node was gone, so a returning player had tokens sunk into things that no
+ * longer existed; the ranks are dropped and the tokens refunded.
  *
- * Every stat node is gone, so a returning player has tokens sunk into things
- * that no longer exist. `applyMetaModifiers` would ignore the orphan keys
- * harmlessly — which is exactly why this needs to be a migration and not left
- * alone. Ignoring them silently *keeps the player's tokens spent* on nothing:
- * the save would look fine, the tree would look untouched, and the tokens would
- * simply be gone. Refunding is the only honest outcome.
- *
- * Volley and Rally Horn survive with the same ids and cheaper costs. Their
- * ranks are kept rather than refunded — the player still has what they bought,
- * and the price difference is not worth clawing back.
+ * Kept as a separate step rather than folded into v2 → v3 so the chain stays a
+ * chain. A v1 save runs both; a v2 save runs only the second. Collapsing them
+ * would mean the v1 path could only ever be tested through the v3 path.
  */
-export function migrateV1ToV2(save: SaveData): SaveData {
-  const next: SaveData = structuredClone(save);
+export function migrateV1ToV2(save: LegacySave): LegacySave {
+  const next: LegacySave = structuredClone(save);
   next.schemaVersion = 2;
 
   let refund = 0;
   for (const [nodeId, costs] of Object.entries(RETIRED_V1_NODES)) {
-    const rank = next.meta.ranks[nodeId] ?? 0;
+    const rank = next.meta?.ranks[nodeId] ?? 0;
     for (let r = 0; r < rank; r++) refund += costs[r] ?? 0;
-    delete next.meta.ranks[nodeId];
+    if (next.meta) delete next.meta.ranks[nodeId];
   }
-  next.tokens += refund;
+  next.tokens = (next.tokens ?? 0) + refund;
   return next;
+}
+
+/**
+ * v2 → v3: one currency (SKILLTREE.md A.2). Tokens and the meta tree are gone;
+ * career XP and the skill tree replace both.
+ *
+ * The conversion has to answer one question honestly: what is a token worth in
+ * XP? There is no exchange rate in the design, because the two currencies never
+ * coexisted by intent — so inventing one would be inventing progress. What the
+ * save *does* hold that survives verbatim is the campaign record, and the new
+ * economy already says what a star pays. So career XP is **recomputed from the
+ * stars the player actually earned**, and their token balance — banked plus
+ * sunk into meta nodes — is added on top at 1:1 so nothing they held is taken
+ * away.
+ *
+ * That is generous by construction and deliberately so. The alternative is a
+ * returning player opening a fresh-looking tree, and "your progress is gone but
+ * the numbers reconcile" is the worst outcome a migration can produce.
+ *
+ * The build starts empty: v2 held no tree, and a migration cannot guess which
+ * of five paths a player would have walked. The points are all there to spend.
+ */
+export function migrateV2ToV3(save: LegacySave, economy: Economy): SaveData {
+  const legacy = structuredClone(save);
+
+  let sunk = 0;
+  for (const [nodeId, costs] of Object.entries(V2_NODE_COSTS)) {
+    const rank = legacy.meta?.ranks[nodeId] ?? 0;
+    for (let r = 0; r < rank; r++) sunk += costs[r] ?? 0;
+  }
+
+  let starXp = 0;
+  for (const entry of Object.values(legacy.campaign ?? {})) {
+    starXp += entry.stars * economy.career.perStarFirstTime;
+  }
+
+  return {
+    schemaVersion: 3,
+    updatedAt: legacy.updatedAt,
+    careerXp: starXp + (legacy.tokens ?? 0) + sunk,
+    campaign: legacy.campaign ?? {},
+    endlessBest: legacy.endlessBest ?? {},
+    build: [],
+    loadout: [],
+  };
 }
 
 export interface RunOutcome {
@@ -85,15 +204,24 @@ export interface RunOutcome {
 }
 
 /**
- * Applies a finished run to the save. Token rules (DESIGN §7): stars pay on
- * first-time improvement only; defeat pays per wave cleared (a failed run is
- * progress); endless pays per milestone newly reached. Pure — returns the
- * new save and what was earned.
+ * Applies a finished run to the save. Payout rules (DESIGN §7, now in XP):
+ * stars pay on first-time improvement only; defeat pays per wave cleared (a
+ * failed run is progress); endless pays per milestone newly reached. Pure —
+ * returns the new save and what was earned.
+ *
+ * `runXp` is what the run itself banked from kills. It is passed in rather than
+ * recomputed because the Simulation already counted it, and two counts of the
+ * same thing is one count too many.
  */
-export function settleRun(save: SaveData, outcome: RunOutcome, economy: Economy): { save: SaveData; tokensEarned: number } {
+export function settleRun(
+  save: SaveData,
+  outcome: RunOutcome,
+  economy: Economy,
+  runXp = 0,
+): { save: SaveData; xpEarned: number } {
   const next: SaveData = structuredClone(save);
-  const t = economy.tokens;
-  let earned = 0;
+  const t = economy.career;
+  let earned = Math.round(runXp);
 
   if (outcome.endless) {
     const best = next.endlessBest[outcome.mapId] ?? 0;
@@ -115,9 +243,9 @@ export function settleRun(save: SaveData, outcome: RunOutcome, economy: Economy)
     next.campaign[outcome.mapId] = entry;
   }
 
-  next.tokens += earned;
+  next.careerXp += earned;
   next.updatedAt = new Date().toISOString();
-  return { save: next, tokensEarned: earned };
+  return { save: next, xpEarned: earned };
 }
 
 /** Linear unlocks: a map is playable if it's first in order or its predecessor is completed. */
@@ -128,34 +256,4 @@ export function unlockedMapIds(save: SaveData, mapsInOrder: ReadonlyArray<{ id: 
     if (i === 0 || save.campaign[mapsInOrder[i - 1]!.id]?.completed) unlocked.add(map.id);
   }
   return unlocked;
-}
-
-/** Total tokens sunk into the tree at current ranks (respec refunds exactly this). */
-export function spentTokens(nodes: readonly MetaNode[], ranks: Record<string, number>): number {
-  let spent = 0;
-  for (const node of nodes) {
-    const rank = ranks[node.id] ?? 0;
-    for (let r = 0; r < rank; r++) spent += node.costPerRank[r] ?? 0;
-  }
-  return spent;
-}
-
-/** Can the next rank of this node be bought? (tokens, max rank, prerequisites at max) */
-export function canBuyRank(
-  node: MetaNode,
-  nodes: readonly MetaNode[],
-  ranks: Record<string, number>,
-  tokens: number,
-): { ok: boolean; cost: number | null; reason?: string } {
-  const rank = ranks[node.id] ?? 0;
-  const cost = node.costPerRank[rank] ?? null;
-  if (cost === null) return { ok: false, cost: null, reason: 'maxed' };
-  for (const req of node.requires) {
-    const reqNode = nodes.find((n) => n.id === req);
-    if (reqNode && (ranks[req] ?? 0) < reqNode.costPerRank.length) {
-      return { ok: false, cost, reason: `requires ${reqNode.name}` };
-    }
-  }
-  if (tokens < cost) return { ok: false, cost, reason: 'tokens' };
-  return { ok: true, cost };
 }

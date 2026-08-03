@@ -1,0 +1,1468 @@
+{
+  "pointsPerLevel": 1,
+  "maxLevel": 36,
+  "pointsPerThreeStar": 1,
+  "maxAllocatableFraction": 0.35,
+  "nodes": [
+    {
+      "id": "hunt-steady",
+      "path": "hunt",
+      "kind": "minor",
+      "name": "Steady Hand",
+      "description": "Arrows hit 20% harder.",
+      "cost": 1,
+      "row": 0,
+      "requires": [],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "bowDamage",
+          "perRank": 1.2,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "hunt-longdraw",
+      "path": "hunt",
+      "kind": "minor",
+      "name": "Long Draw",
+      "description": "Your bow reaches 20% further.",
+      "cost": 1,
+      "row": 0,
+      "requires": [],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "bowRange",
+          "perRank": 1.2,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "hunt-volley-wide",
+      "path": "hunt",
+      "kind": "notable",
+      "name": "Wider Volley",
+      "description": "Volley falls over a 30% larger circle and hits 25% harder.",
+      "cost": 2,
+      "row": 1,
+      "requires": [
+        "hunt-steady"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "volley",
+          "stat": "radius",
+          "perRank": 1.3,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "volley",
+          "stat": "damage",
+          "perRank": 1.25,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "hunt-keen",
+      "path": "hunt",
+      "kind": "notable",
+      "name": "Keen Eye",
+      "description": "Your arrows crit 18% of the time for double.",
+      "cost": 2,
+      "row": 1,
+      "requires": [
+        "hunt-longdraw"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "bowCritChance",
+          "perRank": 0.18,
+          "mode": "add"
+        },
+        {
+          "type": "hero-stat",
+          "stat": "bowCritMultiplier",
+          "perRank": 2.0,
+          "mode": "add"
+        }
+      ]
+    },
+    {
+      "id": "hunt-shaft",
+      "path": "hunt",
+      "kind": "ability",
+      "name": "Heavy Shaft",
+      "description": "Unlock Heavy Shaft \u2014 one arrow through a column.",
+      "cost": 2,
+      "row": 2,
+      "requires": [
+        "hunt-volley-wide"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "unlock-ability",
+          "abilityId": "heavy-shaft"
+        }
+      ]
+    },
+    {
+      "id": "hunt-killing",
+      "path": "hunt",
+      "kind": "synergy",
+      "name": "Killing Ground",
+      "description": "+45% bow damage to enemies that are slowed or held.",
+      "cost": 2,
+      "row": 2,
+      "requires": [
+        "hunt-keen"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "bowDamageVsHindered",
+          "perRank": 1.45,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "hunt-rapid",
+      "path": "hunt",
+      "kind": "ability",
+      "name": "Rapid Fire",
+      "description": "Unlock Rapid Fire \u2014 draw without pause.",
+      "cost": 2,
+      "row": 3,
+      "requires": [
+        "hunt-shaft"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "unlock-ability",
+          "abilityId": "rapid-fire"
+        }
+      ]
+    },
+    {
+      "id": "hunt-hands",
+      "path": "hunt",
+      "kind": "notable",
+      "name": "Practised Hands",
+      "description": "Every ability returns 18% sooner.",
+      "cost": 2,
+      "row": 3,
+      "requires": [
+        "hunt-killing"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": null,
+          "stat": "cooldown",
+          "perRank": 0.82,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "hunt-storm",
+      "path": "hunt",
+      "kind": "ability",
+      "name": "Aerostorm",
+      "description": "Unlock Aerostorm \u2014 the sky answers a hard fight.",
+      "cost": 2,
+      "row": 4,
+      "requires": [
+        "hunt-rapid"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "unlock-ability",
+          "abilityId": "aero-storm"
+        }
+      ]
+    },
+    {
+      "id": "hunt-execution",
+      "path": "hunt",
+      "kind": "synergy",
+      "name": "Execution",
+      "description": "Crits deal a further 60% to slowed or held enemies.",
+      "cost": 2,
+      "row": 4,
+      "requires": [
+        "hunt-hands"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "bowCritMultiplier",
+          "perRank": 3.2,
+          "mode": "add"
+        },
+        {
+          "type": "hero-stat",
+          "stat": "bowDamageVsHindered",
+          "perRank": 1.15,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "hunt-deadeye",
+      "path": "hunt",
+      "kind": "keystone",
+      "name": "Deadeye",
+      "description": "+90% bow damage. \u221235% bow range. Ride into the teeth of it.",
+      "cost": 3,
+      "row": 5,
+      "requires": [
+        "hunt-storm"
+      ],
+      "excludes": [
+        "hunt-skirmisher"
+      ],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "bowDamage",
+          "perRank": 1.9,
+          "mode": "multiply"
+        },
+        {
+          "type": "hero-stat",
+          "stat": "bowRange",
+          "perRank": 0.65,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "hunt-skirmisher",
+      "path": "hunt",
+      "kind": "keystone",
+      "name": "Skirmisher",
+      "description": "+45% fire rate and +15% speed. \u221230% bow damage.",
+      "cost": 3,
+      "row": 5,
+      "requires": [
+        "hunt-execution"
+      ],
+      "excludes": [
+        "hunt-deadeye"
+      ],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "bowFireRate",
+          "perRank": 1.45,
+          "mode": "multiply"
+        },
+        {
+          "type": "hero-stat",
+          "stat": "moveSpeed",
+          "perRank": 1.15,
+          "mode": "multiply"
+        },
+        {
+          "type": "hero-stat",
+          "stat": "bowDamage",
+          "perRank": 0.7,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "ride-shoes",
+      "path": "ride",
+      "kind": "minor",
+      "name": "Iron Shoes",
+      "description": "Trampling deals 50% more.",
+      "cost": 1,
+      "row": 0,
+      "requires": [],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "trampleDamage",
+          "perRank": 1.5,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "ride-footing",
+      "path": "ride",
+      "kind": "minor",
+      "name": "Sure Footing",
+      "description": "You ride 15% faster.",
+      "cost": 1,
+      "row": 0,
+      "requires": [],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "moveSpeed",
+          "perRank": 1.15,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "ride-blades",
+      "path": "ride",
+      "kind": "ability",
+      "name": "Whirling Blades",
+      "description": "Unlock Whirling Blades \u2014 steel circles you.",
+      "cost": 2,
+      "row": 1,
+      "requires": [
+        "ride-shoes"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "unlock-ability",
+          "abilityId": "whirling-blades"
+        }
+      ]
+    },
+    {
+      "id": "ride-barding",
+      "path": "ride",
+      "kind": "notable",
+      "name": "Barding",
+      "description": "The grace after a shove lasts 70% longer.",
+      "cost": 2,
+      "row": 1,
+      "requires": [
+        "ride-footing"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "staggerImmunity",
+          "perRank": 1.7,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "ride-caltrops",
+      "path": "ride",
+      "kind": "ability",
+      "name": "Caltrops",
+      "description": "Unlock Caltrops \u2014 iron on the road.",
+      "cost": 2,
+      "row": 2,
+      "requires": [
+        "ride-blades"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "unlock-ability",
+          "abilityId": "caltrops"
+        }
+      ]
+    },
+    {
+      "id": "ride-honed",
+      "path": "ride",
+      "kind": "notable",
+      "name": "Honed Edges",
+      "description": "Blades cut 40% deeper.",
+      "cost": 2,
+      "row": 2,
+      "requires": [
+        "ride-blades"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "whirling-blades",
+          "stat": "damagePerSecond",
+          "perRank": 1.4,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "ride-warhorse",
+      "path": "ride",
+      "kind": "synergy",
+      "name": "Warhorse",
+      "description": "Trampling hits 25% harder, and the blades cut 25% deeper.",
+      "cost": 2,
+      "row": 3,
+      "requires": [
+        "ride-caltrops"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "trampleDamage",
+          "perRank": 1.25,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "whirling-blades",
+          "stat": "damagePerSecond",
+          "perRank": 1.25,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "ride-arc",
+      "path": "ride",
+      "kind": "notable",
+      "name": "Wide Arc",
+      "description": "One more blade, circling 20% wider.",
+      "cost": 2,
+      "row": 3,
+      "requires": [
+        "ride-honed"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "whirling-blades",
+          "stat": "blades",
+          "perRank": 1,
+          "mode": "add"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "whirling-blades",
+          "stat": "radius",
+          "perRank": 1.2,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "ride-broken",
+      "path": "ride",
+      "kind": "notable",
+      "name": "Broken Ground",
+      "description": "Caltrops last 50% longer and bite harder.",
+      "cost": 2,
+      "row": 4,
+      "requires": [
+        "ride-warhorse"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "caltrops",
+          "stat": "duration",
+          "perRank": 1.5,
+          "mode": "multiply"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "caltrops",
+          "stat": "damagePerSecond",
+          "perRank": 1.35,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "ride-relentless",
+      "path": "ride",
+      "kind": "notable",
+      "name": "Relentless",
+      "description": "Blades hold for 40% longer.",
+      "cost": 2,
+      "row": 4,
+      "requires": [
+        "ride-arc"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "whirling-blades",
+          "stat": "duration",
+          "perRank": 1.4,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "ride-cataphract",
+      "path": "ride",
+      "kind": "keystone",
+      "name": "Cataphract",
+      "description": "Nothing can stagger you. \u221225% bow damage.",
+      "cost": 3,
+      "row": 5,
+      "requires": [
+        "ride-broken"
+      ],
+      "excludes": [
+        "ride-outrider"
+      ],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "staggerResist",
+          "perRank": 99.0,
+          "mode": "multiply"
+        },
+        {
+          "type": "hero-stat",
+          "stat": "bowDamage",
+          "perRank": 0.75,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "ride-outrider",
+      "path": "ride",
+      "kind": "keystone",
+      "name": "Outrider",
+      "description": "+40% speed, coins fly to you from far off. Trampling stops hurting.",
+      "cost": 3,
+      "row": 5,
+      "requires": [
+        "ride-relentless"
+      ],
+      "excludes": [
+        "ride-cataphract"
+      ],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "moveSpeed",
+          "perRank": 1.4,
+          "mode": "multiply"
+        },
+        {
+          "type": "kingdom-stat",
+          "stat": "coinMagnetRadius",
+          "perRank": 3.0,
+          "mode": "multiply"
+        },
+        {
+          "type": "hero-stat",
+          "stat": "trampleDamage",
+          "perRank": 0.02,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "wall-fletchers",
+      "path": "wall",
+      "kind": "minor",
+      "name": "Fletchers",
+      "description": "Every tower hits 18% harder.",
+      "cost": 1,
+      "row": 0,
+      "requires": [],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "damage",
+          "perRank": 1.18,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "wall-masonry",
+      "path": "wall",
+      "kind": "minor",
+      "name": "Masonry",
+      "description": "Towers cost 18% less to raise.",
+      "cost": 1,
+      "row": 0,
+      "requires": [],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "cost",
+          "perRank": 0.82,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "wall-oath",
+      "path": "wall",
+      "kind": "notable",
+      "name": "Marksman's Oath",
+      "description": "Archer towers crit 22% of the time for \u00d72.2.",
+      "cost": 2,
+      "row": 1,
+      "requires": [
+        "wall-fletchers"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": "archer",
+          "grant": {
+            "kind": "crit",
+            "chance": 0.22,
+            "multiplier": 2.2
+          }
+        }
+      ]
+    },
+    {
+      "id": "wall-foundations",
+      "path": "wall",
+      "kind": "notable",
+      "name": "Foundations",
+      "description": "Upgrades cost 22% less.",
+      "cost": 2,
+      "row": 1,
+      "requires": [
+        "wall-masonry"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "cost",
+          "perRank": 0.86,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "wall-horn",
+      "path": "wall",
+      "kind": "ability",
+      "name": "Rally Horn",
+      "description": "Unlock Rally Horn \u2014 every tower fires faster for a while.",
+      "cost": 2,
+      "row": 2,
+      "requires": [
+        "wall-oath"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "unlock-ability",
+          "abilityId": "rally-horn"
+        }
+      ]
+    },
+    {
+      "id": "wall-powder",
+      "path": "wall",
+      "kind": "notable",
+      "name": "Powder Cache",
+      "description": "Bombards hit 35% harder.",
+      "cost": 2,
+      "row": 2,
+      "requires": [
+        "wall-oath"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-stat",
+          "towerId": "bombard",
+          "stat": "damage",
+          "perRank": 1.35,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "wall-winter",
+      "path": "wall",
+      "kind": "notable",
+      "name": "Deep Winter",
+      "description": "Frost spires hold 25% more ground.",
+      "cost": 2,
+      "row": 2,
+      "requires": [
+        "wall-foundations"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-stat",
+          "towerId": "frost-spire",
+          "stat": "range",
+          "perRank": 1.25,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "wall-reload",
+      "path": "wall",
+      "kind": "notable",
+      "name": "Rapid Reload",
+      "description": "Every tower looses 18% faster.",
+      "cost": 2,
+      "row": 3,
+      "requires": [
+        "wall-powder"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "fireRate",
+          "perRank": 1.18,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "wall-beacon",
+      "path": "wall",
+      "kind": "notable",
+      "name": "Beacon Lore",
+      "description": "Towers lend neighbours +15% damage. Build them close.",
+      "cost": 2,
+      "row": 3,
+      "requires": [
+        "wall-winter"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": null,
+          "grant": {
+            "kind": "aura",
+            "radius": 100,
+            "damageMultiplier": 1.15
+          }
+        }
+      ]
+    },
+    {
+      "id": "wall-crossfire",
+      "path": "wall",
+      "kind": "synergy",
+      "name": "Crossfire",
+      "description": "Towers lend neighbours +30% damage across a wide circle. Build them close.",
+      "cost": 2,
+      "row": 4,
+      "requires": [
+        "wall-reload"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": null,
+          "grant": {
+            "kind": "aura",
+            "radius": 150,
+            "damageMultiplier": 1.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "wall-longwatch",
+      "path": "wall",
+      "kind": "notable",
+      "name": "Long Watch",
+      "description": "Every tower watches 20% more road.",
+      "cost": 2,
+      "row": 4,
+      "requires": [
+        "wall-beacon"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "range",
+          "perRank": 1.2,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "wall-siege",
+      "path": "wall",
+      "kind": "keystone",
+      "name": "Siege Doctrine",
+      "description": "+55% tower damage. \u221228% tower range. Few, deadly, close.",
+      "cost": 3,
+      "row": 5,
+      "requires": [
+        "wall-crossfire"
+      ],
+      "excludes": [
+        "wall-curtain"
+      ],
+      "effects": [
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "damage",
+          "perRank": 1.55,
+          "mode": "multiply"
+        },
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "range",
+          "perRank": 0.72,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "wall-curtain",
+      "path": "wall",
+      "kind": "keystone",
+      "name": "Curtain Wall",
+      "description": "+40% tower range, \u221235% build cost. \u221222% tower damage.",
+      "cost": 3,
+      "row": 5,
+      "requires": [
+        "wall-longwatch"
+      ],
+      "excludes": [
+        "wall-siege"
+      ],
+      "effects": [
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "range",
+          "perRank": 1.4,
+          "mode": "multiply"
+        },
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "cost",
+          "perRank": 0.65,
+          "mode": "multiply"
+        },
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "damage",
+          "perRank": 0.78,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "host-barracks",
+      "path": "host",
+      "kind": "ability",
+      "name": "The Barracks",
+      "description": "Unlock the barracks. Soldiers hold the road.",
+      "cost": 2,
+      "row": 0,
+      "requires": [],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "unlock-tower",
+          "towerId": "barracks"
+        }
+      ]
+    },
+    {
+      "id": "host-levy",
+      "path": "host",
+      "kind": "minor",
+      "name": "Levy Writ",
+      "description": "One more soldier in every garrison.",
+      "cost": 1,
+      "row": 1,
+      "requires": [
+        "host-barracks"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": null,
+          "grant": {
+            "kind": "garrison",
+            "squad": 1,
+            "hpMultiplier": 1.0,
+            "damageMultiplier": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "host-mail",
+      "path": "host",
+      "kind": "notable",
+      "name": "Mail and Shield",
+      "description": "Soldiers take 45% longer to fall.",
+      "cost": 2,
+      "row": 1,
+      "requires": [
+        "host-barracks"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": null,
+          "grant": {
+            "kind": "garrison",
+            "squad": 0,
+            "hpMultiplier": 1.45,
+            "damageMultiplier": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "host-orders",
+      "path": "host",
+      "kind": "notable",
+      "name": "Standing Orders",
+      "description": "Replacements march out 35% sooner.",
+      "cost": 2,
+      "row": 2,
+      "requires": [
+        "host-levy"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": null,
+          "grant": {
+            "kind": "garrison",
+            "squad": 0,
+            "hpMultiplier": 1.0,
+            "damageMultiplier": 1.0,
+            "respawnMultiplier": 0.65
+          }
+        }
+      ]
+    },
+    {
+      "id": "host-drill",
+      "path": "host",
+      "kind": "notable",
+      "name": "Drill Yard",
+      "description": "Soldiers fight 50% harder.",
+      "cost": 2,
+      "row": 2,
+      "requires": [
+        "host-mail"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": null,
+          "grant": {
+            "kind": "garrison",
+            "squad": 0,
+            "hpMultiplier": 1.0,
+            "damageMultiplier": 1.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "host-picket",
+      "path": "host",
+      "kind": "synergy",
+      "name": "Wide Picket",
+      "description": "Garrisons hold 25% more road, and towers reach 12% further.",
+      "cost": 2,
+      "row": 3,
+      "requires": [
+        "host-orders"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": null,
+          "grant": {
+            "kind": "garrison",
+            "squad": 0,
+            "hpMultiplier": 1.0,
+            "damageMultiplier": 1.0,
+            "engageRadiusMultiplier": 1.25
+          }
+        },
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "range",
+          "perRank": 1.12,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "host-muster",
+      "path": "host",
+      "kind": "ability",
+      "name": "The Muster",
+      "description": "Unlock the Muster \u2014 the gates open.",
+      "cost": 2,
+      "row": 3,
+      "requires": [
+        "host-drill"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "unlock-ability",
+          "abilityId": "muster"
+        }
+      ]
+    },
+    {
+      "id": "host-banner",
+      "path": "host",
+      "kind": "notable",
+      "name": "War Banner",
+      "description": "The host is three stronger and holds 35% longer.",
+      "cost": 2,
+      "row": 4,
+      "requires": [
+        "host-muster"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "ability-stat",
+          "abilityId": "muster",
+          "stat": "squad",
+          "perRank": 3,
+          "mode": "add"
+        },
+        {
+          "type": "ability-stat",
+          "abilityId": "muster",
+          "stat": "lifetime",
+          "perRank": 1.35,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "host-anvil",
+      "path": "host",
+      "kind": "synergy",
+      "name": "The Anvil",
+      "description": "Your bow deals +25% to slowed or held enemies. Every tower hits 12% harder.",
+      "cost": 2,
+      "row": 4,
+      "requires": [
+        "host-picket"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "hero-stat",
+          "stat": "bowDamageVsHindered",
+          "perRank": 1.25,
+          "mode": "multiply"
+        },
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "damage",
+          "perRank": 1.12,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "host-shieldwall",
+      "path": "host",
+      "kind": "keystone",
+      "name": "Shieldwall",
+      "description": "+140% soldier hp, \u221245% soldier damage, one fewer. They do not break.",
+      "cost": 3,
+      "row": 5,
+      "requires": [
+        "host-anvil"
+      ],
+      "excludes": [
+        "host-thelevy"
+      ],
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": null,
+          "grant": {
+            "kind": "garrison",
+            "squad": 0,
+            "hpMultiplier": 2.4,
+            "damageMultiplier": 0.55
+          }
+        }
+      ]
+    },
+    {
+      "id": "host-thelevy",
+      "path": "host",
+      "kind": "keystone",
+      "name": "The Levy",
+      "description": "+3 soldiers, respawn halved. \u221245% soldier hp. Bodies are cheap.",
+      "cost": 3,
+      "row": 5,
+      "requires": [
+        "host-banner"
+      ],
+      "excludes": [
+        "host-shieldwall"
+      ],
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": null,
+          "grant": {
+            "kind": "garrison",
+            "squad": 3,
+            "hpMultiplier": 0.55,
+            "damageMultiplier": 1.0,
+            "respawnMultiplier": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "crown-lodestone",
+      "path": "crown",
+      "kind": "minor",
+      "name": "Lodestone",
+      "description": "Coins fly to you from 40% further.",
+      "cost": 1,
+      "row": 0,
+      "requires": [],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "kingdom-stat",
+          "stat": "coinMagnetRadius",
+          "perRank": 1.4,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "crown-coffers",
+      "path": "crown",
+      "kind": "minor",
+      "name": "Full Coffers",
+      "description": "Start every run with 20 more gold.",
+      "cost": 1,
+      "row": 0,
+      "requires": [],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "kingdom-stat",
+          "stat": "startingGold",
+          "perRank": 20,
+          "mode": "add"
+        }
+      ]
+    },
+    {
+      "id": "crown-gate",
+      "path": "crown",
+      "kind": "notable",
+      "name": "Stone Gate",
+      "description": "The keep withstands 45 more damage.",
+      "cost": 2,
+      "row": 1,
+      "requires": [
+        "crown-coffers"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "kingdom-stat",
+          "stat": "gateMaxHp",
+          "perRank": 45,
+          "mode": "add"
+        }
+      ]
+    },
+    {
+      "id": "crown-roads",
+      "path": "crown",
+      "kind": "notable",
+      "name": "Wide Roads",
+      "description": "Coins linger 50% longer; the muster pays 25% more.",
+      "cost": 2,
+      "row": 1,
+      "requires": [
+        "crown-lodestone"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "kingdom-stat",
+          "stat": "coinExpiryTime",
+          "perRank": 1.5,
+          "mode": "multiply"
+        },
+        {
+          "type": "kingdom-stat",
+          "stat": "waveClearBonus",
+          "perRank": 1.25,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "crown-tithe",
+      "path": "crown",
+      "kind": "notable",
+      "name": "Tithe",
+      "description": "Every tower pays 2 coins every 9 seconds.",
+      "cost": 2,
+      "row": 2,
+      "requires": [
+        "crown-roads"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-grant",
+          "towerId": null,
+          "grant": {
+            "kind": "income",
+            "value": 2,
+            "interval": 9
+          }
+        }
+      ]
+    },
+    {
+      "id": "crown-stones",
+      "path": "crown",
+      "kind": "notable",
+      "name": "Standing Stones",
+      "description": "Gate repairs cost 30% less.",
+      "cost": 2,
+      "row": 2,
+      "requires": [
+        "crown-gate"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "kingdom-stat",
+          "stat": "repairCost",
+          "perRank": 0.7,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "crown-ransom",
+      "path": "crown",
+      "kind": "synergy",
+      "name": "Ransom",
+      "description": "Coins reach 25% further and wave clears pay 15% more.",
+      "cost": 2,
+      "row": 3,
+      "requires": [
+        "crown-tithe"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "kingdom-stat",
+          "stat": "coinMagnetRadius",
+          "perRank": 1.25,
+          "mode": "multiply"
+        },
+        {
+          "type": "kingdom-stat",
+          "stat": "waveClearBonus",
+          "perRank": 1.15,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "crown-watchfire",
+      "path": "crown",
+      "kind": "notable",
+      "name": "Watchfire",
+      "description": "See two waves ahead instead of one.",
+      "cost": 2,
+      "row": 3,
+      "requires": [
+        "crown-stones"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "kingdom-stat",
+          "stat": "wavePreviewDetail",
+          "perRank": 1,
+          "mode": "add"
+        }
+      ]
+    },
+    {
+      "id": "crown-quarry",
+      "path": "crown",
+      "kind": "synergy",
+      "name": "The Quarry",
+      "description": "Towers cost 15% less and the keep holds 35 more.",
+      "cost": 2,
+      "row": 4,
+      "requires": [
+        "crown-ransom"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "tower-stat",
+          "towerId": null,
+          "stat": "cost",
+          "perRank": 0.85,
+          "mode": "multiply"
+        },
+        {
+          "type": "kingdom-stat",
+          "stat": "gateMaxHp",
+          "perRank": 35,
+          "mode": "add"
+        }
+      ]
+    },
+    {
+      "id": "crown-granary",
+      "path": "crown",
+      "kind": "notable",
+      "name": "Granary",
+      "description": "The muster pays 35% more.",
+      "cost": 2,
+      "row": 4,
+      "requires": [
+        "crown-watchfire"
+      ],
+      "excludes": [],
+      "effects": [
+        {
+          "type": "kingdom-stat",
+          "stat": "waveClearBonus",
+          "perRank": 1.35,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "crown-warchest",
+      "path": "crown",
+      "kind": "keystone",
+      "name": "War Chest",
+      "description": "+95 starting gold. Wave clears pay half. Front-load everything.",
+      "cost": 3,
+      "row": 5,
+      "requires": [
+        "crown-quarry"
+      ],
+      "excludes": [
+        "crown-longsiege"
+      ],
+      "effects": [
+        {
+          "type": "kingdom-stat",
+          "stat": "startingGold",
+          "perRank": 95,
+          "mode": "add"
+        },
+        {
+          "type": "kingdom-stat",
+          "stat": "waveClearBonus",
+          "perRank": 0.5,
+          "mode": "multiply"
+        }
+      ]
+    },
+    {
+      "id": "crown-longsiege",
+      "path": "crown",
+      "kind": "keystone",
+      "name": "The Long Siege",
+      "description": "Wave clears pay +90%. \u221230 starting gold, \u221240 gate hp.",
+      "cost": 3,
+      "row": 5,
+      "requires": [
+        "crown-granary"
+      ],
+      "excludes": [
+        "crown-warchest"
+      ],
+      "effects": [
+        {
+          "type": "kingdom-stat",
+          "stat": "waveClearBonus",
+          "perRank": 1.9,
+          "mode": "multiply"
+        },
+        {
+          "type": "kingdom-stat",
+          "stat": "startingGold",
+          "perRank": -30,
+          "mode": "add"
+        },
+        {
+          "type": "kingdom-stat",
+          "stat": "gateMaxHp",
+          "perRank": -40,
+          "mode": "add"
+        }
+      ]
+    }
+  ]
+}

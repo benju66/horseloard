@@ -61,6 +61,12 @@
     "controlLossDuration": 0.4,
     "shoveDistance": 70,
     "perEnemyCooldown": 1.2,
-    "immunityAfter": 0.9
-  }
+    "immunityAfter": 0.9,
+    "susceptibility": 1
+  },
+  "crit": {
+    "chance": 0,
+    "multiplier": 1
+  },
+  "damageVsHindered": 1
 }

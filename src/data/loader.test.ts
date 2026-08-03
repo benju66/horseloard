@@ -4,12 +4,11 @@ import { validateGameData, type RawGameData } from './loader';
 import towersJson from './towers.json';
 import enemiesJson from './enemies.json';
 import abilitiesJson from './abilities.json';
-import metatreeJson from './metatree.json';
 import heroJson from './hero.json';
 import economyJson from './economy.json';
 import archetypesJson from './archetypes.json';
 import modelsJson from './models.json';
-import perksJson from './perks.json';
+import skillTreeJson from './skilltree.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
 import theFordMapJson from './maps/the-ford.json';
@@ -25,12 +24,11 @@ function seed(): RawGameData & Record<string, any> {
     towers: towersJson,
     enemies: enemiesJson,
     abilities: abilitiesJson,
-    metatree: metatreeJson,
     hero: heroJson,
     economy: economyJson,
     archetypes: archetypesJson,
     models: modelsJson,
-    perks: perksJson,
+    skillTree: skillTreeJson,
     maps: {
       'maps/meadow-road.json': meadowRoadMapJson,
       'maps/the-ford.json': theFordMapJson,
@@ -65,7 +63,7 @@ describe('seed data', () => {
     expect(data.waveSets['meadow-road']?.waves).toHaveLength(8);
     expect(data.waveSets['the-ford']?.waves).toHaveLength(10);
     expect(data.archetypes.map((a) => a.id)).toEqual(['horde', 'raid', 'war-party']);
-    expect(data.metaTree.length).toBeGreaterThanOrEqual(9);
+    expect(data.skillTree.nodes.length).toBeGreaterThanOrEqual(50);
   });
 
   it('exactly one ability is unlocked by default', () => {
@@ -197,96 +195,50 @@ describe('cross-file references', () => {
     expect(() => validateGameData(raw)).toThrow('map has no wave set');
   });
 
-  it('meta node requiring a nonexistent node', () => {
+  it('tree node requiring a nonexistent node', () => {
     const raw = seed();
-    (raw.metatree as any).nodes[0].requires = ['ghost-node'];
-    expect(() => validateGameData(raw)).toThrow('unknown node id "ghost-node"');
+    (raw.skillTree as any).nodes[2].requires = ['ghost-node'];
+    expect(() => validateGameData(raw)).toThrow('unknown node "ghost-node"');
   });
 
   it('unlock-ability pointing at an unknown ability', () => {
     const raw = seed();
-    const node = (raw.metatree as any).nodes.find((n: any) => n.effect.type === 'unlock-ability');
-    node.effect.abilityId = 'meteor';
+    const node = (raw.skillTree as any).nodes.find((n: any) =>
+      n.effects.some((e: any) => e.type === 'unlock-ability'),
+    );
+    node.effects[0].abilityId = 'meteor';
     expect(() => validateGameData(raw)).toThrow('unknown ability "meteor"');
   });
 
   /**
-   * An upgrade card naming a stat its target has not got would validate, be
-   * drafted and change nothing — indistinguishable from a weak perk. These
-   * three make that a boot failure instead.
+   * A node naming a stat its target has not got would validate, sit in the
+   * tree, be bought and change nothing — indistinguishable from a weak node,
+   * and invisible from inside the game. These make it a boot failure instead.
    */
-  it('ability-stat pointing at an unknown ability', () => {
-    const raw = seed();
-    (raw.perks as any).perks.push({
-      id: 'perk-ghost-ability',
-      family: 'hero',
-      name: 'Ghost',
-      description: 'x',
-      effects: [{ type: 'ability-stat', abilityId: 'meteor', stat: 'cooldown', perRank: 0.9, mode: 'multiply' }],
-      maxStacks: 1,
-      weight: 1,
-    });
-    expect(() => validateGameData(raw)).toThrow('unknown ability "meteor"');
-  });
-
-  it('ability-stat naming a stat the ability has not got', () => {
-    const raw = seed();
-    (raw.perks as any).perks.push({
-      id: 'perk-wrong-stat',
-      family: 'hero',
-      name: 'Wrong',
-      description: 'x',
-      // Heavy Shaft is a line, not a circle — it has no radius.
-      effects: [{ type: 'ability-stat', abilityId: 'heavy-shaft', stat: 'radius', perRank: 1.2, mode: 'multiply' }],
-      maxStacks: 1,
-      weight: 1,
-    });
-    expect(() => validateGameData(raw)).toThrow('ability "heavy-shaft" has no "radius"');
-  });
-
-  it('a broad ability-stat is fine as long as some ability carries the stat', () => {
-    const raw = seed();
-    (raw.perks as any).perks.push({
-      id: 'perk-broad',
-      family: 'hero',
-      name: 'Broad',
-      description: 'x',
-      effects: [{ type: 'ability-stat', abilityId: null, stat: 'radius', perRank: 1.2, mode: 'multiply' }],
-      maxStacks: 1,
-      weight: 1,
-    });
-    expect(() => validateGameData(raw)).not.toThrow();
-  });
-
-  // The shipped tree grants no stats any more (MG5.7), so this injects one —
-  // the check must keep working for whatever a future node does.
   it('tower-stat node pointing at an unknown tower', () => {
     const raw = seed();
-    (raw.metatree as any).nodes.push({
-      id: 'ghost-node',
-      branch: 'towers',
-      name: 'Ghost',
-      description: 'x',
-      costPerRank: [10],
-      requires: [],
-      effect: { type: 'tower-stat', towerId: 'tesla', stat: 'damage', perRank: 1.1, mode: 'multiply' },
-    });
+    (raw.skillTree as any).nodes[0].effects = [
+      { type: 'tower-stat', towerId: 'tesla', stat: 'damage', perRank: 1.1, mode: 'multiply' },
+    ];
     expect(() => validateGameData(raw)).toThrow('unknown tower "tesla"');
   });
 
-  it('unlock-perk node pointing at a perk that is not metaLocked', () => {
+  it('ability-stat node naming a stat its target has not got', () => {
     const raw = seed();
-    const node = (raw.metatree as any).nodes.find((n: any) => n.effect.type === 'unlock-perk');
-    // Heavy Draw ships unlocked, so a node granting it is a token sink that
-    // does nothing — the exact silent failure the check exists for.
-    node.effect.perkId = 'perk-heavy-draw';
-    expect(() => validateGameData(raw)).toThrow('is not metaLocked');
+    (raw.skillTree as any).nodes[0].effects = [
+      { type: 'ability-stat', abilityId: 'volley', stat: 'blades', perRank: 1, mode: 'add' },
+    ];
+    expect(() => validateGameData(raw)).toThrow('blades');
   });
 
-  it('metaLocked perk that no node can unlock', () => {
+  it('an ability no tree node unlocks is content nobody can equip', () => {
     const raw = seed();
-    (raw.perks as any).perks[0].metaLocked = true;
-    expect(() => validateGameData(raw)).toThrow('no meta node unlocks');
+    const node = (raw.skillTree as any).nodes.find((n: any) =>
+      n.effects.some((e: any) => e.type === 'unlock-ability'),
+    );
+    const orphaned = node.effects[0].abilityId;
+    node.effects[0].abilityId = 'volley'; // already granted elsewhere
+    expect(() => validateGameData(raw)).toThrow(`"${orphaned}" is not unlocked by default`);
   });
 
   it('enemy pointing at an unknown model', () => {

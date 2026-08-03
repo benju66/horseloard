@@ -135,13 +135,13 @@ describe('endless mode in the simulation', () => {
 });
 
 describe('endless progression payout', () => {
-  // Token rules live under economy.tokens, not at the top level — overriding
+  // Payout rules live under economy.career, not at the top level — overriding
   // the flat names silently does nothing and leaves the defaults in play.
   const economy: Economy = {
     ...TEST_ECONOMY,
-    tokens: { ...TEST_ECONOMY.tokens, endlessMilestoneEvery: 5, perEndlessMilestone: 3 },
+    career: { ...TEST_ECONOMY.career, endlessMilestoneEvery: 5, perEndlessMilestone: 3 },
   };
-  const every = economy.tokens.endlessMilestoneEvery;
+  const every = economy.career.endlessMilestoneEvery;
 
   it('pays only for milestones newly reached, and records the best', () => {
     let save = newSave();
@@ -149,7 +149,7 @@ describe('endless progression payout', () => {
     const first = settleRun(save, { mapId: 'm', victory: false, wavesCleared: every * 2, stars: 1, endless: true }, economy);
     save = first.save;
     expect(save.endlessBest['m']).toBe(every * 2);
-    const paidFirst = save.tokens;
+    const paidFirst = save.careerXp;
     expect(paidFirst).toBeGreaterThan(0);
 
     // A worse run pays nothing and must not lower the record — the classic
@@ -157,13 +157,13 @@ describe('endless progression payout', () => {
     const worse = settleRun(save, { mapId: 'm', victory: false, wavesCleared: every, stars: 1, endless: true }, economy);
     save = worse.save;
     expect(save.endlessBest['m']).toBe(every * 2);
-    expect(save.tokens).toBe(paidFirst);
+    expect(save.careerXp).toBe(paidFirst);
 
     // A better run pays only for the milestones above the previous best.
     const better = settleRun(save, { mapId: 'm', victory: false, wavesCleared: every * 3, stars: 1, endless: true }, economy);
     save = better.save;
     expect(save.endlessBest['m']).toBe(every * 3);
-    expect(save.tokens).toBeGreaterThan(paidFirst);
+    expect(save.careerXp).toBeGreaterThan(paidFirst);
   });
 
   it('does not award campaign stars', () => {

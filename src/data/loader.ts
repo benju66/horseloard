@@ -6,9 +6,8 @@ import {
   EnemiesFileSchema,
   HeroSchema,
   MapSchema,
-  MetaTreeFileSchema,
   ModelsFileSchema,
-  PerksFileSchema,
+  SkillTreeFileSchema,
   TowersFileSchema,
   WaveSetSchema,
   type AbilitiesFile,
@@ -17,9 +16,8 @@ import {
   type EnemiesFile,
   type Hero,
   type MapDef,
-  type MetaTreeFile,
   type ModelsFile,
-  type PerksFile,
+  type SkillTreeFile,
   type TowersFile,
   type WaveSet,
 } from './schemas';
@@ -27,12 +25,11 @@ import {
 import towersJson from './towers.json';
 import enemiesJson from './enemies.json';
 import abilitiesJson from './abilities.json';
-import metatreeJson from './metatree.json';
 import heroJson from './hero.json';
 import economyJson from './economy.json';
 import archetypesJson from './archetypes.json';
 import modelsJson from './models.json';
-import perksJson from './perks.json';
+import skillTreeJson from './skilltree.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
 import theFordMapJson from './maps/the-ford.json';
@@ -49,14 +46,13 @@ export interface GameData {
   abilities: AbilitiesFile['abilities'];
   /** How many abilities the hero may carry at once — the burst-pillar cap (DESIGN §4). */
   equipSlots: number;
-  metaTree: MetaTreeFile['nodes'];
   hero: Hero;
   economy: Economy;
   archetypes: ArchetypesFile['archetypes'];
   /** Render-layer manifest: logical states -> clips, and the variant roster. */
   models: ModelsFile['models'];
-  /** In-run draft pool (DESIGN §15.1). */
-  perks: PerksFile;
+  /** The career tree — the only place a run's power is decided (SKILLTREE.md). */
+  skillTree: SkillTreeFile;
   /** keyed by map id */
   maps: Record<string, MapDef>;
   /** keyed by map id */
@@ -89,12 +85,11 @@ export interface RawGameData {
   towers: unknown;
   enemies: unknown;
   abilities: unknown;
-  metatree: unknown;
   hero: unknown;
   economy: unknown;
   archetypes: unknown;
   models: unknown;
-  perks: unknown;
+  skillTree: unknown;
   /** file path (for messages) → raw content */
   maps: Record<string, unknown>;
   /** file path (for messages) → raw content */
@@ -110,12 +105,11 @@ export function validateGameData(raw: RawGameData): GameData {
   const towers = validateFile(TowersFileSchema, raw.towers, 'towers.json');
   const enemies = validateFile(EnemiesFileSchema, raw.enemies, 'enemies.json');
   const abilitiesFile = validateFile(AbilitiesFileSchema, raw.abilities, 'abilities.json');
-  const metaTreeFile = validateFile(MetaTreeFileSchema, raw.metatree, 'metatree.json');
   const hero = validateFile(HeroSchema, raw.hero, 'hero.json');
   const economy = validateFile(EconomySchema, raw.economy, 'economy.json');
   const archetypesFile = validateFile(ArchetypesFileSchema, raw.archetypes, 'archetypes.json');
   const modelsFile = validateFile(ModelsFileSchema, raw.models, 'models.json');
-  const perks = validateFile(PerksFileSchema, raw.perks, 'perks.json');
+  const skillTree = validateFile(SkillTreeFileSchema, raw.skillTree, 'skilltree.json');
 
   const maps: Record<string, MapDef> = {};
   for (const [file, content] of Object.entries(raw.maps)) {
@@ -218,76 +212,43 @@ export function validateGameData(raw: RawGameData): GameData {
     if (!waveSets[mapId]) errors.push(`maps → ${mapId}: map has no wave set in waveSets`);
   }
 
-  metaTreeFile.nodes.forEach((node, i) => {
-    const effect = node.effect;
-    if (effect.type === 'unlock-ability' && !abilityIds.has(effect.abilityId)) {
-      errors.push(
-        `metatree.json → nodes.${i}.effect.abilityId: unknown ability "${effect.abilityId}" (known: ${[...abilityIds].join(', ')})`,
-      );
-    }
-    if (effect.type === 'unlock-tower' && !towerIds.has(effect.towerId)) {
-      errors.push(
-        `metatree.json → nodes.${i}.effect.towerId: unknown tower "${effect.towerId}" (known: ${[...towerIds].join(', ')})`,
-      );
-    }
-    if (effect.type === 'tower-stat' && effect.towerId !== null && !towerIds.has(effect.towerId)) {
-      errors.push(
-        `metatree.json → nodes.${i}.effect.towerId: unknown tower "${effect.towerId}" (known: ${[...towerIds].join(', ')})`,
-      );
-    }
-    if (effect.type === 'ability-stat') {
-      checkAbilityStat('metatree.json', `nodes.${i}.effect`, effect.abilityId, effect.stat);
-    }
-    if (effect.type === 'unlock-perk') {
-      const perk = perks.perks.find((p) => p.id === effect.perkId);
-      if (!perk) {
-        errors.push(
-          `metatree.json → nodes.${i}.effect.perkId: unknown perk "${effect.perkId}"`,
-        );
-      } else if (!perk.metaLocked) {
-        // A node that unlocks something already available is a token sink that
-        // does nothing — the exact silent failure this whole block exists for.
-        errors.push(
-          `metatree.json → nodes.${i}.effect.perkId: perk "${effect.perkId}" is not metaLocked, so this node grants nothing`,
-        );
-      }
-    }
-  });
-
-  // Every metaLocked perk needs a node that can unlock it, or it is content
-  // nobody can ever reach.
-  const unlockable = new Set(
-    metaTreeFile.nodes.flatMap((n) => (n.effect.type === 'unlock-perk' ? [n.effect.perkId] : [])),
-  );
-  perks.perks.forEach((perk, i) => {
-    if (perk.metaLocked && !unlockable.has(perk.id)) {
-      errors.push(
-        `perks.json → perks.${i}.metaLocked: no meta node unlocks "${perk.id}", so it can never appear`,
-      );
-    }
-  });
-
-  // Perks carry the same effect vocabulary as meta nodes, so they need the same
-  // reference check. A perk aimed at a misspelled tower would validate, appear
-  // in a draft, be chosen, and do nothing — the worst kind of silent failure,
-  // because it reads as the perk being weak rather than broken.
-  perks.perks.forEach((perk, i) => {
-    perk.effects.forEach((effect, j) => {
+  // Tree nodes are the only nodes now, and the effect vocabulary they use is
+  // cross-file by nature — a stat key names an ability, a grant names a tower. A node aimed at a misspelled tower would validate,
+  // sit in the tree, be bought, and do nothing — the worst kind of silent
+  // failure, because it reads as the node being weak rather than broken.
+  skillTree.nodes.forEach((node, i) => {
+    node.effects.forEach((effect, j) => {
+      const where = `skilltree.json → nodes.${i}.effects.${j}`;
       const towerScoped = effect.type === 'tower-stat' || effect.type === 'tower-grant';
       if (towerScoped && effect.towerId !== null && !towerIds.has(effect.towerId)) {
-        errors.push(
-          `perks.json → perks.${i}.effects.${j}.towerId: unknown tower "${effect.towerId}" (known: ${[...towerIds].join(', ')})`,
-        );
+        errors.push(`${where}.towerId: unknown tower "${effect.towerId}"`);
+      }
+      if (effect.type === 'unlock-tower' && !towerIds.has(effect.towerId)) {
+        errors.push(`${where}.towerId: unknown tower "${effect.towerId}"`);
       }
       if (effect.type === 'unlock-ability' && !abilityIds.has(effect.abilityId)) {
-        errors.push(
-          `perks.json → perks.${i}.effects.${j}.abilityId: unknown ability "${effect.abilityId}" (known: ${[...abilityIds].join(', ')})`,
-        );
+        errors.push(`${where}.abilityId: unknown ability "${effect.abilityId}"`);
       }
       if (effect.type === 'ability-stat') {
-        checkAbilityStat('perks.json', `perks.${i}.effects.${j}`, effect.abilityId, effect.stat);
+        checkAbilityStat('skilltree.json', `nodes.${i}.effects.${j}`, effect.abilityId, effect.stat);
       }
     });
+  });
+
+  // Every ability must be reachable from the tree, or it is content nobody can
+  // ever equip. The old meta tree had this hole and it took a playtest to find:
+  // the one ability a player actually had was the one they were told to cut.
+  const treeUnlocks = new Set(
+    skillTree.nodes.flatMap((n) =>
+      n.effects.flatMap((e) => (e.type === 'unlock-ability' ? [e.abilityId] : [])),
+    ),
+  );
+  abilitiesFile.abilities.forEach((a, i) => {
+    if (!a.unlockedByDefault && !treeUnlocks.has(a.id)) {
+      errors.push(
+        `abilities.json → abilities.${i}.id: "${a.id}" is not unlocked by default and no tree node grants it`,
+      );
+    }
   });
 
   // Model refs are optional during the migration, but a ref that IS given must
@@ -317,12 +278,11 @@ export function validateGameData(raw: RawGameData): GameData {
     enemies,
     abilities: abilitiesFile.abilities,
     equipSlots: abilitiesFile.equipSlots,
-    metaTree: metaTreeFile.nodes,
     hero,
     economy,
     archetypes: archetypesFile.archetypes,
     models: modelsFile.models,
-    perks,
+    skillTree,
     maps,
     waveSets,
   };
@@ -334,12 +294,11 @@ export function loadGameData(): GameData {
     towers: towersJson,
     enemies: enemiesJson,
     abilities: abilitiesJson,
-    metatree: metatreeJson,
     hero: heroJson,
     economy: economyJson,
     archetypes: archetypesJson,
     models: modelsJson,
-    perks: perksJson,
+    skillTree: skillTreeJson,
     maps: {
       'maps/meadow-road.json': meadowRoadMapJson,
       'maps/the-ford.json': theFordMapJson,

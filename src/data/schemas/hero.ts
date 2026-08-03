@@ -42,6 +42,15 @@ export const HeroSchema = z.object({
     }),
     levels: z.array(BowLevelSchema).min(1).describe('forge upgrade track; index 0 = starting bow'),
   }),
+  /** The hero's own critical hits, granted by the tree. Absent = never crits. */
+  crit: z
+    .object({
+      chance: z.number().min(0).max(1).default(0),
+      multiplier: z.number().gte(1).default(1),
+    })
+    .default({ chance: 0, multiplier: 1 }),
+  /** Damage multiplier against slowed or blocked enemies. 1 = no bonus. */
+  damageVsHindered: z.number().positive().default(1),
   trample: z
     .object({
       damage: z.number().positive(),
@@ -64,6 +73,8 @@ export const HeroSchema = z.object({
        * player can do about any of it.
        */
       immunityAfter: z.number().nonnegative().default(0.9).describe('seconds of grace after a shove'),
+      /** Set to 0 by a keystone that removes staggering entirely. 1 = normal. */
+      susceptibility: z.number().min(0).max(1).default(1).describe('0 = cannot be staggered at all'),
     })
     .describe('received from staggersHero enemies on contact; the hero cannot die'),
 });

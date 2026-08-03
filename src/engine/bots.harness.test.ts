@@ -1,11 +1,13 @@
 import { describe, it } from 'vitest';
 import { loadGameData } from '../data/loader';
+import { SkillTree } from './skillTree';
 import {
   BOTS,
   armyOnly,
   forcedComposition,
-  forcedPerk,
   heroOnly,
+  pathBuild,
+  spreadBuild,
   runBot,
   combatTowersOnly,
   towersAndArmy,
@@ -87,16 +89,36 @@ function summarize(runs: readonly BotRunResult[]): string {
   );
 }
 
+/**
+ * The reference career: mid-tree, ~22 points (SKILLTREE.md Part F).
+ *
+ * `FULL_POINTS` is the career ceiling — maxLevel × pointsPerLevel plus one per
+ * map three-starred — read off the data rather than written down here, so a
+ * curve change cannot leave the probes measuring a budget the game stopped
+ * granting.
+ */
+const REFERENCE_POINTS = 22;
+
 describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
   const data = loadGameData();
   /**
-   * The reference configuration is **drafting on**, because that is the shipped
-   * game. It was off when the draft landed, which meant every headline number
-   * here described a game nobody would play — and the difficulty targets below
-   * were being compared against it.
+   * The reference configuration is a **mid-tree career build** (SKILLTREE.md
+   * Part F): not an empty tree and not a maxed one.
+   *
+   * Which one it is matters as much as how many points it holds. The draft it
+   * replaced dealt cards from every pillar, so the old reference was a
+   * generalist by construction; a reference that walked one path top-down would
+   * silently retune the whole campaign around a specialist. `spreadBuild` keeps
+   * the generalist, so the difficulty bands below still mean what they meant.
    */
+  const tree = new SkillTree(data.skillTree);
+  const referenceBuild = spreadBuild(tree, REFERENCE_POINTS);
+  const FULL_POINTS = tree.pointsAt(data.skillTree.maxLevel, Object.keys(data.maps).length);
+
   const botData = {
     towers: data.towers,
+    skillTree: data.skillTree,
+    skillNodes: referenceBuild,
     enemies: data.enemies,
     abilities: data.abilities,
     equipSlots: data.equipSlots,
@@ -104,10 +126,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     economy: data.economy,
     maps: data.maps,
     waveSets: data.waveSets,
-    perks: data.perks,
   };
-  /** Drafting off, kept only as the comparison arm of the draft-impact probe. */
-  const noDraftData = { ...botData, perks: undefined };
 
   const all: BotRunResult[] = [];
 
@@ -413,68 +432,124 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
   });
 
   /**
-   * The in-run draft (DESIGN §15.1), measured rather than felt.
+   * **Path probe — SKILLTREE.md Part F.1.** Spend the whole budget down each
+   * path in turn.
    *
-   * Everything above measures the shipped game, drafting included. These two
-   * probes isolate the draft's own contribution, and they are the whole reason
-   * it was built on the injected rng.
+   * The pillar invariant restated as a build question, and the one measurement
+   * that could invalidate the tree: if a single path clears maps 3-4 on its
+   * own, the tree has a dominant line and every other path is decoration. It
+   * runs on the hard maps only — the easy ones are won by any build, so a
+   * specialist's strength is invisible there.
    */
-  it('reports what drafting does to the difficulty curve', { timeout: 60_000 }, () => {
+  it('reports whether any single path clears the hard maps alone', { timeout: 300_000 }, () => {
     const lines: string[] = [];
-    for (const mapId of Object.keys(data.maps)) {
-      const off = BOTS.flatMap((f) => SEEDS.map((s) => runBot(noDraftData, mapId, f, s)));
-      const on = BOTS.flatMap((f) => SEEDS.map((s) => runBot(botData, mapId, f, s)));
-      const rate = (runs: BotRunResult[]) => (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100;
-      const delta = rate(on) - rate(off);
-      const target = DIFFICULTY_TARGETS[mapId];
-      const inBand = target ? rate(on) >= target.winRate[0] && rate(on) <= target.winRate[1] : true;
-      lines.push(
-        `  ${mapId.padEnd(16)} off ${pct(off.filter((r) => r.outcome === 'win').length, off.length)}  ` +
-          `on ${pct(on.filter((r) => r.outcome === 'win').length, on.length)}  ` +
-          `Δ ${(delta >= 0 ? '+' : '') + delta.toFixed(0)}pp` +
-          (target && !inBand ? `   ← outside target ${target.winRate[0]}-${target.winRate[1]}%` : ''),
-      );
-    }
-    console.log(
-      '\n[draft impact — free-choice picks, all bots × all seeds]\n' +
-        lines.join('\n') +
-        '\n  Δ now measures the draft AND the abilities it unlocks — the off arm is a hero\n' +
-        '  carrying only Charge, which is nobody\'s game. Read the on column, not Δ.',
-    );
-  });
-
-  /**
-   * Per-perk strength, forced. Free-choice picks cannot answer this — the
-   * project already learned that for towers, and BACKLOG says so outright:
-   * "the preference column is not evidence about tower strength". A perk that
-   * shows up in winning runs might be strong, or might simply be dealt often.
-   */
-  it('reports whether any single perk swings the campaign', { timeout: 300_000 }, () => {
-    const lines: string[] = [];
-    // Maps 3-4 only: the easy maps win regardless, so a perk's effect is
-    // invisible there. The interesting question is whether a perk rescues a map
-    // that is supposed to be hard.
     const hardMaps = Object.keys(data.maps).filter(
       (m) => (DIFFICULTY_TARGETS[m]?.winRate[1] ?? 100) <= 75,
     );
-    for (const perk of data.perks.perks) {
+    const paths = [...new Set(tree.nodes.map((n) => n.path))].sort();
+    for (const path of paths) {
+      const build = pathBuild(tree, path, FULL_POINTS);
+      const pathData = { ...botData, skillNodes: build };
       const runs: BotRunResult[] = [];
       for (const mapId of hardMaps) {
         for (const f of BOTS) {
-          for (const seed of SEEDS) runs.push(runBot(botData, mapId, forcedPerk(f, perk.id), seed));
+          for (const seed of SEEDS) runs.push(runBot(pathData, mapId, f, seed));
         }
       }
       const wins = runs.filter((r) => r.outcome === 'win');
       lines.push(
-        `  ${perk.id.padEnd(24)} win ${pct(wins.length, runs.length)}  ` +
-          `waves ${(runs.reduce((s, r) => s + r.wavesCleared, 0) / runs.length).toFixed(1)}`,
+        `  ${path.padEnd(8)} ${String(build.length).padStart(2)} nodes / ` +
+          `${String(tree.spent(build)).padStart(2)}pt  win ${pct(wins.length, runs.length)}  ` +
+          `waves ${(runs.reduce((s, r) => s + r.wavesCleared, 0) / runs.length).toFixed(1)}` +
+          (wins.length / runs.length > 0.5 ? '   ← clears alone; path is dominant' : ''),
       );
     }
     console.log(
-      `\n[perk strength — forced pick, maps ${hardMaps.join(' + ')} × all bots × all seeds]\n` +
+      `\n[PATH PROBE — SKILLTREE.md Part F.1]  full budget down one path, maps ` +
+        `${hardMaps.join(' + ')} × all bots × all seeds\n` +
         lines.join('\n') +
-        '\n  Compare against the draft-on row for these maps above. A perk well clear\n' +
-        '  of the rest is carrying runs on its own.',
+        '\n  Accept: no path above 50%. A path that clears the hard maps by itself is\n' +
+        '  the single-pillar failure the whole triangle exists to prevent.',
+    );
+  });
+
+  /**
+   * **Budget probe — Part F.2.** Rule 1 of the design ("you can never finish the
+   * tree") as a number rather than an intention.
+   *
+   * The schema already refuses to load a tree over the ceiling, so this is not a
+   * second guard — it is the readout that says how much headroom is left before
+   * the next batch of nodes trips it.
+   */
+  it('reports the allocatable fraction at max level', () => {
+    const full = spreadBuild(tree, FULL_POINTS);
+    const fraction = tree.spent(full) / tree.totalCost;
+    console.log(
+      `\n[BUDGET PROBE — SKILLTREE.md Part F.2]\n` +
+        `  tree ${tree.nodes.length} nodes / ${tree.totalCost}pt\n` +
+        `  budget ${FULL_POINTS}pt → ${(fraction * 100).toFixed(1)}% allocatable ` +
+        `(${full.length} nodes)\n` +
+        '  Accept: ≤35%. Above that the tree stops being a set of choices.',
+    );
+  });
+
+  /**
+   * **Keystone probe — Part F.3.** Force each keystone and compare it against
+   * the one it excludes.
+   *
+   * Two failures, opposite shapes, same cost: a keystone nobody would take is a
+   * dead node, and a keystone everybody would take is not a choice. Both show up
+   * as a gap between the pair, which is why they are reported side by side
+   * rather than ranked in one column.
+   */
+  it('reports whether either keystone in a pair dominates', { timeout: 300_000 }, () => {
+    const lines: string[] = [];
+    const hardMaps = Object.keys(data.maps).filter(
+      (m) => (DIFFICULTY_TARGETS[m]?.winRate[1] ?? 100) <= 75,
+    );
+    const keystones = tree.nodes.filter((n) => n.kind === 'keystone');
+    const seen = new Set<string>();
+
+    for (const k of keystones) {
+      if (seen.has(k.id)) continue;
+      const partner = keystones.find((o) => k.excludes.includes(o.id));
+      if (partner) seen.add(partner.id);
+      seen.add(k.id);
+
+      const rate = (id: string) => {
+        // Walk the keystone's own path so the prerequisites are paid for, then
+        // force the keystone itself. Spending elsewhere first would measure the
+        // build around it rather than the keystone.
+        const build = pathBuild(tree, k.path, FULL_POINTS).filter(
+          (n) => n === id || !keystones.some((o) => o.id === n),
+        );
+        const withK = build.includes(id) ? build : [...build, id];
+        const runs: BotRunResult[] = [];
+        for (const mapId of hardMaps) {
+          for (const f of BOTS) {
+            for (const seed of SEEDS) {
+              runs.push(runBot({ ...botData, skillNodes: withK }, mapId, f, seed));
+            }
+          }
+        }
+        return (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100;
+      };
+
+      const a = rate(k.id);
+      const b = partner ? rate(partner.id) : null;
+      lines.push(
+        `  ${k.path.padEnd(6)} ${k.id.padEnd(20)} ${a.toFixed(0).padStart(3)}%` +
+          (partner && b !== null
+            ? `   vs  ${partner.id.padEnd(20)} ${b.toFixed(0).padStart(3)}%` +
+              (Math.abs(a - b) > 25 ? '   ← one-sided' : '')
+            : '   (unpaired)'),
+      );
+    }
+    console.log(
+      `\n[KEYSTONE PROBE — SKILLTREE.md Part F.3]  maps ${hardMaps.join(' + ')} × all bots × all seeds\n` +
+        lines.join('\n') +
+        '\n  Accept: no pair more than ~25pp apart. A one-sided pair is a fork with\n' +
+        '  only one prong, which costs a choice and gains nothing.',
     );
   });
 });

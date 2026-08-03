@@ -56,6 +56,7 @@ export class HeroSystem {
   private readonly trampleReadyAt = new Map<number, number>();
   private readonly staggerReadyAt = new Map<number, number>();
   private readonly bowProjectile: ProjectileDef;
+  private readonly rng: () => number;
 
   /**
    * Timed multipliers from `hero-buff` abilities, keyed by the stat they touch.
@@ -88,7 +89,14 @@ export class HeroSystem {
   readonly onStagger: Array<(by: EnemyInstance) => void> = [];
   readonly onTrample: Array<(target: EnemyInstance) => void> = [];
 
-  constructor(config: Hero, map: MapDef, enemies: EnemySystem, projectiles: ProjectileSystem) {
+  constructor(
+    config: Hero,
+    map: MapDef,
+    enemies: EnemySystem,
+    projectiles: ProjectileSystem,
+    rng: () => number = Math.random,
+  ) {
+    this.rng = rng;
     this.config = config;
     this.enemies = enemies;
     this.projectiles = projectiles;
@@ -224,6 +232,7 @@ export class HeroSystem {
       if (
         !this.staggered &&
         !this.staggerImmune &&
+        this.config.stagger.susceptibility > 0 &&
         e.config.staggersHero &&
         (this.staggerReadyAt.get(e.id) ?? 0) <= this.time
       ) {
@@ -250,14 +259,19 @@ export class HeroSystem {
     const stats = this.bowStats;
     const target = this.nearestEnemyWithin(stats.range);
     if (!target) return;
-    this.projectiles.spawn(
-      this.x,
-      this.y + BOW_MUZZLE_OFFSET_Y,
-      target.id,
-      stats.damage * this.buffFactor('bowDamage'),
-      this.bowProjectile,
-      true,
-    );
+    // Crit and the hindered bonus are rolled at *fire* time, not at impact.
+    // The tree's synergy node ("more damage to slowed or blocked enemies") is
+    // meant to reward having built a frost spire or a barracks; checking at
+    // impact would instead reward the enemy still being slowed a second later,
+    // which is a different and much fiddlier thing to reason about.
+    let damage = stats.damage * this.buffFactor('bowDamage');
+    if (this.config.crit.chance > 0 && this.rng() < this.config.crit.chance) {
+      damage *= this.config.crit.multiplier;
+    }
+    if (this.config.damageVsHindered > 1 && (target.slowRemaining > 0 || target.state === 'blocked')) {
+      damage *= this.config.damageVsHindered;
+    }
+    this.projectiles.spawn(this.x, this.y + BOW_MUZZLE_OFFSET_Y, target.id, damage, this.bowProjectile, true);
     this.fireCooldown = stats.fireInterval / this.buffFactor('bowFireRate');
   }
 

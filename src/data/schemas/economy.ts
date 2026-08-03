@@ -30,11 +30,33 @@ export const EconomySchema = z.object({
     hpPerPurchase: z.number().int().positive().describe('gate HP restored per repair tap'),
     costPerHp: z.number().positive().describe('coins per HP restored'),
   }),
-  tokens: z.object({
-    perStarFirstTime: z.number().int().positive().describe('tokens per newly earned star on a map'),
+  /**
+   * Career XP — the **only** progression currency (SKILLTREE.md A.2).
+   *
+   * This block was `tokens` until M6.2. Tokens and XP were two currencies
+   * buying the same kind of thing through two different screens, which is
+   * exactly the confusion DESIGN §15 warns about. Now: gold buys commitment
+   * inside a run, career XP buys identity between them.
+   *
+   * Everything below is denominated in the same XP a kill grants, so the
+   * campaign bonuses and the fighting sit on one scale and can be compared.
+   */
+  career: z.object({
+    perStarFirstTime: z.number().int().positive().describe('XP per newly earned star on a map'),
     perWaveOnDefeat: z.number().int().nonnegative().describe('loss payout — a failed run is progress'),
     endlessMilestoneEvery: z.number().int().positive(),
     perEndlessMilestone: z.number().int().positive(),
+    /**
+     * Career level curve: level n costs `base × growth^(n-2)` XP.
+     *
+     * Deliberately the same shape as the in-run curve below, because they are
+     * measuring the same thing at two scales — and a player who has learned to
+     * read one bar should not have to learn a second.
+     */
+    level: z.object({
+      base: z.number().positive(),
+      growth: z.number().gt(1),
+    }),
   }),
   /**
    * The XP curve that replaces `everyNWaves` as the draft's cadence

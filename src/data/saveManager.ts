@@ -1,4 +1,11 @@
-import { migrateV1ToV2, newSave, SAVE_VERSION, type SaveData } from '../engine/progression';
+import type { Economy } from './schemas';
+import {
+  migrateV1ToV2,
+  migrateV2ToV3,
+  newSave,
+  SAVE_VERSION,
+  type SaveData,
+} from '../engine/progression';
 
 const DB_NAME = 'horse-lord';
 const STORE = 'save';
@@ -11,6 +18,15 @@ const KEY = 'profile';
  */
 export class SaveManager {
   private db: IDBDatabase | null = null;
+
+  /**
+   * The economy the v2 → v3 step needs to price a star in XP.
+   *
+   * Passed in rather than imported so this file keeps no opinion about game
+   * content, and so a migration test can price a save without loading the
+   * shipped JSON.
+   */
+  constructor(private readonly economy: Economy) {}
 
   async open(): Promise<void> {
     this.db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -53,8 +69,10 @@ export class SaveManager {
    * both of the others.
    */
   private migrate(raw: { schemaVersion?: number }): SaveData {
-    let save = raw as SaveData;
-    if (save.schemaVersion === 1) save = migrateV1ToV2(save);
+    let legacy = raw as Parameters<typeof migrateV1ToV2>[0];
+    if (legacy.schemaVersion === 1) legacy = migrateV1ToV2(legacy);
+    let save = legacy as unknown as SaveData;
+    if (legacy.schemaVersion === 2) save = migrateV2ToV3(legacy, this.economy);
     // Unknown/corrupt, or from a future build: don't destroy the row silently —
     // start fresh in memory and leave what is on disk alone.
     if (save.schemaVersion !== SAVE_VERSION) return newSave();

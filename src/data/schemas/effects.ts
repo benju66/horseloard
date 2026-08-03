@@ -1,8 +1,19 @@
 import { z } from 'zod';
 import { IdSchema } from './common';
 
-export const MetaBranchSchema = z.enum(['hero', 'towers', 'kingdom']);
-export type MetaBranch = z.infer<typeof MetaBranchSchema>;
+/**
+ * The shared effect vocabulary — what a node, of any kind, is allowed to *do*.
+ *
+ * This file was `metatree.ts` until M6.2, when the meta tree was retired into
+ * the career tree (SKILLTREE.md A.2). What survived the retirement is the part
+ * that was never really about the meta tree at all: a closed set of stat keys
+ * and a discriminated union of effects, which is what makes "+12% bow damage"
+ * mean exactly one thing no matter which screen granted it.
+ *
+ * Closed enums throughout, so a typo'd stat is a boot failure rather than a
+ * node that silently does nothing — the single worst bug class in a build game,
+ * because it is invisible from inside the game.
+ */
 
 /** Closed stat enums so a typo'd stat fails at boot, not silently no-ops. Extend as systems land. */
 export const HeroStatSchema = z.enum([
@@ -12,6 +23,19 @@ export const HeroStatSchema = z.enum([
   'bowRange',
   'trampleDamage',
   'staggerResist',
+  /** Seconds of grace after a shove — the passive that replaced Charge. */
+  'staggerImmunity',
+  /** Chance and multiplier for the hero's own bow crits. */
+  'bowCritChance',
+  'bowCritMultiplier',
+  /**
+   * Damage multiplier against enemies that are slowed *or* held by a soldier.
+   *
+   * The tree's main synergy hook. It is worth nothing on its own and a great
+   * deal beside a frost spire or a barracks, which is exactly the property
+   * that makes five columns feel like one build — see SkillKindSchema.
+   */
+  'bowDamageVsHindered',
 ]);
 export const KingdomStatSchema = z.enum([
   'startingGold',
@@ -38,6 +62,9 @@ export const AbilityStatKeySchema = z.enum([
   'duration',
   'range',
   'blades',
+  /** Bodies in a summoned host, and how long they stand before dispersing. */
+  'squad',
+  'lifetime',
 ]);
 export type AbilityStatKey = z.infer<typeof AbilityStatKeySchema>;
 
@@ -121,70 +148,5 @@ export const MetaEffectSchema = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('unlock-ability'), abilityId: IdSchema }),
   z.object({ type: z.literal('unlock-tower'), towerId: IdSchema }),
-  /**
-   * Make a `metaLocked` perk eligible to appear in drafts (TRIANGLE.md §B.6).
-   *
-   * The meta tree decides what *can* show up; the draft decides what you
-   * actually get. That is Vampire Survivors' unlock structure, and it is why
-   * there is no third selection screen — the draft already is the tree.
-   *
-   * Only meaningful on meta nodes. A perk that unlocked another perk would be a
-   * card whose value is "the pool gets better later", which is not a decision
-   * anyone can evaluate at the moment they are asked to make it.
-   */
-  z.object({ type: z.literal('unlock-perk'), perkId: IdSchema }),
 ]);
 export type MetaEffect = z.infer<typeof MetaEffectSchema>;
-
-export const MetaNodeSchema = z.object({
-  id: IdSchema,
-  branch: MetaBranchSchema,
-  name: z.string().min(1),
-  description: z.string().min(1),
-  costPerRank: z
-    .array(z.number().int().positive())
-    .min(1)
-    .describe('token cost per rank; array length = max rank'),
-  requires: z.array(IdSchema).default([]).describe('node ids that must be at max rank first'),
-  effect: MetaEffectSchema,
-});
-export type MetaNode = z.infer<typeof MetaNodeSchema>;
-
-/** metatree.json. Free respec always — no refund math lives in data. */
-export const MetaTreeFileSchema = z
-  .object({
-    nodes: z.array(MetaNodeSchema).min(1),
-  })
-  .superRefine((file, ctx) => {
-    const ids = new Set<string>();
-    file.nodes.forEach((n, i) => {
-      if (ids.has(n.id)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['nodes', i, 'id'],
-          message: `duplicate node id "${n.id}"`,
-        });
-      }
-      ids.add(n.id);
-    });
-    const all = new Set(file.nodes.map((n) => n.id));
-    file.nodes.forEach((n, i) => {
-      n.requires.forEach((req, j) => {
-        if (!all.has(req)) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['nodes', i, 'requires', j],
-            message: `unknown node id "${req}" in requires`,
-          });
-        }
-        if (req === n.id) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['nodes', i, 'requires', j],
-            message: `node "${n.id}" cannot require itself`,
-          });
-        }
-      });
-    });
-  });
-export type MetaTreeFile = z.infer<typeof MetaTreeFileSchema>;

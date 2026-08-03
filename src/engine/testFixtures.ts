@@ -17,8 +17,10 @@ export const TEST_HERO: Hero = {
       { cost: 30, damage: 8, fireInterval: 0.4, range: 60 },
     ],
   },
+  crit: { chance: 0, multiplier: 1 },
+  damageVsHindered: 1,
   trample: { damage: 6, perEnemyCooldown: 1 },
-  stagger: { controlLossDuration: 0.4, shoveDistance: 40, perEnemyCooldown: 1.2, immunityAfter: 0.9 },
+  stagger: { controlLossDuration: 0.4, shoveDistance: 40, perEnemyCooldown: 1.2, immunityAfter: 0.9, susceptibility: 1 },
 };
 
 export const TEST_ECONOMY: Economy = {
@@ -28,7 +30,13 @@ export const TEST_ECONOMY: Economy = {
   waveClearBonus: { base: 10, perWave: 3 },
   earlyStart: { windowSeconds: 12, maxBonus: 15 },
   repair: { hpPerPurchase: 20, costPerHp: 0.5 },
-  tokens: { perStarFirstTime: 10, perWaveOnDefeat: 1, endlessMilestoneEvery: 10, perEndlessMilestone: 5 },
+  career: {
+    perStarFirstTime: 400,
+    perWaveOnDefeat: 40,
+    endlessMilestoneEvery: 10,
+    perEndlessMilestone: 200,
+    level: { base: 400, growth: 1.1 },
+  },
   xp: { base: 30, growth: 1.12, perKillDefault: 3, eliteMultiplier: 3 },
   stars: { twoStarMaxDamageFraction: 0.3 },
 };

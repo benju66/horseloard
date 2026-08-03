@@ -1,4 +1,4 @@
-import type { Ability, Economy, EnemiesFile, Hero, MapDef, PerksFile, TowersFile, WaveSet } from '../data/schemas';
+import type { Ability, Economy, EnemiesFile, Hero, MapDef, TowersFile, WaveSet } from '../data/schemas';
 import { IdGenerator } from './ids';
 import { buildLanePaths, type LanePath } from './path';
 import { EnemySystem } from './enemySystem';
@@ -10,7 +10,6 @@ import { TowerSystem } from './towerSystem';
 import { GateSystem } from './gateSystem';
 import { AbilitySystem } from './abilitySystem';
 import { LooterSystem } from './looterSystem';
-import { PerkSystem } from './perkSystem';
 import { ZoneSystem } from './zoneSystem';
 import { ArmySystem } from './armySystem';
 import { XpSystem } from './xpSystem';
@@ -36,17 +35,12 @@ export interface SimData {
   /** how many abilities may be carried at once; defaults to the schema's 3 */
   equipSlots?: number;
   /**
-   * Meta-tree unlocks. Both default to "everything available", which is what
-   * engine tests and the bot harness want — bots stand in for a player with
-   * meta progression, so measuring them against a fresh-save pool would measure
-   * the wrong game. Only the real run passes restricted sets.
+   * Towers the career tree has not unlocked yet. Empty = the whole roster is
+   * buildable, which is what engine tests and the bot harness want.
    */
-  unlockedPerkIds?: readonly string[] | null;
   lockedTowerIds?: readonly string[];
   /** endless mode: waves generate forever, victory never comes */
   endless?: boolean;
-  /** in-run draft pool; omitted = no drafting (engine tests, legacy callers) */
-  perks?: PerksFile;
 }
 
 /**
@@ -80,9 +74,11 @@ export class Simulation {
   /** The army pillar: soldiers posted by garrison towers (TRIANGLE.md §B.2). */
   readonly army: ArmySystem;
   readonly looters: LooterSystem;
-  /** The in-run draft, or null when this run has no perk pool. */
-  readonly perks: PerkSystem | null;
-  /** Kills → XP → levels → drafts (TRIANGLE.md §B.4). */
+  /**
+   * Kills → XP. The run does not spend it — XP is **career** currency now
+   * (SKILLTREE.md), banked at run end and spent in the tree between runs.
+   * Nothing about a run's power changes while it is being played.
+   */
   readonly xp: XpSystem;
   readonly endless: boolean;
   private readonly enemiesFile: EnemiesFile;
@@ -137,7 +133,7 @@ export class Simulation {
       this.enemySystem.spawn(enemyId, laneId, hpMultiplier);
     });
     this.projectileSystem = new ProjectileSystem(this.enemySystem, rng);
-    this.hero = new HeroSystem(data.hero, data.map, this.enemySystem, this.projectileSystem);
+    this.hero = new HeroSystem(data.hero, data.map, this.enemySystem, this.projectileSystem, rng);
     this.economy = new EconomySystem(data.economy, rng);
     this.xp = new XpSystem(data.economy.xp);
     this.towerSystem = new TowerSystem(
@@ -163,25 +159,6 @@ export class Simulation {
 
     this.looters = new LooterSystem(this.enemySystem, this.economy, this.lanes);
 
-    // The draft mutates the very config objects the systems above hold by
-    // reference, so it is built from the same `data` and needs no plumbing to
-    // reach them. Off entirely when no pool is supplied, which keeps every
-    // existing engine test and the legacy call sites untouched.
-    this.perks = data.perks
-      ? new PerkSystem(
-          data.perks,
-          {
-            hero: data.hero,
-            economy: data.economy,
-            towers: data.towers,
-            map: data.map,
-            abilities: data.abilities as Ability[],
-          },
-          rng,
-          data.unlockedPerkIds ?? null,
-        )
-      : null;
-
     // Mills drop coins beside themselves — map safety converted into economy.
     this.towerSystem.onIncome.push((x, y, value) => {
       this.economy.spawnCoins(x, y, value);
@@ -191,26 +168,10 @@ export class Simulation {
     this.gate.onDestroyed.push(() => {
       this.phase = 'defeat';
     });
-    // GateSystem copies hp into maxHp at construction rather than reading its
-    // config live, so a reinforcement perk has to be routed here.
-    this.perks?.onGateMaxHpChanged.push((delta) => this.gate.adjustCapacity(delta));
-    // Drafted abilities. TRIANGLE.md §B.6: the draft *is* the ability tree, so
-    // `unlock-ability` has to actually reach the AbilitySystem.
-    this.perks?.onUnlockAbility.push((id) => this.abilities.unlock(id));
-    // ...and must stop being offered once it could not land. AbilitySystem owns
-    // the equip cap; PerkSystem owns the offer; this is the only place that
-    // knows both, which is why the veto is wired here rather than living in
-    // either of them.
-    if (this.perks) {
-      this.perks.isOfferable = (perk) => {
-        for (const fx of perk.effects) {
-          if (fx.type !== 'unlock-ability') continue;
-          const slot = this.abilities.getSlot(fx.abilityId);
-          if (!slot || slot.unlocked || !this.abilities.hasFreeSlot) return false;
-        }
-        return true;
-      };
-    }
+    // The gate's capacity is set from `map.gate.hp` at construction, which the
+    // career tree has already rewritten before the Simulation exists — so
+    // nothing needs routing here any more. The draft used to change it mid-run;
+    // nothing changes mid-run now.
 
     // Hero damage feeds `damage-dealt` triggers. Hero-sourced only: an ability
     // that fires "after a hard-fought stretch" has to mean the player's fight,
@@ -228,14 +189,6 @@ export class Simulation {
       this.xp.award(e.config.xpValue, e.isElite);
     });
 
-    // Every level deals a card. This is the cadence `everyNWaves` used to own,
-    // and moving it here is what ties the draft to riding out and fighting
-    // rather than to surviving a wave.
-    //
-    // Only when there is no offer already in hand: the sim never blocks on a
-    // UI decision, so a player mid-charge who levels twice keeps the first card
-    // rather than having it replaced under them.
-    this.xp.onLevelUp.push(() => this.perks?.queue());
   }
 
   get gold(): number {

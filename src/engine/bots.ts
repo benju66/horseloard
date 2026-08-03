@@ -4,16 +4,16 @@ import type {
   Economy,
   Hero,
   MapDef,
-  Perk,
-  PerksFile,
   Projectile,
   TowerStats,
+  SkillTreeFile,
   TowersFile,
   WaveSet,
 } from '../data/schemas';
 import type { EnemyInstance } from './enemySystem';
 import { marginalCoverage, plotCoverage, sampleLanes, type LaneSample, type Watcher } from './coverage';
 import { SIM_DT, Simulation } from './simulation';
+import { SkillTree } from './skillTree';
 import type { PlotState } from './towerSystem';
 
 /**
@@ -441,12 +441,6 @@ export interface BotPolicy {
   spend(sim: Simulation): void;
   /** Every tick while a wave is running. */
   steer(sim: Simulation): void;
-  /**
-   * Choose from a pending draft. Optional — omitted means "take the first
-   * card", which is already a weighted random pick because the offer was dealt
-   * by weighted sampling. Return null to decline.
-   */
-  pickPerk?(offer: readonly Perk[], sim: Simulation): string | null;
 }
 
 export type BotFactory = (towers: TowersFile, map: MapDef) => BotPolicy;
@@ -616,20 +610,6 @@ export function forcedComposition(towerId: string): BotFactory {
   });
 }
 
-/**
- * Wrap any bot so it always takes one named perk when the draft offers it.
- *
- * The same argument as `forcedComposition`, and the project already paid to
- * learn it: a free-choice bot only tells you what it *happened* to be dealt and
- * chose, so a perk that correlates with wins might be strong, or might simply
- * be common. BACKLOG records the tower version of this mistake — "the
- * preference column is not evidence about tower strength". Forcing the pick
- * takes chance out of the loop: if a perk swings the win rate on its own, that
- * shows up directly.
- *
- * Falls through to the wrapped bot's own choice when the perk is not on offer,
- * so a run still drafts normally rather than stalling.
- */
 // ─── Pillar probes (TRIANGLE.md MG5.1) ───
 //
 // The invariant these exist to measure: no single pillar clears a map alone,
@@ -744,20 +724,67 @@ export function withoutHeroDamage(hero: Hero): Hero {
   return out;
 }
 
-export function forcedPerk(inner: BotFactory, perkId: string): BotFactory {
-  return (towers, map) => {
-    const policy = inner(towers, map);
-    return {
-      ...policy,
-      name: `${policy.name}+${perkId}`,
-      spend: (sim) => policy.spend(sim),
-      steer: (sim) => policy.steer(sim),
-      pickPerk: (offer, sim) => {
-        if (offer.some((p) => p.id === perkId)) return perkId;
-        return policy.pickPerk?.(offer, sim) ?? offer[0]?.id ?? null;
-      },
-    };
-  };
+/**
+ * The greedy build a single path can afford — the M6 replacement for `forcedPerk`.
+ *
+ * `forcedPerk` forced one card so a free-choice bot could not confound "strong"
+ * with "common". The tree has no dealer, so the confound moves: a build assembled
+ * by preference tells you what the *chooser* liked. Fixing the path and spending
+ * top-down removes the chooser, and SKILLTREE.md Part F's claim — that no single
+ * path clears maps 3-4 — becomes directly falsifiable.
+ *
+ * Rows first, then cost within a row, so the walk mirrors how a player actually
+ * descends a path: you cannot reach row 4 without paying for row 2.
+ */
+export function pathBuild(tree: SkillTree, path: string, points: number): readonly string[] {
+  const order = tree.nodes
+    .filter((n) => n.path === path)
+    .slice()
+    .sort((a, b) => a.row - b.row || a.cost - b.cost || (a.id < b.id ? -1 : 1));
+
+  let allocated: readonly string[] = [];
+  // Re-sweep after every take: buying a prerequisite in row 2 can open a row-3
+  // node the first pass walked past while it was still locked.
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const node of order) {
+      if (tree.canAllocate(node.id, { allocated, pointsEarned: points })) {
+        allocated = tree.allocate(node.id, { allocated, pointsEarned: points });
+        changed = true;
+      }
+    }
+  }
+  return allocated;
+}
+
+/**
+ * The generalist build: spend round-robin across every path, cheapest reachable
+ * node first. The reference arm for the difficulty curve.
+ *
+ * A reference has to be *typical*, and a top-down walk of one path is the least
+ * typical build in the tree — it is the specialist the path probe exists to
+ * measure. Round-robin keeps the reference broad and shallow, which is what a
+ * player who has not yet committed actually holds.
+ */
+export function spreadBuild(tree: SkillTree, points: number): readonly string[] {
+  const paths = [...new Set(tree.nodes.map((n) => n.path))].sort();
+  let allocated: readonly string[] = [];
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const path of paths) {
+      const next = tree.nodes
+        .filter(
+          (n) => n.path === path && tree.canAllocate(n.id, { allocated, pointsEarned: points }),
+        )
+        .sort((a, b) => a.row - b.row || a.cost - b.cost || (a.id < b.id ? -1 : 1))[0];
+      if (!next) continue;
+      allocated = tree.allocate(next.id, { allocated, pointsEarned: points });
+      changed = true;
+    }
+  }
+  return allocated;
 }
 
 // ─── Runner ───
@@ -781,8 +808,6 @@ export interface BotRunResult {
   heroLevel: number;
   /** tower ids standing at the end — reported as data, to spot dead weight */
   towers: string[];
-  /** perks drafted this run as "id xN" — the measurement the draft exists for */
-  perks: string[];
 }
 
 /** The LCG the balance harness uses — same seed, same run, forever. */
@@ -797,8 +822,10 @@ export function makeRng(seed: number): () => number {
 /** Everything a bot run needs — the validated-data subset, no loader dependency. */
 export interface BotGameData {
   towers: TowersFile;
-  /** in-run draft pool; omit to run with drafting off (the pre-perk baseline) */
-  perks?: PerksFile;
+  /** the career tree; omit to run a career that has none (engine-only fixtures) */
+  skillTree?: SkillTreeFile;
+  /** node ids the career build holds — the only thing that varies a run's power */
+  skillNodes?: readonly string[];
   enemies: EnemiesFile;
   abilities: readonly Ability[];
   /** how many abilities may be carried at once; defaults to the schema's 3 */
@@ -819,30 +846,44 @@ export function runBot(
   factory: BotFactory,
   seed: number,
 ): BotRunResult {
-  const map = data.maps[mapId]!;
+  // The career build is folded into the balance data *before* the sim exists,
+  // exactly as the meta tree always was — so the run is played by an engine that
+  // has never heard of a tree. This is also why the probes below can vary a
+  // build without any engine flag: a different build is different data, nothing
+  // more.
+  const base = {
+    hero: data.hero,
+    economy: data.economy,
+    towers: data.towers,
+    map: data.maps[mapId]!,
+    abilities: data.abilities as Ability[],
+  };
+  const built =
+    data.skillTree && data.skillNodes?.length
+      ? new SkillTree(data.skillTree).applyTo(base, data.skillNodes)
+      : { ...base, unlockedAbilityIds: [] as string[], unlockedTowerIds: [] as string[] };
+
+  const map = built.map;
   const waveSet = data.waveSets[mapId]!;
-  const abilities = data.abilities;
 
   const sim = new Simulation(
     {
       enemies: data.enemies,
       map,
       waveSet,
-      hero: data.hero,
-      economy: data.economy,
-      towers: data.towers,
-      abilities,
+      hero: built.hero,
+      economy: built.economy,
+      towers: built.towers,
+      abilities: built.abilities,
       equipSlots: data.equipSlots,
-      // Bots start with the default loadout and fill the rest from the draft,
-      // which is how a run actually plays now (TRIANGLE.md §B.6).
+      // A bot carries exactly what its build unlocked, on top of the default
+      // loadout — never the whole roster.
       //
-      // They used to force-unlock the whole roster on the grounds that we were
-      // measuring the skill ceiling rather than the meta-tree ramp. That stopped
-      // being true the day abilities became draftable and the bar gained an
-      // equip cap: force-unlocking filled every slot on wave 1, which made every
-      // ability-unlock card a dead draw and quietly measured a loadout no player
-      // can assemble.
-      perks: data.perks,
+      // Force-unlocking everything was defensible while abilities came from the
+      // meta tree and the bar had no cap. It stopped being true the day the bar
+      // gained an equip cap: filling every slot on wave 1 measured a loadout no
+      // player can assemble, and made every ability node a dead take.
+      unlockedAbilityIds: built.unlockedAbilityIds,
     },
     makeRng(seed),
   );
@@ -876,16 +917,6 @@ export function runBot(
       outcome = 'win';
       break;
     }
-
-    // Draft, if the wave clear dealt one. Taking the first card is already a
-    // weighted random pick — the offer was dealt by weighted sampling from the
-    // sim's own seeded rng, so this stays reproducible without a second stream.
-    const offer = sim.perks?.offer;
-    if (offer && offer.length > 0) {
-      const choice = bot.pickPerk ? bot.pickPerk(offer, sim) : offer[0]!.id;
-      if (choice) sim.perks!.take(choice);
-      else sim.perks!.skip();
-    }
   }
 
   const cleared =
@@ -912,8 +943,5 @@ export function runBot(
     towers: sim.towerSystem.plots
       .filter((p) => p.towerId !== null)
       .map((p) => `${p.towerId}${p.branchId ? ':' + p.branchId : '@L' + p.level}`),
-    perks: (sim.perks?.takenPerks ?? []).map(
-      ({ perk, stacks }) => `${perk.id}${stacks > 1 ? ' x' + stacks : ''}`,
-    ),
   };
 }
