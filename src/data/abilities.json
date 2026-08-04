@@ -1,8 +1,8 @@
 {
   "equipSlots": 2,
   "equipSlotGrants": [
-    2,
-    4
+    4,
+    8
   ],
   "abilities": [
     {

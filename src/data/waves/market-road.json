@@ -1,0 +1,238 @@
+{
+  "mapId": "market-road",
+  "waves": [
+    {
+      "hpMultiplier": 2.55,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 8,
+          "spacing": 0.8,
+          "laneId": "main",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 3.06,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 7,
+          "spacing": 0.7,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "runner",
+          "count": 4,
+          "spacing": 0.9,
+          "laneId": "alley",
+          "delay": 1.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 3.57,
+      "entries": [
+        {
+          "enemyId": "swarm",
+          "count": 12,
+          "spacing": 0.3,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "looter",
+          "count": 3,
+          "spacing": 1.2,
+          "laneId": "alley",
+          "delay": 2.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 4.08,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 10,
+          "spacing": 0.6,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "swarm",
+          "count": 12,
+          "spacing": 0.3,
+          "laneId": "alley",
+          "delay": 0
+        },
+        {
+          "enemyId": "looter",
+          "count": 3,
+          "spacing": 1.2,
+          "laneId": "alley",
+          "delay": 4.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 4.718,
+      "archetypeId": "raid",
+      "entries": [
+        {
+          "enemyId": "runner",
+          "count": 10,
+          "spacing": 0.45,
+          "laneId": "alley",
+          "delay": 0
+        },
+        {
+          "enemyId": "looter",
+          "count": 4,
+          "spacing": 1.0,
+          "laneId": "main",
+          "delay": 2.0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 8,
+          "spacing": 0.7,
+          "laneId": "main",
+          "delay": 1.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 5.355,
+      "entries": [
+        {
+          "enemyId": "swarm",
+          "count": 18,
+          "spacing": 0.22,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 9,
+          "spacing": 0.55,
+          "laneId": "alley",
+          "delay": 0.5
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 6.12,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 13,
+          "spacing": 0.5,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "runner",
+          "count": 8,
+          "spacing": 0.5,
+          "laneId": "alley",
+          "delay": 0
+        },
+        {
+          "enemyId": "looter",
+          "count": 5,
+          "spacing": 1.0,
+          "laneId": "alley",
+          "delay": 3.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 6.885,
+      "entries": [
+        {
+          "enemyId": "swarm",
+          "count": 18,
+          "spacing": 0.2,
+          "laneId": "alley",
+          "delay": 0
+        },
+        {
+          "enemyId": "looter",
+          "count": 6,
+          "spacing": 0.9,
+          "laneId": "main",
+          "delay": 2.5
+        },
+        {
+          "enemyId": "runner",
+          "count": 6,
+          "spacing": 0.6,
+          "laneId": "main",
+          "delay": 1.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 7.65,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 16,
+          "spacing": 0.45,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "runner",
+          "count": 9,
+          "spacing": 0.5,
+          "laneId": "alley",
+          "delay": 0
+        },
+        {
+          "enemyId": "looter",
+          "count": 5,
+          "spacing": 1.0,
+          "laneId": "alley",
+          "delay": 4.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 8.67,
+      "entries": [
+        {
+          "enemyId": "swarm",
+          "count": 21,
+          "spacing": 0.2,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "swarm",
+          "count": 14,
+          "spacing": 0.25,
+          "laneId": "alley",
+          "delay": 0
+        },
+        {
+          "enemyId": "runner",
+          "count": 8,
+          "spacing": 0.45,
+          "laneId": "alley",
+          "delay": 1.5
+        },
+        {
+          "enemyId": "looter",
+          "count": 7,
+          "spacing": 0.8,
+          "laneId": "main",
+          "delay": 3.0
+        }
+      ]
+    }
+  ]
+}

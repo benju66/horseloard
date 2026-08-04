@@ -35,6 +35,10 @@ import skillTreeJson from './skilltree.json';
 import biomesJson from './biomes.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
+import marketRoadMapJson from './maps/market-road.json';
+import marketRoadWavesJson from './waves/market-road.json';
+import harvestNightMapJson from './maps/harvest-night.json';
+import harvestNightWavesJson from './waves/harvest-night.json';
 import theFordMapJson from './maps/the-ford.json';
 import theFordWavesJson from './waves/the-ford.json';
 import crossroadsMapJson from './maps/crossroads.json';
@@ -344,12 +348,16 @@ export function loadGameData(): GameData {
     biomes: biomesJson,
     maps: {
       'maps/meadow-road.json': meadowRoadMapJson,
+      'maps/market-road.json': marketRoadMapJson,
+      'maps/harvest-night.json': harvestNightMapJson,
       'maps/the-ford.json': theFordMapJson,
       'maps/crossroads.json': crossroadsMapJson,
       'maps/warlords-march.json': warlordsMarchMapJson,
     },
     waveSets: {
       'waves/meadow-road.json': meadowRoadWavesJson,
+      'waves/market-road.json': marketRoadWavesJson,
+      'waves/harvest-night.json': harvestNightWavesJson,
       'waves/the-ford.json': theFordWavesJson,
       'waves/crossroads.json': crossroadsWavesJson,
       'waves/warlords-march.json': warlordsMarchWavesJson,

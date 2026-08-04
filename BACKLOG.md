@@ -723,6 +723,33 @@ the reference build holds without re-running the curve in the same breath.**
 Still open for the depth pass: the one-sided keystone pairs, and Wall's pure-path arm
 (10%, −78pp — the known M7.9 artifact, a Wall build has no soldiers for its own scaling).
 
+## M8.5 — Green Road complete (2026-08-04): The Market Road and Harvest Night
+
+The Green Road is a four-level world: meadow-road (introduce) → the-ford (geometry) →
+**market-road** (composition: greed under pressure — looters come up a thieves' alley
+WITH the fights, so the coins you leave lying walk away mid-wave) → **harvest-night**
+(setpiece: three HORDE banners, a two-sided pincer, the tide with the dark). Campaign
+renumbered green 1–4, Iron Crossing 5, Warlord's March 6. Equip-slot grants moved to the
+biome boundaries [4, 8] — "a slot per biome entered" (BIOMES.md Part E) — which keeps
+every existing map's slots exactly as they were.
+
+**Curve: ON TARGET on all six maps, monotonic in campaign order — 100 / 94 / 89 / 72 /
+50 / 44.** Both new maps use the pure green pool; no legacy species.
+
+**What authoring the first new levels taught, in three failed rounds:**
+1. **HP alone cannot make green hard.** ×2.1 the budget: still 100%, zero leaks. The
+   green pool has no weight class, so a mature single-lane board out-kills any body count.
+2. **Compression alone cannot either.** Walls of swarms at 0.18s spacing feed splash;
+   kill rate scales with density and the wall dies as one.
+3. **Geometry is green's only difficulty dial.** The-ford loses 6% *because it splits*.
+   Both new maps were redesigned around split pressure — the alley, the pincer — and the
+   ford's own HP regime (×2 → ×8, the manufactured weight class) finally put them in band.
+   The authoring rule for tankless pools: **lanes first, budgets second.**
+
+The plot gold-trap guard caught one mis-placed plot before any human could buy it.
+Cadence: harvest 25.2 in band; market 25.0 on the boundary (24.0 all-runs) — recorded,
+not chased; crossroads already sits similarly at the other edge.
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 

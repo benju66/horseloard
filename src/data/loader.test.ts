@@ -12,6 +12,10 @@ import skillTreeJson from './skilltree.json';
 import biomesJson from './biomes.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
+import marketRoadMapJson from './maps/market-road.json';
+import marketRoadWavesJson from './waves/market-road.json';
+import harvestNightMapJson from './maps/harvest-night.json';
+import harvestNightWavesJson from './waves/harvest-night.json';
 import theFordMapJson from './maps/the-ford.json';
 import theFordWavesJson from './waves/the-ford.json';
 import crossroadsMapJson from './maps/crossroads.json';
@@ -33,12 +37,16 @@ function seed(): RawGameData & Record<string, any> {
     biomes: biomesJson,
     maps: {
       'maps/meadow-road.json': meadowRoadMapJson,
+      'maps/market-road.json': marketRoadMapJson,
+      'maps/harvest-night.json': harvestNightMapJson,
       'maps/the-ford.json': theFordMapJson,
       'maps/crossroads.json': crossroadsMapJson,
       'maps/warlords-march.json': warlordsMarchMapJson,
     },
     waveSets: {
       'waves/meadow-road.json': meadowRoadWavesJson,
+      'waves/market-road.json': marketRoadWavesJson,
+      'waves/harvest-night.json': harvestNightWavesJson,
       'waves/the-ford.json': theFordWavesJson,
       'waves/crossroads.json': crossroadsWavesJson,
       'waves/warlords-march.json': warlordsMarchWavesJson,
@@ -61,7 +69,7 @@ describe('seed data', () => {
       'aero-storm',
       'muster',
     ]);
-    expect(Object.keys(data.maps).sort()).toEqual(['crossroads', 'meadow-road', 'the-ford', 'warlords-march']);
+    expect(Object.keys(data.maps).sort()).toEqual(['crossroads', 'harvest-night', 'market-road', 'meadow-road', 'the-ford', 'warlords-march']);
     expect(data.waveSets['meadow-road']?.waves).toHaveLength(8);
     expect(data.waveSets['the-ford']?.waves).toHaveLength(10);
     expect(data.archetypes.map((a) => a.id)).toEqual(['horde', 'raid', 'war-party']);

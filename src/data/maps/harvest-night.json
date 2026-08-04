@@ -1,0 +1,139 @@
+{
+ "id": "harvest-night",
+ "name": "Harvest Night",
+ "description": "The fields are cut, the barns are full, and everything hungry in the valley knows it. The tide comes with the dark.",
+ "order": 4,
+ "biomeId": "green-road",
+ "world": {
+  "width": 420,
+  "height": 780
+ },
+ "heroSpawn": {
+  "x": 210,
+  "y": 640
+ },
+ "lanes": [
+  {
+   "id": "west",
+   "waypoints": [
+    {
+     "x": 110,
+     "y": -50
+    },
+    {
+     "x": 110,
+     "y": 200
+    },
+    {
+     "x": 160,
+     "y": 420
+    },
+    {
+     "x": 210,
+     "y": 560
+    },
+    {
+     "x": 210,
+     "y": 690
+    }
+   ]
+  },
+  {
+   "id": "east",
+   "waypoints": [
+    {
+     "x": 310,
+     "y": -50
+    },
+    {
+     "x": 310,
+     "y": 200
+    },
+    {
+     "x": 260,
+     "y": 420
+    },
+    {
+     "x": 210,
+     "y": 560
+    },
+    {
+     "x": 210,
+     "y": 690
+    }
+   ]
+  }
+ ],
+ "plots": [
+  {
+   "id": "west-barn",
+   "position": {
+    "x": 155,
+    "y": 140
+   }
+  },
+  {
+   "id": "east-barn",
+   "position": {
+    "x": 265,
+    "y": 140
+   }
+  },
+  {
+   "id": "west-rick",
+   "position": {
+    "x": 135,
+    "y": 320
+   }
+  },
+  {
+   "id": "east-rick",
+   "position": {
+    "x": 285,
+    "y": 320
+   }
+  },
+  {
+   "id": "mid-field",
+   "position": {
+    "x": 210,
+    "y": 430
+   }
+  },
+  {
+   "id": "threshing-floor",
+   "position": {
+    "x": 165,
+    "y": 555
+   }
+  },
+  {
+   "id": "south-barn",
+   "position": {
+    "x": 255,
+    "y": 555
+   }
+  },
+  {
+   "id": "last-light",
+   "position": {
+    "x": 210,
+    "y": 645
+   }
+  }
+ ],
+ "gate": {
+  "position": {
+   "x": 210,
+   "y": 715
+  },
+  "hp": 110,
+  "attackSlots": 5
+ },
+ "forge": {
+  "position": {
+   "x": 75,
+   "y": 690
+  }
+ }
+}

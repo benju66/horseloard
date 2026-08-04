@@ -70,6 +70,11 @@ export const DIFFICULTY_TARGETS: Record<
 > = {
   'meadow-road': { winRate: [90, 100], maxSinglePillarWinRate: 100, intent: 'nearly unloseable — it teaches' },
   'the-ford': { winRate: [70, 95], maxSinglePillarWinRate: 100, intent: 'comfortable, but leaks punish' },
+  // Green Road back half (BIOMES.md C.1: 90-100 → 70-90 across the biome).
+  // Single-pillar stays uncapped through the teaching biome — the counters
+  // that force the triangle deliberately live in Iron and Steppe.
+  'market-road': { winRate: [65, 90], maxSinglePillarWinRate: 100, intent: 'greed under pressure — the thieves know' },
+  'harvest-night': { winRate: [60, 85], maxSinglePillarWinRate: 100, intent: 'the tide — green road finale' },
   'crossroads': { winRate: [45, 75], maxSinglePillarWinRate: 40, intent: 'one pillar is not enough' },
   'warlords-march': { winRate: [25, 55], maxSinglePillarWinRate: 25, intent: 'honest challenge' },
 };

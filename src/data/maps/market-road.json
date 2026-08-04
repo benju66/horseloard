@@ -1,0 +1,140 @@
+{
+ "id": "market-road",
+ "name": "The Market Road",
+ "description": "Stalls line the bend and your coins lie where they fall. The thieves know.",
+ "order": 3,
+ "biomeId": "green-road",
+ "world": {
+  "width": 420,
+  "height": 780
+ },
+ "heroSpawn": {
+  "x": 210,
+  "y": 640
+ },
+ "lanes": [
+  {
+   "id": "main",
+   "waypoints": [
+    {
+     "x": 210,
+     "y": -50
+    },
+    {
+     "x": 210,
+     "y": 80
+    },
+    {
+     "x": 90,
+     "y": 150
+    },
+    {
+     "x": 90,
+     "y": 330
+    },
+    {
+     "x": 330,
+     "y": 400
+    },
+    {
+     "x": 330,
+     "y": 560
+    },
+    {
+     "x": 210,
+     "y": 620
+    },
+    {
+     "x": 210,
+     "y": 690
+    }
+   ]
+  },
+  {
+   "id": "alley",
+   "waypoints": [
+    {
+     "x": -50,
+     "y": 470
+    },
+    {
+     "x": 110,
+     "y": 470
+    },
+    {
+     "x": 210,
+     "y": 560
+    },
+    {
+     "x": 210,
+     "y": 690
+    }
+   ]
+  }
+ ],
+ "plots": [
+  {
+   "id": "north-stall",
+   "position": {
+    "x": 155,
+    "y": 120
+   }
+  },
+  {
+   "id": "west-wall",
+   "position": {
+    "x": 150,
+    "y": 240
+   }
+  },
+  {
+   "id": "market-square",
+   "position": {
+    "x": 175,
+    "y": 360
+   }
+  },
+  {
+   "id": "east-stall",
+   "position": {
+    "x": 270,
+    "y": 330
+   }
+  },
+  {
+   "id": "east-wall",
+   "position": {
+    "x": 270,
+    "y": 490
+   }
+  },
+  {
+   "id": "south-gatehouse",
+   "position": {
+    "x": 150,
+    "y": 520
+   }
+  },
+  {
+   "id": "last-post",
+   "position": {
+    "x": 265,
+    "y": 625
+   }
+  }
+ ],
+ "gate": {
+  "position": {
+   "x": 210,
+   "y": 715
+  },
+  "hp": 100,
+  "attackSlots": 5
+ },
+ "forge": {
+  "position": {
+   "x": 75,
+   "y": 690
+  }
+ }
+}
