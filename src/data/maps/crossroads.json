@@ -1,139 +1,139 @@
 {
-  "id": "crossroads",
-  "biomeId": "iron-deeps",
-  "name": "Crossroads",
-  "description": "Two roads, one keep. You cannot cover both \u2014 your towers must own a lane.",
-  "order": 3,
-  "world": {
-    "width": 420,
-    "height": 780
-  },
-  "heroSpawn": {
-    "x": 210,
-    "y": 620
-  },
-  "lanes": [
+ "id": "crossroads",
+ "biomeId": "iron-deeps",
+ "name": "The Iron Crossing",
+ "description": "Two haul-roads meet beneath the quarry walls. You cannot cover both \u2014 your towers must own a lane.",
+ "order": 3,
+ "world": {
+  "width": 420,
+  "height": 780
+ },
+ "heroSpawn": {
+  "x": 210,
+  "y": 620
+ },
+ "lanes": [
+  {
+   "id": "north",
+   "waypoints": [
     {
-      "id": "north",
-      "waypoints": [
-        {
-          "x": 280,
-          "y": -50
-        },
-        {
-          "x": 280,
-          "y": 160
-        },
-        {
-          "x": 200,
-          "y": 260
-        },
-        {
-          "x": 160,
-          "y": 380
-        },
-        {
-          "x": 210,
-          "y": 500
-        },
-        {
-          "x": 210,
-          "y": 690
-        }
-      ]
+     "x": 280,
+     "y": -50
     },
     {
-      "id": "west",
-      "waypoints": [
-        {
-          "x": -50,
-          "y": 430
-        },
-        {
-          "x": 120,
-          "y": 430
-        },
-        {
-          "x": 210,
-          "y": 530
-        },
-        {
-          "x": 210,
-          "y": 690
-        }
-      ]
+     "x": 280,
+     "y": 160
+    },
+    {
+     "x": 200,
+     "y": 260
+    },
+    {
+     "x": 160,
+     "y": 380
+    },
+    {
+     "x": 210,
+     "y": 500
+    },
+    {
+     "x": 210,
+     "y": 690
     }
-  ],
-  "plots": [
-    {
-      "id": "watchtower",
-      "position": {
-        "x": 345,
-        "y": 160
-      }
-    },
-    {
-      "id": "north-bend",
-      "position": {
-        "x": 205,
-        "y": 205
-      }
-    },
-    {
-      "id": "west-slope",
-      "position": {
-        "x": 120,
-        "y": 300
-      }
-    },
-    {
-      "id": "east-slope",
-      "position": {
-        "x": 255,
-        "y": 330
-      }
-    },
-    {
-      "id": "west-road",
-      "position": {
-        "x": 60,
-        "y": 480
-      }
-    },
-    {
-      "id": "junction",
-      "position": {
-        "x": 150,
-        "y": 505
-      }
-    },
-    {
-      "id": "east-yard",
-      "position": {
-        "x": 280,
-        "y": 600
-      }
-    },
-    {
-      "id": "west-yard",
-      "position": {
-        "x": 140,
-        "y": 620
-      }
-    }
-  ],
-  "gate": {
-    "position": {
-      "x": 210,
-      "y": 715
-    },
-    "hp": 110,
-    "attackSlots": 5
+   ]
   },
-  "forge": {
-    "position": {
-      "x": 345,
-      "y": 655
+  {
+   "id": "west",
+   "waypoints": [
+    {
+     "x": -50,
+     "y": 430
+    },
+    {
+     "x": 120,
+     "y": 430
+    },
+    {
+     "x": 210,
+     "y": 530
+    },
+    {
+     "x": 210,
+     "y": 690
     }
+   ]
   }
+ ],
+ "plots": [
+  {
+   "id": "watchtower",
+   "position": {
+    "x": 345,
+    "y": 160
+   }
+  },
+  {
+   "id": "north-bend",
+   "position": {
+    "x": 205,
+    "y": 205
+   }
+  },
+  {
+   "id": "west-slope",
+   "position": {
+    "x": 120,
+    "y": 300
+   }
+  },
+  {
+   "id": "east-slope",
+   "position": {
+    "x": 255,
+    "y": 330
+   }
+  },
+  {
+   "id": "west-road",
+   "position": {
+    "x": 60,
+    "y": 480
+   }
+  },
+  {
+   "id": "junction",
+   "position": {
+    "x": 150,
+    "y": 505
+   }
+  },
+  {
+   "id": "east-yard",
+   "position": {
+    "x": 280,
+    "y": 600
+   }
+  },
+  {
+   "id": "west-yard",
+   "position": {
+    "x": 140,
+    "y": 620
+   }
+  }
+ ],
+ "gate": {
+  "position": {
+   "x": 210,
+   "y": 715
+  },
+  "hp": 110,
+  "attackSlots": 5
+ },
+ "forge": {
+  "position": {
+   "x": 345,
+   "y": 655
+  }
+ }
 }

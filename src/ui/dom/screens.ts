@@ -112,7 +112,28 @@ export class MapSelectScreen {
 
     const list = document.createElement('div');
     list.className = 'map-list';
+    // The campaign reads as worlds, not a flat list: a header per biome, in
+    // biome order, with the maps of that biome under it. The header is the
+    // *place* — the palette and the rule live down in the levels, but the name
+    // up here is what makes entering biome 2 feel like travelling.
+    let lastBiomeId: string | null = null;
     for (const map of maps) {
+      if (map.biomeId !== lastBiomeId) {
+        lastBiomeId = map.biomeId;
+        const biome = data.biomes.find((b) => b.id === map.biomeId);
+        if (biome) {
+          const head = document.createElement('div');
+          head.className = 'biome-head';
+          const biomeName = document.createElement('div');
+          biomeName.className = 'biome-name';
+          biomeName.textContent = biome.name;
+          const biomeDesc = document.createElement('div');
+          biomeDesc.className = 'biome-desc';
+          biomeDesc.textContent = biome.description;
+          head.append(biomeName, biomeDesc);
+          list.append(head);
+        }
+      }
       const open = unlocked.has(map.id);
       const entry = save.campaign[map.id];
       const stars = entry?.stars ?? 0;
@@ -755,6 +776,13 @@ export function screensCss(): string {
 .screen-title { font: 700 32px/1.1 Georgia, serif; color: #f6c945; margin-top: env(safe-area-inset-top, 0px); }
 .screen-sub { font: 600 14px ui-monospace, monospace; color: #cdc6b4; margin-bottom: 8px; }
 .map-list, .node-list { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; }
+.biome-head { margin: 10px 2px 0; display: flex; flex-direction: column; gap: 2px; }
+.biome-head:first-child { margin-top: 0; }
+.biome-name {
+  font: 700 13px ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase;
+  color: #d8b86a;
+}
+.biome-desc { font: 400 11px/1.35 ui-monospace, monospace; color: #9aa08e; }
 .map-row, .node-row {
   text-align: left; padding: 14px 16px; border-radius: 14px; pointer-events: auto;
   background: #24361f; border: 2px solid #59a844; color: #f5ead0;
