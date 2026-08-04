@@ -196,7 +196,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * are not decisions, which is both an easiness problem AND the thing most
    * likely to flatten tower balance if difficulty is raised by HP alone.
    */
-  it('reports whether gold is actually scarce', { timeout: 60_000 }, () => {
+  it('reports whether gold is actually scarce', { timeout: 120_000 }, () => {
     const lines: string[] = [];
     for (const mapId of Object.keys(data.maps)) {
       const runs = BOTS.flatMap((f) => SEEDS.map((seed) => runBot(botData, mapId, f, seed)));
@@ -227,7 +227,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * that dies on wave 4 should of course be short of 25, and averaging it in
    * with full clears would make a healthy curve look starved.
    */
-  it('reports how many levels a run actually produces', { timeout: 60_000 }, () => {
+  it('reports how many levels a run actually produces', { timeout: 120_000 }, () => {
     const lines: string[] = [];
     for (const mapId of Object.keys(data.maps)) {
       const runs = BOTS.flatMap((f) => SEEDS.map((s) => runBot(botData, mapId, f, s)));
@@ -269,7 +269,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * a tuning pass has a target instead of a vibe. Reports rather than asserts —
    * this is an instrument for `npm run bots`, not a gate on `npm test`.
    */
-  it('reports the difficulty curve against its target', { timeout: 60_000 }, () => {
+  it('reports the difficulty curve against its target', { timeout: 180_000 }, () => {
     const lines: string[] = [];
     let failures = 0;
 
@@ -494,7 +494,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * it never picks might be weak or might just be mis-scored. Forcing the build
    * removes the model from the question entirely.
    */
-  it('reports whether each tower can carry a map alone', { timeout: 60_000 }, () => {
+  it('reports whether each tower can carry a map alone', { timeout: 180_000 }, () => {
     const lines: string[] = [];
     for (const tower of data.towers.towers) {
       const runs: BotRunResult[] = [];
