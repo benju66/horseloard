@@ -92,7 +92,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.258,
+      "hpMultiplier": 2.6,
       "entries": [
         {
           "enemyId": "shieldbearer",
@@ -118,7 +118,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.634,
+      "hpMultiplier": 3.1,
       "archetypeId": "raid",
       "entries": [
         {
@@ -145,7 +145,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.073,
+      "hpMultiplier": 3.8,
       "entries": [
         {
           "enemyId": "brute",
@@ -177,7 +177,7 @@
         },
         {
           "enemyId": "outrider",
-          "count": 2,
+          "count": 3,
           "spacing": 1.4,
           "laneId": "east",
           "delay": 4
@@ -185,7 +185,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.575,
+      "hpMultiplier": 4.5,
       "archetypeId": "horde",
       "entries": [
         {
@@ -226,7 +226,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.14,
+      "hpMultiplier": 5.2,
       "archetypeId": "war-party",
       "entries": [
         {
@@ -259,7 +259,7 @@
         },
         {
           "enemyId": "halberdier",
-          "count": 2,
+          "count": 3,
           "spacing": 2.4,
           "laneId": "west",
           "delay": 5
@@ -267,7 +267,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.767,
+      "hpMultiplier": 6.0,
       "entries": [
         {
           "enemyId": "brute",

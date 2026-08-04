@@ -70,7 +70,7 @@
       "entries": [
         {
           "enemyId": "wolf-rider",
-          "count": 4,
+          "count": 3,
           "spacing": 1.6,
           "laneId": "east",
           "delay": 0
@@ -132,7 +132,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.119,
+      "hpMultiplier": 2.697,
       "archetypeId": "horde",
       "entries": [
         {
@@ -151,28 +151,28 @@
         },
         {
           "enemyId": "swarm",
-          "count": 9,
+          "count": 6,
           "spacing": 0.15,
           "laneId": "west",
           "delay": 4.5
         },
         {
           "enemyId": "swarm",
-          "count": 9,
+          "count": 6,
           "spacing": 0.15,
           "laneId": "east",
           "delay": 6
         },
         {
           "enemyId": "shieldbearer",
-          "count": 2,
+          "count": 1,
           "spacing": 0.15,
           "laneId": "west",
           "delay": 0
         },
         {
           "enemyId": "outrider",
-          "count": 3,
+          "count": 2,
           "spacing": 1.4,
           "laneId": "east",
           "delay": 4
@@ -180,7 +180,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.465,
+      "hpMultiplier": 3.069,
       "entries": [
         {
           "enemyId": "brute",
@@ -198,7 +198,7 @@
         },
         {
           "enemyId": "grunt",
-          "count": 3,
+          "count": 2,
           "spacing": 0.55,
           "laneId": "west",
           "delay": 4
@@ -209,11 +209,18 @@
           "spacing": 2,
           "laneId": "east",
           "delay": 0
+        },
+        {
+          "enemyId": "sapper",
+          "count": 2,
+          "spacing": 2.2,
+          "laneId": "west",
+          "delay": 5.0
         }
       ]
     },
     {
-      "hpMultiplier": 3.881,
+      "hpMultiplier": 3.162,
       "entries": [
         {
           "enemyId": "shieldbearer",
@@ -260,7 +267,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.297,
+      "hpMultiplier": 3.069,
       "archetypeId": "raid",
       "supplyDrop": {
         "delay": 8,
@@ -272,14 +279,14 @@
       "entries": [
         {
           "enemyId": "runner",
-          "count": 8,
+          "count": 5,
           "spacing": 0.5,
           "laneId": "west",
           "delay": 0
         },
         {
           "enemyId": "wolf-rider",
-          "count": 7,
+          "count": 4,
           "spacing": 0.9,
           "laneId": "west",
           "delay": 4
@@ -301,7 +308,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.712,
+      "hpMultiplier": 3.488,
       "entries": [
         {
           "enemyId": "brute",
@@ -326,7 +333,7 @@
         },
         {
           "enemyId": "raven",
-          "count": 8,
+          "count": 6,
           "spacing": 0.35,
           "laneId": "west",
           "delay": 2.0
@@ -354,7 +361,7 @@
         },
         {
           "enemyId": "raven",
-          "count": 8,
+          "count": 6,
           "spacing": 0.35,
           "laneId": "west",
           "delay": 2.0
@@ -365,22 +372,29 @@
           "spacing": 1.6,
           "laneId": "west",
           "delay": 0
+        },
+        {
+          "enemyId": "sapper",
+          "count": 2,
+          "spacing": 2.2,
+          "laneId": "east",
+          "delay": 7.0
         }
       ]
     },
     {
-      "hpMultiplier": 5.128,
+      "hpMultiplier": 3.906,
       "entries": [
         {
           "enemyId": "wolf-rider",
-          "count": 9,
+          "count": 5,
           "spacing": 0.8,
           "laneId": "east",
           "delay": 0
         },
         {
           "enemyId": "shieldbearer",
-          "count": 4,
+          "count": 3,
           "spacing": 1.5,
           "laneId": "west",
           "delay": 1
@@ -402,7 +416,7 @@
       ]
     },
     {
-      "hpMultiplier": 5.544,
+      "hpMultiplier": 4.185,
       "archetypeId": "war-party",
       "supplyDrop": {
         "delay": 10,
@@ -414,7 +428,7 @@
       "entries": [
         {
           "enemyId": "shieldbearer",
-          "count": 4,
+          "count": 3,
           "spacing": 1.4,
           "laneId": "west",
           "delay": 0
@@ -439,27 +453,6 @@
           "spacing": 1.7,
           "laneId": "east",
           "delay": 4
-        },
-        {
-          "enemyId": "grunt",
-          "count": 2,
-          "spacing": 1.4,
-          "laneId": "west",
-          "delay": 0
-        },
-        {
-          "enemyId": "grunt",
-          "count": 2,
-          "spacing": 1.6,
-          "laneId": "east",
-          "delay": 2.5
-        },
-        {
-          "enemyId": "grunt",
-          "count": 2,
-          "spacing": 1.5,
-          "laneId": "west",
-          "delay": 1
         },
         {
           "enemyId": "grunt",
@@ -491,15 +484,22 @@
         },
         {
           "enemyId": "outrider",
-          "count": 4,
+          "count": 3,
           "spacing": 1.1,
           "laneId": "west",
           "delay": 3
+        },
+        {
+          "enemyId": "sapper",
+          "count": 3,
+          "spacing": 2.0,
+          "laneId": "west",
+          "delay": 6.0
         }
       ]
     },
     {
-      "hpMultiplier": 5.96,
+      "hpMultiplier": 4.092,
       "entries": [
         {
           "enemyId": "brute",
@@ -510,7 +510,7 @@
         },
         {
           "enemyId": "wolf-rider",
-          "count": 7,
+          "count": 5,
           "spacing": 0.9,
           "laneId": "west",
           "delay": 2

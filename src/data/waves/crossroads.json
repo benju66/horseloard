@@ -196,7 +196,7 @@
         },
         {
           "enemyId": "brute",
-          "count": 3,
+          "count": 2,
           "spacing": 2.6,
           "laneId": "north",
           "delay": 1.2
@@ -221,6 +221,13 @@
           "spacing": 0.35,
           "laneId": "north",
           "delay": 2.0
+        },
+        {
+          "enemyId": "juggernaut",
+          "count": 1,
+          "spacing": 1.0,
+          "laneId": "west",
+          "delay": 6.0
         }
       ]
     },
@@ -318,7 +325,7 @@
         },
         {
           "enemyId": "brute",
-          "count": 4,
+          "count": 3,
           "spacing": 2.2,
           "laneId": "west",
           "delay": 1.5
@@ -336,6 +343,13 @@
           "spacing": 0.35,
           "laneId": "north",
           "delay": 2.0
+        },
+        {
+          "enemyId": "juggernaut",
+          "count": 2,
+          "spacing": 9.0,
+          "laneId": "north",
+          "delay": 4.0
         }
       ]
     },

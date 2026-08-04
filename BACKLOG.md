@@ -522,13 +522,24 @@ choice matters — but a 1% build is a trap, not a choice, and the floor wants r
 points a build is two or three nodes' worth of difference. Read the direction, not the digits,
 and re-run before acting on any single number.
 
-[ ] **M7.3 — Retune the campaign against the curve.** State as of the single-budget change, at
-a first-clear reference of LV8/2★ = 10 points: **100 / 100 / 81 / 11** against 90-100 / 70-95 /
-45-75 / 25-55. Maps 2-3 too easy, map 4 too hard — the *spread* between them is too wide, which
-is map tuning rather than tree tuning. The career ramp itself is now deliberately slow: ~4 runs
-to LV8, ~23 to LV22, ~152 to LV44, which is the long-game shape.
-Still deferred until M7.2 lands, for the original reason: the feedback layer changes what the
-curve should be, so tuning first means tuning twice.
+[x] **M7.3 — Retune the campaign against the curve** (2026-08-04). Opening state had drifted to
+**97 / 100 / 58 / 3**; final state **97 / 89 / 56 / 36** against 90-100 / 70-95 / 45-75 / 25-55 —
+all four maps in band, warlords-march mid-band rather than on the floor. Pillar probe OK, cadence
+29.4 / 29.2 / 32.5 / 34.2. Wave-data only; no engine, tree or economy change.
+**the campaign was still priced for the draft.** The in-run draft handed ~30 perks across a run;
+the career tree's first-clear reference holds 10 shallow points, and the wave budgets were never
+re-priced after M6.3 deleted the draft. That is the whole reason maps 3-4 sagged while 1-2 stayed
+easy — the spread was a pricing residue, not a design.
+**warlords died at the leak floods, not the boss.** Deaths clustered at w6 (22 swarms + outriders,
+two lanes) and w9 (wolf-rider/runner speed flood) with 8-25 leaks melting the gate; the boss wave
+was barely reached. Easing was aimed there: trim the floods, flatten the mid ramp ~7%, leave the
+finale alone. A death-wave histogram is a better tuning instrument than a win rate — it says *where*.
+**and the counter-enemies are finally in the campaign** (M8's prerequisite, folded in here so the
+map is tuned once): Juggernaut ×3 into crossroads (its future Iron candidacy), Sapper ×7 into
+warlords-march (its future Steppe finale), each paid for by trimming what merely walks. Crossroads
+absorbed them inside its band and its last solo-carrier went to 0.
+**band-edge readings are noise.** At 36 runs a single run is ~3pp, so 25% vs 19% across two
+measurements is the same number; tune to mid-band or the next unrelated change re-opens the gate.
 [ ] **M7.4 — More maps** → **superseded by M8, see BIOMES.md.** Four is not a campaign for a
 long game, but "more maps" was the wrong frame: the problem is that all four ask the *same
 question*, so the tree's six paths have nowhere to express themselves. Restructured as three
