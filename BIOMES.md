@@ -466,3 +466,44 @@ reach it — the wave never ends. Hit by two experimental plots at crossroads' w
 (12/12 stalls), gone when they were removed. Rule for M8.5 authoring: **no plot may cover
 the off-screen approach of a lane**; the engine-side guard (spawn-grace against slows, or a
 loader check on plot-to-approach distance) is a decision for M8.4.
+
+---
+
+## Part N — M8.4, the instruments hardened (2026-08-04)
+
+Run before authoring, exactly as Part H ordered. Four changes, one finding.
+
+**The softlock guard is engine-side, at the applySlow choke point.** An enemy outside the
+world bounds can be hit but never held — which covers auras, stuns, zones and any future
+slow source at once, where a loader check on plot positions would only ever have covered
+plots. The loader check was considered and dropped: it constrained authoring to prevent
+something the engine now makes impossible. Part M's authoring rule stands as taste, not law.
+
+**The pool probe measures each pool under its own biome's rule**, read from biomes.json —
+inheriting the base map's rule taxed every reskin with physics only Iron has, and drove the
+control row to 0%. Normalisation moved from per-entry to per-wave: counts stay
+shape-preserving (a 3-brute entry can no longer become a 26-swarm flood) and the wave's own
+hpMultiplier absorbs the difference, so every reskin carries exactly the original total HP
+and what differs is species behaviour — the signal the probe exists to read. The report now
+names the top *two* paths per pool (a single max-delta label hid the signature), and prints
+the Part G acceptance as a verdict.
+
+**Current reading: green → crown then wall · iron → wall then host · steppe → crown then
+ride. Part G accept: PASS** — no path is top-third in every pool. The second places are the
+biomes speaking: the sapper suppresses Wall in steppe, open-country lifts Ride, the
+Juggernaut lifts Host in iron. Crown topping two pools is a tree-balance genericity (it got
+relatively stronger when the bots learned to spend under pressure), not a biome failure —
+it belongs to the tree depth pass.
+
+**The complement probe sweeps to each map's readable budget** — the level where the
+towers-only control lands nearest 50%, the only place a complement can show as a delta —
+and flags saturated maps as unreadable instead of counting them as verdicts. The-ford at
+its readable budget: towers-only 50% → towers+army **100%**. Exposure multiplies rate,
+measured cleanly for the first time.
+
+**Found, reproducible, open: the rich-bot garrison collapse.** On crossroads at a 780-gold
+budget the towers+army arm buys two garrisons early, starves its combat line, and collapses
+58% → 0% (waves 11.2 → 4.8). Same class as the recorded mill overvaluation — a rich early
+bot overprices support. It is localised, printed in the probe (`garr` column), and belongs
+to the same valuation work as Crown's genericity. Do not read it as "the barracks is bad":
+the-ford's +50pp at one garrison is the design working.

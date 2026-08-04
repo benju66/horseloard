@@ -289,10 +289,29 @@ export class EnemySystem {
     if (e) e.armorStrippedFor = Math.max(e.armorStrippedFor, duration);
   }
 
+  /**
+   * The playable field, for the spawn-approach guard below. Unset (Infinity)
+   * means no guard — engine tests that build no map keep working unchanged.
+   */
+  private worldW = Infinity;
+  private worldH = Infinity;
+  setWorldBounds(width: number, height: number): void {
+    this.worldW = width;
+    this.worldH = height;
+  }
+
   applySlow(id: number, factor: number, duration: number, vulnerability = 1): void {
     const e = this.byId.get(id);
     if (!e) return;
     if (e.config.ignoresSlows) return;
+    // The spawn-approach guard. An enemy still on the off-screen approach can
+    // be *hit* but not *held*: a slow that lands out there can freeze a flyer
+    // where ground-only towers cannot see it and the hero's margin clamp
+    // cannot reach it, and the wave never ends. Found at 12/12 stalls by two
+    // experimental plots near crossroads' west approach (BIOMES.md Part M).
+    // Guarded here, at the single choke point every slow source funnels
+    // through — auras, stuns, zones, and whatever comes next.
+    if (e.x < 0 || e.y < 0 || e.x > this.worldW || e.y > this.worldH) return;
     if (e.slowRemaining <= 0 || factor <= e.slowFactor) e.slowFactor = factor;
     e.slowRemaining = Math.max(e.slowRemaining, duration);
     if (vulnerability > e.vulnerability) e.vulnerability = vulnerability;

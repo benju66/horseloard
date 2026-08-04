@@ -703,7 +703,21 @@ covering a lane's off-screen approach freezes flyers where nothing can kill them
 wave never ends. M8.5 authoring rule: no plot covers an off-screen approach; engine guard is
 an M8.4 decision.
 
-### Original M8 plan (see BIOMES.md Part H for what remains: M8.4–M8.7)
+[x] **M8.4 — Harden the instruments before authoring** (2026-08-04, BIOMES.md Part N).
+Softlock guard shipped engine-side at the applySlow choke point (off-screen enemies can be
+hit, never held) — chosen over a loader check because it covers zones and future slow
+sources, not just plots. Pool probe: per-pool biome rules from biomes.json, per-wave HP
+normalisation (shape-preserving counts, hpMultiplier absorbs the drift), top-two reporting,
+and the Part G acceptance printed as a verdict — **PASS: green crown/wall, iron wall/host,
+steppe crown/ride**. Complement probe: sweeps to each map's readable budget (control nearest
+50%) and flags saturated maps unreadable — the-ford reads towers-only 50% → towers+army
+**100%**, exposure multiplying rate measured cleanly for the first time.
+**Open, reproducible: the rich-bot garrison collapse** — crossroads @780g buys two
+garrisons early, starves the combat line, 58% → 0%. Same class as the mill overvaluation;
+belongs with Crown's genericity in the tree/valuation pass. The-ford's +50pp at one
+garrison is the design working.
+
+### Original M8 plan (see BIOMES.md Part H for what remains: M8.5–M8.7)
 Full plan in **BIOMES.md**. Three biomes of four levels replacing four standalone maps.
 
 **The decision in one line:** the tree has six paths and the campaign has four maps that all ask
