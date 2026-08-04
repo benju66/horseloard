@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { HexColorSchema, IdSchema, Vec2Schema } from './common';
+import { TerrainRuleSchema } from './terrain';
 
 /**
  * Per-map framing. Render-layer data — the engine never reads it (CLAUDE.md #2).
@@ -188,6 +189,14 @@ export const MapSchema = z
     name: z.string().min(1),
     description: z.string().min(1),
     order: z.number().int().positive().describe('campaign position; unlocks are linear'),
+    /** The world this level belongs to (biomes.json). Required — a map outside every biome is unreachable content. */
+    biomeId: IdSchema,
+    /**
+     * INJECTED BY THE LOADER from the map's biome — never authored here. A map
+     * file that sets it is a boot failure: the rule belongs to the *place*, and
+     * a per-map rule is exactly the "parameterised modifier" BIOMES.md C.4 bans.
+     */
+    terrainRule: TerrainRuleSchema.optional(),
     world: z.object({
       width: z.number().int().positive(),
       height: z.number().int().positive(),

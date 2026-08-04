@@ -9,6 +9,7 @@ import economyJson from './economy.json';
 import archetypesJson from './archetypes.json';
 import modelsJson from './models.json';
 import skillTreeJson from './skilltree.json';
+import biomesJson from './biomes.json';
 import meadowRoadMapJson from './maps/meadow-road.json';
 import meadowRoadWavesJson from './waves/meadow-road.json';
 import theFordMapJson from './maps/the-ford.json';
@@ -29,6 +30,7 @@ function seed(): RawGameData & Record<string, any> {
     archetypes: archetypesJson,
     models: modelsJson,
     skillTree: skillTreeJson,
+    biomes: biomesJson,
     maps: {
       'maps/meadow-road.json': meadowRoadMapJson,
       'maps/the-ford.json': theFordMapJson,
@@ -278,5 +280,85 @@ describe('cross-file references', () => {
     (raw.models as any).models.push({ id: 'fileless-probe' });
     const data = validateGameData(raw);
     expect(data.models.find((m) => m.id === 'fileless-probe')?.file).toBeUndefined();
+  });
+});
+
+describe('biomes (BIOMES.md Part F)', () => {
+  it('a wave summoning an enemy outside its biome pool is a boot failure', () => {
+    // Or the pools are decoration — this check is what makes a biome's enemy
+    // pool a design constraint rather than a comment.
+    const raw = seed();
+    (raw.maps as any)['maps/meadow-road.json'] = structuredClone((raw.maps as any)['maps/meadow-road.json']);
+    const waves = structuredClone((raw.waveSets as any)['waves/meadow-road.json']);
+    waves.waves[0].entries.push({ enemyId: 'juggernaut', count: 1, spacing: 1, laneId: 'main', delay: 0 });
+    (raw.waveSets as any)['waves/meadow-road.json'] = waves;
+    expect(() => validateGameData(raw)).toThrow('outside biome "green-road"');
+  });
+
+  it('a map naming an unknown biome is a boot failure', () => {
+    const raw = seed();
+    const map = structuredClone((raw.maps as any)['maps/meadow-road.json']);
+    map.biomeId = 'the-void';
+    (raw.maps as any)['maps/meadow-road.json'] = map;
+    expect(() => validateGameData(raw)).toThrow('unknown biome "the-void"');
+  });
+
+  it('a map authoring its own terrainRule is a boot failure', () => {
+    // The rule belongs to the place. A per-map rule is the "parameterised
+    // modifier" BIOMES.md C.4 bans, and it would drift silently.
+    const raw = seed();
+    const map = structuredClone((raw.maps as any)['maps/crossroads.json']);
+    map.terrainRule = 'narrow-cuts';
+    (raw.maps as any)['maps/crossroads.json'] = map;
+    expect(() => validateGameData(raw)).toThrow('terrain rules belong to biomes');
+  });
+
+  it('a biome with no maps is a boot failure', () => {
+    const raw = seed();
+    const biomes = structuredClone(raw.biomes as any);
+    biomes.biomes.push({
+      id: 'empty-waste',
+      name: 'The Empty Waste',
+      description: 'test',
+      order: 9,
+      pool: ['grunt'],
+      band: [0, 100],
+      terrainRule: 'narrow-cuts',
+      lighting: {},
+    });
+    raw.biomes = biomes;
+    expect(() => validateGameData(raw)).toThrow('has no maps');
+  });
+
+  it('only the first biome may omit the terrain rule', () => {
+    // A later biome without a rule is a reskin — the exact failure a biome is
+    // defined against (BIOMES.md Part B).
+    const raw = seed();
+    const biomes = structuredClone(raw.biomes as any);
+    const iron = biomes.biomes.find((b: any) => b.id === 'iron-deeps');
+    delete iron.terrainRule;
+    raw.biomes = biomes;
+    expect(() => validateGameData(raw)).toThrow('no terrain rule');
+  });
+
+  it('maps inherit their biome lighting, and their own authored fields win', () => {
+    const data = validateGameData(seed());
+    // Fields crossroads does NOT author come from the Iron Deeps palette,
+    // not from the schema's grassland defaults...
+    expect(data.maps['crossroads']!.lighting.day.ambientIntensity).toBe(1.15);
+    expect(data.maps['crossroads']!.lighting.day.sunElevation).toBe(34);
+    expect(data.maps['crossroads']!.lighting.day.fogDensity).toBe(0.45);
+    // ...while its own authored mood beats the biome on the fields it names.
+    expect(data.maps['crossroads']!.lighting.day.groundTint).toBe('#7d8a3f');
+    // Green Road carries no palette of its own — the schema defaults ARE the
+    // grassland, and meadow-road keeps them.
+    expect(data.maps['meadow-road']!.lighting.day.groundTint).toBe('#4a7c3a');
+  });
+
+  it('the terrain rule is injected from the biome onto the map', () => {
+    const data = validateGameData(seed());
+    expect(data.maps['crossroads']!.terrainRule).toBe('narrow-cuts');
+    expect(data.maps['warlords-march']!.terrainRule).toBe('open-country');
+    expect(data.maps['meadow-road']!.terrainRule).toBeUndefined();
   });
 });

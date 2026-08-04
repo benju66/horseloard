@@ -110,13 +110,31 @@ export function combatValue(stats: TowerStats, def: Projectile | null): number {
 
   if (def?.behavior === 'aura') {
     // Auras tick on their own interval and are usually control, not damage.
+    // Slow control is deliberately NOT priced here — it is an amplifier, worth
+    // only what stands nearby to shoot the slowed. See controlValue below.
     reach = def.radius;
     dps = def.tickInterval > 0 ? stats.damage / def.tickInterval : 0;
-    if (def.slow) dps += CONTROL_TO_DPS * (1 - def.slow.factor);
     if (def.vulnerability) dps += CONTROL_TO_DPS * (def.vulnerability - 1);
   }
 
   return dps * (reach / RANGE_REFERENCE);
+}
+
+/**
+ * A slow is an amplifier: it buys time for damage that must already exist.
+ * Worth a share of the combat value standing within reach of the hold, capped
+ * at the flat rate the old model paid unconditionally.
+ *
+ * That flat rate was measured buying frost monocultures: under narrow-cuts the
+ * rider bot bought two Deep Freezes and a mill, held enemies beautifully in
+ * places nothing could shoot, and lost every seed. The MG5.4 rally-range
+ * lesson — exposure is only worth what is shooting past it — applies to
+ * slows exactly as it applied to soldiers, and this is it, priced.
+ */
+export function controlValue(stats: TowerStats, def: Projectile | null, neighbourCombat: number): number {
+  if (def?.behavior !== 'aura' || !def.slow) return 0;
+  const flat = CONTROL_TO_DPS * (1 - def.slow.factor) * (def.radius / RANGE_REFERENCE);
+  return Math.min(flat, neighbourCombat * EXPOSURE_AMPLIFICATION + BLOCK_FLOOR);
 }
 
 /**
@@ -239,6 +257,12 @@ function totalValue(
 ): number {
   return (
     combatValue(stats, def) +
+    controlValue(
+      stats,
+      def,
+      // Amplification reaches a little past the aura: slowed enemies drift on.
+      def?.behavior === 'aura' ? v.neighbourCombat(plot.x, plot.y, def.radius * 1.5) : 0,
+    ) +
     incomeValue(stats, v.horizonSeconds, v.valuePerGold) +
     supportValue(stats, stats.towerAura ? v.neighbourCombat(plot.x, plot.y, stats.towerAura.radius) : 0) +
     exposureValue(
@@ -550,6 +574,28 @@ function makePolicy(plan: Plan): BotFactory {
           /* keep repairing */
         }
 
+        /**
+         * A plan's tower cap is a playstyle, not a suicide pact. When the gate
+         * is being lost with gold in hand, any human buys coverage — a bot that
+         * cannot is an instrument encoding the pre-biome game, where two towers
+         * plus the hero could always hold. narrow-cuts broke that assumption
+         * and the rider promptly lost every seed while banking 600 gold.
+         *
+         * Responsive, not recalibrated: a run that never bleeds never exceeds
+         * its plan, so maps the persona already beats measure exactly as
+         * before. Probe arms with maxTowers 0 stay absolute — an emergency
+         * tower inside the hero-only arm would corrupt the pillar probe.
+         */
+        const gateFraction = sim.gate.hp / sim.gate.maxHp;
+        const emergency =
+          plan.maxTowers > 0 && Number.isFinite(plan.maxTowers)
+            ? gateFraction < 0.35
+              ? 2
+              : gateFraction < 0.7
+                ? 1
+                : 0
+            : 0;
+
         let spending = true;
         while (spending) {
           spending = false;
@@ -564,7 +610,7 @@ function makePolicy(plan: Plan): BotFactory {
             sim,
             file,
             ranked,
-            plan.maxTowers,
+            plan.maxTowers + emergency,
             plan.onlyTowerId ?? null,
             samples,
             plan.onlyGarrison ? 'only' : plan.noGarrison ? 'none' : 'any',

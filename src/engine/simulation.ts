@@ -1,4 +1,5 @@
 import type { Ability, Economy, EnemiesFile, Hero, MapDef, TowersFile, WaveSet } from '../data/schemas';
+import { TERRAIN_RULES } from '../data/schemas';
 import { IdGenerator } from './ids';
 import { buildLanePaths, type LanePath } from './path';
 import { EnemySystem } from './enemySystem';
@@ -153,9 +154,40 @@ export class Simulation {
       hero: structuredClone(input.hero),
       economy: structuredClone(input.economy),
       towers: structuredClone(input.towers),
+      // Cloned for the same reason as the rest — and because the terrain rule
+      // below multiplies enemy speed, which without the clone would compound
+      // across every run the harness feeds from one loadGameData() result.
+      enemies: structuredClone(input.enemies),
       map: structuredClone(input.map),
       abilities: structuredClone(input.abilities ?? []),
     };
+
+    // The biome's terrain rule (BIOMES.md C.4), applied once to this run's own
+    // data. Iterated generically off the schema table: no rule name appears
+    // here, so a third rule is a schema row and zero engine changes.
+    if (data.map.terrainRule !== undefined) {
+      const mods = TERRAIN_RULES[data.map.terrainRule];
+      if (mods.towerRange !== undefined) {
+        for (const tower of data.towers.towers) {
+          for (const level of tower.levels) level.range *= mods.towerRange;
+          for (const branch of tower.branches) branch.stats.range *= mods.towerRange;
+        }
+        // An aura's radius IS its reach — leaving it out would exempt Frost
+        // from a rule about sightlines.
+        for (const p of data.towers.projectiles) {
+          if (p.behavior === 'aura') p.radius *= mods.towerRange;
+        }
+      }
+      if (mods.towerDamage !== undefined) {
+        for (const tower of data.towers.towers) {
+          for (const level of tower.levels) level.damage *= mods.towerDamage;
+          for (const branch of tower.branches) branch.stats.damage *= mods.towerDamage;
+        }
+      }
+      if (mods.enemySpeed !== undefined) {
+        for (const e of data.enemies.enemies) e.speed *= mods.enemySpeed;
+      }
+    }
 
     this.endless = data.endless ?? false;
     this.enemiesFile = data.enemies;

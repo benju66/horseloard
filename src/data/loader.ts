@@ -2,6 +2,7 @@ import type { z } from 'zod';
 import {
   AbilitiesFileSchema,
   ArchetypesFileSchema,
+  BiomesFileSchema,
   EconomySchema,
   EnemiesFileSchema,
   HeroSchema,
@@ -12,6 +13,7 @@ import {
   WaveSetSchema,
   type AbilitiesFile,
   type ArchetypesFile,
+  type BiomeDef,
   type Economy,
   type EnemiesFile,
   type Hero,
@@ -23,6 +25,7 @@ import {
 } from './schemas';
 
 import towersJson from './towers.json';
+import biomesJson from './biomes.json';
 import enemiesJson from './enemies.json';
 import abilitiesJson from './abilities.json';
 import heroJson from './hero.json';
@@ -54,6 +57,8 @@ export interface GameData {
   models: ModelsFile['models'];
   /** The career tree — the only place a run's power is decided (SKILLTREE.md). */
   skillTree: SkillTreeFile;
+  /** The worlds (BIOMES.md): palette + pool + one terrain rule + band. Keyed by biome id. */
+  biomes: Record<string, BiomeDef>;
   /** keyed by map id */
   maps: Record<string, MapDef>;
   /** keyed by map id */
@@ -91,6 +96,7 @@ export interface RawGameData {
   archetypes: unknown;
   models: unknown;
   skillTree: unknown;
+  biomes: unknown;
   /** file path (for messages) → raw content */
   maps: Record<string, unknown>;
   /** file path (for messages) → raw content */
@@ -111,12 +117,83 @@ export function validateGameData(raw: RawGameData): GameData {
   const archetypesFile = validateFile(ArchetypesFileSchema, raw.archetypes, 'archetypes.json');
   const modelsFile = validateFile(ModelsFileSchema, raw.models, 'models.json');
   const skillTree = validateFile(SkillTreeFileSchema, raw.skillTree, 'skilltree.json');
+  const biomesFile = validateFile(BiomesFileSchema, raw.biomes, 'biomes.json');
+
+  const biomes: Record<string, BiomeDef> = {};
+  for (const biome of biomesFile.biomes) biomes[biome.id] = biome;
+
+  // Only the first biome may omit the terrain rule — it is the control, the
+  // place a player learns what normal is. Any later biome without one is a
+  // reskin, which is the failure BIOMES.md Part B exists to prevent.
+  const firstOrder = Math.min(...biomesFile.biomes.map((b) => b.order));
+  biomesFile.biomes.forEach((b, i) => {
+    if (b.order !== firstOrder && b.terrainRule === undefined) {
+      fail([
+        `biomes.json → biomes.${i}.terrainRule: biome "${b.id}" has no terrain rule — a biome ` +
+          `missing its rule is a reskin; only the first biome (the control) may omit it`,
+      ]);
+    }
+  });
+
+  /**
+   * The palette is inherited: a map's lighting starts from its biome's and its
+   * own authored fields win. Merged on the RAW content before parsing, because
+   * Zod fills defaults during parse and afterwards "authored" and "defaulted"
+   * are indistinguishable — merging parsed objects would let biome values be
+   * shadowed by schema defaults the map never wrote.
+   */
+  const mergeRaw = (base: unknown, over: unknown): unknown => {
+    if (
+      typeof base !== 'object' || base === null || Array.isArray(base) ||
+      typeof over !== 'object' || over === null || Array.isArray(over)
+    ) {
+      return over === undefined ? base : over;
+    }
+    const out: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+    for (const [k, v] of Object.entries(over as Record<string, unknown>)) {
+      out[k] = mergeRaw(out[k], v);
+    }
+    return out;
+  };
+  const rawBiomeLighting = new Map<string, unknown>();
+  if (typeof raw.biomes === 'object' && raw.biomes !== null) {
+    for (const b of ((raw.biomes as { biomes?: unknown[] }).biomes ?? [])) {
+      const rb = b as { id?: string; lighting?: unknown };
+      if (rb.id !== undefined) rawBiomeLighting.set(rb.id, rb.lighting);
+    }
+  }
 
   const maps: Record<string, MapDef> = {};
   for (const [file, content] of Object.entries(raw.maps)) {
-    const map = validateFile(MapSchema, content, file);
+    const rawMap = content as { id?: string; biomeId?: string; terrainRule?: unknown; lighting?: unknown };
+    if (rawMap.terrainRule !== undefined) {
+      fail([
+        `${file} → terrainRule: terrain rules belong to biomes, never to maps — remove it ` +
+          `(the loader injects the biome's rule)`,
+      ]);
+    }
+    const biomeLighting = rawMap.biomeId ? rawBiomeLighting.get(rawMap.biomeId) : undefined;
+    const merged =
+      biomeLighting === undefined
+        ? content
+        : { ...(content as Record<string, unknown>), lighting: mergeRaw(biomeLighting, rawMap.lighting) };
+    const map = validateFile(MapSchema, merged, file);
     if (maps[map.id]) fail([`${file} → id: duplicate map id "${map.id}"`]);
+    const biome = biomes[map.biomeId];
+    if (!biome) {
+      fail([
+        `${file} → biomeId: unknown biome "${map.biomeId}" (known: ${Object.keys(biomes).join(', ')})`,
+      ]);
+    }
+    map.terrainRule = biome.terrainRule;
     maps[map.id] = map;
+  }
+
+  // Every biome must hold at least one level, or it is a world nobody can enter.
+  for (const biome of biomesFile.biomes) {
+    if (!Object.values(maps).some((m) => m.biomeId === biome.id)) {
+      fail([`biomes.json → biomes: biome "${biome.id}" has no maps — a world with no levels`]);
+    }
   }
 
   const waveSets: Record<string, WaveSet> = {};
@@ -205,6 +282,22 @@ export function validateGameData(raw: RawGameData): GameData {
             `${file} → waves.${w}.entries.${e}.laneId: unknown lane "${entry.laneId}" on map "${map.id}" (known: ${[...laneIds].join(', ')})`,
           );
         }
+        // A wave summoning an enemy outside its own biome's pool is a boot
+        // failure, or the pools are decoration (BIOMES.md Part F). legacyPool
+        // is the named transitional debt — it must empty at the M8.5 wave
+        // re-authoring, and this check is what makes that visible.
+        const biome = biomes[map.biomeId];
+        if (
+          biome &&
+          enemyIds.has(entry.enemyId) &&
+          !biome.pool.includes(entry.enemyId) &&
+          !biome.legacyPool.includes(entry.enemyId)
+        ) {
+          errors.push(
+            `${file} → waves.${w}.entries.${e}.enemyId: "${entry.enemyId}" is outside biome ` +
+              `"${biome.id}" (pool: ${biome.pool.join(', ')}${biome.legacyPool.length ? `; legacy: ${biome.legacyPool.join(', ')}` : ''})`,
+          );
+        }
       });
     });
   }
@@ -285,6 +378,7 @@ export function validateGameData(raw: RawGameData): GameData {
     archetypes: archetypesFile.archetypes,
     models: modelsFile.models,
     skillTree,
+    biomes,
     maps,
     waveSets,
   };
@@ -301,6 +395,7 @@ export function loadGameData(): GameData {
     archetypes: archetypesJson,
     models: modelsJson,
     skillTree: skillTreeJson,
+    biomes: biomesJson,
     maps: {
       'maps/meadow-road.json': meadowRoadMapJson,
       'maps/the-ford.json': theFordMapJson,

@@ -1,10 +1,12 @@
 # BIOMES.md — the campaign, restructured
 
-**Status: UNBLOCKED (2026-08-03). Part H may proceed.**
+**Status: IN PROGRESS (2026-08-04). M8.1–M8.3 shipped — see Part M.**
 The thesis test failed on the original roster (**Part J**), and passes with the two
 counter-enemies designed in **Part K** and shipped in M9 — see **Part L** for the numbers.
-Supersedes DESIGN.md's flat map list. TRIANGLE.md still governs balance; SKILLTREE.md still
-governs progression.
+The biome layer (schema, data, loader checks, lighting inheritance) and both terrain rules
+are live; the four legacy maps are regrouped into three biomes and the campaign is in band
+under the rules. Supersedes DESIGN.md's flat map list. TRIANGLE.md still governs balance;
+SKILLTREE.md still governs progression.
 
 ---
 
@@ -401,3 +403,66 @@ Their moderate engine work never has to happen.
 - **Iron at 0–42% is hard**, possibly too hard. That is a band question for M8.7, not a reason
   to soften the Juggernaut — the trait is doing its job and the wave budget is the dial.
 - Twelve builds remains a small sample. The direction is decisive; the digits are not.
+
+---
+
+## Part M — M8.1–M8.3, shipped (2026-08-04)
+
+The biome layer exists: `biomes.json` + `BiomeSchema` (palette, pool, terrain rule, band —
+all four required, Green's missing rule enforced as the deliberate control), `biomeId` on
+every map, lighting inherited from the biome by raw-JSON deep-merge so a map's own authored
+fields win and schema defaults never shadow the palette. Load-time checks are live: unknown
+biome, biome with no maps, wave entry outside its biome's pool, a map authoring its own
+terrainRule, a non-first biome without one — all boot failures, all tested.
+
+**`legacyPool` names the debt.** The absorbed maps still summon species outside their
+design pools (the-ford's outriders in Green, crossroads' looters in Iron). Those live in a
+separate `legacyPool` field rather than diluting `pool`, so the design intent and the debt
+stay distinguishable in data. The M8.5 re-authoring must drain it to zero, and the check
+will say so if it doesn't.
+
+**Terrain rules are in the sim** — applied at construction to the run's own cloned data,
+iterated generically off `TERRAIN_RULES` so no rule name appears in engine source and a
+third rule is a schema row. Aura radius scales with tower range: an aura's radius is its
+reach, and exempting Frost from a sightline rule would be a hole.
+
+**narrow-cuts became a trade, by measurement.** As the bare −18% range tax C.4 specified,
+it collapsed every low-tower playstyle at once (crossroads 56% → 14–25%, two of three bots
+at zero at every wave-budget setting tried). That is the flat-tax failure Part J documents
+for enemies — punishing every composition instead of asking a question — surfacing in a
+rule. It now reads: **tower range ×0.82, tower damage ×1.15**. Coverage stops being free;
+what you do cover, you shred. Same identity, but a question rather than a fine.
+
+**The rule found two instrument faults before it found any map fault**, which is the
+recurring M5 lesson wearing biome clothes:
+
+1. **Persona tower caps were the pre-biome game, hardcoded.** The rider bot caps at two
+   towers and lost every seed while banking 600 gold — no human keeps riding while the gate
+   falls with a tower's price in hand. Caps are now responsive: a bleeding gate lifts the
+   cap by one, twice at worst. Probe arms with `maxTowers: 0` stay absolute so the pillar
+   probe is untouched.
+2. **Slow control was priced unconditionally** (`CONTROL_TO_DPS` flat), so under a coverage
+   tax the bots bought frost monocultures that held enemies where nothing could shoot.
+   A slow is an amplifier; it is now worth a share of the combat value standing within
+   reach, capped at the old flat rate — the MG5.4 rally-range lesson applied to slows.
+   This one change moved crossroads 33% → 89% at an unchanged wave budget, which means
+   **every crossroads ease made before it was compensation for a blind instrument** and
+   was reverted to the original budget.
+
+**Crossroads was re-speciated toward the Iron pool while fixing this** — ravens, swarms,
+runners and wolf-riders out of the killer waves, shieldbearers, brutes, grunts and a
+halberdier in, HP-normalised. The species that made it unholdable under short coverage are
+exactly the ones Iron's design pool sheds, so the difficulty fix and the biome identity
+turned out to be the same edit. Its Juggernauts now debut at w11 rather than w8 — a
+mid-game board under narrow-cuts cannot yet slow or block one, and killing it late is a
+board answer, not a dead wave.
+
+**Campaign after all of it: 97 / 81 / 72 / 44, all four maps in band** (90–100 / 70–95 /
+45–75 / 25–55), under the rules, with the counter-enemies in the waves.
+
+**Found and parked:** a Deep-Freeze aura placed near an off-screen spawn can freeze a flyer
+on the approach where ground-only towers cannot see it and the hero's margin clamp cannot
+reach it — the wave never ends. Hit by two experimental plots at crossroads' west approach
+(12/12 stalls), gone when they were removed. Rule for M8.5 authoring: **no plot may cover
+the off-screen approach of a lane**; the engine-side guard (spawn-grace against slows, or a
+loader check on plot-to-approach distance) is a decision for M8.4.

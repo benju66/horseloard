@@ -185,7 +185,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.5,
+      "hpMultiplier": 4.3,
       "archetypeId": "horde",
       "entries": [
         {
@@ -226,7 +226,7 @@
       ]
     },
     {
-      "hpMultiplier": 5.2,
+      "hpMultiplier": 4.9,
       "archetypeId": "war-party",
       "entries": [
         {
@@ -267,7 +267,7 @@
       ]
     },
     {
-      "hpMultiplier": 6.0,
+      "hpMultiplier": 5.6,
       "entries": [
         {
           "enemyId": "brute",

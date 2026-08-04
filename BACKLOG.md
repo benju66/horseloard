@@ -667,7 +667,43 @@ not.
 two are content rather than prerequisites and the moderate engine work never happens. None need
 art to be tested — placeholder geometry is a valid state.
 
-## M8 — Biomes  ← UNBLOCKED by M9, see BIOMES.md Part L
+## M8 — Biomes  ← IN PROGRESS, M8.1–M8.3 shipped 2026-08-04 (see BIOMES.md Part M)
+
+[x] **M8.1 — Biome schema and data** (2026-08-04). `BiomeSchema` / `BiomesFileSchema`,
+`biomes.json` with all three biomes designed (palette, pool, terrain rule, band), `biomeId`
+required on every map, lighting inherited from the biome by raw-JSON merge (authored map
+fields win — merging *parsed* objects would let schema defaults shadow the palette). Boot
+failures, all tested: unknown biome, biome with no maps, wave entry outside the biome pool,
+a map authoring terrainRule, a non-first biome without a rule.
+**`legacyPool` names the transitional debt** — species the absorbed maps still use that the
+design pools exclude, kept as a separate field so intent and debt cannot blur. M8.5 drains it.
+[x] **M8.2 — Regroup the four maps** (2026-08-04). meadow-road + the-ford → Green Road,
+crossroads → Iron Deeps, warlords-march → Long Steppe finale. Campaign playable throughout;
+crossroads' killer waves re-speciated toward the Iron pool (HP-normalised), which turned out
+to be the difficulty fix and the biome identity in one edit.
+[x] **M8.3 — Terrain rules** (2026-08-04). Applied by the Simulation to its own cloned data,
+iterated generically off `TERRAIN_RULES` — no rule name in engine source, a third rule is a
+schema row. Aura radius counts as reach. Enemies joined the constructor's clone list (the
+speed multiplier would otherwise compound across harness runs).
+**narrow-cuts became a trade by measurement** — the bare −18% tax collapsed all low-tower
+playstyles at once (56% → 14–25%, two of three bots at zero at every budget tried), the
+flat-tax failure M9 documented for enemies, surfacing in a rule. Now ×0.82 range, ×1.15
+damage: coverage stops being free, what you cover you shred.
+**The rule found two instrument faults before any map fault** (sixth and seventh entries in
+the harness-shortcut-becomes-a-lie ledger): persona tower caps encoded the pre-biome game
+(rider lost every seed banking 600g; caps now lift by one while the gate bleeds, probe arms
+at 0 stay absolute), and slow-control was priced flat (`CONTROL_TO_DPS`) so bots bought
+frost monocultures that held enemies where nothing could shoot. Slow value now needs a payer
+— a share of neighbouring combat value, the MG5.4 rally-range lesson applied to slows. That
+one change moved crossroads 33% → 89% at an unchanged budget, so every ease made before it
+was compensation for a blind instrument, and was reverted.
+**Campaign after: 97 / 81 / 72 / 44, all in band under the rules.** Pillar probe OK.
+**Found and parked:** freeze-near-spawn softlock (BIOMES.md Part M) — a Deep-Freeze aura
+covering a lane's off-screen approach freezes flyers where nothing can kill them and the
+wave never ends. M8.5 authoring rule: no plot covers an off-screen approach; engine guard is
+an M8.4 decision.
+
+### Original M8 plan (see BIOMES.md Part H for what remains: M8.4–M8.7)
 Full plan in **BIOMES.md**. Three biomes of four levels replacing four standalone maps.
 
 **The decision in one line:** the tree has six paths and the campaign has four maps that all ask

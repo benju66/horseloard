@@ -114,6 +114,7 @@ export function makeMap(overrides?: {
     name: 'Straight',
     description: 'test',
     order: 1,
+    biomeId: 'test-biome',
     world: { width: 100, height: 200 },
     heroSpawn: overrides?.heroSpawn ?? { x: 50, y: 100 },
     lanes: [

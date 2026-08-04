@@ -1,173 +1,174 @@
 {
-  "id": "warlords-march",
-  "name": "The Warlord's March",
-  "description": "Two long roads to one gate, and HE walks one of them. The final exam.",
-  "order": 4,
-  "world": {
-    "width": 420,
-    "height": 780
-  },
-  "heroSpawn": {
-    "x": 210,
-    "y": 640
-  },
-  "lanes": [
+ "id": "warlords-march",
+ "name": "The Warlord's March",
+ "description": "Two long roads to one gate, and HE walks one of them. The final exam.",
+ "order": 4,
+ "biomeId": "long-steppe",
+ "world": {
+  "width": 420,
+  "height": 780
+ },
+ "heroSpawn": {
+  "x": 210,
+  "y": 640
+ },
+ "lanes": [
+  {
+   "id": "west",
+   "waypoints": [
     {
-      "id": "west",
-      "waypoints": [
-        {
-          "x": 120,
-          "y": -50
-        },
-        {
-          "x": 120,
-          "y": 120
-        },
-        {
-          "x": 60,
-          "y": 220
-        },
-        {
-          "x": 100,
-          "y": 360
-        },
-        {
-          "x": 60,
-          "y": 500
-        },
-        {
-          "x": 140,
-          "y": 600
-        },
-        {
-          "x": 210,
-          "y": 690
-        }
-      ]
+     "x": 120,
+     "y": -50
     },
     {
-      "id": "east",
-      "waypoints": [
-        {
-          "x": 300,
-          "y": -50
-        },
-        {
-          "x": 300,
-          "y": 120
-        },
-        {
-          "x": 360,
-          "y": 220
-        },
-        {
-          "x": 320,
-          "y": 360
-        },
-        {
-          "x": 360,
-          "y": 500
-        },
-        {
-          "x": 280,
-          "y": 600
-        },
-        {
-          "x": 210,
-          "y": 690
-        }
-      ]
+     "x": 120,
+     "y": 120
+    },
+    {
+     "x": 60,
+     "y": 220
+    },
+    {
+     "x": 100,
+     "y": 360
+    },
+    {
+     "x": 60,
+     "y": 500
+    },
+    {
+     "x": 140,
+     "y": 600
+    },
+    {
+     "x": 210,
+     "y": 690
     }
-  ],
-  "plots": [
-    {
-      "id": "north-gate",
-      "position": {
-        "x": 210,
-        "y": 120
-      }
-    },
-    {
-      "id": "west-ridge",
-      "position": {
-        "x": 150,
-        "y": 260
-      }
-    },
-    {
-      "id": "east-ridge",
-      "position": {
-        "x": 270,
-        "y": 260
-      }
-    },
-    {
-      "id": "west-cliff",
-      "position": {
-        "x": 55,
-        "y": 320
-      }
-    },
-    {
-      "id": "east-cliff",
-      "position": {
-        "x": 365,
-        "y": 320
-      }
-    },
-    {
-      "id": "west-hollow",
-      "position": {
-        "x": 150,
-        "y": 430
-      }
-    },
-    {
-      "id": "east-hollow",
-      "position": {
-        "x": 270,
-        "y": 430
-      }
-    },
-    {
-      "id": "last-stand",
-      "position": {
-        "x": 210,
-        "y": 600
-      }
-    }
-  ],
-  "gate": {
-    "position": {
-      "x": 210,
-      "y": 715
-    },
-    "hp": 120,
-    "attackSlots": 6
+   ]
   },
-  "forge": {
-    "position": {
-      "x": 75,
-      "y": 660
-    }
-  },
-  "lighting": {
-    "sunAzimuth": -66,
-    "day": {
-      "groundTint": "#6b6a4a",
-      "pathTint": "#a89878",
-      "sunColor": "#ffd39a",
-      "sunElevation": 22,
-      "background": "#b09a86",
-      "fogColor": "#c4b09a"
+  {
+   "id": "east",
+   "waypoints": [
+    {
+     "x": 300,
+     "y": -50
     },
-    "night": {
-      "groundTint": "#68656d",
-      "pathTint": "#8a838f",
-      "skyColor": "#6e5b81",
-      "sunColor": "#b19dc3",
-      "background": "#423a49",
-      "fogColor": "#4b4352"
+    {
+     "x": 300,
+     "y": 120
+    },
+    {
+     "x": 360,
+     "y": 220
+    },
+    {
+     "x": 320,
+     "y": 360
+    },
+    {
+     "x": 360,
+     "y": 500
+    },
+    {
+     "x": 280,
+     "y": 600
+    },
+    {
+     "x": 210,
+     "y": 690
     }
+   ]
   }
+ ],
+ "plots": [
+  {
+   "id": "north-gate",
+   "position": {
+    "x": 210,
+    "y": 120
+   }
+  },
+  {
+   "id": "west-ridge",
+   "position": {
+    "x": 150,
+    "y": 260
+   }
+  },
+  {
+   "id": "east-ridge",
+   "position": {
+    "x": 270,
+    "y": 260
+   }
+  },
+  {
+   "id": "west-cliff",
+   "position": {
+    "x": 55,
+    "y": 320
+   }
+  },
+  {
+   "id": "east-cliff",
+   "position": {
+    "x": 365,
+    "y": 320
+   }
+  },
+  {
+   "id": "west-hollow",
+   "position": {
+    "x": 150,
+    "y": 430
+   }
+  },
+  {
+   "id": "east-hollow",
+   "position": {
+    "x": 270,
+    "y": 430
+   }
+  },
+  {
+   "id": "last-stand",
+   "position": {
+    "x": 210,
+    "y": 600
+   }
+  }
+ ],
+ "gate": {
+  "position": {
+   "x": 210,
+   "y": 715
+  },
+  "hp": 120,
+  "attackSlots": 6
+ },
+ "forge": {
+  "position": {
+   "x": 75,
+   "y": 660
+  }
+ },
+ "lighting": {
+  "sunAzimuth": -66,
+  "day": {
+   "groundTint": "#6b6a4a",
+   "pathTint": "#a89878",
+   "sunColor": "#ffd39a",
+   "sunElevation": 22,
+   "background": "#b09a86",
+   "fogColor": "#c4b09a"
+  },
+  "night": {
+   "groundTint": "#68656d",
+   "pathTint": "#8a838f",
+   "skyColor": "#6e5b81",
+   "sunColor": "#b19dc3",
+   "background": "#423a49",
+   "fogColor": "#4b4352"
+  }
+ }
 }

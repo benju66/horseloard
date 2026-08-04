@@ -1,0 +1,92 @@
+{
+  "biomes": [
+    {
+      "id": "green-road",
+      "name": "The Green Road",
+      "description": "Rolling farmland, warm and open. The teaching biome — no terrain rule on purpose: this is the control, the place a player learns what normal is.",
+      "order": 1,
+      "pool": ["grunt", "swarm", "runner", "looter"],
+      "legacyPool": ["brute", "shieldbearer", "outrider", "halberdier"],
+      "band": [70, 100],
+      "lighting": {}
+    },
+    {
+      "id": "iron-deeps",
+      "name": "The Iron Deeps",
+      "description": "Quarry cuts and pit-heads. Tight sightlines, cold light, dust. The walls are close: coverage stops being free, and the plots you pick matter more than how many you own.",
+      "order": 2,
+      "pool": ["grunt", "brute", "shieldbearer", "halberdier", "juggernaut"],
+      "legacyPool": ["swarm", "runner", "raven", "wolf-rider", "looter", "outrider"],
+      "terrainRule": "narrow-cuts",
+      "band": [55, 75],
+      "lighting": {
+        "sunAzimuth": -30,
+        "day": {
+          "groundTint": "#7d7466",
+          "pathTint": "#a89272",
+          "skyColor": "#c2cdd6",
+          "groundColor": "#4a463c",
+          "ambientIntensity": 1.15,
+          "sunColor": "#f0ead8",
+          "sunIntensity": 2.1,
+          "sunElevation": 34,
+          "background": "#8fa0ab",
+          "fogColor": "#b6b3a6",
+          "fogDensity": 0.45
+        },
+        "night": {
+          "groundTint": "#4f5a5e",
+          "pathTint": "#8b8a80",
+          "skyColor": "#3d5474",
+          "groundColor": "#232a30",
+          "ambientIntensity": 1.2,
+          "sunColor": "#a9bedd",
+          "sunIntensity": 1.6,
+          "sunElevation": 48,
+          "background": "#242f3f",
+          "fogColor": "#2b3442",
+          "fogDensity": 0.5
+        }
+      }
+    },
+    {
+      "id": "long-steppe",
+      "name": "The Long Steppe",
+      "description": "Open grass to the horizon, high wind, long shadows. Half the pool ignores blockers; being in the right place matters more than holding the line. The warlord ends it — a finale, not a native.",
+      "order": 3,
+      "pool": ["grunt", "wolf-rider", "raven", "outrider", "sapper", "warlord"],
+      "legacyPool": ["runner", "swarm", "shieldbearer", "brute", "looter", "halberdier"],
+      "terrainRule": "open-country",
+      "band": [30, 55],
+      "lighting": {
+        "sunAzimuth": -45,
+        "day": {
+          "groundTint": "#98904f",
+          "pathTint": "#d6bf8d",
+          "skyColor": "#cfe3f0",
+          "groundColor": "#6b6440",
+          "ambientIntensity": 1.25,
+          "sunColor": "#ffe3a8",
+          "sunIntensity": 2.4,
+          "sunElevation": 19,
+          "background": "#a9c6d4",
+          "fogColor": "#c4d4d6",
+          "fogDensity": 0.22
+        },
+        "night": {
+          "groundTint": "#5d6d63",
+          "pathTint": "#a9a291",
+          "skyColor": "#46639b",
+          "groundColor": "#272e3a",
+          "ambientIntensity": 1.3,
+          "sunColor": "#bccdec",
+          "sunIntensity": 1.75,
+          "sunElevation": 40,
+          "background": "#2b3850",
+          "fogColor": "#303c56",
+          "fogDensity": 0.3
+        }
+      }
+    }
+  ]
+}

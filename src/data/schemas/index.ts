@@ -14,3 +14,5 @@ export * from './hero';
 export * from './economy';
 export * from './archetype';
 export * from './model';
+export * from './terrain';
+export * from './biome';
