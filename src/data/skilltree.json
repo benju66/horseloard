@@ -1373,7 +1373,7 @@
           "type": "scaling",
           "scale": "tower-damage-per-100-gold",
           "perUnit": 0.08,
-          "max": 2.5
+          "max": 1.5
         }
       ]
     },
@@ -1417,7 +1417,7 @@
           "type": "scaling",
           "scale": "tower-damage-per-100-gold",
           "perUnit": 0.06,
-          "max": 2.5
+          "max": 1.4
         }
       ]
     },
@@ -1463,7 +1463,7 @@
           "type": "tower-stat",
           "towerId": null,
           "stat": "cost",
-          "perRank": 0.85,
+          "perRank": 0.9,
           "mode": "multiply"
         },
         {
@@ -1492,7 +1492,7 @@
         {
           "type": "kingdom-stat",
           "stat": "waveClearBonus",
-          "perRank": 1.35,
+          "perRank": 1.2,
           "mode": "multiply"
         }
       ]

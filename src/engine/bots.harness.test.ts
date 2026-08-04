@@ -756,7 +756,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
       ['iron', 'iron-deeps', ['grunt', 'brute', 'halberdier', 'juggernaut']],
       ['steppe', 'long-steppe', ['grunt', 'wolf-rider', 'raven', 'sapper']],
     ];
-    const SAMPLES = 12;
+    const SAMPLES = 18;
     const mapId = 'crossroads';
     const hpOf = new Map(data.enemies.enemies.map((e) => [e.id, e.hp]));
     const paths = [...new Set(tree.nodes.map((n) => n.path))].sort();
@@ -811,6 +811,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     const lines: string[] = [];
     /** path → pools where it ranks in the top third of winners' point share. */
     const topThirdIn = new Map<string, string[]>();
+    let readablePools = 0;
     for (const [name, biomeId, pool] of POOLS) {
       const poolData = {
         ...botData,
@@ -842,11 +843,21 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
       const order = paths
         .map((p, i) => ({ p, d: deltas[i]! }))
         .sort((a, b) => b.d - a.d);
-      const best = `${order[0]!.p}, then ${order[1]!.p} ${order[1]!.d >= 0 ? '+' : ''}${order[1]!.d.toFixed(0)}`;
-      for (const { p } of order.slice(0, Math.ceil(paths.length / 3))) {
-        topThirdIn.set(p, [...(topThirdIn.get(p) ?? []), name]);
-      }
       const wins = rows.map((r) => r.win);
+      // A saturated row cannot rank anything: with every build at the same win
+      // rate, "top third vs bottom third" is sort-order noise. The authored
+      // probe already refuses to read such rows; the verdict here must too, or
+      // green's 100–100% control votes on a question it never asked.
+      const readable = Math.max(...wins) - Math.min(...wins) >= 10;
+      const best = readable
+        ? `${order[0]!.p}, then ${order[1]!.p} ${order[1]!.d >= 0 ? '+' : ''}${order[1]!.d.toFixed(0)}`
+        : 'unreadable (saturated)';
+      if (readable) {
+        readablePools++;
+        for (const { p } of order.slice(0, Math.ceil(paths.length / 3))) {
+          topThirdIn.set(p, [...(topThirdIn.get(p) ?? []), name]);
+        }
+      }
 
       lines.push(
         `  ${name.padEnd(7)} win ${Math.min(...wins).toFixed(0).padStart(2)}-` +
@@ -869,12 +880,15 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
         // a path in the winners' top third of ALL pools is the build everyone
         // takes everywhere, which is what biomes exist to prevent.
         (() => {
+          if (readablePools < 2) {
+            return '  [ACCEPT — BIOMES.md Part G] UNREADABLE: fewer than two pools have spread.';
+          }
           const everywhere = [...topThirdIn.entries()]
-            .filter(([, pools]) => pools.length === POOLS.length)
+            .filter(([, pools]) => pools.length === readablePools)
             .map(([p]) => p);
           return everywhere.length === 0
-            ? '  [ACCEPT — BIOMES.md Part G] PASS: no path is top-third in every pool.'
-            : `  [ACCEPT — BIOMES.md Part G] FAIL: ${everywhere.join(', ')} top-third in every pool.`;
+            ? `  [ACCEPT — BIOMES.md Part G] PASS: no path is top-third in every readable pool (${readablePools}).`
+            : `  [ACCEPT — BIOMES.md Part G] FAIL: ${everywhere.join(', ')} top-third in every readable pool (${readablePools}).`;
         })(),
     );
   });

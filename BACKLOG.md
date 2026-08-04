@@ -707,11 +707,21 @@ collapse recorded on the branch does not reproduce on main; the rally-range fix 
 valuation fix were two halves of one repair. Authored-biome probe: iron carries host,
 steppe carries ride, two distinct paths.
 
-**Open, formally flagged: the pool probe's Part G verdict reads FAIL — crown top-third in
-every pool reskin** (+18/+8/+33). The authored-map probe does not reproduce it (crown
-carries nothing there), so it is an early warning rather than a proven dominance: Crown's
-gold-genericity is the tree-depth pass's first target, alongside the one-sided keystone
-pairs. Do not author Iron/Steppe levels around economy pressure until it is repriced.
+**Crown repriced (2026-08-04), and the Part G verdict now reads PASS.** The genericity
+lived in the deep nodes, not the cheap ones: the damage-per-gold-held caps came down
+(tithe 2.5 → 1.5, ransom 2.5 → 1.4), quarry's universal discount 15% → 10%, granary
+×1.35 → ×1.2 per rank. Iron now reads crown −3 (hunt/storm carry), steppe crown +12 with
+ride second — greed keeps its home biome and stops being everyone's answer.
+**Two instrument findings on the way.** A saturated pool row (green at 100–100%) was
+voting on the verdict with sort-order noise — readable rows only now, with the
+denominator shrinking to match, and the sample rose 12 → 18 builds because the verdict
+was flapping on ±5pp deltas. And the first reprice attempt cut `crown-coffers`, which
+the reference spread build holds — starting gold 65 → 55 flipped the bots' first
+purchase and moved the whole curve +20pp on two maps. A nerf that raises win rates is a
+threshold artifact, not balance: reverted, and the lesson recorded — **never tune a node
+the reference build holds without re-running the curve in the same breath.**
+Still open for the depth pass: the one-sided keystone pairs, and Wall's pure-path arm
+(10%, −78pp — the known M7.9 artifact, a Wall build has no soldiers for its own scaling).
 
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
