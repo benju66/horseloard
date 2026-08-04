@@ -10,6 +10,7 @@ import { TowerSystem } from './towerSystem';
 import { GateSystem } from './gateSystem';
 import { AbilitySystem } from './abilitySystem';
 import { LooterSystem } from './looterSystem';
+import { StalkerSystem } from './stalkerSystem';
 import { ZoneSystem } from './zoneSystem';
 import { Scaling, type ScaleSpec } from './scaling';
 import { ArmySystem } from './armySystem';
@@ -94,6 +95,8 @@ export class Simulation {
   /** The army pillar: soldiers posted by garrison towers (TRIANGLE.md §B.2). */
   readonly army: ArmySystem;
   readonly looters: LooterSystem;
+  /** Drives huntsHero enemies — the Stalker's off-road pursuit (BIOMES.md K.3). */
+  readonly stalkers: StalkerSystem;
   /**
    * Kills → XP. The run does not spend it — XP is **career** currency now
    * (SKILLTREE.md), banked at run end and spent in the tree between runs.
@@ -200,6 +203,7 @@ export class Simulation {
     );
 
     this.looters = new LooterSystem(this.enemySystem, this.economy, this.lanes);
+    this.stalkers = new StalkerSystem(this.enemySystem, this.hero);
 
     // ─── Rules and scaling (SKILLTREE.md) ───
     this.rules = new Set(data.rules ?? []);
@@ -303,6 +307,7 @@ export class Simulation {
     }
     this.enemySystem.tick(SIM_DT); // besiegers persist and act across phases
     this.looters.tick(SIM_DT);
+    this.stalkers.tick(SIM_DT);
     this.gate.tick(SIM_DT);
     this.towerSystem.tick(SIM_DT);
     // After the towers, before the hero: a soldier that grabs an enemy this

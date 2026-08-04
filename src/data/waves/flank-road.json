@@ -2,7 +2,7 @@
   "mapId": "flank-road",
   "waves": [
     {
-      "hpMultiplier": 1.299,
+      "hpMultiplier": 1.169,
       "entries": [
         {
           "enemyId": "grunt",
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.516,
+      "hpMultiplier": 1.364,
       "entries": [
         {
           "enemyId": "grunt",
@@ -33,7 +33,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.733,
+      "hpMultiplier": 1.56,
       "entries": [
         {
           "enemyId": "wolf-rider",
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.992,
+      "hpMultiplier": 1.793,
       "entries": [
         {
           "enemyId": "raven",
@@ -71,7 +71,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.295,
+      "hpMultiplier": 2.066,
       "archetypeId": "wild-hunt",
       "entries": [
         {
@@ -91,7 +91,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.599,
+      "hpMultiplier": 2.339,
       "entries": [
         {
           "enemyId": "grunt",
@@ -117,7 +117,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.903,
+      "hpMultiplier": 2.613,
       "entries": [
         {
           "enemyId": "wolf-rider",
@@ -136,7 +136,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.248,
+      "hpMultiplier": 2.923,
       "entries": [
         {
           "enemyId": "raven",
@@ -158,11 +158,18 @@
           "spacing": 2.0,
           "laneId": "north",
           "delay": 5.0
+        },
+        {
+          "enemyId": "stalker",
+          "count": 1,
+          "spacing": 1.5,
+          "laneId": "north",
+          "delay": 5.0
         }
       ]
     },
     {
-      "hpMultiplier": 3.596,
+      "hpMultiplier": 3.236,
       "entries": [
         {
           "enemyId": "grunt",
@@ -188,7 +195,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.985,
+      "hpMultiplier": 3.587,
       "entries": [
         {
           "enemyId": "wolf-rider",
@@ -221,7 +228,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.419,
+      "hpMultiplier": 3.977,
       "archetypeId": "wild-hunt",
       "entries": [
         {
@@ -251,6 +258,13 @@
           "spacing": 1.8,
           "laneId": "flank",
           "delay": 7.0
+        },
+        {
+          "enemyId": "stalker",
+          "count": 2,
+          "spacing": 3.0,
+          "laneId": "flank",
+          "delay": 4.0
         }
       ]
     }

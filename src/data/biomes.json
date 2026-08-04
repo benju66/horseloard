@@ -70,7 +70,8 @@
         "brute",
         "shieldbearer",
         "halberdier",
-        "juggernaut"
+        "juggernaut",
+        "warden"
       ],
       "terrainRule": "narrow-cuts"
     },
@@ -113,6 +114,7 @@
         "wolf-rider",
         "raven",
         "outrider",
+        "stalker",
         "sapper",
         "warlord"
       ],

@@ -398,6 +398,13 @@
           "spacing": 1.5,
           "laneId": "west",
           "delay": 1
+        },
+        {
+          "enemyId": "stalker",
+          "count": 2,
+          "spacing": 3.0,
+          "laneId": "west",
+          "delay": 6.0
         }
       ]
     },

@@ -11,7 +11,7 @@ import type { LanePath } from './path';
  *             whether this spot deals siege damage is the GateSystem's call
  *             (attack slot) or not (overflow queue).
  */
-export type EnemyState = 'walking' | 'blocked' | 'to-slot' | 'at-slot' | 'looting';
+export type EnemyState = 'walking' | 'blocked' | 'to-slot' | 'at-slot' | 'looting' | 'hunting';
 
 export interface EnemyInstance {
   readonly id: number;
@@ -50,6 +50,11 @@ export interface EnemyInstance {
   hasteRemaining: number;
   /** seconds until this enemy's next war cry (warCry configs only) */
   cryCooldown: number;
+  /** damage-taken multiplier from a Warden's standard; active while wardRemaining > 0 */
+  wardFactor: number;
+  wardRemaining: number;
+  /** seconds until this enemy's next ward pulse (ward configs only) */
+  wardCooldown: number;
   /** soldier id holding this enemy while state is 'blocked'; the ArmySystem owns it */
   blockedBy: number | null;
 }
@@ -121,7 +126,10 @@ export class EnemySystem {
       vulnerability: 1,
       hasteFactor: 1,
       hasteRemaining: 0,
+      wardFactor: 1,
+      wardRemaining: 0,
       cryCooldown: config.warCry ? config.warCry.interval * 0.4 : 0,
+      wardCooldown: config.ward ? config.ward.interval * 0.4 : 0,
       blockedBy: null,
     };
     lane.positionAt(0, e);
@@ -172,10 +180,37 @@ export class EnemySystem {
           for (const fn of this.onWarCry) fn(e, cry.radius);
         }
       }
+      if (e.wardRemaining > 0) {
+        e.wardRemaining -= dt;
+        if (e.wardRemaining <= 0) {
+          e.wardRemaining = 0;
+          e.wardFactor = 1;
+        }
+      }
+      // The defensive twin of warCry: everything near the standard is harder
+      // to kill — except the bearer itself, or the counter (focus the Warden)
+      // would be recursive.
+      const ward = e.config.ward;
+      if (ward) {
+        e.wardCooldown -= dt;
+        if (e.wardCooldown <= 0) {
+          e.wardCooldown = ward.interval;
+          const rSq = ward.radius * ward.radius;
+          for (const other of this.list) {
+            if (other === e) continue;
+            const dx = other.x - e.x;
+            const dy = other.y - e.y;
+            if (dx * dx + dy * dy > rSq) continue;
+            other.wardFactor = Math.min(other.wardFactor, ward.factor);
+            other.wardRemaining = Math.max(other.wardRemaining, ward.duration);
+          }
+        }
+      }
 
       const speed = this.effectiveSpeed(e);
 
       if (e.state === 'looting') continue; // the LooterSystem drives these
+      if (e.state === 'hunting') continue; // the StalkerSystem drives these
       // Held on the road. It keeps its lane distance, so releasing it resumes
       // the walk from exactly where it stopped rather than teleporting it.
       if (e.state === 'blocked') continue; // the ArmySystem drives these
@@ -257,6 +292,7 @@ export class EnemySystem {
       }
     }
     if (e.slowRemaining > 0 && e.vulnerability > 1) dealt *= e.vulnerability;
+    if (e.wardRemaining > 0) dealt *= e.wardFactor; // the Warden's standard
 
     e.hp -= dealt;
     for (const fn of this.onDamaged) fn(e, dealt);
@@ -349,7 +385,7 @@ export class EnemySystem {
    */
   get walkingCount(): number {
     let n = 0;
-    for (const e of this.list) if (e.state === 'walking' || e.state === 'blocked') n++;
+    for (const e of this.list) if (e.state === 'walking' || e.state === 'blocked' || e.state === 'hunting') n++;
     return n;
   }
 }

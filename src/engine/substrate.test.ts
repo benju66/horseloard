@@ -57,6 +57,7 @@ const ENGINE_VOCABULARY = new Set([
   'to-slot',
   'at-slot',
   'looting',
+  'hunting',
   // SimPhase
   'build',
   'wave',

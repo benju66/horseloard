@@ -2,7 +2,7 @@
   "mapId": "broken-line",
   "waves": [
     {
-      "hpMultiplier": 0.922,
+      "hpMultiplier": 0.848,
       "entries": [
         {
           "enemyId": "grunt",
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.056,
+      "hpMultiplier": 0.972,
       "entries": [
         {
           "enemyId": "outrider",
@@ -33,7 +33,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.219,
+      "hpMultiplier": 1.121,
       "entries": [
         {
           "enemyId": "wolf-rider",
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.409,
+      "hpMultiplier": 1.296,
       "entries": [
         {
           "enemyId": "sapper",
@@ -71,7 +71,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.599,
+      "hpMultiplier": 1.471,
       "entries": [
         {
           "enemyId": "outrider",
@@ -93,11 +93,18 @@
           "spacing": 0.55,
           "laneId": "east",
           "delay": 2.0
+        },
+        {
+          "enemyId": "stalker",
+          "count": 1,
+          "spacing": 1.5,
+          "laneId": "west",
+          "delay": 4.0
         }
       ]
     },
     {
-      "hpMultiplier": 1.815,
+      "hpMultiplier": 1.67,
       "archetypeId": "wild-hunt",
       "entries": [
         {
@@ -117,7 +124,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.033,
+      "hpMultiplier": 1.87,
       "entries": [
         {
           "enemyId": "raven",
@@ -143,7 +150,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.277,
+      "hpMultiplier": 2.095,
       "entries": [
         {
           "enemyId": "outrider",
@@ -169,7 +176,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.52,
+      "hpMultiplier": 2.318,
       "entries": [
         {
           "enemyId": "sapper",
@@ -191,11 +198,18 @@
           "spacing": 0.45,
           "laneId": "east",
           "delay": 0.5
+        },
+        {
+          "enemyId": "stalker",
+          "count": 2,
+          "spacing": 3.0,
+          "laneId": "east",
+          "delay": 3.0
         }
       ]
     },
     {
-      "hpMultiplier": 2.791,
+      "hpMultiplier": 2.568,
       "archetypeId": "wild-hunt",
       "entries": [
         {
@@ -222,7 +236,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.089,
+      "hpMultiplier": 2.842,
       "entries": [
         {
           "enemyId": "outrider",
@@ -255,7 +269,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.415,
+      "hpMultiplier": 3.142,
       "entries": [
         {
           "enemyId": "wolf-rider",
@@ -291,6 +305,13 @@
           "spacing": 0.5,
           "laneId": "west",
           "delay": 3.0
+        },
+        {
+          "enemyId": "stalker",
+          "count": 2,
+          "spacing": 3.0,
+          "laneId": "west",
+          "delay": 5.0
         }
       ]
     }

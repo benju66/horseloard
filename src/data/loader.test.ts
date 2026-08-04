@@ -82,7 +82,7 @@ describe('seed data', () => {
   it('validates clean', () => {
     const data = validateGameData(seed());
     expect(data.towers.towers.map((t) => t.id)).toEqual(['archer', 'bombard', 'frost-spire', 'mill', 'barracks']);
-    expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute', 'shieldbearer', 'swarm', 'wolf-rider', 'raven', 'looter', 'outrider', 'halberdier', 'sapper', 'juggernaut', 'warlord']);
+    expect(data.enemies.enemies.map((e) => e.id)).toEqual(['grunt', 'runner', 'brute', 'shieldbearer', 'swarm', 'wolf-rider', 'raven', 'looter', 'outrider', 'halberdier', 'sapper', 'juggernaut', 'warden', 'stalker', 'warlord']);
     expect(data.abilities.map((a) => a.id)).toEqual([
       'volley',
       'whirling-blades',

@@ -120,6 +120,13 @@
           "spacing": 0.6,
           "laneId": "cut",
           "delay": 3.5
+        },
+        {
+          "enemyId": "warden",
+          "count": 1,
+          "spacing": 1.5,
+          "laneId": "cut",
+          "delay": 2.0
         }
       ]
     },
@@ -265,6 +272,13 @@
           "spacing": 0.45,
           "laneId": "cut",
           "delay": 4.0
+        },
+        {
+          "enemyId": "warden",
+          "count": 2,
+          "spacing": 8.0,
+          "laneId": "cut",
+          "delay": 3.0
         }
       ]
     }

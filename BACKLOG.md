@@ -793,6 +793,30 @@ designed against real gaps now that all twelve levels exist) and M8.7 (the per-b
 tuning pass + draining green's legacyPool, which the M8.2 re-speciation may already have
 emptied — verify).**
 
+## M8.6 — The natives (2026-08-04): the Warden and the Stalker
+
+**Warden** (Iron): the defensive twin of warCry — everything near the standard takes 60%
+damage, except the bearer itself, because a ward that warded its carrier would make the
+counter recursive. Punishes damage spread thin; the answer is focus. **Stalker** (Steppe):
+leaves the road and comes for you — `huntsHero` via a StalkerSystem on the looter-driver
+pattern, `staggersHero` on contact, never sieges, holds the wave open until killed. The one
+pressure that makes mobility a requirement. Both tested (aura never self-applies, ward
+expires, hunter leaves the lane and releases the wave on death); both in campaign waves at
+accent density; all twelve maps re-measured ON TARGET after a stalker-tax ease on the
+steppe.
+
+**Instrument finding — natives do not belong in the reskin pools.** The pool probe's
+round-robin casts a sparse accent as one body in five, and at that density both natives'
+shared hero-shaped counter dragged every pool toward ride/hunt and failed Part G on a
+composition the campaign never ships. The authored-biome probe measures them at real
+density and is the gate that judges them. Rationale recorded in the probe itself.
+
+**M8.7's opening target, measured and named: ride tops all three authored biomes**
+(+43 green / +10 iron / +20 steppe, 10-build sample). Green is the anomaly and the cause
+is legible — the split-pressure redesign that fixed green's difficulty also made mobility
+its dominant answer. Iron reads nearly flat (weak signal). The per-biome pass owns this:
+differentiate green's answer back toward rate, and re-read iron at a bigger sample.
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 

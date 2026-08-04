@@ -1,221 +1,254 @@
 {
-  "elite": {
-    "chance": 0.08,
-    "hpMultiplier": 2.5,
-    "coinMultiplier": 2
+ "elite": {
+  "chance": 0.08,
+  "hpMultiplier": 2.5,
+  "coinMultiplier": 2
+ },
+ "enemies": [
+  {
+   "id": "grunt",
+   "name": "Grunt",
+   "hp": 22,
+   "speed": 42,
+   "radius": 12,
+   "coinValue": 4,
+   "siegeDps": 2,
+   "staggersHero": false,
+   "eliteEligible": true,
+   "spriteRef": "enemy-grunt",
+   "model": "unit-grunt",
+   "xpValue": 2
   },
-  "enemies": [
-    {
-      "id": "grunt",
-      "name": "Grunt",
-      "hp": 22,
-      "speed": 42,
-      "radius": 12,
-      "coinValue": 4,
-      "siegeDps": 2,
-      "staggersHero": false,
-      "eliteEligible": true,
-      "spriteRef": "enemy-grunt",
-      "model": "unit-grunt",
-      "xpValue": 2
-    },
-    {
-      "id": "runner",
-      "name": "Runner",
-      "hp": 13,
-      "speed": 74,
-      "radius": 10,
-      "coinValue": 3,
-      "siegeDps": 1.5,
-      "staggersHero": false,
-      "eliteEligible": true,
-      "spriteRef": "enemy-runner",
-      "model": "unit-runner",
-      "xpValue": 1.5
-    },
-    {
-      "id": "brute",
-      "name": "Brute",
-      "hp": 70,
-      "speed": 27,
-      "radius": 16,
-      "coinValue": 11,
-      "siegeDps": 6,
-      "staggersHero": true,
-      "eliteEligible": true,
-      "spriteRef": "enemy-brute",
-      "model": "unit-brute",
-      "armor": 0.45,
-      "xpValue": 6
-    },
-    {
-      "id": "shieldbearer",
-      "name": "Shieldbearer",
-      "hp": 38,
-      "speed": 34,
-      "radius": 13,
-      "coinValue": 8,
-      "siegeDps": 4,
-      "staggersHero": true,
-      "eliteEligible": true,
-      "frontalBlock": {
-        "arcDegrees": 220,
-        "multiplier": 0.1
-      },
-      "spriteRef": "enemy-shieldbearer",
-      "model": "unit-shieldbearer",
-      "xpValue": 3.5
-    },
-    {
-      "id": "swarm",
-      "name": "Swarmling",
-      "hp": 8,
-      "speed": 55,
-      "radius": 8,
-      "coinValue": 1,
-      "siegeDps": 0.6,
-      "staggersHero": false,
-      "eliteEligible": true,
-      "spriteRef": "enemy-swarm",
-      "model": "unit-swarm",
-      "xpValue": 1
-    },
-    {
-      "id": "wolf-rider",
-      "name": "Wolf Rider",
-      "hp": 40,
-      "speed": 88,
-      "radius": 13,
-      "coinValue": 9,
-      "siegeDps": 3,
-      "staggersHero": true,
-      "eliteEligible": true,
-      "ignoresSlows": true,
-      "spriteRef": "enemy-wolf-rider",
-      "model": "unit-wolf-rider",
-      "xpValue": 4
-    },
-    {
-      "id": "raven",
-      "name": "War Raven",
-      "hp": 26,
-      "speed": 82,
-      "radius": 10,
-      "coinValue": 7,
-      "siegeDps": 3,
-      "staggersHero": true,
-      "eliteEligible": true,
-      "flying": true,
-      "spriteRef": "enemy-swarm",
-      "model": "unit-raven",
-      "xpValue": 2.5
-    },
-    {
-      "id": "looter",
-      "name": "Looter",
-      "hp": 25,
-      "speed": 70,
-      "radius": 11,
-      "coinValue": 6,
-      "siegeDps": 0.5,
-      "staggersHero": false,
-      "eliteEligible": false,
-      "lootsCoins": {
-        "detectRadius": 90,
-        "fleeSpeedMultiplier": 1.3
-      },
-      "spriteRef": "enemy-looter",
-      "model": "unit-looter",
-      "xpValue": 2
-    },
-    {
-      "id": "outrider",
-      "name": "Outrider",
-      "hp": 46,
-      "speed": 62,
-      "radius": 12,
-      "coinValue": 9,
-      "siegeDps": 4,
-      "staggersHero": false,
-      "eliteEligible": true,
-      "blockImmune": true,
-      "spriteRef": "enemy-outrider",
-      "model": "unit-outrider",
-      "xpValue": 4.5
-    },
-    {
-      "id": "halberdier",
-      "name": "Halberdier",
-      "hp": 105,
-      "speed": 24,
-      "radius": 15,
-      "coinValue": 14,
-      "siegeDps": 7,
-      "staggersHero": true,
-      "eliteEligible": true,
-      "antiInfantry": 4.5,
-      "spriteRef": "enemy-halberdier",
-      "model": "unit-halberdier",
-      "xpValue": 9
-    },
-    {
-      "id": "sapper",
-      "name": "Sapper",
-      "hp": 34,
-      "speed": 58,
-      "radius": 12,
-      "coinValue": 9,
-      "siegeDps": 3,
-      "staggersHero": false,
-      "eliteEligible": true,
-      "towerBreak": {
-        "radius": 44,
-        "cooldown": 5
-      },
-      "spriteRef": "enemy-runner",
-      "model": "unit-runner",
-      "xpValue": 5
-    },
-    {
-      "id": "juggernaut",
-      "name": "Juggernaut",
-      "hp": 260,
-      "speed": 19,
-      "radius": 20,
-      "coinValue": 30,
-      "siegeDps": 14,
-      "staggersHero": true,
-      "eliteEligible": false,
-      "momentumArmor": {
-        "multiplier": 0.2
-      },
-      "spriteRef": "enemy-brute",
-      "model": "unit-brute",
-      "xpValue": 22
-    },
-    {
-      "id": "warlord",
-      "name": "The Warlord",
-      "hp": 1300,
-      "speed": 14,
-      "radius": 22,
-      "coinValue": 150,
-      "siegeDps": 25,
-      "staggersHero": true,
-      "eliteEligible": false,
-      "warCry": {
-        "radius": 140,
-        "speedMultiplier": 1.6,
-        "duration": 2.5,
-        "interval": 6
-      },
-      "towerBreak": {
-        "radius": 48,
-        "cooldown": 8
-      },
-      "spriteRef": "enemy-warlord",
-      "model": "unit-warlord",
-      "xpValue": 60
-    }
-  ]
+  {
+   "id": "runner",
+   "name": "Runner",
+   "hp": 13,
+   "speed": 74,
+   "radius": 10,
+   "coinValue": 3,
+   "siegeDps": 1.5,
+   "staggersHero": false,
+   "eliteEligible": true,
+   "spriteRef": "enemy-runner",
+   "model": "unit-runner",
+   "xpValue": 1.5
+  },
+  {
+   "id": "brute",
+   "name": "Brute",
+   "hp": 70,
+   "speed": 27,
+   "radius": 16,
+   "coinValue": 11,
+   "siegeDps": 6,
+   "staggersHero": true,
+   "eliteEligible": true,
+   "spriteRef": "enemy-brute",
+   "model": "unit-brute",
+   "armor": 0.45,
+   "xpValue": 6
+  },
+  {
+   "id": "shieldbearer",
+   "name": "Shieldbearer",
+   "hp": 38,
+   "speed": 34,
+   "radius": 13,
+   "coinValue": 8,
+   "siegeDps": 4,
+   "staggersHero": true,
+   "eliteEligible": true,
+   "frontalBlock": {
+    "arcDegrees": 220,
+    "multiplier": 0.1
+   },
+   "spriteRef": "enemy-shieldbearer",
+   "model": "unit-shieldbearer",
+   "xpValue": 3.5
+  },
+  {
+   "id": "swarm",
+   "name": "Swarmling",
+   "hp": 8,
+   "speed": 55,
+   "radius": 8,
+   "coinValue": 1,
+   "siegeDps": 0.6,
+   "staggersHero": false,
+   "eliteEligible": true,
+   "spriteRef": "enemy-swarm",
+   "model": "unit-swarm",
+   "xpValue": 1
+  },
+  {
+   "id": "wolf-rider",
+   "name": "Wolf Rider",
+   "hp": 40,
+   "speed": 88,
+   "radius": 13,
+   "coinValue": 9,
+   "siegeDps": 3,
+   "staggersHero": true,
+   "eliteEligible": true,
+   "ignoresSlows": true,
+   "spriteRef": "enemy-wolf-rider",
+   "model": "unit-wolf-rider",
+   "xpValue": 4
+  },
+  {
+   "id": "raven",
+   "name": "War Raven",
+   "hp": 26,
+   "speed": 82,
+   "radius": 10,
+   "coinValue": 7,
+   "siegeDps": 3,
+   "staggersHero": true,
+   "eliteEligible": true,
+   "flying": true,
+   "spriteRef": "enemy-swarm",
+   "model": "unit-raven",
+   "xpValue": 2.5
+  },
+  {
+   "id": "looter",
+   "name": "Looter",
+   "hp": 25,
+   "speed": 70,
+   "radius": 11,
+   "coinValue": 6,
+   "siegeDps": 0.5,
+   "staggersHero": false,
+   "eliteEligible": false,
+   "lootsCoins": {
+    "detectRadius": 90,
+    "fleeSpeedMultiplier": 1.3
+   },
+   "spriteRef": "enemy-looter",
+   "model": "unit-looter",
+   "xpValue": 2
+  },
+  {
+   "id": "outrider",
+   "name": "Outrider",
+   "hp": 46,
+   "speed": 62,
+   "radius": 12,
+   "coinValue": 9,
+   "siegeDps": 4,
+   "staggersHero": false,
+   "eliteEligible": true,
+   "blockImmune": true,
+   "spriteRef": "enemy-outrider",
+   "model": "unit-outrider",
+   "xpValue": 4.5
+  },
+  {
+   "id": "halberdier",
+   "name": "Halberdier",
+   "hp": 105,
+   "speed": 24,
+   "radius": 15,
+   "coinValue": 14,
+   "siegeDps": 7,
+   "staggersHero": true,
+   "eliteEligible": true,
+   "antiInfantry": 4.5,
+   "spriteRef": "enemy-halberdier",
+   "model": "unit-halberdier",
+   "xpValue": 9
+  },
+  {
+   "id": "sapper",
+   "name": "Sapper",
+   "hp": 34,
+   "speed": 58,
+   "radius": 12,
+   "coinValue": 9,
+   "siegeDps": 3,
+   "staggersHero": false,
+   "eliteEligible": true,
+   "towerBreak": {
+    "radius": 44,
+    "cooldown": 5
+   },
+   "spriteRef": "enemy-runner",
+   "model": "unit-runner",
+   "xpValue": 5
+  },
+  {
+   "id": "juggernaut",
+   "name": "Juggernaut",
+   "hp": 260,
+   "speed": 19,
+   "radius": 20,
+   "coinValue": 30,
+   "siegeDps": 14,
+   "staggersHero": true,
+   "eliteEligible": false,
+   "momentumArmor": {
+    "multiplier": 0.2
+   },
+   "spriteRef": "enemy-brute",
+   "model": "unit-brute",
+   "xpValue": 22
+  },
+  {
+   "id": "warden",
+   "name": "Warden",
+   "hp": 90,
+   "speed": 30,
+   "radius": 12,
+   "coinValue": 16,
+   "siegeDps": 3,
+   "staggersHero": false,
+   "eliteEligible": false,
+   "ward": {
+    "radius": 75,
+    "factor": 0.6,
+    "duration": 3.0,
+    "interval": 2.5
+   },
+   "spriteRef": "enemy-shieldbearer",
+   "xpValue": 9
+  },
+  {
+   "id": "stalker",
+   "name": "Stalker",
+   "hp": 52,
+   "speed": 62,
+   "radius": 9,
+   "coinValue": 13,
+   "siegeDps": 1,
+   "staggersHero": true,
+   "eliteEligible": true,
+   "huntsHero": true,
+   "spriteRef": "enemy-wolf-rider",
+   "xpValue": 7
+  },
+  {
+   "id": "warlord",
+   "name": "The Warlord",
+   "hp": 1300,
+   "speed": 14,
+   "radius": 22,
+   "coinValue": 150,
+   "siegeDps": 25,
+   "staggersHero": true,
+   "eliteEligible": false,
+   "warCry": {
+    "radius": 140,
+    "speedMultiplier": 1.6,
+    "duration": 2.5,
+    "interval": 6
+   },
+   "towerBreak": {
+    "radius": 48,
+    "cooldown": 8
+   },
+   "spriteRef": "enemy-warlord",
+   "model": "unit-warlord",
+   "xpValue": 60
+  }
+ ]
 }

@@ -759,6 +759,13 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     // point of M9. Green keeps none: it is the teaching pool, and a pool where
     // towers *are* the answer is the control the other two are read against.
     //
+    // Natives (warden, stalker) are deliberately NOT in these reskin pools.
+    // The round-robin weights every species equally, which casts a sparse
+    // accent enemy as one body in five — measured, that dragged both readable
+    // pools toward the natives' shared hero-shaped counter (ride/hunt) and
+    // failed Part G on density the campaign never ships. The authored-biome
+    // probe below measures the natives at their real wave densities and is
+    // the gate that judges them.
     // Each pool is measured under ITS OWN biome (the reskinned map's biomeId is
     // overridden per pool, so runBot resolves that biome's terrain rule) —
     // never under the base map's. Inheriting the base map's rule taxed every

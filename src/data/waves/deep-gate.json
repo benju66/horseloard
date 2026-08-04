@@ -75,6 +75,13 @@
           "spacing": 0.55,
           "laneId": "shaft",
           "delay": 3.0
+        },
+        {
+          "enemyId": "warden",
+          "count": 1,
+          "spacing": 1.5,
+          "laneId": "ramp",
+          "delay": 2.0
         }
       ]
     },
@@ -180,6 +187,13 @@
           "spacing": 1.6,
           "laneId": "shaft",
           "delay": 4.0
+        },
+        {
+          "enemyId": "warden",
+          "count": 1,
+          "spacing": 1.5,
+          "laneId": "ramp",
+          "delay": 2.5
         }
       ]
     },
@@ -273,6 +287,13 @@
           "spacing": 0.5,
           "laneId": "ramp",
           "delay": 3.0
+        },
+        {
+          "enemyId": "warden",
+          "count": 2,
+          "spacing": 9.0,
+          "laneId": "shaft",
+          "delay": 2.0
         }
       ]
     },

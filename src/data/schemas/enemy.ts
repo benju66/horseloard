@@ -84,6 +84,37 @@ export const EnemySchema = z.object({
     })
     .optional()
     .describe('Warlord: periodically hastes every other enemy in radius'),
+  /**
+   * Warden: everything near the standard is harder to kill — the defensive
+   * twin of warCry (BIOMES.md Part K.4). Punishes damage spread thin across a
+   * wide line; the answer is focus — reach the Warden and kill *it*, because
+   * the aura never covers its own bearer. A ward that warded its carrier would
+   * make the counter recursive, and a counter you cannot execute is a tax.
+   */
+  ward: z
+    .object({
+      radius: z.number().positive(),
+      factor: z
+        .number()
+        .gt(0)
+        .lt(1)
+        .describe('damage multiplier on warded allies — 0.6 means they take 60%'),
+      duration: z.number().positive(),
+      interval: z.number().positive().describe('seconds between pulses'),
+    })
+    .optional()
+    .describe('Warden: periodically shields every OTHER enemy in radius'),
+  /**
+   * Stalker: leaves the road and comes for you (BIOMES.md Part K.3). The only
+   * pressure that makes the hero's mobility a requirement rather than a
+   * convenience. The hero cannot die, so the price is control — pair with
+   * staggersHero. Harassment, not a gate threat: it never sieges, and it holds
+   * the wave open until killed.
+   */
+  huntsHero: z
+    .boolean()
+    .default(false)
+    .describe('Stalker: ignores the lane and beelines for the hero'),
   towerBreak: z
     .object({
       radius: z.number().positive(),
