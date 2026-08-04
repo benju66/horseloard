@@ -37,20 +37,32 @@
       "description": "Quarry cuts and pit-heads. Close walls, cold light, and things that do not stop.",
       "order": 2,
       "lighting": {
-        "sunAzimuth": -52,
+        "sunAzimuth": -30,
         "day": {
-          "groundTint": "#7d8a3f",
-          "pathTint": "#d6bc84",
-          "sunColor": "#ffdfa4",
-          "background": "#a8c39c",
-          "fogColor": "#cbd3a8"
+          "groundTint": "#7d7466",
+          "pathTint": "#a89272",
+          "skyColor": "#c2cdd6",
+          "groundColor": "#4a463c",
+          "ambientIntensity": 1.15,
+          "sunColor": "#f0ead8",
+          "sunIntensity": 2.1,
+          "sunElevation": 34,
+          "background": "#8fa0ab",
+          "fogColor": "#b6b3a6",
+          "fogDensity": 0.45
         },
         "night": {
-          "groundTint": "#71756c",
-          "pathTint": "#aba595",
-          "skyColor": "#5c6a8d",
-          "background": "#3f444a",
-          "fogColor": "#484b52"
+          "groundTint": "#4f5a5e",
+          "pathTint": "#8b8a80",
+          "skyColor": "#3d5474",
+          "groundColor": "#232a30",
+          "ambientIntensity": 1.2,
+          "sunColor": "#a9bedd",
+          "sunIntensity": 1.6,
+          "sunElevation": 48,
+          "background": "#242f3f",
+          "fogColor": "#2b3442",
+          "fogDensity": 0.5
         }
       },
       "pool": [
@@ -68,22 +80,32 @@
       "description": "Open grass to the horizon. Everything is faster here, including the wind.",
       "order": 3,
       "lighting": {
-        "sunAzimuth": -66,
+        "sunAzimuth": -45,
         "day": {
-          "groundTint": "#6b6a4a",
-          "pathTint": "#a89878",
-          "sunColor": "#ffd39a",
-          "sunElevation": 22,
-          "background": "#b09a86",
-          "fogColor": "#c4b09a"
+          "groundTint": "#98904f",
+          "pathTint": "#d6bf8d",
+          "skyColor": "#cfe3f0",
+          "groundColor": "#6b6440",
+          "ambientIntensity": 1.25,
+          "sunColor": "#ffe3a8",
+          "sunIntensity": 2.4,
+          "sunElevation": 19,
+          "background": "#a9c6d4",
+          "fogColor": "#c4d4d6",
+          "fogDensity": 0.22
         },
         "night": {
-          "groundTint": "#68656d",
-          "pathTint": "#8a838f",
-          "skyColor": "#6e5b81",
-          "sunColor": "#b19dc3",
-          "background": "#423a49",
-          "fogColor": "#4b4352"
+          "groundTint": "#5d6d63",
+          "pathTint": "#a9a291",
+          "skyColor": "#46639b",
+          "groundColor": "#272e3a",
+          "ambientIntensity": 1.3,
+          "sunColor": "#bccdec",
+          "sunIntensity": 1.75,
+          "sunElevation": 40,
+          "background": "#2b3850",
+          "fogColor": "#303c56",
+          "fogDensity": 0.3
         }
       },
       "pool": [

@@ -169,6 +169,7 @@ export class Simulation {
       data.enemies.elite,
       rng,
     );
+    this.enemySystem.setWorldBounds(data.map.world.width, data.map.world.height);
     this.waveRunner = new WaveRunner(data.waveSet, (enemyId, laneId, hpMultiplier) => {
       this.enemySystem.spawn(enemyId, laneId, hpMultiplier);
     });
