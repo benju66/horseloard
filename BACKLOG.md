@@ -691,6 +691,28 @@ something immune to a damage shape rather than to a blocker, something that outr
 something that punishes standing still. Two or three of those, then re-run this probe.
 **an hour of work, spent before eight hand-authored maps rather than after.**
 
+## Reconciliation of the parallel sessions (2026-08-04)
+
+Two sessions built M8.1–M8.4 in parallel; main kept its renderer integration, army
+rally-range fix and per-biome probes, and the evaluation branch's instrument work was
+reconciled in on top: controlValue (slow needs a payer), responsive tower caps, the
+budget-sweep complement probe, the per-pool-rule pool probe, the spawn-approach softlock
+guard, and the designed Iron/Steppe palettes (the shipped ones were recycled per-map moods
+— reported from device as "it looks the same").
+
+**Full harness on the merged result:** curve ON TARGET (100/94/50/44), pillar probe OK,
+triangle-by-biome 0 pillars sufficient. **The complement probe finally sings:** army helps
+on 2/2 readable maps — crossroads +67pp, the-ford +8pp — and the rich-bot garrison
+collapse recorded on the branch does not reproduce on main; the rally-range fix and the
+valuation fix were two halves of one repair. Authored-biome probe: iron carries host,
+steppe carries ride, two distinct paths.
+
+**Open, formally flagged: the pool probe's Part G verdict reads FAIL — crown top-third in
+every pool reskin** (+18/+8/+33). The authored-map probe does not reproduce it (crown
+carries nothing there), so it is an early warning rather than a proven dominance: Crown's
+gold-genericity is the tree-depth pass's first target, alongside the one-sided keystone
+pairs. Do not author Iron/Steppe levels around economy pressure until it is repriced.
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 
