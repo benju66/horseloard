@@ -3,17 +3,22 @@
     {
       "id": "horde",
       "name": "HORDE",
-      "subtitle": "A tide of bodies — splash damage and trample lines"
+      "subtitle": "A tide of bodies \u2014 splash damage and trample lines"
     },
     {
       "id": "raid",
       "name": "RAID",
-      "subtitle": "Runners flooding one lane — intercept or lose it"
+      "subtitle": "Runners flooding one lane \u2014 intercept or lose it"
     },
     {
       "id": "war-party",
       "name": "WAR PARTY",
-      "subtitle": "Brutes behind shields — flank them or be ground down"
+      "subtitle": "Brutes behind shields \u2014 flank them or be ground down"
+    },
+    {
+      "id": "wild-hunt",
+      "name": "WILD HUNT",
+      "subtitle": "Wolf-riders at full gallop \u2014 nothing slows them"
     }
   ]
 }

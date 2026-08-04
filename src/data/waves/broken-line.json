@@ -1,0 +1,298 @@
+{
+  "mapId": "broken-line",
+  "waves": [
+    {
+      "hpMultiplier": 0.922,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 10,
+          "spacing": 0.6,
+          "laneId": "west",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 1.056,
+      "entries": [
+        {
+          "enemyId": "outrider",
+          "count": 3,
+          "spacing": 1.2,
+          "laneId": "east",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 8,
+          "spacing": 0.55,
+          "laneId": "west",
+          "delay": 0.5
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 1.219,
+      "entries": [
+        {
+          "enemyId": "wolf-rider",
+          "count": 6,
+          "spacing": 1.0,
+          "laneId": "west",
+          "delay": 0
+        },
+        {
+          "enemyId": "raven",
+          "count": 5,
+          "spacing": 1.1,
+          "laneId": "east",
+          "delay": 1.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 1.409,
+      "entries": [
+        {
+          "enemyId": "sapper",
+          "count": 3,
+          "spacing": 2.2,
+          "laneId": "west",
+          "delay": 2.0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 10,
+          "spacing": 0.5,
+          "laneId": "east",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 1.599,
+      "entries": [
+        {
+          "enemyId": "outrider",
+          "count": 4,
+          "spacing": 1.0,
+          "laneId": "west",
+          "delay": 0
+        },
+        {
+          "enemyId": "raven",
+          "count": 7,
+          "spacing": 1.0,
+          "laneId": "west",
+          "delay": 0.5
+        },
+        {
+          "enemyId": "grunt",
+          "count": 7,
+          "spacing": 0.55,
+          "laneId": "east",
+          "delay": 2.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 1.815,
+      "archetypeId": "wild-hunt",
+      "entries": [
+        {
+          "enemyId": "wolf-rider",
+          "count": 9,
+          "spacing": 0.8,
+          "laneId": "east",
+          "delay": 0
+        },
+        {
+          "enemyId": "outrider",
+          "count": 3,
+          "spacing": 1.1,
+          "laneId": "west",
+          "delay": 2.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.033,
+      "entries": [
+        {
+          "enemyId": "raven",
+          "count": 9,
+          "spacing": 0.85,
+          "laneId": "east",
+          "delay": 0
+        },
+        {
+          "enemyId": "sapper",
+          "count": 3,
+          "spacing": 2.0,
+          "laneId": "east",
+          "delay": 3.0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 11,
+          "spacing": 0.5,
+          "laneId": "west",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.277,
+      "entries": [
+        {
+          "enemyId": "outrider",
+          "count": 5,
+          "spacing": 0.95,
+          "laneId": "east",
+          "delay": 0
+        },
+        {
+          "enemyId": "wolf-rider",
+          "count": 7,
+          "spacing": 0.85,
+          "laneId": "west",
+          "delay": 0.5
+        },
+        {
+          "enemyId": "grunt",
+          "count": 9,
+          "spacing": 0.5,
+          "laneId": "west",
+          "delay": 2.5
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.52,
+      "entries": [
+        {
+          "enemyId": "sapper",
+          "count": 4,
+          "spacing": 1.8,
+          "laneId": "west",
+          "delay": 1.5
+        },
+        {
+          "enemyId": "raven",
+          "count": 8,
+          "spacing": 0.9,
+          "laneId": "west",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 12,
+          "spacing": 0.45,
+          "laneId": "east",
+          "delay": 0.5
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.791,
+      "archetypeId": "wild-hunt",
+      "entries": [
+        {
+          "enemyId": "wolf-rider",
+          "count": 10,
+          "spacing": 0.75,
+          "laneId": "west",
+          "delay": 0
+        },
+        {
+          "enemyId": "outrider",
+          "count": 4,
+          "spacing": 0.95,
+          "laneId": "east",
+          "delay": 1.0
+        },
+        {
+          "enemyId": "raven",
+          "count": 7,
+          "spacing": 0.9,
+          "laneId": "east",
+          "delay": 3.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 3.089,
+      "entries": [
+        {
+          "enemyId": "outrider",
+          "count": 6,
+          "spacing": 0.9,
+          "laneId": "west",
+          "delay": 0
+        },
+        {
+          "enemyId": "sapper",
+          "count": 4,
+          "spacing": 1.8,
+          "laneId": "east",
+          "delay": 4.0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 14,
+          "spacing": 0.45,
+          "laneId": "east",
+          "delay": 0
+        },
+        {
+          "enemyId": "raven",
+          "count": 8,
+          "spacing": 0.85,
+          "laneId": "west",
+          "delay": 2.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 3.415,
+      "entries": [
+        {
+          "enemyId": "wolf-rider",
+          "count": 12,
+          "spacing": 0.7,
+          "laneId": "east",
+          "delay": 0
+        },
+        {
+          "enemyId": "outrider",
+          "count": 5,
+          "spacing": 0.9,
+          "laneId": "west",
+          "delay": 0.5
+        },
+        {
+          "enemyId": "raven",
+          "count": 10,
+          "spacing": 0.8,
+          "laneId": "west",
+          "delay": 1.5
+        },
+        {
+          "enemyId": "sapper",
+          "count": 5,
+          "spacing": 1.6,
+          "laneId": "east",
+          "delay": 5.0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 10,
+          "spacing": 0.5,
+          "laneId": "west",
+          "delay": 3.0
+        }
+      ]
+    }
+  ]
+}

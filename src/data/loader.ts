@@ -45,6 +45,12 @@ import crossroadsMapJson from './maps/crossroads.json';
 import crossroadsWavesJson from './waves/crossroads.json';
 import warlordsMarchMapJson from './maps/warlords-march.json';
 import warlordsMarchWavesJson from './waves/warlords-march.json';
+import openRoadMapJson from './maps/open-road.json';
+import openRoadWavesJson from './waves/open-road.json';
+import flankRoadMapJson from './maps/flank-road.json';
+import flankRoadWavesJson from './waves/flank-road.json';
+import brokenLineMapJson from './maps/broken-line.json';
+import brokenLineWavesJson from './waves/broken-line.json';
 
 /** Everything the game needs, validated. Engines receive slices of this — they never import JSON. */
 export interface GameData {
@@ -352,6 +358,9 @@ export function loadGameData(): GameData {
       'maps/harvest-night.json': harvestNightMapJson,
       'maps/the-ford.json': theFordMapJson,
       'maps/crossroads.json': crossroadsMapJson,
+      'maps/open-road.json': openRoadMapJson,
+      'maps/flank-road.json': flankRoadMapJson,
+      'maps/broken-line.json': brokenLineMapJson,
       'maps/warlords-march.json': warlordsMarchMapJson,
     },
     waveSets: {
@@ -360,6 +369,9 @@ export function loadGameData(): GameData {
       'waves/harvest-night.json': harvestNightWavesJson,
       'waves/the-ford.json': theFordWavesJson,
       'waves/crossroads.json': crossroadsWavesJson,
+      'waves/open-road.json': openRoadWavesJson,
+      'waves/flank-road.json': flankRoadWavesJson,
+      'waves/broken-line.json': brokenLineWavesJson,
       'waves/warlords-march.json': warlordsMarchWavesJson,
     },
   });

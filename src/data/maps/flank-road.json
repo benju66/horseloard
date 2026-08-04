@@ -1,0 +1,132 @@
+{
+ "id": "flank-road",
+ "name": "The Flank Road",
+ "description": "One road comes down the grass. The other comes across it, behind everything you built.",
+ "order": 7,
+ "biomeId": "long-steppe",
+ "world": {
+  "width": 420,
+  "height": 780
+ },
+ "heroSpawn": {
+  "x": 210,
+  "y": 640
+ },
+ "lanes": [
+  {
+   "id": "north",
+   "waypoints": [
+    {
+     "x": 250,
+     "y": -50
+    },
+    {
+     "x": 250,
+     "y": 180
+    },
+    {
+     "x": 170,
+     "y": 320
+    },
+    {
+     "x": 170,
+     "y": 500
+    },
+    {
+     "x": 210,
+     "y": 690
+    }
+   ]
+  },
+  {
+   "id": "flank",
+   "waypoints": [
+    {
+     "x": -50,
+     "y": 380
+    },
+    {
+     "x": 120,
+     "y": 380
+    },
+    {
+     "x": 300,
+     "y": 440
+    },
+    {
+     "x": 300,
+     "y": 570
+    },
+    {
+     "x": 210,
+     "y": 690
+    }
+   ]
+  }
+ ],
+ "plots": [
+  {
+   "id": "north-post",
+   "position": {
+    "x": 195,
+    "y": 150
+   }
+  },
+  {
+   "id": "mid-ridge",
+   "position": {
+    "x": 225,
+    "y": 300
+   }
+  },
+  {
+   "id": "west-gap",
+   "position": {
+    "x": 115,
+    "y": 440
+   }
+  },
+  {
+   "id": "crossing",
+   "position": {
+    "x": 230,
+    "y": 420
+   }
+  },
+  {
+   "id": "east-run",
+   "position": {
+    "x": 300,
+    "y": 505
+   }
+  },
+  {
+   "id": "south-post",
+   "position": {
+    "x": 155,
+    "y": 555
+   }
+  },
+  {
+   "id": "gate-side",
+   "position": {
+    "x": 260,
+    "y": 630
+   }
+  }
+ ],
+ "gate": {
+  "position": {
+   "x": 210,
+   "y": 715
+  },
+  "hp": 110,
+  "attackSlots": 5
+ },
+ "forge": {
+  "position": {
+   "x": 75,
+   "y": 690
+  }
+ }
+}

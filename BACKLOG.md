@@ -750,6 +750,25 @@ The plot gold-trap guard caught one mis-placed plot before any human could buy i
 Cadence: harvest 25.2 in band; market 25.0 on the boundary (24.0 all-runs) — recorded,
 not chased; crossroads already sits similarly at the other edge.
 
+## M8.5 — Long Steppe complete (2026-08-04): three roads to the Warlord
+
+**The Open Road** (L1, introduce: one species at a time under open-country — the first
+lone sapper arrives at w8 so the "kill it early or not at all" lesson is taught with one
+before The Broken Line asks it with many) → **The Flank Road** (L2, geometry: a lane that
+enters from the side and runs the map's width behind everything you built) → **The Broken
+Line** (L3, composition: everything ignores something — outriders past soldiers, ravens
+over mortars, sappers unmaking the towers; what cannot be ignored is the hero) → The
+Warlord's March (finale). New WILD HUNT banner — RAID's subtitle promises runners, and a
+banner that lies teaches the wrong lesson.
+
+**Curve ON TARGET on all nine maps**: 100/94 · 81/72 (green back half) · 50 (iron) ·
+61/47/33 (steppe road) · 44 (finale). Cadence 30.7/31.7/33.4 in band. Pillar probe OK.
+Steppe tuning converged in five iterations — the pool has real teeth (speed, flying,
+towerBreak), so budgets carried difficulty where green needed geometry. Flank-road showed
+the hair-trigger again (64%→25% on a 5% step); small moves found 47%.
+
+**Remaining in M8.5: Iron Deeps L2–L4.** Then natives (M8.6) and the per-biome pass (M8.7).
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 

@@ -1,0 +1,135 @@
+{
+ "id": "broken-line",
+ "name": "The Broken Line",
+ "description": "Riders that ignore your soldiers, wings that ignore your mortars, mauls that break the towers themselves. What is left is you.",
+ "order": 8,
+ "biomeId": "long-steppe",
+ "world": {
+  "width": 420,
+  "height": 780
+ },
+ "heroSpawn": {
+  "x": 210,
+  "y": 640
+ },
+ "lanes": [
+  {
+   "id": "west",
+   "waypoints": [
+    {
+     "x": 100,
+     "y": -50
+    },
+    {
+     "x": 100,
+     "y": 220
+    },
+    {
+     "x": 200,
+     "y": 360
+    },
+    {
+     "x": 200,
+     "y": 690
+    }
+   ]
+  },
+  {
+   "id": "east",
+   "waypoints": [
+    {
+     "x": 340,
+     "y": -50
+    },
+    {
+     "x": 340,
+     "y": 260
+    },
+    {
+     "x": 240,
+     "y": 430
+    },
+    {
+     "x": 240,
+     "y": 580
+    },
+    {
+     "x": 210,
+     "y": 690
+    }
+   ]
+  }
+ ],
+ "plots": [
+  {
+   "id": "west-stones",
+   "position": {
+    "x": 155,
+    "y": 160
+   }
+  },
+  {
+   "id": "east-stones",
+   "position": {
+    "x": 285,
+    "y": 190
+   }
+  },
+  {
+   "id": "mid-steppe",
+   "position": {
+    "x": 165,
+    "y": 330
+   }
+  },
+  {
+   "id": "east-bend",
+   "position": {
+    "x": 300,
+    "y": 380
+   }
+  },
+  {
+   "id": "long-watch",
+   "position": {
+    "x": 245,
+    "y": 500
+   }
+  },
+  {
+   "id": "west-watch",
+   "position": {
+    "x": 150,
+    "y": 480
+   }
+  },
+  {
+   "id": "last-stand",
+   "position": {
+    "x": 175,
+    "y": 615
+   }
+  },
+  {
+   "id": "gate-east",
+   "position": {
+    "x": 265,
+    "y": 640
+   }
+  }
+ ],
+ "gate": {
+  "position": {
+   "x": 210,
+   "y": 715
+  },
+  "hp": 115,
+  "attackSlots": 5
+ },
+ "forge": {
+  "position": {
+   "x": 75,
+   "y": 690
+  }
+ }
+}

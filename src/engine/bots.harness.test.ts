@@ -76,6 +76,10 @@ export const DIFFICULTY_TARGETS: Record<
   'market-road': { winRate: [65, 90], maxSinglePillarWinRate: 100, intent: 'greed under pressure — the thieves know' },
   'harvest-night': { winRate: [60, 85], maxSinglePillarWinRate: 100, intent: 'the tide — green road finale' },
   'crossroads': { winRate: [45, 75], maxSinglePillarWinRate: 40, intent: 'one pillar is not enough' },
+  // Long Steppe road to the finale (BIOMES.md C.3, band 30-55 rising to it).
+  'open-road': { winRate: [45, 70], maxSinglePillarWinRate: 40, intent: 'the steppe introduces itself' },
+  'flank-road': { winRate: [35, 60], maxSinglePillarWinRate: 30, intent: 'the flank owns the game' },
+  'broken-line': { winRate: [30, 55], maxSinglePillarWinRate: 25, intent: 'lines fail here — riders do not' },
   'warlords-march': { winRate: [25, 55], maxSinglePillarWinRate: 25, intent: 'honest challenge' },
 };
 
@@ -326,7 +330,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * The army arm lands with MG5.2; until the barracks exists there is no third
    * pillar to isolate, which is precisely why the triangle does not close yet.
    */
-  it('reports whether any single pillar can hold a map alone', { timeout: 120_000 }, () => {
+  it('reports whether any single pillar can hold a map alone', { timeout: 300_000 }, () => {
     const lines: string[] = [];
     let failures = 0;
 
@@ -394,7 +398,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * If `towers+army` does not beat `towers only` here, TRIANGLE §B.2 is wrong
    * and the barracks is a worse tower rather than a third pillar.
    */
-  it('reports whether exposure actually multiplies rate', { timeout: 300_000 }, () => {
+  it('reports whether exposure actually multiplies rate', { timeout: 600_000 }, () => {
     /**
      * Rebuilt (M8.4c). The old probe funded every map at one fixed 260 gold,
      * and the flaw was recorded the day it shipped: both arms saturate on the
@@ -597,7 +601,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * holds its band at the budget a player reaches it with; read across a row to
    * see how fast the tree hands out power.
    */
-  it('reports the difficulty ramp across career budgets', { timeout: 300_000 }, () => {
+  it('reports the difficulty ramp across career budgets', { timeout: 600_000 }, () => {
     // Level paired with the stars a career plausibly holds at it — the career as
     // actually lived, not a level sweep at a fixed ceiling.
     const stages: ReadonlyArray<readonly [number, number]> = [

@@ -1,0 +1,104 @@
+{
+ "id": "open-road",
+ "name": "The Open Road",
+ "description": "Grass to the horizon and riders on it. Everything here arrives sooner than you think.",
+ "order": 6,
+ "biomeId": "long-steppe",
+ "world": {
+  "width": 420,
+  "height": 780
+ },
+ "heroSpawn": {
+  "x": 210,
+  "y": 640
+ },
+ "lanes": [
+  {
+   "id": "main",
+   "waypoints": [
+    {
+     "x": 150,
+     "y": -50
+    },
+    {
+     "x": 150,
+     "y": 140
+    },
+    {
+     "x": 290,
+     "y": 240
+    },
+    {
+     "x": 290,
+     "y": 420
+    },
+    {
+     "x": 150,
+     "y": 520
+    },
+    {
+     "x": 210,
+     "y": 690
+    }
+   ]
+  }
+ ],
+ "plots": [
+  {
+   "id": "north-cairn",
+   "position": {
+    "x": 210,
+    "y": 110
+   }
+  },
+  {
+   "id": "east-rise",
+   "position": {
+    "x": 235,
+    "y": 260
+   }
+  },
+  {
+   "id": "high-grass",
+   "position": {
+    "x": 335,
+    "y": 330
+   }
+  },
+  {
+   "id": "west-hollow",
+   "position": {
+    "x": 215,
+    "y": 450
+   }
+  },
+  {
+   "id": "south-cairn",
+   "position": {
+    "x": 145,
+    "y": 585
+   }
+  },
+  {
+   "id": "gate-watch",
+   "position": {
+    "x": 255,
+    "y": 610
+   }
+  }
+ ],
+ "gate": {
+  "position": {
+   "x": 210,
+   "y": 715
+  },
+  "hp": 110,
+  "attackSlots": 5
+ },
+ "forge": {
+  "position": {
+   "x": 75,
+   "y": 690
+  }
+ }
+}

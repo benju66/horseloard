@@ -1,0 +1,225 @@
+{
+  "mapId": "open-road",
+  "waves": [
+    {
+      "hpMultiplier": 1.398,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 11,
+          "spacing": 0.7,
+          "laneId": "main",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 1.667,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 10,
+          "spacing": 0.6,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 6,
+          "spacing": 0.6,
+          "laneId": "main",
+          "delay": 2.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 1.935,
+      "entries": [
+        {
+          "enemyId": "wolf-rider",
+          "count": 5,
+          "spacing": 1.4,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 8,
+          "spacing": 0.6,
+          "laneId": "main",
+          "delay": 1.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.258,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 12,
+          "spacing": 0.55,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "wolf-rider",
+          "count": 6,
+          "spacing": 1.2,
+          "laneId": "main",
+          "delay": 2.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.58,
+      "entries": [
+        {
+          "enemyId": "raven",
+          "count": 6,
+          "spacing": 1.2,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 10,
+          "spacing": 0.55,
+          "laneId": "main",
+          "delay": 1.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.957,
+      "archetypeId": "wild-hunt",
+      "entries": [
+        {
+          "enemyId": "wolf-rider",
+          "count": 10,
+          "spacing": 0.9,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 7,
+          "spacing": 0.6,
+          "laneId": "main",
+          "delay": 2.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 3.333,
+      "entries": [
+        {
+          "enemyId": "raven",
+          "count": 8,
+          "spacing": 1.0,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 12,
+          "spacing": 0.5,
+          "laneId": "main",
+          "delay": 0.5
+        },
+        {
+          "enemyId": "wolf-rider",
+          "count": 5,
+          "spacing": 1.1,
+          "laneId": "main",
+          "delay": 3.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 3.763,
+      "entries": [
+        {
+          "enemyId": "sapper",
+          "count": 1,
+          "spacing": 1.0,
+          "laneId": "main",
+          "delay": 4.0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 14,
+          "spacing": 0.5,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "raven",
+          "count": 5,
+          "spacing": 1.1,
+          "laneId": "main",
+          "delay": 2.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 4.193,
+      "entries": [
+        {
+          "enemyId": "wolf-rider",
+          "count": 12,
+          "spacing": 0.85,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "raven",
+          "count": 7,
+          "spacing": 1.0,
+          "laneId": "main",
+          "delay": 1.5
+        },
+        {
+          "enemyId": "grunt",
+          "count": 10,
+          "spacing": 0.55,
+          "laneId": "main",
+          "delay": 3.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 4.731,
+      "archetypeId": "wild-hunt",
+      "entries": [
+        {
+          "enemyId": "wolf-rider",
+          "count": 14,
+          "spacing": 0.8,
+          "laneId": "main",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 14,
+          "spacing": 0.5,
+          "laneId": "main",
+          "delay": 1.0
+        },
+        {
+          "enemyId": "raven",
+          "count": 8,
+          "spacing": 0.9,
+          "laneId": "main",
+          "delay": 3.0
+        },
+        {
+          "enemyId": "sapper",
+          "count": 2,
+          "spacing": 2.0,
+          "laneId": "main",
+          "delay": 6.0
+        }
+      ]
+    }
+  ]
+}

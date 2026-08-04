@@ -1,0 +1,258 @@
+{
+  "mapId": "flank-road",
+  "waves": [
+    {
+      "hpMultiplier": 1.299,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 9,
+          "spacing": 0.65,
+          "laneId": "north",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 1.516,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 8,
+          "spacing": 0.6,
+          "laneId": "north",
+          "delay": 0
+        },
+        {
+          "enemyId": "wolf-rider",
+          "count": 3,
+          "spacing": 1.3,
+          "laneId": "flank",
+          "delay": 1.5
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 1.733,
+      "entries": [
+        {
+          "enemyId": "wolf-rider",
+          "count": 5,
+          "spacing": 1.1,
+          "laneId": "north",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 8,
+          "spacing": 0.55,
+          "laneId": "flank",
+          "delay": 0.5
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 1.992,
+      "entries": [
+        {
+          "enemyId": "raven",
+          "count": 6,
+          "spacing": 1.1,
+          "laneId": "flank",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 10,
+          "spacing": 0.5,
+          "laneId": "north",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.295,
+      "archetypeId": "wild-hunt",
+      "entries": [
+        {
+          "enemyId": "wolf-rider",
+          "count": 8,
+          "spacing": 0.85,
+          "laneId": "flank",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 7,
+          "spacing": 0.55,
+          "laneId": "north",
+          "delay": 1.5
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.599,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 11,
+          "spacing": 0.5,
+          "laneId": "north",
+          "delay": 0
+        },
+        {
+          "enemyId": "raven",
+          "count": 7,
+          "spacing": 1.0,
+          "laneId": "north",
+          "delay": 0.5
+        },
+        {
+          "enemyId": "sapper",
+          "count": 2,
+          "spacing": 2.0,
+          "laneId": "flank",
+          "delay": 4.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.903,
+      "entries": [
+        {
+          "enemyId": "wolf-rider",
+          "count": 7,
+          "spacing": 0.9,
+          "laneId": "north",
+          "delay": 0
+        },
+        {
+          "enemyId": "wolf-rider",
+          "count": 6,
+          "spacing": 0.9,
+          "laneId": "flank",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 3.248,
+      "entries": [
+        {
+          "enemyId": "raven",
+          "count": 9,
+          "spacing": 0.9,
+          "laneId": "flank",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 12,
+          "spacing": 0.5,
+          "laneId": "flank",
+          "delay": 0
+        },
+        {
+          "enemyId": "sapper",
+          "count": 2,
+          "spacing": 2.0,
+          "laneId": "north",
+          "delay": 5.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 3.596,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 13,
+          "spacing": 0.45,
+          "laneId": "north",
+          "delay": 0
+        },
+        {
+          "enemyId": "wolf-rider",
+          "count": 8,
+          "spacing": 0.8,
+          "laneId": "flank",
+          "delay": 1.0
+        },
+        {
+          "enemyId": "raven",
+          "count": 6,
+          "spacing": 1.0,
+          "laneId": "north",
+          "delay": 3.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 3.985,
+      "entries": [
+        {
+          "enemyId": "wolf-rider",
+          "count": 9,
+          "spacing": 0.8,
+          "laneId": "flank",
+          "delay": 0
+        },
+        {
+          "enemyId": "raven",
+          "count": 8,
+          "spacing": 0.9,
+          "laneId": "flank",
+          "delay": 0.5
+        },
+        {
+          "enemyId": "grunt",
+          "count": 10,
+          "spacing": 0.5,
+          "laneId": "north",
+          "delay": 2.0
+        },
+        {
+          "enemyId": "sapper",
+          "count": 3,
+          "spacing": 1.8,
+          "laneId": "north",
+          "delay": 6.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 4.419,
+      "archetypeId": "wild-hunt",
+      "entries": [
+        {
+          "enemyId": "wolf-rider",
+          "count": 12,
+          "spacing": 0.7,
+          "laneId": "flank",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 14,
+          "spacing": 0.45,
+          "laneId": "north",
+          "delay": 0
+        },
+        {
+          "enemyId": "raven",
+          "count": 9,
+          "spacing": 0.85,
+          "laneId": "north",
+          "delay": 2.5
+        },
+        {
+          "enemyId": "sapper",
+          "count": 3,
+          "spacing": 1.8,
+          "laneId": "flank",
+          "delay": 7.0
+        }
+      ]
+    }
+  ]
+}
