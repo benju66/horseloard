@@ -389,39 +389,85 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * If `towers+army` does not beat `towers only` here, TRIANGLE §B.2 is wrong
    * and the barracks is a worse tower rather than a third pillar.
    */
-  it('reports whether exposure actually multiplies rate', { timeout: 120_000 }, () => {
-    const funded = withoutAbilities({
-      ...botData,
-      hero: withoutHeroDamage(data.hero),
-      economy: { ...data.economy, startingGold: 260 },
-    });
+  it('reports whether exposure actually multiplies rate', { timeout: 300_000 }, () => {
+    /**
+     * Rebuilt (M8.4c). The old probe funded every map at one fixed 260 gold,
+     * and the flaw was recorded the day it shipped: both arms saturate on the
+     * easy maps and both die on the hard ones, so it reported "army helps on
+     * 0/4 maps" while measuring nothing — an arm that cannot exercise its
+     * subject, for the third recorded time.
+     *
+     * Now each map is measured at ITS OWN readable budget: sweep starting
+     * gold, take the level where the towers-only control lands nearest 50%,
+     * and compare the arms there. At 50% every run is winnable and losable,
+     * which is the only place a complement can show up as a delta.
+     */
+    const GOLD_SWEEP = [140, 200, 280, 400, 560, 780];
+    const garrisonIds = new Set(
+      data.towers.towers.filter((t) => t.levels[0]?.garrison).map((t) => t.id),
+    );
+    const fundedAt = (gold: number) =>
+      withoutAbilities({
+        ...botData,
+        hero: withoutHeroDamage(data.hero),
+        economy: { ...data.economy, startingGold: gold },
+      });
+    const winOf = (runs: BotRunResult[]) =>
+      (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100;
+    const waveOf = (runs: BotRunResult[]) =>
+      runs.reduce((s, r) => s + r.wavesCleared, 0) / runs.length;
+
     const lines: string[] = [];
     let complements = 0;
+    let readable = 0;
     for (const mapId of Object.keys(data.maps)) {
-      const arms: Array<[string, BotRunResult[]]> = [
-        ['towers only', SEEDS.map((s) => runBot(funded, mapId, combatTowersOnly, s))],
-        ['towers+army', SEEDS.map((s) => runBot(funded, mapId, towersAndArmy, s))],
-      ];
-      const waveOf = (runs: BotRunResult[]) =>
-        runs.reduce((s, r) => s + r.wavesCleared, 0) / runs.length;
-      const winOf = (runs: BotRunResult[]) =>
-        (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100;
-      const gain = waveOf(arms[1]![1]) - waveOf(arms[0]![1]);
-      const winGain = winOf(arms[1]![1]) - winOf(arms[0]![1]);
+      // Find the budget where the control is mid-range.
+      let control: BotRunResult[] = [];
+      let controlGold = GOLD_SWEEP[0]!;
+      let bestDist = Infinity;
+      for (const gold of GOLD_SWEEP) {
+        const runs = SEEDS.map((s) => runBot(fundedAt(gold), mapId, combatTowersOnly, s));
+        const dist = Math.abs(winOf(runs) - 50);
+        if (dist < bestDist) {
+          bestDist = dist;
+          control = runs;
+          controlGold = gold;
+        }
+      }
+      const army = SEEDS.map((s) => runBot(fundedAt(controlGold), mapId, towersAndArmy, s));
+
+      const winGain = winOf(army) - winOf(control);
+      const gain = waveOf(army) - waveOf(control);
       // Wins decide, waves break the tie. Waves alone reads a map where the
       // army converts near-misses into clears as a *regression*, because a run
       // that wins on wave 12 and one that dies on wave 12 score the same.
       const helps = winGain > 0 || (winGain === 0 && gain > 0);
       if (helps) complements++;
-      const row = [`  ${mapId}${helps ? '' : '   ← army adds nothing here'}`];
-      for (const [label, runs] of arms) {
-        const win = Math.round((runs.filter((r) => r.outcome === 'win').length / runs.length) * 100);
-        const towers = (runs.reduce((s, r) => s + r.towers.length, 0) / runs.length).toFixed(1);
-        const kills = Math.round(runs.reduce((s, r) => s + r.kills, 0) / runs.length);
+      // A control still saturated at every budget cannot answer the question —
+      // say so instead of counting it as a verdict either way.
+      const isReadable = winOf(control) > 5 && winOf(control) < 95;
+      if (isReadable) readable++;
+
+      const row = [
+        `  ${mapId}  @${controlGold}g` +
+          (isReadable ? '' : '   ← saturated at every budget; unreadable') +
+          (isReadable && !helps ? '   ← army adds nothing here' : ''),
+      ];
+      for (const [label, runs] of [
+        ['towers only', control],
+        ['towers+army', army],
+      ] as const) {
+        const garr = (
+          runs.reduce(
+            (s, r) => s + r.towers.filter((t) => garrisonIds.has(t.split(/[:@]/)[0]!)).length,
+            0,
+          ) / runs.length
+        ).toFixed(1);
         row.push(
-          `      ${label.padEnd(14)} win ${String(win).padStart(3)}%  ` +
+          `      ${label.padEnd(14)} win ${String(Math.round(winOf(runs))).padStart(3)}%  ` +
             `waves ${waveOf(runs).toFixed(1).padStart(4)}/${runs[0]!.totalWaves}  ` +
-            `towers ${towers.padStart(4)}  kills ${String(kills).padStart(3)}`,
+            `towers ${(runs.reduce((s, r) => s + r.towers.length, 0) / runs.length).toFixed(1).padStart(4)}` +
+            `  garr ${garr}  kills ${String(Math.round(runs.reduce((s, r) => s + r.kills, 0) / runs.length)).padStart(3)}`,
         );
       }
       row.push(
@@ -431,9 +477,9 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
       lines.push(row.join('\n'));
     }
     console.log(
-      `\n[COMPLEMENT PROBE — TRIANGLE.md §B.2]  army helps on ${complements}/${Object.keys(data.maps).length} maps\n` +
+      `\n[COMPLEMENT PROBE — TRIANGLE.md §B.2]  army helps on ${complements}/${readable} readable maps\n` +
         lines.join('\n') +
-        '\n  Funded equally on purpose — on the shipped economy neither arm survives to build.',
+        '\n  Each map at the budget where its control is nearest 50% — the only place a complement can show as a delta.',
     );
   });
 
@@ -699,31 +745,59 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     // Each pool now carries one counter-enemy (BIOMES.md Part K) — the whole
     // point of M9. Green keeps none: it is the teaching pool, and a pool where
     // towers *are* the answer is the control the other two are read against.
-    const POOLS: ReadonlyArray<readonly [string, readonly string[]]> = [
-      ['green', ['grunt', 'swarm', 'runner', 'looter']],
-      ['iron', ['grunt', 'brute', 'halberdier', 'juggernaut']],
-      ['steppe', ['grunt', 'wolf-rider', 'raven', 'sapper']],
+    //
+    // Each pool is measured under ITS OWN biome (the reskinned map's biomeId is
+    // overridden per pool, so runBot resolves that biome's terrain rule) —
+    // never under the base map's. Inheriting the base map's rule taxed every
+    // reskin with physics only Iron has, which drove the green control row to
+    // 0% and made it unreadable.
+    const POOLS: ReadonlyArray<readonly [string, string, readonly string[]]> = [
+      ['green', 'green-road', ['grunt', 'swarm', 'runner', 'looter']],
+      ['iron', 'iron-deeps', ['grunt', 'brute', 'halberdier', 'juggernaut']],
+      ['steppe', 'long-steppe', ['grunt', 'wolf-rider', 'raven', 'sapper']],
     ];
     const SAMPLES = 12;
     const mapId = 'crossroads';
     const hpOf = new Map(data.enemies.enemies.map((e) => [e.id, e.hp]));
     const paths = [...new Set(tree.nodes.map((n) => n.path))].sort();
 
-    /** Same waves, different species, same HP per entry. */
+    /**
+     * Same waves, different species, same TOTAL HP per wave.
+     *
+     * Two normalisations were tried and both saturated rows into
+     * unreadability. Per-entry HP normalisation turns one 3-brute entry into a
+     * 26-swarm flood the moment the base map's mix goes heavy — not a reskin
+     * of the wave's shape but a different wave. Clamping the counts alone
+     * fixed the floods but let total wave HP drift by the hp ratio of whatever
+     * the round-robin happened to swap in.
+     *
+     * So: counts stay shape-preserving (at most double, at least half), and
+     * the wave's own hpMultiplier absorbs the difference so every reskin
+     * carries exactly the original wave's total HP. What still differs between
+     * pools is species behaviour — speed, flying, blockImmune, towerBreak,
+     * hindered-only damage — which is precisely the signal the probe exists
+     * to read.
+     */
     const reskin = (pool: readonly string[]) => {
       const base = data.waveSets[mapId]!;
       let i = 0;
       return {
         ...base,
-        waves: base.waves.map((w) => ({
-          ...w,
-          entries: w.entries.map((e) => {
+        waves: base.waves.map((w) => {
+          let origHp = 0;
+          let newHp = 0;
+          const entries = w.entries.map((e) => {
             const swap = pool[i++ % pool.length]!;
-            const oldHp = hpOf.get(e.enemyId) ?? 1;
-            const newHp = hpOf.get(swap) ?? 1;
-            return { ...e, enemyId: swap, count: Math.max(1, Math.round((e.count * oldHp) / newHp)) };
-          }),
-        })),
+            const oldUnit = hpOf.get(e.enemyId) ?? 1;
+            const newUnit = hpOf.get(swap) ?? 1;
+            const normalised = Math.round((e.count * oldUnit) / newUnit);
+            const count = Math.max(1, Math.max(Math.ceil(e.count / 2), Math.min(e.count * 2, normalised)));
+            origHp += e.count * oldUnit;
+            newHp += count * newUnit;
+            return { ...e, enemyId: swap, count };
+          });
+          return { ...w, entries, hpMultiplier: w.hpMultiplier * (newHp > 0 ? origHp / newHp : 1) };
+        }),
       };
     };
 
@@ -735,8 +809,14 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     );
 
     const lines: string[] = [];
-    for (const [name, pool] of POOLS) {
-      const poolData = { ...botData, waveSets: { ...data.waveSets, [mapId]: reskin(pool) } };
+    /** path → pools where it ranks in the top third of winners' point share. */
+    const topThirdIn = new Map<string, string[]>();
+    for (const [name, biomeId, pool] of POOLS) {
+      const poolData = {
+        ...botData,
+        maps: { ...data.maps, [mapId]: { ...data.maps[mapId]!, biomeId } },
+        waveSets: { ...data.waveSets, [mapId]: reskin(pool) },
+      };
       const rows = builds
         .map((build) => {
           const runs = BOTS.flatMap((f) =>
@@ -755,7 +835,17 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
       const avg = (set: typeof rows, p: string) =>
         set.reduce((s, r) => s + r.share[p]!, 0) / set.length;
       const deltas = paths.map((p) => avg(rows.slice(0, third), p) - avg(rows.slice(-third), p));
-      const best = paths[deltas.indexOf(Math.max(...deltas))]!;
+      // Top two, not one: a single max-delta label hides the signature. Two
+      // pools can share a generically-strong top path while differing
+      // completely in what comes second — and the second place is often the
+      // biome talking (the sapper suppressing wall, open-country lifting ride).
+      const order = paths
+        .map((p, i) => ({ p, d: deltas[i]! }))
+        .sort((a, b) => b.d - a.d);
+      const best = `${order[0]!.p}, then ${order[1]!.p} ${order[1]!.d >= 0 ? '+' : ''}${order[1]!.d.toFixed(0)}`;
+      for (const { p } of order.slice(0, Math.ceil(paths.length / 3))) {
+        topThirdIn.set(p, [...(topThirdIn.get(p) ?? []), name]);
+      }
       const wins = rows.map((r) => r.win);
 
       lines.push(
@@ -773,7 +863,19 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
         lines.join('\n') +
         '\n\n  THE TEST: does the carrying path differ between pools?\n' +
         '  Same path all three → biomes would be palettes; cut the plan.\n' +
-        '  Different paths → the thesis holds and twelve maps are worth authoring.',
+        '  Different paths → the thesis holds and twelve maps are worth authoring.\n' +
+        '\n' +
+        // Part G's acceptance, as a verdict rather than a reading exercise:
+        // a path in the winners' top third of ALL pools is the build everyone
+        // takes everywhere, which is what biomes exist to prevent.
+        (() => {
+          const everywhere = [...topThirdIn.entries()]
+            .filter(([, pools]) => pools.length === POOLS.length)
+            .map(([p]) => p);
+          return everywhere.length === 0
+            ? '  [ACCEPT — BIOMES.md Part G] PASS: no path is top-third in every pool.'
+            : `  [ACCEPT — BIOMES.md Part G] FAIL: ${everywhere.join(', ')} top-third in every pool.`;
+        })(),
     );
   });
 
