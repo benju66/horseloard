@@ -590,7 +590,7 @@
         {
           "type": "hero-stat",
           "stat": "trampleDamage",
-          "perRank": 3.0,
+          "perRank": 2.6,
           "mode": "multiply"
         },
         {
@@ -627,7 +627,7 @@
         {
           "type": "hero-stat",
           "stat": "moveSpeed",
-          "perRank": 1.6,
+          "perRank": 1.7,
           "mode": "multiply"
         },
         {
@@ -645,7 +645,7 @@
         {
           "type": "hero-stat",
           "stat": "trampleDamage",
-          "perRank": 0.5,
+          "perRank": 0.75,
           "mode": "multiply"
         }
       ]
@@ -931,7 +931,7 @@
           "type": "tower-stat",
           "towerId": null,
           "stat": "damage",
-          "perRank": 1.55,
+          "perRank": 1.45,
           "mode": "multiply"
         },
         {
@@ -972,13 +972,6 @@
           "towerId": null,
           "stat": "cost",
           "perRank": 0.65,
-          "mode": "multiply"
-        },
-        {
-          "type": "tower-stat",
-          "towerId": null,
-          "stat": "damage",
-          "perRank": 0.78,
           "mode": "multiply"
         }
       ]

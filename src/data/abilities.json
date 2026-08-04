@@ -28,11 +28,11 @@
       "id": "whirling-blades",
       "name": "Whirling Blades",
       "description": "Blades circle you and cut down whatever comes close. Ride through them.",
-      "cooldown": 23,
+      "cooldown": 28,
       "unlockedByDefault": false,
       "trigger": {
         "type": "enemies-near",
-        "count": 2,
+        "count": 3,
         "radius": 90
       },
       "effect": {
@@ -42,7 +42,7 @@
         "bladeRadius": 20,
         "revolutionsPerSecond": 0.8,
         "damagePerSecond": 34,
-        "duration": 7
+        "duration": 6
       },
       "iconRef": "icon-whirling-blades",
       "castSfxRef": "sfx-whirl"

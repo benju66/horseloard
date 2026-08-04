@@ -838,6 +838,32 @@ green floods with is worth blocking.
 palettes, probes, all bands green. One open balance item (green×ride) hands off to the
 tree-depth pass with its mechanism named.
 
+## Tree-depth pass (2026-08-04): whirling bounded, ride pair evened, two instrument findings
+
+**Whirling-blades' clock is real again**: 7s/23s (30% guaranteed uptime) → 6s/28s (21%),
+trigger threshold 2 → 3. By DESIGN §4's own reasoning an ability that fires itself is worth
+what its clock allows — 30% uptime with a mass-biome trigger was a sustain engine, not a
+burst ability. Curve held ON TARGET through it.
+
+**Ride keystone pair evened**: cataphract trample ×3.0 → ×2.6, outrider trample penalty
+×0.5 → ×0.75 and speed ×1.6 → ×1.7. Reads 87 vs 71 — inside the 25pp accept. Hunt, host
+and storm pairs read healthy; crown at 20pp borderline.
+
+**Finding 1 — the curtain collapse is structural, not numeric.** wall-curtain reads 7%
+against no-keystone's 51% even with its damage penalty deleted — a strictly-positive
+keystone cannot be 44pp worse than nothing on stats. Prime suspect: the bot under cost
+modifiers (cheap towers inflate value-per-coin, the greedy scorer overbuilds thin — the
+documented monoculture spiral, now triggered by a keystone). Diagnosis path: log tower
+counts/levels under curtain vs siege. Candidate eighth entry in the harness ledger.
+
+**Finding 2 — green's ride +47 is substantially a dead-complement mirror.** The delta was
+identical through three successive ride nerfs (AoE trims, coin-scaling cut, uptime cut) —
+a reading that ignores its cause's magnitude is not measuring the cause. With host −30 and
+storm −13 dead in green, winner share must pool in the live paths. The real green question
+is complement deadness in the control biome (semi-by-design for a teaching world), and the
+trustworthy instrument for it is the contribution-scoring probe M7.8 already asked for,
+plus a bigger biome-probe sample. Both queued for the next instrument round.
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 
