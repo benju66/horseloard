@@ -45,6 +45,12 @@ import crossroadsMapJson from './maps/crossroads.json';
 import crossroadsWavesJson from './waves/crossroads.json';
 import warlordsMarchMapJson from './maps/warlords-march.json';
 import warlordsMarchWavesJson from './waves/warlords-march.json';
+import pitHeadsMapJson from './maps/pit-heads.json';
+import pitHeadsWavesJson from './waves/pit-heads.json';
+import undercutMapJson from './maps/undercut.json';
+import undercutWavesJson from './waves/undercut.json';
+import deepGateMapJson from './maps/deep-gate.json';
+import deepGateWavesJson from './waves/deep-gate.json';
 import openRoadMapJson from './maps/open-road.json';
 import openRoadWavesJson from './waves/open-road.json';
 import flankRoadMapJson from './maps/flank-road.json';
@@ -358,6 +364,9 @@ export function loadGameData(): GameData {
       'maps/harvest-night.json': harvestNightMapJson,
       'maps/the-ford.json': theFordMapJson,
       'maps/crossroads.json': crossroadsMapJson,
+      'maps/pit-heads.json': pitHeadsMapJson,
+      'maps/undercut.json': undercutMapJson,
+      'maps/deep-gate.json': deepGateMapJson,
       'maps/open-road.json': openRoadMapJson,
       'maps/flank-road.json': flankRoadMapJson,
       'maps/broken-line.json': brokenLineMapJson,
@@ -369,6 +378,9 @@ export function loadGameData(): GameData {
       'waves/harvest-night.json': harvestNightWavesJson,
       'waves/the-ford.json': theFordWavesJson,
       'waves/crossroads.json': crossroadsWavesJson,
+      'waves/pit-heads.json': pitHeadsWavesJson,
+      'waves/undercut.json': undercutWavesJson,
+      'waves/deep-gate.json': deepGateWavesJson,
       'waves/open-road.json': openRoadWavesJson,
       'waves/flank-road.json': flankRoadWavesJson,
       'waves/broken-line.json': brokenLineWavesJson,

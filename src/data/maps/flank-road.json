@@ -2,7 +2,7 @@
  "id": "flank-road",
  "name": "The Flank Road",
  "description": "One road comes down the grass. The other comes across it, behind everything you built.",
- "order": 7,
+ "order": 10,
  "biomeId": "long-steppe",
  "world": {
   "width": 420,

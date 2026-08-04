@@ -2,7 +2,7 @@
  "id": "open-road",
  "name": "The Open Road",
  "description": "Grass to the horizon and riders on it. Everything here arrives sooner than you think.",
- "order": 6,
+ "order": 9,
  "biomeId": "long-steppe",
  "world": {
   "width": 420,

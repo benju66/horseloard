@@ -3,7 +3,7 @@
  "biomeId": "long-steppe",
  "name": "The Warlord's March",
  "description": "Open steppe, two long roads to one gate \u2014 and HE walks one of them. The final exam.",
- "order": 9,
+ "order": 12,
  "world": {
   "width": 420,
   "height": 780

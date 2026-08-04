@@ -1,0 +1,108 @@
+{
+ "id": "undercut",
+ "name": "The Undercut",
+ "description": "The cut doubles back on itself twice. What holds the first bend is wrong for the second, and the things coming do not stop.",
+ "order": 7,
+ "biomeId": "iron-deeps",
+ "world": {
+  "width": 420,
+  "height": 780
+ },
+ "heroSpawn": {
+  "x": 210,
+  "y": 640
+ },
+ "lanes": [
+  {
+   "id": "cut",
+   "waypoints": [
+    {
+     "x": 90,
+     "y": -50
+    },
+    {
+     "x": 90,
+     "y": 130
+    },
+    {
+     "x": 330,
+     "y": 200
+    },
+    {
+     "x": 330,
+     "y": 340
+    },
+    {
+     "x": 90,
+     "y": 410
+    },
+    {
+     "x": 90,
+     "y": 550
+    },
+    {
+     "x": 210,
+     "y": 690
+    }
+   ]
+  }
+ ],
+ "plots": [
+  {
+   "id": "first-bend",
+   "position": {
+    "x": 155,
+    "y": 155
+   }
+  },
+  {
+   "id": "high-wall",
+   "position": {
+    "x": 270,
+    "y": 265
+   }
+  },
+  {
+   "id": "second-bend",
+   "position": {
+    "x": 235,
+    "y": 375
+   }
+  },
+  {
+   "id": "under-wall",
+   "position": {
+    "x": 150,
+    "y": 480
+   }
+  },
+  {
+   "id": "low-cut",
+   "position": {
+    "x": 190,
+    "y": 590
+   }
+  },
+  {
+   "id": "gate-ledge",
+   "position": {
+    "x": 270,
+    "y": 620
+   }
+  }
+ ],
+ "gate": {
+  "position": {
+   "x": 210,
+   "y": 715
+  },
+  "hp": 120,
+  "attackSlots": 5
+ },
+ "forge": {
+  "position": {
+   "x": 75,
+   "y": 690
+  }
+ }
+}

@@ -76,6 +76,10 @@ export const DIFFICULTY_TARGETS: Record<
   'market-road': { winRate: [65, 90], maxSinglePillarWinRate: 100, intent: 'greed under pressure — the thieves know' },
   'harvest-night': { winRate: [60, 85], maxSinglePillarWinRate: 100, intent: 'the tide — green road finale' },
   'crossroads': { winRate: [45, 75], maxSinglePillarWinRate: 40, intent: 'one pillar is not enough' },
+  // Iron Deeps descent (BIOMES.md C.2, band 55-75 easing as the quarry deepens).
+  'pit-heads': { winRate: [45, 70], maxSinglePillarWinRate: 40, intent: 'five plots — choose like it matters' },
+  'undercut': { winRate: [40, 65], maxSinglePillarWinRate: 30, intent: 'every answer punished by the next wave' },
+  'deep-gate': { winRate: [35, 60], maxSinglePillarWinRate: 25, intent: 'everything down here breaks gates' },
   // Long Steppe road to the finale (BIOMES.md C.3, band 30-55 rising to it).
   'open-road': { winRate: [45, 70], maxSinglePillarWinRate: 40, intent: 'the steppe introduces itself' },
   'flank-road': { winRate: [35, 60], maxSinglePillarWinRate: 30, intent: 'the flank owns the game' },

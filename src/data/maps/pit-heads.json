@@ -1,0 +1,110 @@
+{
+ "id": "pit-heads",
+ "name": "The Pit Heads",
+ "description": "Two pit mouths, one trench, five places to stand a tower. Choose like it matters \u2014 it does.",
+ "order": 6,
+ "biomeId": "iron-deeps",
+ "world": {
+  "width": 420,
+  "height": 780
+ },
+ "heroSpawn": {
+  "x": 210,
+  "y": 640
+ },
+ "lanes": [
+  {
+   "id": "west-pit",
+   "waypoints": [
+    {
+     "x": 120,
+     "y": -50
+    },
+    {
+     "x": 120,
+     "y": 170
+    },
+    {
+     "x": 210,
+     "y": 280
+    },
+    {
+     "x": 210,
+     "y": 690
+    }
+   ]
+  },
+  {
+   "id": "east-pit",
+   "waypoints": [
+    {
+     "x": 300,
+     "y": -50
+    },
+    {
+     "x": 300,
+     "y": 170
+    },
+    {
+     "x": 210,
+     "y": 280
+    },
+    {
+     "x": 210,
+     "y": 690
+    }
+   ]
+  }
+ ],
+ "plots": [
+  {
+   "id": "west-mouth",
+   "position": {
+    "x": 165,
+    "y": 140
+   }
+  },
+  {
+   "id": "east-mouth",
+   "position": {
+    "x": 255,
+    "y": 140
+   }
+  },
+  {
+   "id": "trench-head",
+   "position": {
+    "x": 210,
+    "y": 340
+   }
+  },
+  {
+   "id": "mid-trench",
+   "position": {
+    "x": 165,
+    "y": 470
+   }
+  },
+  {
+   "id": "gate-shelf",
+   "position": {
+    "x": 255,
+    "y": 590
+   }
+  }
+ ],
+ "gate": {
+  "position": {
+   "x": 210,
+   "y": 715
+  },
+  "hp": 115,
+  "attackSlots": 5
+ },
+ "forge": {
+  "position": {
+   "x": 75,
+   "y": 690
+  }
+ }
+}

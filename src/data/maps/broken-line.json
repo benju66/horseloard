@@ -2,7 +2,7 @@
  "id": "broken-line",
  "name": "The Broken Line",
  "description": "Riders that ignore your soldiers, wings that ignore your mortars, mauls that break the towers themselves. What is left is you.",
- "order": 8,
+ "order": 11,
  "biomeId": "long-steppe",
  "world": {
   "width": 420,

@@ -1,0 +1,320 @@
+{
+  "mapId": "deep-gate",
+  "waves": [
+    {
+      "hpMultiplier": 1.169,
+      "entries": [
+        {
+          "enemyId": "grunt",
+          "count": 10,
+          "spacing": 0.6,
+          "laneId": "ramp",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 1.341,
+      "entries": [
+        {
+          "enemyId": "shieldbearer",
+          "count": 4,
+          "spacing": 1.0,
+          "laneId": "shaft",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 8,
+          "spacing": 0.55,
+          "laneId": "ramp",
+          "delay": 0.5
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 1.548,
+      "entries": [
+        {
+          "enemyId": "brute",
+          "count": 4,
+          "spacing": 1.2,
+          "laneId": "ramp",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 9,
+          "spacing": 0.5,
+          "laneId": "shaft",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 1.789,
+      "archetypeId": "war-party",
+      "entries": [
+        {
+          "enemyId": "shieldbearer",
+          "count": 5,
+          "spacing": 0.95,
+          "laneId": "ramp",
+          "delay": 0
+        },
+        {
+          "enemyId": "brute",
+          "count": 3,
+          "spacing": 1.2,
+          "laneId": "ramp",
+          "delay": 1.5
+        },
+        {
+          "enemyId": "grunt",
+          "count": 7,
+          "spacing": 0.55,
+          "laneId": "shaft",
+          "delay": 3.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.029,
+      "entries": [
+        {
+          "enemyId": "juggernaut",
+          "count": 1,
+          "spacing": 1.0,
+          "laneId": "shaft",
+          "delay": 2.0
+        },
+        {
+          "enemyId": "halberdier",
+          "count": 2,
+          "spacing": 1.8,
+          "laneId": "ramp",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 9,
+          "spacing": 0.5,
+          "laneId": "ramp",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.167,
+      "entries": [
+        {
+          "enemyId": "shieldbearer",
+          "count": 6,
+          "spacing": 0.9,
+          "laneId": "shaft",
+          "delay": 0
+        },
+        {
+          "enemyId": "brute",
+          "count": 4,
+          "spacing": 1.2,
+          "laneId": "shaft",
+          "delay": 1.0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 8,
+          "spacing": 0.5,
+          "laneId": "ramp",
+          "delay": 2.5
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.458,
+      "entries": [
+        {
+          "enemyId": "juggernaut",
+          "count": 2,
+          "spacing": 8.0,
+          "laneId": "ramp",
+          "delay": 0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 10,
+          "spacing": 0.5,
+          "laneId": "shaft",
+          "delay": 0
+        },
+        {
+          "enemyId": "shieldbearer",
+          "count": 4,
+          "spacing": 1.0,
+          "laneId": "shaft",
+          "delay": 1.5
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 2.748,
+      "archetypeId": "war-party",
+      "entries": [
+        {
+          "enemyId": "shieldbearer",
+          "count": 6,
+          "spacing": 0.9,
+          "laneId": "ramp",
+          "delay": 0
+        },
+        {
+          "enemyId": "brute",
+          "count": 5,
+          "spacing": 1.1,
+          "laneId": "ramp",
+          "delay": 1.2
+        },
+        {
+          "enemyId": "halberdier",
+          "count": 3,
+          "spacing": 1.6,
+          "laneId": "shaft",
+          "delay": 4.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 3.072,
+      "entries": [
+        {
+          "enemyId": "juggernaut",
+          "count": 2,
+          "spacing": 7.0,
+          "laneId": "shaft",
+          "delay": 0
+        },
+        {
+          "enemyId": "brute",
+          "count": 4,
+          "spacing": 1.2,
+          "laneId": "ramp",
+          "delay": 2.0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 11,
+          "spacing": 0.45,
+          "laneId": "ramp",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 3.428,
+      "entries": [
+        {
+          "enemyId": "halberdier",
+          "count": 4,
+          "spacing": 1.5,
+          "laneId": "ramp",
+          "delay": 0
+        },
+        {
+          "enemyId": "shieldbearer",
+          "count": 5,
+          "spacing": 0.95,
+          "laneId": "shaft",
+          "delay": 0.5
+        },
+        {
+          "enemyId": "grunt",
+          "count": 10,
+          "spacing": 0.45,
+          "laneId": "shaft",
+          "delay": 2.0
+        },
+        {
+          "enemyId": "brute",
+          "count": 3,
+          "spacing": 1.2,
+          "laneId": "ramp",
+          "delay": 4.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 3.815,
+      "archetypeId": "war-party",
+      "entries": [
+        {
+          "enemyId": "shieldbearer",
+          "count": 7,
+          "spacing": 0.85,
+          "laneId": "shaft",
+          "delay": 0
+        },
+        {
+          "enemyId": "brute",
+          "count": 6,
+          "spacing": 1.05,
+          "laneId": "shaft",
+          "delay": 1.2
+        },
+        {
+          "enemyId": "juggernaut",
+          "count": 2,
+          "spacing": 8.0,
+          "laneId": "ramp",
+          "delay": 6.0
+        },
+        {
+          "enemyId": "grunt",
+          "count": 9,
+          "spacing": 0.5,
+          "laneId": "ramp",
+          "delay": 3.0
+        }
+      ]
+    },
+    {
+      "hpMultiplier": 4.269,
+      "entries": [
+        {
+          "enemyId": "juggernaut",
+          "count": 2,
+          "spacing": 9.0,
+          "laneId": "ramp",
+          "delay": 0
+        },
+        {
+          "enemyId": "juggernaut",
+          "count": 1,
+          "spacing": 1.0,
+          "laneId": "shaft",
+          "delay": 3.0
+        },
+        {
+          "enemyId": "shieldbearer",
+          "count": 6,
+          "spacing": 0.9,
+          "laneId": "ramp",
+          "delay": 1.0
+        },
+        {
+          "enemyId": "brute",
+          "count": 5,
+          "spacing": 1.1,
+          "laneId": "shaft",
+          "delay": 2.5
+        },
+        {
+          "enemyId": "grunt",
+          "count": 12,
+          "spacing": 0.45,
+          "laneId": "shaft",
+          "delay": 0
+        }
+      ]
+    }
+  ]
+}

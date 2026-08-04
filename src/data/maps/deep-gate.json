@@ -1,0 +1,132 @@
+{
+ "id": "deep-gate",
+ "name": "The Deep Gate",
+ "description": "The bottom of the quarry, where the old gate stands. Shields first, brutes behind, and the pair of things that do not stop until held.",
+ "order": 8,
+ "biomeId": "iron-deeps",
+ "world": {
+  "width": 420,
+  "height": 780
+ },
+ "heroSpawn": {
+  "x": 210,
+  "y": 640
+ },
+ "lanes": [
+  {
+   "id": "ramp",
+   "waypoints": [
+    {
+     "x": 140,
+     "y": -50
+    },
+    {
+     "x": 140,
+     "y": 200
+    },
+    {
+     "x": 250,
+     "y": 300
+    },
+    {
+     "x": 250,
+     "y": 460
+    },
+    {
+     "x": 210,
+     "y": 690
+    }
+   ]
+  },
+  {
+   "id": "shaft",
+   "waypoints": [
+    {
+     "x": 330,
+     "y": -50
+    },
+    {
+     "x": 330,
+     "y": 240
+    },
+    {
+     "x": 160,
+     "y": 380
+    },
+    {
+     "x": 160,
+     "y": 540
+    },
+    {
+     "x": 210,
+     "y": 690
+    }
+   ]
+  }
+ ],
+ "plots": [
+  {
+   "id": "ramp-head",
+   "position": {
+    "x": 195,
+    "y": 160
+   }
+  },
+  {
+   "id": "shaft-head",
+   "position": {
+    "x": 275,
+    "y": 190
+   }
+  },
+  {
+   "id": "cross-gallery",
+   "position": {
+    "x": 205,
+    "y": 345
+   }
+  },
+  {
+   "id": "west-gallery",
+   "position": {
+    "x": 115,
+    "y": 460
+   }
+  },
+  {
+   "id": "east-gallery",
+   "position": {
+    "x": 290,
+    "y": 420
+   }
+  },
+  {
+   "id": "old-wall",
+   "position": {
+    "x": 165,
+    "y": 605
+   }
+  },
+  {
+   "id": "gate-stand",
+   "position": {
+    "x": 260,
+    "y": 630
+   }
+  }
+ ],
+ "gate": {
+  "position": {
+   "x": 210,
+   "y": 715
+  },
+  "hp": 130,
+  "attackSlots": 5
+ },
+ "forge": {
+  "position": {
+   "x": 75,
+   "y": 690
+  }
+ }
+}

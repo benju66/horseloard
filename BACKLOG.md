@@ -769,6 +769,30 @@ the hair-trigger again (64%→25% on a 5% step); small moves found 47%.
 
 **Remaining in M8.5: Iron Deeps L2–L4.** Then natives (M8.6) and the per-biome pass (M8.7).
 
+## M8.5 COMPLETE (2026-08-04): twelve levels, three worlds, one curve
+
+**The Iron Deeps descend**: The Iron Crossing → **The Pit Heads** (geometry: two pit
+mouths, one trench, five plots — under narrow-cuts, which five matters more than anything
+you buy; landed in band on the first authored budget) → **The Undercut** (composition: a
+twice-doubled switchback where halberdiers punish the soldiers the juggernauts demand) →
+**The Deep Gate** (setpiece: war-party columns, juggernaut pairs, the deepest gate in the
+campaign at 130hp).
+
+**Final campaign, ON TARGET on all twelve maps, per-world descents:**
+Green 100 / 94 / 81 / 72 · Iron 50 / 67 / 42 / 53 · Steppe 61 / 47 / 33 / 44.
+Pillar probe OK. 284 unit tests, production build green. Each biome restarts gentler than
+the last one ended and descends to its setpiece — the per-biome band shape BIOMES.md
+Part G.1 asked for, now measured rather than intended.
+
+Deep-gate oscillated 25/36/33 across band-edge nudges before one decisive ease landed it
+at 53 — the same lesson as flank-road and the warlords floor: **never park a map within
+one run of its band edge; tune to mid-band or the next unrelated change re-opens the gate.**
+
+**M8.5 is done. Remaining in M8: M8.6 (biome natives — one each for Iron and Steppe,
+designed against real gaps now that all twelve levels exist) and M8.7 (the per-biome
+tuning pass + draining green's legacyPool, which the M8.2 re-speciation may already have
+emptied — verify).**
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 

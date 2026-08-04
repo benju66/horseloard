@@ -22,6 +22,12 @@ import crossroadsMapJson from './maps/crossroads.json';
 import crossroadsWavesJson from './waves/crossroads.json';
 import warlordsMarchMapJson from './maps/warlords-march.json';
 import warlordsMarchWavesJson from './waves/warlords-march.json';
+import pitHeadsMapJson from './maps/pit-heads.json';
+import pitHeadsWavesJson from './waves/pit-heads.json';
+import undercutMapJson from './maps/undercut.json';
+import undercutWavesJson from './waves/undercut.json';
+import deepGateMapJson from './maps/deep-gate.json';
+import deepGateWavesJson from './waves/deep-gate.json';
 import openRoadMapJson from './maps/open-road.json';
 import openRoadWavesJson from './waves/open-road.json';
 import flankRoadMapJson from './maps/flank-road.json';
@@ -47,6 +53,9 @@ function seed(): RawGameData & Record<string, any> {
       'maps/harvest-night.json': harvestNightMapJson,
       'maps/the-ford.json': theFordMapJson,
       'maps/crossroads.json': crossroadsMapJson,
+      'maps/pit-heads.json': pitHeadsMapJson,
+      'maps/undercut.json': undercutMapJson,
+      'maps/deep-gate.json': deepGateMapJson,
       'maps/open-road.json': openRoadMapJson,
       'maps/flank-road.json': flankRoadMapJson,
       'maps/broken-line.json': brokenLineMapJson,
@@ -58,6 +67,9 @@ function seed(): RawGameData & Record<string, any> {
       'waves/harvest-night.json': harvestNightWavesJson,
       'waves/the-ford.json': theFordWavesJson,
       'waves/crossroads.json': crossroadsWavesJson,
+      'waves/pit-heads.json': pitHeadsWavesJson,
+      'waves/undercut.json': undercutWavesJson,
+      'waves/deep-gate.json': deepGateWavesJson,
       'waves/open-road.json': openRoadWavesJson,
       'waves/flank-road.json': flankRoadWavesJson,
       'waves/broken-line.json': brokenLineWavesJson,
@@ -81,7 +93,7 @@ describe('seed data', () => {
       'aero-storm',
       'muster',
     ]);
-    expect(Object.keys(data.maps).sort()).toEqual(['broken-line', 'crossroads', 'flank-road', 'harvest-night', 'market-road', 'meadow-road', 'open-road', 'the-ford', 'warlords-march']);
+    expect(Object.keys(data.maps).sort()).toEqual(['broken-line', 'crossroads', 'deep-gate', 'flank-road', 'harvest-night', 'market-road', 'meadow-road', 'open-road', 'pit-heads', 'the-ford', 'undercut', 'warlords-march']);
     expect(data.waveSets['meadow-road']?.waves).toHaveLength(8);
     expect(data.waveSets['the-ford']?.waves).toHaveLength(10);
     expect(data.archetypes.map((a) => a.id)).toEqual(['horde', 'raid', 'war-party', 'wild-hunt']);
