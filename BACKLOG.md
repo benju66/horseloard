@@ -817,6 +817,27 @@ is legible — the split-pressure redesign that fixed green's difficulty also ma
 its dominant answer. Iron reads nearly flat (weak signal). The per-biome pass owns this:
 differentiate green's answer back toward rate, and re-read iron at a bigger sample.
 
+## M8.7 — The per-biome pass (2026-08-04), and where green's answer actually lives
+
+Shipped: harvest-night's pincer converges at mid-map so central plots cover both flanks
+(rate answers what only riding could reach); ride's AoE engine trimmed at the tree
+(trample ×1.5/×1.45 → ×1.35/×1.3 per rank, whirling dps ×1.4 → ×1.28, coin-scaling
+0.03/max 2.0 → 0.02/max 1.5). **Steppe differentiated: its carrying path flipped to hunt.**
+All twelve bands held through every change. Legacy pools verified drained — the strict
+pool check has no exceptions left.
+
+**Green still reads ride (+47), and three failed levers say why.** Swarm-mass-up fed it
+(+43 → +53: whirling and trample eat mass), looter-down did nothing, coin-scaling-down did
+nothing. The mechanism is whirling-blades' `enemies-near` auto-trigger at near-permanent
+uptime in the mass biome — an AoE sustain engine wearing a burst ability's clothes. That is
+TREE work (trigger economics, the ride keystone pair), not map work, and it merges into the
+already-queued tree-depth pass. Host at −30 in green is the same coin's other face: nothing
+green floods with is worth blocking.
+
+**M8 status: structurally complete** — three worlds, twelve levels, two natives, rules,
+palettes, probes, all bands green. One open balance item (green×ride) hands off to the
+tree-depth pass with its mechanism named.
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 

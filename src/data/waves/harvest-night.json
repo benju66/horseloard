@@ -214,7 +214,7 @@
         },
         {
           "enemyId": "looter",
-          "count": 6,
+          "count": 5,
           "spacing": 0.8,
           "laneId": "west",
           "delay": 3.0

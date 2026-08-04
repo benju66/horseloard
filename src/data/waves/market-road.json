@@ -161,7 +161,7 @@
         },
         {
           "enemyId": "looter",
-          "count": 6,
+          "count": 5,
           "spacing": 0.9,
           "laneId": "main",
           "delay": 2.5
