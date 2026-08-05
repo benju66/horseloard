@@ -265,6 +265,8 @@ let save: SaveData = newSave();
 let shownCareerLevel = 1;
 let toastTimer = 0;
 let bannerTimer = 0;
+/** True while the pause sheet is up — the sim freezes, the renderer keeps drawing. */
+let paused = false;
 
 /** Fire a one-shot CSS animation by re-adding the class. */
 function replay(el: HTMLElement): void {
@@ -419,6 +421,7 @@ function startMap(mapId: string, endless = false): void {
   activeEndless = endless;
   leaks = 0;
   settled = false;
+  paused = false;
   world = buildWorld(modded.map, scene, views);
   fx = new FxLayer(scene, modded.map);
   instanced = new InstancedEntities(scene, modded.map, modded.map.camera.elevation);
@@ -531,6 +534,35 @@ runOverlay.onRestart = () => {
   if (activeMapId) startMap(activeMapId, activeEndless);
 };
 runOverlay.onExit = () => toMapSelect();
+runOverlay.onPauseChange = (p) => {
+  paused = p;
+};
+// Retreat: the run ends by choice. It settles as a defeat — a failed run is
+// progress (DESIGN §7), so walking away keeps the kills' XP and the per-wave
+// wages rather than silently deleting twenty minutes of fighting.
+runOverlay.onRetreat = () => {
+  if (sim && activeMapId && !settled) {
+    settled = true;
+    const result = settleRun(
+      save,
+      {
+        mapId: activeMapId,
+        victory: false,
+        // A wave in progress was not cleared; only the build phase stands on
+        // a finished wave count.
+        wavesCleared: sim.phase === 'wave' ? Math.max(0, sim.waveRunner.waveNumber - 1) : sim.waveRunner.waveNumber,
+        stars: sim.stars(),
+        endless: activeEndless,
+      },
+      data.economy,
+      sim.xp.totalXp,
+      sim.encountered,
+    );
+    save = result.save;
+    void saves.save(save);
+  }
+  toMapSelect();
+};
 startBtn.addEventListener('click', () => {
   audio.unlock();
   if (!sim?.startNextWave()) return;
@@ -564,7 +596,7 @@ function step(dt: number): void {
   sim.hero.input.y = joystick.value.y;
   // ×2 is a tick multiplier on the fixed-timestep sim — it cannot desync
   // anything, because the tick size itself never changes.
-  if (sim.phase !== 'done' && sim.phase !== 'defeat') {
+  if (!paused && sim.phase !== 'done' && sim.phase !== 'defeat') {
     const scaled = dt * runOverlay.speed;
     simClock += scaled;
     sim.advance(scaled);

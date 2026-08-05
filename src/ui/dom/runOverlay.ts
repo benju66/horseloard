@@ -27,7 +27,14 @@ export class RunOverlay {
   onRestart: (() => void) | null = null;
   /** Assigned by the host: leave the run and return to map select. */
   onExit: (() => void) | null = null;
+  /** Assigned by the host: freeze/unfreeze the sim while the pause sheet is up. */
+  onPauseChange: ((paused: boolean) => void) | null = null;
+  /** Assigned by the host: abandon the run mid-fight (settles as a defeat). */
+  onRetreat: (() => void) | null = null;
   private readonly exit: HTMLButtonElement;
+  private readonly pauseBtn: HTMLButtonElement;
+  private readonly pausePanel: HTMLDivElement;
+  private pausedFlag = false;
   private readonly bannerEl: HTMLDivElement;
   private readonly revealEl: HTMLDivElement;
   private readonly revealQueue: Array<{ name: string; intro: string }> = [];
@@ -98,7 +105,53 @@ export class RunOverlay {
     ri.className = 'reveal-intro';
     this.revealEl.append(rc, rn, ri);
 
-    layer.append(this.speedBtn, this.panel, this.bannerEl, this.revealEl);
+    // ─── Pause: the one interruption the run allows. Opens a sheet; the sheet
+    // freezes the sim (via the host) rather than the sim knowing about menus.
+    this.pauseBtn = document.createElement('button');
+    this.pauseBtn.className = 'pause-btn';
+    this.pauseBtn.setAttribute('data-ui', '');
+    this.pauseBtn.setAttribute('aria-label', 'Pause');
+    this.pauseBtn.textContent = '❚❚';
+    this.pauseBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      this.setPaused(true);
+    });
+
+    this.pausePanel = document.createElement('div');
+    this.pausePanel.className = 'run-panel pause-panel';
+    this.pausePanel.style.display = 'none';
+    const pTitle = document.createElement('div');
+    pTitle.className = 'run-title';
+    pTitle.textContent = 'Paused';
+    const resume = document.createElement('button');
+    resume.className = 'run-again';
+    resume.setAttribute('data-ui', '');
+    resume.textContent = 'Ride on';
+    resume.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      this.setPaused(false);
+    });
+    const retreat = document.createElement('button');
+    retreat.className = 'run-again ghost';
+    retreat.setAttribute('data-ui', '');
+    // Honest label: leaving mid-run settles as a defeat, and a defeat pays
+    // per wave cleared (DESIGN §7) — retreat keeps what the run earned.
+    retreat.textContent = 'Retreat to map select';
+    retreat.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      this.pausedFlag = false;
+      this.pausePanel.style.display = 'none';
+      this.onRetreat?.();
+    });
+    this.pausePanel.append(pTitle, resume, retreat);
+
+    layer.append(this.speedBtn, this.pauseBtn, this.panel, this.pausePanel, this.bannerEl, this.revealEl);
+  }
+
+  private setPaused(on: boolean): void {
+    this.pausedFlag = on;
+    this.pausePanel.style.display = on ? '' : 'none';
+    this.onPauseChange?.(on);
   }
 
   /** Multiplier to apply to dt before advancing the sim. */
@@ -144,6 +197,7 @@ export class RunOverlay {
       `waves ${sim.waveRunner.waveNumber}/${sim.waveRunner.totalWaves}  ·  ` +
       `kills ${sim.kills}  ·  damage taken ${Math.round(sim.gate.totalDamageTaken)}  ·  leaks ${leaks}`;
     this.speedBtn.style.display = 'none';
+    this.pauseBtn.style.display = 'none';
 
     // The payout, stated plainly. A defeat pays too — a failed run is progress
     // (DESIGN §7), and saying so is the difference between a loss that stings
@@ -223,7 +277,12 @@ export class RunOverlay {
   hide(): void {
     this.panel.style.display = 'none';
     this.speedBtn.style.display = '';
+    this.pauseBtn.style.display = '';
     this.shownFor = null;
+    // Leaving the run always unwinds the pause — a frozen sim behind the map
+    // select would freeze the *next* run's opening too.
+    if (this.pausedFlag) this.setPaused(false);
+    this.pausePanel.style.display = 'none';
     // A queued reveal belongs to the run that met the enemy; don't let it
     // play over the map select or the next run's opening.
     this.revealQueue.length = 0;
@@ -241,6 +300,17 @@ export class RunOverlay {
   background: rgba(28,40,34,.85); color: #f2ecdd; font: 700 15px ui-monospace, monospace;
 }
 body.left-hand .speed-btn { right: auto; left: calc(env(safe-area-inset-left, 0px) + 14px); }
+/* Opposite corner from mute/speed, so each thumb owns one edge of chrome.
+   Left-hand mode swaps it with them. */
+.pause-btn {
+  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 40px);
+  left: calc(env(safe-area-inset-left, 0px) + 10px); pointer-events: auto;
+  width: 40px; height: 40px; border-radius: 12px; border: 0;
+  background: rgba(20,30,24,.6); color: #f2ecdd; font: 700 12px/1 ui-monospace, monospace;
+}
+body.left-hand .pause-btn { left: auto; right: calc(env(safe-area-inset-right, 0px) + 10px); }
+.pause-panel { background: rgba(10,16,20,.93); }
+.pause-panel .run-title { color: #f2ecdd; }
 .run-panel {
   position: fixed; inset: 0; pointer-events: auto;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;

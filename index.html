@@ -27,12 +27,13 @@
         inset: 0;
         display: block;
       }
+      /* The overlay itself never eats a touch; each child opts in or out with
+         its own pointer-events. No blanket child rule here — `#overlay > *`
+         carries ID specificity, which silently defeats every `.panel
+         { pointer-events: auto }` opt-in and killed the end-of-run buttons. */
       #overlay {
         position: fixed;
         inset: 0;
-        pointer-events: none;
-      }
-      #overlay > * {
         pointer-events: none;
       }
     </style>

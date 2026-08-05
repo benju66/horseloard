@@ -994,6 +994,21 @@ protanopia** — ΔE 17 at equal luminance. All three enemy reds pushed toward o
 gold/path and HP-bar pairs pass untouched. Learned: flat shading makes palette the whole
 identity channel, so the check is a *pairwise contrast table*, not a vibe.
 
+[x] **Dead-button fix + pause** (2026-08-05, from a phone report). Root cause of "most
+buttons don't work": `#overlay > * { pointer-events: none }` in index.html — an ID-
+specificity rule that silently defeated every `.panel { pointer-events: auto }` opt-in,
+and `pointer-events` *inherits*, so whole panels died with their roots. Deep descendants
+that declared their own `auto` (map rows, tree nodes, start/mute) kept working, which is
+why the campaign was playable while the end-of-run panel, the speed toggle and the
+settings sheet were all dead. Rule deleted; every direct overlay child audited to carry
+its own explicit value. **Pause added**: ❚❚ top-left (mirrors in left-hand mode) freezes
+the sim while the renderer keeps drawing; Ride on / Retreat. Retreat settles as a defeat
+— per-wave wages and the kills' XP are kept, a wave in progress does not count as
+cleared. Learned, structurally: UI regressions live below the reach of the vitest suite,
+so this fix shipped with a **Playwright smoke** (`scripts/ui-smoke.mjs`) that clicks the
+real built game — settings toggle, pause/resume, retreat-to-menu, left-hand class. Run
+it against `vite preview` after any overlay/CSS change.
+
 Remaining: icons/splash/store-listing draft (waits on art per standing order) ·
 performance pass on real devices (needs the phone) · soft launch to friends · TWA
 wrapper decision for Play Store.
