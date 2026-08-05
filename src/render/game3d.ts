@@ -310,6 +310,16 @@ const heroScaleOverride = (() => {
   const n = raw === null ? NaN : Number(raw);
   return Number.isFinite(n) && n > 0 ? n : undefined;
 })();
+/**
+ * Dev-only model probe: `?heroModel=unit-hero` rides the old fused hero for a
+ * side-by-side against whatever hero.json ships, same reasoning as heroScale —
+ * the comparison can only be judged on a phone, without a rebuild. Falls back
+ * to the manifest default if the id doesn't resolve.
+ */
+const heroModelOverride = (() => {
+  const raw = new URLSearchParams(location.search).get('heroModel');
+  return raw && raw.length > 0 ? raw : undefined;
+})();
 
 const host = {
   data,
@@ -490,8 +500,11 @@ function startMap(mapId: string, endless = false): void {
   abilityBar?.destroy();
   abilityBar = new AbilityBar(sim, overlay);
 
-  const heroModel = modded.hero.model;
+  const heroModel = heroModelOverride ?? modded.hero.model;
   heroView = heroModel ? views.acquire(heroModel) : undefined;
+  if (!heroView && heroModelOverride && modded.hero.model) {
+    heroView = views.acquire(modded.hero.model);
+  }
   if (heroView) {
     // ?heroScale=1.2 replaces the manifest scale for this load only. How big
     // the hero should read against the roster is a judgement that can only be

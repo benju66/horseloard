@@ -1,5 +1,5 @@
 {
-  "model": "unit-hero",
+  "model": "hero-mounted",
   "moveSpeed": 150,
   "radius": 16,
   "margins": {

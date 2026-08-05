@@ -76,17 +76,17 @@
       "id": "hero-mounted",
       "base": "base-horse",
       "scale": 1.5,
-      "file": "models/hero/horse.glb",
+      "file": "models/hero/mount-fox.glb",
       "keepMaterials": true,
       "clips": {
         "walk": "Walk",
-        "idle": "Idle"
+        "idle": "Survey"
       },
       "props": [
         {
           "id": "hero-rider",
           "socket": "mount",
-          "bone": "Spine",
+          "bone": "b_Spine02_03",
           "file": "models/kaykit/Knight.glb",
           "scale": 0.62,
           "keepMaterials": true

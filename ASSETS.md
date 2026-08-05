@@ -87,6 +87,16 @@ attribution, so the licence row is unchanged.
 
 Each pack's own `License.txt` / `LICENSE.txt` ships alongside its models.
 
+| `public/models/hero/mount-fox.glb` | Khronos glTF-Sample-Assets "Fox" — model by PixelMannen (CC0), rig + animations by @tomkranis (CC-BY 4.0) | CC0 mesh / **CC-BY 4.0 rig+anims** | **Yes — credit @tomkranis if this ships** |
+
+**The fox is a stand-in mount, not the hero's final horse.** It exists to prove
+the bone-anchored-rider pipeline end-to-end (rigged quadruped with real
+`Walk`/`Survey` clips, static KayKit Knight parented to `b_Spine02_03`) while
+asset sites were unreachable from the dev container. Replace the file with a
+rigged horse and update `hero-mounted` in `models.json` (file path, clip
+names, bone name) — nothing else changes. If it is ever *not* replaced before
+release, the CC-BY attribution above becomes a real obligation.
+
 ## AI-generated
 
 | Asset | Source | License | Attribution required |
