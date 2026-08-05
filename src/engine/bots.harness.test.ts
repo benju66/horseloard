@@ -735,6 +735,108 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
   });
 
   /**
+   * **Contribution probe — the instrument M7.8 asked for.**
+   *
+   * Every earlier probe scored a path by the wins of builds that CONTAIN it,
+   * which conflates "this path carries" with "winners happened to hold it" —
+   * the exact confusion that had ride blamed for a poisoned instrument and
+   * host read as dead when nothing green was worth blocking.
+   *
+   * This one asks the causal question: for each sampled build and each path
+   * it spent points in, replay the same build with that path ABLATED and the
+   * freed points RESPREAD across the build's other paths at the same budget.
+   * The path's contribution is base − respread: what those points bought
+   * *over spending them elsewhere*. Positive = the points earned their place;
+   * negative = a respec would have won more.
+   *
+   * One composition level per biome — the L3s, where each world's question is
+   * sharpest — so a path can contribute in one world and not another.
+   */
+  it("reports each path's marginal contribution (ablation, respread)", { timeout: 900_000 }, () => {
+    const SAMPLES = 12;
+    const ABLATION_SEEDS = SEEDS.slice(0, 8);
+    const probeMaps = ['market-road', 'undercut', 'broken-line'].filter((m) => data.maps[m]);
+    const budget = at(REFERENCE_LEVEL, REFERENCE_STARS);
+    const paths = [...new Set(tree.nodes.map((n) => n.path))].sort();
+
+    const buildRng = makeRng(7777);
+    const builds = Array.from({ length: SAMPLES }, () => randomBuild(tree, budget, buildRng));
+
+    const winOf = (build: readonly string[]): number => {
+      let wins = 0;
+      let total = 0;
+      for (const mapId of probeMaps) {
+        for (const f of BOTS) {
+          for (const seed of ABLATION_SEEDS) {
+            const r = runBot({ ...botData, skillNodes: build }, mapId, f, seed);
+            total++;
+            if (r.outcome === 'win') wins++;
+          }
+        }
+      }
+      return (wins / total) * 100;
+    };
+
+    /** The build with `path` removed and its points respent on the rest. */
+    const respread = (build: readonly string[], path: string, salt: number): readonly string[] => {
+      const rng = makeRng(9000 + salt);
+      let allocated: readonly string[] = [];
+      for (const id of build) {
+        const n = tree.node(id);
+        if (!n || n.path === path) continue;
+        if (tree.canAllocate(id, { allocated, pointsEarned: budget })) {
+          allocated = tree.allocate(id, { allocated, pointsEarned: budget });
+        }
+      }
+      for (;;) {
+        const open = tree.nodes.filter(
+          (n) => n.path !== path && tree.canAllocate(n.id, { allocated, pointsEarned: budget }),
+        );
+        if (open.length === 0) break;
+        const pick = open[Math.min(open.length - 1, Math.floor(rng() * open.length))]!;
+        allocated = tree.allocate(pick.id, { allocated, pointsEarned: budget });
+      }
+      return allocated;
+    };
+
+    const contributions = new Map<string, number[]>();
+    const pointsIn = new Map<string, number[]>();
+    builds.forEach((build, bi) => {
+      const base = winOf(build);
+      const share = pathShare(tree, build);
+      for (const [path, pts] of Object.entries(share)) {
+        if (pts <= 0) continue;
+        const delta = base - winOf(respread(build, path, bi * 10 + paths.indexOf(path as (typeof paths)[number])));
+        contributions.set(path, [...(contributions.get(path) ?? []), delta]);
+        pointsIn.set(path, [...(pointsIn.get(path) ?? []), pts]);
+      }
+    });
+
+    const lines = paths.map((p) => {
+      const cs = contributions.get(p) ?? [];
+      if (cs.length === 0) return `  ${p.padEnd(6)} (unsampled)`;
+      const mean = cs.reduce((a, b) => a + b, 0) / cs.length;
+      const pts = (pointsIn.get(p) ?? []).reduce((a, b) => a + b, 0) / cs.length;
+      const perPt = mean / Math.max(1, pts);
+      const flag = mean <= -8 ? '   ← a respec would win more' : mean >= 8 ? '   ← earns its points' : '';
+      return (
+        `  ${p.padEnd(6)} contribution ${(mean >= 0 ? '+' : '') + mean.toFixed(1).padStart(5)}pp ` +
+        `over ${String(cs.length).padStart(2)} builds  (~${pts.toFixed(1)}pt held, ` +
+        `${(perPt >= 0 ? '+' : '') + perPt.toFixed(1)}pp/pt)${flag}`
+      );
+    });
+
+    console.log(
+      `\n[CONTRIBUTION PROBE — M7.8's ask]  ${SAMPLES} builds × ablate-and-respread, ` +
+        `maps ${probeMaps.join(' + ')} × all bots × ${ABLATION_SEEDS.length} seeds\n` +
+        lines.join('\n') +
+        '\n  contribution = win(build) − win(same budget, this path respec into the rest).\n' +
+        '  Positive: the points earn their place. Negative: a respec wins more.\n' +
+        '  Accept: no path ≤ −8pp (dead weight) and none ≥ +12pp (the mandatory pick).',
+    );
+  });
+
+  /**
    * **Pool probe — the biome thesis, tested before a single map is authored.**
    *
    * BIOMES.md rests on one claim: *different enemy pools make different builds

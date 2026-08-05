@@ -893,6 +893,24 @@ Three instrument fixes this ledger cycle — persona caps, slow pricing, income 
 and each one re-priced the campaign. The lesson is now structural: **after any bot change,
 the difficulty curve is the first read, not the last.**
 
+## The contribution probe (2026-08-05): the causal instrument, and its first verdicts
+
+Built: ablate-and-respread. For each sampled build and each path it holds, replay the same
+budget with that path's nodes removed and the points respent across the build's other
+paths. Contribution = base − respread: what the points bought *over spending them
+elsewhere*. This is the causal question every share-among-winners reading only gestured at.
+One composition level per biome (market-road, undercut, broken-line) so a path can earn
+its keep in one world and not another.
+
+**First verdicts:** hunt −1.2pp — the "hunt tops all three biomes" watch item closes as
+correlation, not cause. wall +8.0pp (+5.6/pt) — earns its points; the vindication arc from
+the mill trap completes. ride +1.4, storm −0.3, crown −6.9 — all within accept.
+**host −24.1pp (−8.0/pt) — genuinely dead weight, causally.** A respec beats holding host
+on every composition level. This is the first balance defect found by a trustworthy
+instrument rather than inferred around a broken one, and it is the next design target:
+host's value must become real on boards players actually build, or its cost must fall to
+what the exposure is worth.
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 
