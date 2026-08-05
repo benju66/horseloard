@@ -103,6 +103,9 @@ export class AbilityBar {
   bottom: calc(env(safe-area-inset-bottom, 0px) + 92px);
   display: flex; flex-direction: column; gap: 12px; pointer-events: none;
 }
+/* Left-hand mode: the readout moves to the edge the steering thumb is NOT
+   covering. Purely cosmetic — nothing here is pressable either way. */
+body.left-hand .ability-bar { right: auto; left: calc(env(safe-area-inset-left, 0px) + 14px); }
 .ability {
   /* pointer-events: none — see the class comment. A readout that swallows
      touches in the bottom-right is a readout that eats your steering. */

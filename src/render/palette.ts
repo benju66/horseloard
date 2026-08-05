@@ -22,14 +22,20 @@ export const PALETTE = [
   '#4a3018', // wood dark
   '#f6c945', // gold
   '#3b5dc9', // hero blue
-  '#c4452e', // enemy red
+  // Enemy reds lean orange on purpose. The naive crimson (#c4452e family) sat
+  // at the same luminance as the grass, and under protanopia — where red
+  // dims — enemy-vs-field collapsed to ΔE ≈ 17 (safe is ≥ 30). Pushing each
+  // red toward orange raises its luminance without losing "enemy": measured
+  // ΔE vs both grasses is now ≥ 35 protan and ≥ 53 deutan, and the
+  // enemy-vs-friendly channel (red vs blue) was never at risk.
+  '#d84a24', // enemy red
   '#e8b88a', // skin
   // Faction shades. Under flat shading a unit *is* its colour, so weight has to
   // come from the palette: heavier and more dangerous reads darker, fragile and
   // fast reads lighter. Appended rather than inserted — slots are referenced by
   // index from models.json, so renumbering would silently recolour the roster.
-  '#8e2f20', // enemy red dark — brutes, swarms, the heavy end
-  '#e0673f', // enemy red light — runners
+  '#9c2810', // enemy red dark — brutes, swarms, the heavy end
+  '#ef7a3a', // enemy red light — runners
   '#3d3646', // blackened — the warlord, flyers
 ] as const;
 

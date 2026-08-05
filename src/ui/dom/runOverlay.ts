@@ -232,12 +232,15 @@ export class RunOverlay {
 
   static css(): string {
     return `
+/* Below the mute button, not on top of it — the two share the right edge and
+   at their old offsets (40 vs 34) their boxes overlapped almost entirely. */
 .speed-btn {
-  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 40px);
+  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 86px);
   right: calc(env(safe-area-inset-right, 0px) + 14px); pointer-events: auto;
   width: 52px; height: 40px; border-radius: 12px; border: 1px solid rgba(255,255,255,.22);
   background: rgba(28,40,34,.85); color: #f2ecdd; font: 700 15px ui-monospace, monospace;
 }
+body.left-hand .speed-btn { right: auto; left: calc(env(safe-area-inset-left, 0px) + 14px); }
 .run-panel {
   position: fixed; inset: 0; pointer-events: auto;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;

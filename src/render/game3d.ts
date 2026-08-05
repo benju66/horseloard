@@ -16,6 +16,8 @@ import { AbilityBar } from '../ui/dom/abilityBar';
 import { BubbleLayer, bubbleActions } from '../ui/dom/bubbles';
 import { DomJoystick } from '../ui/dom/joystick';
 import { RunOverlay } from '../ui/dom/runOverlay';
+import { SettingsPanel } from '../ui/dom/settingsPanel';
+import { SettingsStore } from '../ui/settings';
 import { LoadoutScreen, MapSelectScreen, SkillTreeScreen, screensCss } from '../ui/dom/screens';
 import { ModelViewFactory, UNIT_HEIGHT } from './entityViews';
 import { FxLayer } from './fx';
@@ -82,6 +84,7 @@ style.textContent =
   BubbleLayer.css() +
   AbilityBar.css() +
   RunOverlay.css() +
+  SettingsPanel.css() +
   screensCss() +
   `
 #hud { position: fixed; inset: 0; pointer-events: none;
@@ -154,6 +157,7 @@ style.textContent =
   pointer-events: auto; width: 40px; height: 40px; border-radius: 12px; border: 0;
   background: rgba(20,30,24,.6); color: #f2ecdd; font-size: 17px; line-height: 1; }
 #mutebtn[data-state="silent"] { background: rgba(150,60,30,.75); }
+body.left-hand #mutebtn { right: auto; left: 10px; }
 `;
 document.head.append(style);
 
@@ -234,6 +238,15 @@ muteBtn.addEventListener('click', () => {
 });
 syncMute();
 hud.append(muteBtn);
+
+const settings = new SettingsStore();
+const settingsPanel = new SettingsPanel(overlay, audio, settings);
+// Handedness is a body class so every fixed element can mirror in CSS alone.
+const applyHandedness = (): void => {
+  document.body.classList.toggle('left-hand', settings.settings.leftHand);
+};
+settings.onChange.push(applyHandedness);
+applyHandedness();
 
 const joystick = new DomJoystick(canvas, overlay);
 const bubbles = new BubbleLayer(hud);
@@ -331,6 +344,7 @@ const mapSelect = new MapSelectScreen(
     mapSelect.hide();
     loadout.show();
   },
+  () => settingsPanel.show(),
 );
 const treeScreen = new SkillTreeScreen(overlay, host, () => {
   treeScreen.hide();
@@ -465,6 +479,7 @@ function startMap(mapId: string, endless = false): void {
   sim.enemySystem.onDamaged.push((e) => flashUntil.set(e.id, simClock + FLASH_SECONDS));
   fx.attach(sim);
   attachAudio(sim);
+  attachHaptics(sim);
   audio.startMusic();
   audio.setMusicPhase('calm');
   audio.setMusicBoss(false);
@@ -715,11 +730,24 @@ function attachAudio(s: Simulation): void {
   });
 }
 
+/**
+ * Sim events -> vibration, same one-way contract as audio. Deliberately
+ * sparse: haptics are for the *physical* beats — the ones that happen to your
+ * body (staggered) or your walls (a leak, a wave held). A phone that buzzes
+ * per kill is a phone set to silent by day two.
+ */
+function attachHaptics(s: Simulation): void {
+  s.hero.onStagger.push(() => settings.buzz(45));
+  s.enemySystem.onReachEnd.push(() => settings.buzz(20));
+  s.onWaveClear.push(() => settings.buzz([12, 40, 12]));
+}
+
 function settleIfNeeded(): void {
   if (!sim || settled || !activeMapId) return;
   if (sim.phase !== 'done' && sim.phase !== 'defeat') return;
   settled = true;
   audio.play(sim.phase === 'done' ? 'victory' : 'defeat');
+  settings.buzz(sim.phase === 'done' ? [30, 60, 30, 60, 80] : 150);
   const result = settleRun(
     save,
     {

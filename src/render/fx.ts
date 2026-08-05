@@ -169,7 +169,7 @@ export class FxLayer {
 
   constructor(scene: THREE.Scene, map: MapDef) {
     this.map = map;
-    this.enemyRings = new RingPool(scene, 13, '#c4452e', 0.5);
+    this.enemyRings = new RingPool(scene, 13, '#d84a24', 0.5);
     this.heroRing = new RingPool(scene, 17, '#5b8bff', 0.62);
     this.rangeRings = new RingPool(scene, 1, '#ffffff', 0.14);
     // Unit radius, scaled per zone — a hazard has to read as *ground you do not
@@ -193,7 +193,7 @@ export class FxLayer {
         this.scratch.x,
         e.config.radius,
         this.scratch.z,
-        e.isElite ? '#f6c945' : '#c4452e',
+        e.isElite ? '#f6c945' : '#d84a24',
         e.isElite ? 1.5 : 1,
       );
       if (e.config.staggersHero) this.kick(0.5); // heavies land heavier

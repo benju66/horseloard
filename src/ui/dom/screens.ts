@@ -65,6 +65,7 @@ export class MapSelectScreen {
     host: ScreenHost,
     openTree: () => void,
     openLoadout: () => void,
+    openSettings?: () => void,
   ) {
     this.host = host;
     this.root = document.createElement('div');
@@ -73,10 +74,12 @@ export class MapSelectScreen {
     layer.append(this.root);
     this.openTree = openTree;
     this.openLoadout = openLoadout;
+    this.openSettings = openSettings;
   }
 
   private readonly openTree: () => void;
   private readonly openLoadout: () => void;
+  private readonly openSettings?: () => void;
 
   show(): void {
     this.render();
@@ -204,6 +207,15 @@ export class MapSelectScreen {
     bar.addEventListener('click', () => this.openLoadout());
 
     actions.append(meta, bar);
+    if (this.openSettings) {
+      const gear = document.createElement('button');
+      gear.className = 'screen-action ghost';
+      gear.setAttribute('data-ui', '');
+      gear.setAttribute('aria-label', 'Settings');
+      gear.textContent = '⚙';
+      gear.addEventListener('click', () => this.openSettings!());
+      actions.append(gear);
+    }
     this.root.append(actions);
   }
 }

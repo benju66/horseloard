@@ -973,7 +973,30 @@ curve is untouched by construction, and the curve probe was still re-run first p
 ledger rule.
 
 ## M4 — Publish polish
-Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
+
+[—] **Map 1 as diegetic tutorial** — skipped by explicit call (2026-08-05).
+
+[x] **Settings** (2026-08-05). A sheet off map select (⚙), four toggles, zero navigation
+levels: sound / music (existing AudioManager prefs), **haptics** (new `SettingsStore`,
+localStorage like audio — device property, never save state), **left-hand mode** (a
+`body.left-hand` class; ability readout, speed and mute mirror to the left edge in CSS
+alone — the joystick needs nothing, it already spawns under the thumb). Haptics follow
+the audio contract (sim fires events whether anyone listens) and are deliberately
+sparse: stagger, leak, wave clear, run end. A phone that buzzes per kill is a phone set
+to silent by day two. Found and fixed en route: the speed and mute buttons had been
+sharing the same top-right box since MG.5 — speed now stacks below.
+
+[x] **Colorblind-safe enemy palette** (2026-08-05). Measured, not eyeballed: Viénot
+dichromacy simulation + Lab ΔE over every adversarial pair. Enemy-vs-friendly (red vs
+blue) was never at risk (ΔE ≥ 95 everywhere). The failure was **enemy red vs grass under
+protanopia** — ΔE 17 at equal luminance. All three enemy reds pushed toward orange
+(`#d84a24`/`#9c2810`/`#ef7a3a`): now ≥ 35 protan / ≥ 53 deutan vs both grasses, and the
+gold/path and HP-bar pairs pass untouched. Learned: flat shading makes palette the whole
+identity channel, so the check is a *pairwise contrast table*, not a vibe.
+
+Remaining: icons/splash/store-listing draft (waits on art per standing order) ·
+performance pass on real devices (needs the phone) · soft launch to friends · TWA
+wrapper decision for Play Store.
 
 ---
 
