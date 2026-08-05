@@ -217,6 +217,13 @@ export class MapSelectScreen {
       actions.append(gear);
     }
     this.root.append(actions);
+
+    // The staleness tell. A PWA's service worker can serve a bundle days older
+    // than main; this makes "which build am I on" readable from the phone.
+    const build = document.createElement('div');
+    build.className = 'screen-build';
+    build.textContent = typeof __BUILD__ === 'string' ? `build ${__BUILD__}` : '';
+    this.root.append(build);
   }
 }
 
@@ -787,6 +794,7 @@ export function screensCss(): string {
 }
 .screen-title { font: 700 32px/1.1 Georgia, serif; color: #f6c945; margin-top: env(safe-area-inset-top, 0px); }
 .screen-sub { font: 600 14px ui-monospace, monospace; color: #cdc6b4; margin-bottom: 8px; }
+.screen-build { margin-top: 14px; font: 400 10px ui-monospace, monospace; color: rgba(205,198,180,.45); }
 .map-list, .node-list { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; }
 .biome-head { margin: 10px 2px 0; display: flex; flex-direction: column; gap: 2px; }
 .biome-head:first-child { margin-top: 0; }

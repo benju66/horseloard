@@ -13,6 +13,12 @@ import { VitePWA } from 'vite-plugin-pwa';
  */
 
 export default defineConfig({
+  // Stamped into the map select footer. A PWA behind a service worker can run
+  // code that is days older than what main serves, and "is my phone on the new
+  // build" must be answerable by looking at the screen, not by deduction.
+  define: {
+    __BUILD__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ')),
+  },
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
