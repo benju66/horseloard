@@ -925,6 +925,27 @@ while the campaign's juggernauts pay for them. No tree change shipped — the te
 lesson is that the accused was the instrument again, and this time the better instrument
 acquitted the design.
 
+## Endless measured (2026-08-05): the long game gets its bands
+
+The last unmeasured system. Three changes, one probe, one tune:
+
+**Generated waves are biome-bound.** `ResolvedMapDef` now carries its biome's pool (same
+resolution as the palette), and the endless generator filters to it — the loader cannot
+check waves that do not exist yet, so the generator checks itself. Before this, a Green
+Road endless run summoned juggernauts and wardens past the exact rule authored waves obey.
+Tested both ways.
+
+**runBot learned endless** (opts: endless + a wave horizon; surviving to it is a win), and
+the **[ENDLESS PROBE]** plays each biome's first map to a 40-wave horizon: median waves
+survived vs bands expressing the milestone economy (10/20/30 pay XP — under the first
+milestone endless pays nothing, past ~30 it prints).
+
+**Escalation gained a quadratic tail** (hp 1 + 0.14n + 0.008n²): linear never caught a
+competent board — green's pooled endless ran to a median of wave 39. The quadratic leaves
+early milestones alone (+0.8 at w10) and closes the deep tail. **ON TARGET: meadow 28,
+crossroads 15, open-road 18** — every reference run clears milestone one, some touch two
+and three, none farm forever. The run ends because the world ends it.
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 

@@ -174,3 +174,50 @@ describe('endless progression payout', () => {
     expect(out.save.campaign['m']?.stars ?? 0).toBe(0);
   });
 });
+
+function makeEnemiesFile(): EnemiesFile {
+  return {
+    elite: { chance: 0, hpMultiplier: 2, coinMultiplier: 2 },
+    enemies: [
+      makeEnemy({ id: 'pool-one', name: 'One', hp: 10, coinValue: 3 }),
+      makeEnemy({ id: 'pool-two', name: 'Two', hp: 20, coinValue: 8 }),
+      makeEnemy({ id: 'pool-three', name: 'Three', hp: 40, coinValue: 15 }),
+    ],
+  };
+}
+
+function makeSeededRng(seed: number): () => number {
+  let s = seed >>> 0 || 1;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+describe('endless respects the biome pool', () => {
+  // The loader cannot check waves that do not exist yet, so the generator
+  // checks itself: a Green Road endless run must never summon what the Green
+  // Road cannot. Empty pool = fixture = unconstrained.
+  it('generated entries draw only from the map pool', () => {
+    const enemies = makeEnemiesFile();
+    const map = { ...makeMap(), pool: [enemies.enemies[0]!.id] };
+    const rng = makeSeededRng(7);
+    for (let n = 1; n <= 20; n++) {
+      const wave = generateEndlessWave(n, enemies, map, rng);
+      for (const e of wave.entries) {
+        expect(e.enemyId).toBe(enemies.enemies[0]!.id);
+      }
+    }
+  });
+
+  it('an empty pool means the whole roster (fixtures)', () => {
+    const enemies = makeEnemiesFile();
+    const map = makeMap(); // fixture pool: []
+    const rng = makeSeededRng(11);
+    const seen = new Set<string>();
+    for (let n = 1; n <= 30; n++) {
+      for (const e of generateEndlessWave(n, enemies, map, rng).entries) seen.add(e.enemyId);
+    }
+    expect(seen.size).toBeGreaterThan(1);
+  });
+});

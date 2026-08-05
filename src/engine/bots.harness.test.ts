@@ -1314,6 +1314,56 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
   });
 
   /**
+   * **Endless probe — the long game, measured for the first time.**
+   *
+   * Endless carries the entire replay motor (DESIGN §3): milestones at
+   * 10/20/30 pay career XP, and BIOMES.md Part I.3 names it as the thing that
+   * turns twelve levels of novelty into hundreds of runs. Until now it had no
+   * bands and no instrument — the last unmeasured system in the game.
+   *
+   * One run per biome's FIRST map (endless unlocks per map on clear, and the
+   * L1 is where most careers will grind). The reference build plays to a
+   * 40-wave horizon; the reading is the median wave survived. Bands express
+   * the milestone economy: a first-clear career should routinely pass the
+   * first milestone (10) and sometimes the second (20) — a median under the
+   * first milestone means endless pays nothing, over ~30 means it prints XP.
+   */
+  it('reports how deep endless runs go', { timeout: 900_000 }, () => {
+    const ENDLESS_BANDS: Record<string, [number, number]> = {
+      'meadow-road': [12, 28],
+      'crossroads': [10, 24],
+      'open-road': [8, 22],
+    };
+    const lines: string[] = [];
+    let off = 0;
+    for (const [mapId, band] of Object.entries(ENDLESS_BANDS)) {
+      if (!data.maps[mapId]) continue;
+      const waves: number[] = [];
+      for (const f of BOTS) {
+        for (const seed of SEEDS.slice(0, 6)) {
+          const r = runBot(botData, mapId, f, seed, { endless: true, maxWaves: 40 });
+          waves.push(r.wavesCleared);
+        }
+      }
+      waves.sort((a, b) => a - b);
+      const median = waves[Math.floor(waves.length / 2)]!;
+      const inBand = median >= band[0] && median <= band[1];
+      if (!inBand) off++;
+      lines.push(
+        `  ${mapId.padEnd(14)} median w${String(median).padStart(2)}  ` +
+          `range w${waves[0]}–w${waves[waves.length - 1]}  ` +
+          `(want ${band[0]}-${band[1]}) ${inBand ? '✓' : '✗'}`,
+      );
+    }
+    console.log(
+      `\n[ENDLESS PROBE]  ${off === 0 ? 'ON TARGET' : `${off} map(s) off target`} — reference build to a 40-wave horizon\n` +
+        lines.join('\n') +
+        '\n  Median waves survived. Milestones pay at 10/20/30: under the first\n' +
+        '  milestone endless pays nothing; past ~30 it prints XP.',
+    );
+  });
+
+  /**
    * **Budget probe — Part F.2.** Rule 1 of the design ("you can never finish the
    * tree") as a number rather than an intention.
    *

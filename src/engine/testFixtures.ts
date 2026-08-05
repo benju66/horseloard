@@ -136,5 +136,8 @@ export function makeMap(overrides?: {
     // duplicating literals that would drift out of sync.
     camera: MapCameraSchema.parse({}),
     lighting: MapLightingSchema.parse({}),
+    // Fixtures allow the whole roster — pool binding is the loader's job, and
+    // the endless generator treats a full pool as no constraint.
+    pool: [],
   };
 }

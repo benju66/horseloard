@@ -234,4 +234,12 @@ export const MapSchema = z
   });
 export type MapDef = z.infer<typeof MapSchema>;
 
-export type ResolvedMapDef = MapDef & { lighting: MapLighting };
+/**
+ * A map after the loader has resolved its biome inheritance: the palette it
+ * will render under, and the enemy pool runtime systems may draw from. The
+ * pool matters beyond bookkeeping — endless mode GENERATES waves, and a
+ * generator that samples the whole roster would summon juggernauts onto the
+ * Green Road, bypassing at runtime the exact check the loader enforces on
+ * authored waves.
+ */
+export type ResolvedMapDef = MapDef & { lighting: MapLighting; pool: readonly string[] };

@@ -13,10 +13,21 @@ export function generateEndlessWave(
   map: MapDef,
   rng: () => number,
 ): Wave {
-  const roster = enemies.enemies.filter((e) => !e.warCry && !e.lootsCoins);
+  // The biome pool binds generated waves exactly as it binds authored ones —
+  // the loader cannot check what does not exist yet, so the generator checks
+  // itself. Fixture maps without a resolved pool keep the whole roster.
+  const pool = (map as { pool?: readonly string[] }).pool;
+  const roster = enemies.enemies.filter(
+    (e) => !e.warCry && !e.lootsCoins && (!pool || pool.length === 0 || pool.includes(e.id)),
+  );
   const lanes = map.lanes.map((l) => l.id);
   const budget = 24 + n * 9;
-  const hpMultiplier = Math.round((1 + n * 0.14) * 100) / 100;
+  // Linear escalation never catches a competent board — measured, the green
+  // pool's endless ran to a median of wave 39 against a 12-28 band. The
+  // quadratic term leaves the early milestones alone (+0.8 at w10) and
+  // closes the deep tail (+12 at w39): the run ends because the WORLD ends
+  // it, not because attention lapsed.
+  const hpMultiplier = Math.round((1 + n * 0.14 + 0.008 * n * n) * 100) / 100;
 
   // weight: cheap fodder early, heavies scale in
   const weight = (cost: number) => {

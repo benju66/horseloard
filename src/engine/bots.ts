@@ -1032,6 +1032,12 @@ export function runBot(
   mapId: string,
   factory: BotFactory,
   seed: number,
+  /**
+   * Endless probing: play in endless mode and stop at `maxWaves`. A run that
+   * reaches the horizon alive counts as a win; wavesCleared carries the real
+   * signal either way (median waves survived).
+   */
+  opts?: { endless?: boolean; maxWaves?: number },
 ): BotRunResult {
   // The career build is folded into the balance data *before* the sim exists,
   // exactly as the meta tree always was — so the run is played by an engine that
@@ -1093,6 +1099,7 @@ export function runBot(
       // player can assemble, and made every ability node a dead take.
       unlockedAbilityIds: built.unlockedAbilityIds,
       rules: built.rules,
+      endless: opts?.endless ?? false,
       scaling: built.scaling,
       // Tower unlocks are part of a build too. Ignoring them let every arm of
       // every probe build the whole roster, which quietly made a tree node that
@@ -1142,7 +1149,8 @@ export function runBot(
   const guardTicks = Math.round(MAX_WAVE_SECONDS / SIM_DT);
   let outcome: BotRunResult['outcome'] = 'stalled';
 
-  for (let wave = 1; wave <= sim.waveRunner.totalWaves; wave++) {
+  const lastWave = opts?.endless ? (opts.maxWaves ?? 40) : sim.waveRunner.totalWaves;
+  for (let wave = 1; wave <= lastWave; wave++) {
     bot.spend(sim);
     if (!sim.startNextWave()) break;
 
@@ -1191,6 +1199,7 @@ export function runBot(
       ? sim.waveRunner.totalWaves
       : Math.max(0, sim.waveRunner.waveNumber - 1);
 
+  if (opts?.endless && outcome === 'stalled' && sim.phase !== 'wave') outcome = 'win';
   return {
     mapId,
     bot: bot.name,

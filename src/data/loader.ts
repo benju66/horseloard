@@ -149,7 +149,7 @@ export function validateGameData(raw: RawGameData): GameData {
     // The palette is resolved exactly once, here. Everything downstream sees a
     // map that has one, so no renderer call site carries a fallback that could
     // differ from the biome's.
-    maps[map.id] = { ...map, lighting: map.lighting ?? biome.lighting };
+    maps[map.id] = { ...map, lighting: map.lighting ?? biome.lighting, pool: biome.pool };
   }
 
   const waveSets: Record<string, WaveSet> = {};
