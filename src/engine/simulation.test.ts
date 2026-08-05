@@ -184,6 +184,71 @@ describe('wave lifecycle', () => {
     expect(sim.gold).toBe(before);
   });
 
+  it('reports zero gate damage for a clean hold', () => {
+    const sim = new Simulation(fixture(), TEST_RNG);
+    const reports: Array<{ wave: number; damage: number }> = [];
+    sim.onWaveClear.push((wave, _xp, damageTaken) => reports.push({ wave, damage: damageTaken }));
+    sim.startNextWave();
+    advanceSeconds(sim, 1.5); // both spawned, nowhere near the gate
+    sim.enemySystem.applyDamage(1, 999);
+    sim.enemySystem.applyDamage(2, 999);
+    advanceSeconds(sim, SIM_DT * 2);
+    expect(reports).toEqual([{ wave: 1, damage: 0 }]);
+  });
+
+  it('reports the gate HP the wave actually cost', () => {
+    const sim = new Simulation(fixture(), TEST_RNG);
+    const damages: number[] = [];
+    sim.onWaveClear.push((_w, _xp, damageTaken) => damages.push(damageTaken));
+    sim.startNextWave();
+    advanceSeconds(sim, 20); // walkers reach the gate and besiege it
+    expect(sim.gate.hp).toBeLessThan(sim.gate.maxHp);
+    sim.enemySystem.applyDamage(1, 999);
+    sim.enemySystem.applyDamage(2, 999);
+    advanceSeconds(sim, SIM_DT * 2);
+    expect(damages).toHaveLength(1);
+    expect(damages[0]).toBeGreaterThan(0);
+    // No repair happened, so the report must equal the gate's actual loss.
+    expect(damages[0]).toBeCloseTo(sim.gate.maxHp - sim.gate.hp, 5);
+  });
+
+  it('announces each species once, on first spawn, and never again', () => {
+    const enemies: EnemiesFile = {
+      elite: { chance: 0, hpMultiplier: 2, coinMultiplier: 2 },
+      enemies: [makeEnemy({ id: 'walker', name: 'Walker' }), makeEnemy({ id: 'newcomer', name: 'Newcomer' })],
+    };
+    const waveSet: WaveSet = {
+      mapId: 'straight',
+      waves: [
+        { hpMultiplier: 1, entries: [{ enemyId: 'walker', count: 2, spacing: 0.5, laneId: 'main', delay: 0 }] },
+        {
+          hpMultiplier: 1,
+          entries: [
+            { enemyId: 'walker', count: 1, spacing: 0.5, laneId: 'main', delay: 0 },
+            { enemyId: 'newcomer', count: 1, spacing: 0.5, laneId: 'main', delay: 0.5 },
+          ],
+        },
+      ],
+    };
+    const sim = new Simulation(
+      { enemies, map: makeMap(), waveSet, hero: TEST_HERO, economy: TEST_ECONOMY, towers: makeTowersFile() },
+      TEST_RNG,
+    );
+    const sightings: string[] = [];
+    sim.onFirstEncounter.push((id) => sightings.push(id));
+
+    sim.startNextWave();
+    advanceSeconds(sim, 2);
+    expect(sightings).toEqual(['walker']); // two walkers, one announcement
+    for (const e of [...sim.enemySystem.enemies]) sim.enemySystem.applyDamage(e.id, 999);
+    advanceSeconds(sim, SIM_DT * 2);
+
+    sim.startNextWave();
+    advanceSeconds(sim, 2);
+    expect(sightings).toEqual(['walker', 'newcomer']); // wave 2's walker is old news
+    expect([...sim.encountered]).toEqual(['walker', 'newcomer']);
+  });
+
   it('applyDamage kills at 0 and removes the enemy', () => {
     const sim = new Simulation(fixture(), TEST_RNG);
     sim.startNextWave();

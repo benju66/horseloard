@@ -4,6 +4,13 @@ import { IdSchema, SpriteRefSchema } from './common';
 export const EnemySchema = z.object({
   id: IdSchema,
   name: z.string().min(1),
+  /**
+   * One line shown the first time this species is ever seen (once per career,
+   * tracked in the save). Optional: an enemy without one still gets a reveal
+   * banner — name alone — so a new monster is never silently introduced.
+   * Written as a *tell*, not lore: it should say what the enemy does to you.
+   */
+  intro: z.string().min(1).optional(),
   hp: z.number().positive(),
   speed: z.number().positive().describe('world units per second along the lane'),
   radius: z.number().positive().describe('body radius, world units (contact + render)'),

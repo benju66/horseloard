@@ -2,9 +2,11 @@ import type { Economy } from './schemas';
 import {
   migrateV1ToV2,
   migrateV2ToV3,
+  migrateV3ToV4,
   newSave,
   SAVE_VERSION,
   type SaveData,
+  type SaveDataV3,
 } from '../engine/progression';
 
 const DB_NAME = 'horse-lord';
@@ -71,8 +73,10 @@ export class SaveManager {
   private migrate(raw: { schemaVersion?: number }): SaveData {
     let legacy = raw as Parameters<typeof migrateV1ToV2>[0];
     if (legacy.schemaVersion === 1) legacy = migrateV1ToV2(legacy);
-    let save = legacy as unknown as SaveData;
-    if (legacy.schemaVersion === 2) save = migrateV2ToV3(legacy, this.economy);
+    let v3 = legacy as unknown as SaveDataV3;
+    if (legacy.schemaVersion === 2) v3 = migrateV2ToV3(legacy, this.economy);
+    let save = v3 as SaveData;
+    if (v3.schemaVersion === 3) save = migrateV3ToV4(v3);
     // Unknown/corrupt, or from a future build: don't destroy the row silently —
     // start fresh in memory and leave what is on disk alone.
     if (save.schemaVersion !== SAVE_VERSION) return newSave();

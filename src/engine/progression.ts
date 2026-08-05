@@ -1,17 +1,19 @@
 import type { Economy } from '../data/schemas';
 
 /** The current save schema version. Bump with every shape or meaning change. */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /**
- * Save schema v3 — versioned from the first write (CLAUDE.md #4). No derived state.
+ * Save schema v4 — versioned from the first write (CLAUDE.md #4). No derived state.
  *
- * v3 is the career-tree save (SKILLTREE.md). Two fields died with the meta
+ * v3 was the career-tree save (SKILLTREE.md). Two fields died with the meta
  * tree: `tokens` and `meta.ranks`. What replaces them is deliberately smaller —
  * **career XP and a list of node ids** — because everything else about a career
  * is derivable from those two plus the campaign record. Level, points earned,
  * points spent and points free are all computed on read, so no two fields in
  * this file can ever disagree with each other.
+ *
+ * v4 adds `seenEnemies`: the reveal ledger for first-encounter banners.
  */
 export interface SaveData {
   schemaVersion: number;
@@ -24,6 +26,12 @@ export interface SaveData {
   build: string[];
   /** Ability ids equipped, in bar order. Capped by the campaign, not the tree. */
   loadout: string[];
+  /**
+   * Enemy ids ever encountered, in order of first sighting. Gates the
+   * first-encounter reveal to once per *career*, not once per run — the
+   * banner is news, and news does not repeat. Append-only.
+   */
+  seenEnemies: string[];
 }
 
 export function newSave(): SaveData {
@@ -35,6 +43,7 @@ export function newSave(): SaveData {
     endlessBest: {},
     build: [],
     loadout: [],
+    seenEnemies: [],
   };
 }
 
@@ -184,7 +193,7 @@ export function migrateV1ToV2(save: LegacySave): LegacySave {
  * The build starts empty: v2 held no tree, and a migration cannot guess which
  * of five paths a player would have walked. The points are all there to spend.
  */
-export function migrateV2ToV3(save: LegacySave, economy: Economy): SaveData {
+export function migrateV2ToV3(save: LegacySave, economy: Economy): SaveDataV3 {
   const legacy = structuredClone(save);
 
   let sunk = 0;
@@ -209,6 +218,20 @@ export function migrateV2ToV3(save: LegacySave, economy: Economy): SaveData {
   };
 }
 
+/** The v3 shape — v4 minus the reveal ledger. What migrateV2ToV3 produces. */
+export type SaveDataV3 = Omit<SaveData, 'seenEnemies'>;
+
+/**
+ * v3 → v4: adds the `seenEnemies` reveal ledger, empty. Honest emptiness, not a
+ * backfill: a v3 career has certainly *met* the early roster, but guessing
+ * which ids from the campaign record would silently swallow reveals for
+ * anything guessed wrong. The cost of an empty ledger is one round of
+ * already-known banners on the next run — a repeat, not a loss.
+ */
+export function migrateV3ToV4(save: SaveDataV3): SaveData {
+  return { ...structuredClone(save), schemaVersion: 4, seenEnemies: [] };
+}
+
 export interface RunOutcome {
   mapId: string;
   victory: boolean;
@@ -225,17 +248,23 @@ export interface RunOutcome {
  *
  * `runXp` is what the run itself banked from kills. It is passed in rather than
  * recomputed because the Simulation already counted it, and two counts of the
- * same thing is one count too many.
+ * same thing is one count too many. `encountered` is the run's sighting set,
+ * merged append-only into the career ledger for the same reason.
  */
 export function settleRun(
   save: SaveData,
   outcome: RunOutcome,
   economy: Economy,
   runXp = 0,
+  encountered: Iterable<string> = [],
 ): { save: SaveData; xpEarned: number } {
   const next: SaveData = structuredClone(save);
   const t = economy.career;
   let earned = Math.round(runXp);
+
+  for (const id of encountered) {
+    if (!next.seenEnemies.includes(id)) next.seenEnemies.push(id);
+  }
 
   if (outcome.endless) {
     const best = next.endlessBest[outcome.mapId] ?? 0;

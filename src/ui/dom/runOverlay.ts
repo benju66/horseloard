@@ -29,6 +29,9 @@ export class RunOverlay {
   onExit: (() => void) | null = null;
   private readonly exit: HTMLButtonElement;
   private readonly bannerEl: HTMLDivElement;
+  private readonly revealEl: HTMLDivElement;
+  private readonly revealQueue: Array<{ name: string; intro: string }> = [];
+  private revealBusy = false;
 
   constructor(layer: HTMLElement) {
     const stored = Number(localStorage.getItem(SPEED_KEY));
@@ -84,7 +87,18 @@ export class RunOverlay {
     bs.className = 'banner-sub';
     this.bannerEl.append(bt, bs);
 
-    layer.append(this.speedBtn, this.panel, this.bannerEl);
+    this.revealEl = document.createElement('div');
+    this.revealEl.className = 'reveal-banner';
+    const rc = document.createElement('div');
+    rc.className = 'reveal-chip';
+    rc.textContent = 'New foe';
+    const rn = document.createElement('div');
+    rn.className = 'reveal-name';
+    const ri = document.createElement('div');
+    ri.className = 'reveal-intro';
+    this.revealEl.append(rc, rn, ri);
+
+    layer.append(this.speedBtn, this.panel, this.bannerEl, this.revealEl);
   }
 
   /** Multiplier to apply to dt before advancing the sim. */
@@ -152,7 +166,22 @@ export class RunOverlay {
    * preview from informational into dramatic, which is its whole job.
    */
   banner(name: string, subtitle: string): void {
-    this.bannerEl.querySelector('.banner-title')!.textContent = `⚠ ${name}`;
+    this.bannerEl.classList.remove('is-milestone');
+    this.showBanner(`⚠ ${name}`, subtitle);
+  }
+
+  /**
+   * Endless milestone (DESIGN §7 payouts): same stage as the wave banner, but
+   * gold, not red — an achievement, not a threat. Fires between waves, when the
+   * warning banner is guaranteed idle, so the two can share one element.
+   */
+  milestone(title: string, subtitle: string): void {
+    this.bannerEl.classList.add('is-milestone');
+    this.showBanner(title, subtitle);
+  }
+
+  private showBanner(title: string, subtitle: string): void {
+    this.bannerEl.querySelector('.banner-title')!.textContent = title;
     this.bannerEl.querySelector('.banner-sub')!.textContent = subtitle;
     this.bannerEl.classList.remove('show');
     // Force a reflow so re-triggering the same banner replays the animation.
@@ -160,10 +189,45 @@ export class RunOverlay {
     this.bannerEl.classList.add('show');
   }
 
+  /**
+   * First-encounter card. Queued, because a wave can introduce two species in
+   * the same second and news read over news is news lost. Its own element,
+   * because reveals fire on *spawn* — often within a breath of the wave-start
+   * warning banner — and must not evict it.
+   *
+   * Tells you anything, asks you nothing: non-interactive, self-dismissing,
+   * and the run never pauses for it.
+   */
+  reveal(name: string, intro: string): void {
+    this.revealQueue.push({ name, intro });
+    this.pumpReveals();
+  }
+
+  private pumpReveals(): void {
+    if (this.revealBusy) return;
+    const next = this.revealQueue.shift();
+    if (!next) return;
+    this.revealBusy = true;
+    this.revealEl.querySelector('.reveal-name')!.textContent = next.name;
+    this.revealEl.querySelector('.reveal-intro')!.textContent = next.intro;
+    this.revealEl.classList.remove('show');
+    void this.revealEl.offsetWidth;
+    this.revealEl.classList.add('show');
+    // Slightly longer than the animation, so back-to-back cards breathe.
+    window.setTimeout(() => {
+      this.revealBusy = false;
+      this.pumpReveals();
+    }, 3400);
+  }
+
   hide(): void {
     this.panel.style.display = 'none';
     this.speedBtn.style.display = '';
     this.shownFor = null;
+    // A queued reveal belongs to the run that met the enemy; don't let it
+    // play over the map select or the next run's opening.
+    this.revealQueue.length = 0;
+    this.revealEl.classList.remove('show');
   }
 
   static css(): string {
@@ -208,6 +272,25 @@ export class RunOverlay {
   100% { opacity: 0; }
 }
 .banner-title { font: 700 30px Georgia, serif; color: #e5484d; }
-.banner-sub { font: 400 13px sans-serif; color: #f5ead0; margin-top: 4px; }`;
+.banner-sub { font: 400 13px sans-serif; color: #f5ead0; margin-top: 4px; }
+.wave-banner.is-milestone { background: rgba(18,24,12,.85); }
+.wave-banner.is-milestone .banner-title { color: #f6c945; }
+.reveal-banner {
+  position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 88px);
+  transform: translateX(-50%); max-width: min(320px, 86vw);
+  pointer-events: none; text-align: center; padding: 10px 20px;
+  border-radius: 14px; border: 1px solid rgba(246,201,69,.45);
+  background: rgba(16,20,14,.9); opacity: 0;
+}
+.reveal-banner.show { animation: reveal-flash 3.1s ease-out forwards; }
+@keyframes reveal-flash {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  82% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.reveal-chip { font: 700 10px/1 sans-serif; letter-spacing: .18em; text-transform: uppercase; color: #f6c945; }
+.reveal-name { font: 700 20px Georgia, serif; color: #f2ecdd; margin-top: 4px; }
+.reveal-intro { font: 400 12px/1.45 sans-serif; color: #cdc6b4; margin-top: 3px; }`;
   }
 }

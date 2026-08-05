@@ -5,6 +5,7 @@ import {
   careerProgress,
   migrateV1ToV2,
   migrateV2ToV3,
+  migrateV3ToV4,
   newSave,
   settleRun,
   threeStarredMaps,
@@ -150,6 +151,36 @@ describe('v2 → v3: one currency, and a tree instead of a meta tree', () => {
   });
 });
 
+describe('v3 → v4: the reveal ledger', () => {
+  /** A v3 save exactly as the previous build wrote it — no seenEnemies key. */
+  function v3Save() {
+    const { seenEnemies: _dropped, ...rest } = newSave();
+    return { ...rest, schemaVersion: 3, careerXp: 123, build: ['tithe'] };
+  }
+
+  it('adds an empty ledger and stamps version 4', () => {
+    const out = migrateV3ToV4(v3Save());
+    expect(out.schemaVersion).toBe(4);
+    expect(out.seenEnemies).toEqual([]);
+  });
+
+  it('is honestly empty — no backfill guessed from the campaign record', () => {
+    // A repeat banner is recoverable; a swallowed one is not.
+    const v3 = v3Save();
+    v3.campaign['meadow-road'] = { stars: 3, bestWavesCleared: 8, completed: true };
+    expect(migrateV3ToV4(v3).seenEnemies).toEqual([]);
+  });
+
+  it('carries everything else across verbatim, without mutating the input', () => {
+    const before = v3Save();
+    const out = migrateV3ToV4(before);
+    expect(out.careerXp).toBe(123);
+    expect(out.build).toEqual(['tithe']);
+    expect(before.schemaVersion).toBe(3);
+    expect('seenEnemies' in before).toBe(false);
+  });
+});
+
 describe('career levels', () => {
   const eco = TEST_ECONOMY;
   const { base, growth } = eco.career.level;
@@ -213,6 +244,25 @@ describe('settleRun banks the run', () => {
     save = settleRun(save, { mapId: 'a', victory: true, wavesCleared: 8, stars: 3, endless: false }, eco).save;
     save = settleRun(save, { mapId: 'b', victory: true, wavesCleared: 8, stars: 2, endless: false }, eco).save;
     expect(threeStarredMaps(save)).toBe(1);
+  });
+
+  it('merges first encounters into the ledger append-only, in sighting order', () => {
+    let save = newSave();
+    const out = { mapId: 'm', victory: true, wavesCleared: 8, stars: 1, endless: false } as const;
+    save = settleRun(save, out, eco, 0, ['grunt', 'brute']).save;
+    expect(save.seenEnemies).toEqual(['grunt', 'brute']);
+    // A later run repeats one species and adds one: only the news lands, and
+    // the original sighting order is never rewritten.
+    save = settleRun(save, out, eco, 0, ['brute', 'raven']).save;
+    expect(save.seenEnemies).toEqual(['grunt', 'brute', 'raven']);
+  });
+
+  it('leaves the ledger alone when the run met nothing new', () => {
+    let save = newSave();
+    const out = { mapId: 'm', victory: false, wavesCleared: 2, stars: 1, endless: false } as const;
+    save = settleRun(save, out, eco, 0, ['grunt']).save;
+    const again = settleRun(save, out, eco, 0, ['grunt']).save;
+    expect(again.seenEnemies).toEqual(['grunt']);
   });
 });
 

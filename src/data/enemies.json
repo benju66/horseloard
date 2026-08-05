@@ -8,6 +8,7 @@
   {
    "id": "grunt",
    "name": "Grunt",
+   "intro": "Walks the road. Dies to anything, but never alone.",
    "hp": 22,
    "speed": 42,
    "radius": 12,
@@ -22,6 +23,7 @@
   {
    "id": "runner",
    "name": "Runner",
+   "intro": "Twice the pace, half the health. Outruns a slow trigger finger.",
    "hp": 13,
    "speed": 74,
    "radius": 10,
@@ -36,6 +38,7 @@
   {
    "id": "brute",
    "name": "Brute",
+   "intro": "Armored — arrows glance off. Bombs and blades do not.",
    "hp": 70,
    "speed": 27,
    "radius": 16,
@@ -51,6 +54,7 @@
   {
    "id": "shieldbearer",
    "name": "Shieldbearer",
+   "intro": "A wall from the front. Shoot past it, or get behind it.",
    "hp": 38,
    "speed": 34,
    "radius": 13,
@@ -69,6 +73,7 @@
   {
    "id": "swarm",
    "name": "Swarmling",
+   "intro": "One is nothing. The flood is the weapon.",
    "hp": 8,
    "speed": 55,
    "radius": 8,
@@ -83,6 +88,7 @@
   {
    "id": "wolf-rider",
    "name": "Wolf Rider",
+   "intro": "Cannot be slowed, frozen, or mired. Only stopped.",
    "hp": 40,
    "speed": 88,
    "radius": 13,
@@ -98,6 +104,7 @@
   {
    "id": "raven",
    "name": "War Raven",
+   "intro": "Flies over walls and soldiers. Only what aims skyward touches it.",
    "hp": 26,
    "speed": 82,
    "radius": 10,
@@ -113,6 +120,7 @@
   {
    "id": "looter",
    "name": "Looter",
+   "intro": "Comes for your coins, not your gate. Flees with what it grabs.",
    "hp": 25,
    "speed": 70,
    "radius": 11,
@@ -131,6 +139,7 @@
   {
    "id": "outrider",
    "name": "Outrider",
+   "intro": "Rides straight through your line. Soldiers cannot hold it.",
    "hp": 46,
    "speed": 62,
    "radius": 12,
@@ -146,6 +155,7 @@
   {
    "id": "halberdier",
    "name": "Halberdier",
+   "intro": "Cuts soldiers down four times as fast. Cover your garrison.",
    "hp": 105,
    "speed": 24,
    "radius": 15,
@@ -161,6 +171,7 @@
   {
    "id": "sapper",
    "name": "Sapper",
+   "intro": "Knocks towers down a level as it passes. Kill it on approach.",
    "hp": 34,
    "speed": 58,
    "radius": 12,
@@ -179,6 +190,7 @@
   {
    "id": "juggernaut",
    "name": "Juggernaut",
+   "intro": "Nearly impervious in motion. Stop it, then hurt it.",
    "hp": 260,
    "speed": 19,
    "radius": 20,
@@ -196,6 +208,7 @@
   {
    "id": "warden",
    "name": "Warden",
+   "intro": "Its standard shields every enemy near it — but never itself. Kill the bearer.",
    "hp": 90,
    "speed": 30,
    "radius": 12,
@@ -215,6 +228,7 @@
   {
    "id": "stalker",
    "name": "Stalker",
+   "intro": "Leaves the road and hunts you. It holds the wave open until it dies.",
    "hp": 52,
    "speed": 62,
    "radius": 9,
@@ -229,6 +243,7 @@
   {
    "id": "warlord",
    "name": "The Warlord",
+   "intro": "Breaks towers, hastens the horde, and does not stop.",
    "hp": 1300,
    "speed": 14,
    "radius": 22,

@@ -432,12 +432,32 @@ function startMap(mapId: string, endless = false): void {
   });
   sim.enemySystem.onReachEnd.push(() => leaks++);
   // What the wave was worth, said out loud. Waves are the natural beat for this
-  // — frequent enough to be a rhythm, rare enough not to be noise.
-  sim.onWaveClear.push((_wave, xpEarned) => {
+  // — frequent enough to be a rhythm, rare enough not to be noise. The gate
+  // suffix makes a clean hold *visible* instead of merely not-punished: stars
+  // score on damage taken (DESIGN §3), so this is the star currency ticking.
+  const milestoneEvery = data.economy.career.endlessMilestoneEvery;
+  const bestAtStart = save.endlessBest[mapId] ?? 0;
+  sim.onWaveClear.push((wave, xpEarned, damageTaken) => {
+    if (endless && wave % milestoneEvery === 0) {
+      const isNews = wave > bestAtStart;
+      runOverlay.milestone(
+        `Wave ${wave} held`,
+        isNews ? `+${data.economy.career.perEndlessMilestone} XP banked` : 'held again — beat your best for more',
+      );
+    }
     if (xpEarned <= 0) return;
-    xpToast.textContent = `+${xpEarned} XP`;
+    xpToast.textContent =
+      damageTaken > 0 ? `+${xpEarned} XP · −${Math.round(damageTaken)} gate` : `+${xpEarned} XP · gate untouched`;
     replay(xpToast);
     toastTimer = 1.5;
+  });
+  // First sighting of a species, once per career. The sim reports the run's
+  // first encounters; the save's ledger says which are actually news. The
+  // ledger itself is written at settle, with the rest of what the run earned.
+  sim.onFirstEncounter.push((id) => {
+    if (save.seenEnemies.includes(id)) return;
+    const def = data.enemies.enemies.find((e) => e.id === id);
+    if (def) runOverlay.reveal(def.name, def.intro ?? '');
   });
   shownCareerLevel = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel).level;
   flashUntil.clear();
@@ -711,6 +731,7 @@ function settleIfNeeded(): void {
     },
     data.economy,
     sim.xp.totalXp,
+    sim.encountered,
   );
   const beforeLv = careerProgress(save.careerXp, data.economy, data.skillTree.maxLevel).level;
   save = result.save;

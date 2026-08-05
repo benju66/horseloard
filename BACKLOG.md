@@ -946,6 +946,32 @@ early milestones alone (+0.8 at w10) and closes the deep tail. **ON TARGET: mead
 crossroads 15, open-road 18** — every reference run clears milestone one, some touch two
 and three, none farm forever. The run ends because the world ends it.
 
+## Dopamine layer (2026-08-05): the run tells you more, still asks you nothing
+
+Three beats added on the M7.2 rule — every one a *report*, none a decision:
+
+**First-encounter reveals.** The sim announces each species' first spawn of a run
+(`onFirstEncounter` + an `encountered` set — substrate-clean, fires for any id); the save
+gates it to once per *career* via a v4 `seenEnemies` ledger (SAVE_VERSION 3→4, migration
+honestly empty rather than backfilled — a repeat banner is recoverable, a swallowed one is
+not). Every enemy has an `intro` line written as a tell ("Cannot be slowed, frozen, or
+mired. Only stopped."), shown on a queued, non-interactive card. A monster added next
+month introduces itself with zero new wiring.
+
+**Endless milestone banners.** At each `endlessMilestoneEvery` wave the gold variant of
+the wave banner fires in-run — "+200 XP banked" when the wave beats the career best,
+honest "held again" when it does not, because settleRun only pays new milestones and a
+banner that lies about XP poisons every banner after it.
+
+**Gate legibility on the wave toast.** `onWaveClear` now reports damage taken (baselined
+at wave start so mid-run repair cannot flatter it): "+34 XP · gate untouched" or
+"+34 XP · −18 gate". Stars score on damage taken, so this is the star currency ticking
+where the player can see it, wave by wave.
+
+Learned: the whole layer is notify-only — bots subscribe to none of it, so the difficulty
+curve is untouched by construction, and the curve probe was still re-run first per the
+ledger rule.
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 

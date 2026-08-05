@@ -122,8 +122,17 @@ export class Simulation {
    * nothing said so. A wave is the natural beat to say it on: frequent enough
    * to be a rhythm, rare enough not to be noise.
    */
-  readonly onWaveClear: Array<(wave: number, xpEarned: number) => void> = [];
+  readonly onWaveClear: Array<(wave: number, xpEarned: number, damageTaken: number) => void> = [];
   private xpAtWaveStart = 0;
+  private gateHpAtWaveStart = 0;
+  /**
+   * Enemy ids this run has met, in spawn order of first sighting. The UI
+   * pairs it with the save's career-wide seen set for first-encounter
+   * reveals; the sim only reports. New species become news automatically —
+   * a monster added next month introduces itself with zero new wiring.
+   */
+  readonly encountered = new Set<string>();
+  readonly onFirstEncounter: Array<(enemyId: string) => void> = [];
   private readonly enemiesFile: EnemiesFile;
   private readonly mapDef: MapDef;
   private readonly rng: () => number;
@@ -173,6 +182,13 @@ export class Simulation {
       rng,
     );
     this.enemySystem.setWorldBounds(data.map.world.width, data.map.world.height);
+    // First sighting of a species, once per run. The UI intersects this with
+    // the career-wide seen set; the sim just says who walked on stage.
+    this.enemySystem.onSpawn.push((e) => {
+      if (this.encountered.has(e.config.id)) return;
+      this.encountered.add(e.config.id);
+      for (const fn of this.onFirstEncounter) fn(e.config.id);
+    });
     this.waveRunner = new WaveRunner(data.waveSet, (enemyId, laneId, hpMultiplier) => {
       this.enemySystem.spawn(enemyId, laneId, hpMultiplier);
     });
@@ -347,6 +363,10 @@ export class Simulation {
     const wave = this.waveRunner.waveNumber;
     const earned = this.xp.totalXp - this.xpAtWaveStart;
     this.xpAtWaveStart = this.xp.totalXp;
+    // Gate HP lost during the wave — the star currency, reported per wave so a
+    // clean hold is *visible* instead of merely not-punished. Repair between
+    // waves cannot flatter it: the baseline is taken at wave start.
+    const damageTaken = Math.max(0, this.gateHpAtWaveStart - this.gate.hp);
     this.phase = nextPhase;
     this.buildElapsed = 0;
 
@@ -358,7 +378,7 @@ export class Simulation {
     // well beyond the engine — the renderer's day/night cycle keys off
     // `phase === 'wave'` — so a fifth value would silently change how the game
     // *looks*.
-    for (const fn of this.onWaveClear) fn(wave, earned);
+    for (const fn of this.onWaveClear) fn(wave, earned, damageTaken);
   }
 
   /**
@@ -385,6 +405,7 @@ export class Simulation {
     this.economy.gold += bonus;
     this.phase = 'wave';
     this.waveElapsed = 0;
+    this.gateHpAtWaveStart = this.gate.hp;
     this.pendingDrop = this.waveRunner.currentWaveData?.supplyDrop ?? null;
     return true;
   }
