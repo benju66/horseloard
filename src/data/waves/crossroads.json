@@ -2,7 +2,7 @@
   "mapId": "crossroads",
   "waves": [
     {
-      "hpMultiplier": 0.8568,
+      "hpMultiplier": 0.814,
       "entries": [
         {
           "enemyId": "grunt",
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "hpMultiplier": 0.9853,
+      "hpMultiplier": 0.936,
       "entries": [
         {
           "enemyId": "grunt",
@@ -33,7 +33,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.1138,
+      "hpMultiplier": 1.058,
       "entries": [
         {
           "enemyId": "grunt",
@@ -59,7 +59,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.2852,
+      "hpMultiplier": 1.221,
       "entries": [
         {
           "enemyId": "grunt",
@@ -85,7 +85,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.4566,
+      "hpMultiplier": 1.384,
       "entries": [
         {
           "enemyId": "grunt",
@@ -118,7 +118,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.6708,
+      "hpMultiplier": 1.587,
       "supplyDrop": {
         "delay": 4,
         "x": 360,
@@ -151,7 +151,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.885,
+      "hpMultiplier": 1.791,
       "archetypeId": "raid",
       "entries": [
         {
@@ -185,7 +185,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.142,
+      "hpMultiplier": 2.035,
       "entries": [
         {
           "enemyId": "shieldbearer",
@@ -225,7 +225,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.399,
+      "hpMultiplier": 2.279,
       "archetypeId": "horde",
       "entries": [
         {
@@ -259,7 +259,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.6561,
+      "hpMultiplier": 2.523,
       "archetypeId": "war-party",
       "entries": [
         {
@@ -300,7 +300,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.8703,
+      "hpMultiplier": 2.727,
       "supplyDrop": {
         "delay": 6,
         "x": 60,
@@ -340,7 +340,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.0845,
+      "hpMultiplier": 2.93,
       "entries": [
         {
           "enemyId": "juggernaut",

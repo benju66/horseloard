@@ -2,7 +2,7 @@
   "mapId": "flank-road",
   "waves": [
     {
-      "hpMultiplier": 1.169,
+      "hpMultiplier": 1.344,
       "entries": [
         {
           "enemyId": "grunt",
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.364,
+      "hpMultiplier": 1.569,
       "entries": [
         {
           "enemyId": "grunt",
@@ -33,7 +33,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.56,
+      "hpMultiplier": 1.794,
       "entries": [
         {
           "enemyId": "wolf-rider",
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.793,
+      "hpMultiplier": 2.062,
       "entries": [
         {
           "enemyId": "raven",
@@ -71,7 +71,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.066,
+      "hpMultiplier": 2.376,
       "archetypeId": "wild-hunt",
       "entries": [
         {
@@ -91,7 +91,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.339,
+      "hpMultiplier": 2.69,
       "entries": [
         {
           "enemyId": "grunt",
@@ -117,7 +117,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.613,
+      "hpMultiplier": 3.005,
       "entries": [
         {
           "enemyId": "wolf-rider",
@@ -136,7 +136,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.923,
+      "hpMultiplier": 3.361,
       "entries": [
         {
           "enemyId": "raven",
@@ -169,7 +169,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.236,
+      "hpMultiplier": 3.721,
       "entries": [
         {
           "enemyId": "grunt",
@@ -195,7 +195,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.587,
+      "hpMultiplier": 4.125,
       "entries": [
         {
           "enemyId": "wolf-rider",
@@ -228,7 +228,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.977,
+      "hpMultiplier": 4.574,
       "archetypeId": "wild-hunt",
       "entries": [
         {

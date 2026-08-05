@@ -2,7 +2,7 @@
   "mapId": "undercut",
   "waves": [
     {
-      "hpMultiplier": 1.17,
+      "hpMultiplier": 1.231,
       "entries": [
         {
           "enemyId": "grunt",
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.365,
+      "hpMultiplier": 1.437,
       "entries": [
         {
           "enemyId": "brute",
@@ -33,7 +33,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.599,
+      "hpMultiplier": 1.684,
       "entries": [
         {
           "enemyId": "shieldbearer",
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.872,
+      "hpMultiplier": 1.971,
       "entries": [
         {
           "enemyId": "halberdier",
@@ -71,7 +71,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.145,
+      "hpMultiplier": 2.258,
       "entries": [
         {
           "enemyId": "juggernaut",
@@ -97,7 +97,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.457,
+      "hpMultiplier": 2.587,
       "archetypeId": "war-party",
       "entries": [
         {
@@ -131,7 +131,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.769,
+      "hpMultiplier": 2.915,
       "entries": [
         {
           "enemyId": "halberdier",
@@ -157,7 +157,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.12,
+      "hpMultiplier": 3.284,
       "entries": [
         {
           "enemyId": "juggernaut",
@@ -183,7 +183,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.51,
+      "hpMultiplier": 3.695,
       "entries": [
         {
           "enemyId": "brute",
@@ -209,7 +209,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.9,
+      "hpMultiplier": 4.106,
       "entries": [
         {
           "enemyId": "juggernaut",
@@ -242,7 +242,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.368,
+      "hpMultiplier": 4.598,
       "archetypeId": "war-party",
       "entries": [
         {

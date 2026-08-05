@@ -2,7 +2,7 @@
   "mapId": "deep-gate",
   "waves": [
     {
-      "hpMultiplier": 1.169,
+      "hpMultiplier": 1.379,
       "entries": [
         {
           "enemyId": "grunt",
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.341,
+      "hpMultiplier": 1.582,
       "entries": [
         {
           "enemyId": "shieldbearer",
@@ -33,7 +33,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.548,
+      "hpMultiplier": 1.827,
       "entries": [
         {
           "enemyId": "brute",
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.789,
+      "hpMultiplier": 2.111,
       "archetypeId": "war-party",
       "entries": [
         {
@@ -86,7 +86,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.029,
+      "hpMultiplier": 2.394,
       "entries": [
         {
           "enemyId": "juggernaut",
@@ -112,7 +112,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.167,
+      "hpMultiplier": 2.557,
       "entries": [
         {
           "enemyId": "shieldbearer",
@@ -138,7 +138,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.458,
+      "hpMultiplier": 2.9,
       "entries": [
         {
           "enemyId": "juggernaut",
@@ -164,7 +164,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.748,
+      "hpMultiplier": 3.243,
       "archetypeId": "war-party",
       "entries": [
         {
@@ -198,7 +198,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.072,
+      "hpMultiplier": 3.625,
       "entries": [
         {
           "enemyId": "juggernaut",
@@ -224,7 +224,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.428,
+      "hpMultiplier": 4.045,
       "entries": [
         {
           "enemyId": "halberdier",
@@ -257,7 +257,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.815,
+      "hpMultiplier": 4.502,
       "archetypeId": "war-party",
       "entries": [
         {
@@ -298,7 +298,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.269,
+      "hpMultiplier": 5.037,
       "entries": [
         {
           "enemyId": "juggernaut",

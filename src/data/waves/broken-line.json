@@ -2,7 +2,7 @@
   "mapId": "broken-line",
   "waves": [
     {
-      "hpMultiplier": 0.848,
+      "hpMultiplier": 0.95,
       "entries": [
         {
           "enemyId": "grunt",
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "hpMultiplier": 0.972,
+      "hpMultiplier": 1.089,
       "entries": [
         {
           "enemyId": "outrider",
@@ -33,7 +33,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.121,
+      "hpMultiplier": 1.256,
       "entries": [
         {
           "enemyId": "wolf-rider",
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.296,
+      "hpMultiplier": 1.452,
       "entries": [
         {
           "enemyId": "sapper",
@@ -71,7 +71,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.471,
+      "hpMultiplier": 1.648,
       "entries": [
         {
           "enemyId": "outrider",
@@ -104,7 +104,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.67,
+      "hpMultiplier": 1.87,
       "archetypeId": "wild-hunt",
       "entries": [
         {
@@ -124,7 +124,7 @@
       ]
     },
     {
-      "hpMultiplier": 1.87,
+      "hpMultiplier": 2.094,
       "entries": [
         {
           "enemyId": "raven",
@@ -150,7 +150,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.095,
+      "hpMultiplier": 2.346,
       "entries": [
         {
           "enemyId": "outrider",
@@ -176,7 +176,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.318,
+      "hpMultiplier": 2.596,
       "entries": [
         {
           "enemyId": "sapper",
@@ -209,7 +209,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.568,
+      "hpMultiplier": 2.876,
       "archetypeId": "wild-hunt",
       "entries": [
         {
@@ -236,7 +236,7 @@
       ]
     },
     {
-      "hpMultiplier": 2.842,
+      "hpMultiplier": 3.183,
       "entries": [
         {
           "enemyId": "outrider",
@@ -269,7 +269,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.142,
+      "hpMultiplier": 3.519,
       "entries": [
         {
           "enemyId": "wolf-rider",

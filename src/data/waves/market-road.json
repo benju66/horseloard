@@ -33,7 +33,7 @@
       ]
     },
     {
-      "hpMultiplier": 3.57,
+      "hpMultiplier": 4.316,
       "entries": [
         {
           "enemyId": "swarm",
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.08,
+      "hpMultiplier": 6.166,
       "entries": [
         {
           "enemyId": "grunt",
@@ -78,7 +78,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.718,
+      "hpMultiplier": 7.129,
       "archetypeId": "raid",
       "entries": [
         {
@@ -105,7 +105,7 @@
       ]
     },
     {
-      "hpMultiplier": 5.355,
+      "hpMultiplier": 8.093,
       "entries": [
         {
           "enemyId": "swarm",
@@ -124,7 +124,7 @@
       ]
     },
     {
-      "hpMultiplier": 6.12,
+      "hpMultiplier": 9.249,
       "entries": [
         {
           "enemyId": "grunt",
@@ -150,7 +150,7 @@
       ]
     },
     {
-      "hpMultiplier": 6.885,
+      "hpMultiplier": 10.405,
       "entries": [
         {
           "enemyId": "swarm",
@@ -176,7 +176,7 @@
       ]
     },
     {
-      "hpMultiplier": 7.65,
+      "hpMultiplier": 11.561,
       "entries": [
         {
           "enemyId": "grunt",
@@ -202,7 +202,7 @@
       ]
     },
     {
-      "hpMultiplier": 8.67,
+      "hpMultiplier": 13.103,
       "entries": [
         {
           "enemyId": "swarm",
