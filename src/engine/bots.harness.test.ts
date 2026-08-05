@@ -754,27 +754,45 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    */
   it("reports each path's marginal contribution (ablation, respread)", { timeout: 900_000 }, () => {
     const SAMPLES = 12;
-    const ABLATION_SEEDS = SEEDS.slice(0, 8);
-    const probeMaps = ['market-road', 'undercut', 'broken-line'].filter((m) => data.maps[m]);
+    const ABLATION_SEEDS = SEEDS.slice(0, 6);
+    /**
+     * ALL maps, not a per-biome pick. The first run used the three L3
+     * composition levels and read host at −24pp — but composition levels are
+     * build-punishers BY DESIGN and two of three punish the army, so the path
+     * was sentenced on hostile ground. Averaging every level a biome ships is
+     * the only selection-free frame; the per-biome breakdown below preserves
+     * the "earns its keep here, not there" signal that per-map picks wanted.
+     */
+    const probeMaps = Object.keys(data.maps);
+    const biomeOf = (m: string) => data.maps[m]!.biomeId;
     const budget = at(REFERENCE_LEVEL, REFERENCE_STARS);
     const paths = [...new Set(tree.nodes.map((n) => n.path))].sort();
 
     const buildRng = makeRng(7777);
     const builds = Array.from({ length: SAMPLES }, () => randomBuild(tree, budget, buildRng));
 
-    const winOf = (build: readonly string[]): number => {
-      let wins = 0;
-      let total = 0;
+    const winOf = (build: readonly string[]): { overall: number; byBiome: Record<string, number> } => {
+      const wins: Record<string, number> = {};
+      const totals: Record<string, number> = {};
+      let allWins = 0;
+      let allTotal = 0;
       for (const mapId of probeMaps) {
+        const b = biomeOf(mapId);
         for (const f of BOTS) {
           for (const seed of ABLATION_SEEDS) {
             const r = runBot({ ...botData, skillNodes: build }, mapId, f, seed);
-            total++;
-            if (r.outcome === 'win') wins++;
+            allTotal++;
+            totals[b] = (totals[b] ?? 0) + 1;
+            if (r.outcome === 'win') {
+              allWins++;
+              wins[b] = (wins[b] ?? 0) + 1;
+            }
           }
         }
       }
-      return (wins / total) * 100;
+      const byBiome: Record<string, number> = {};
+      for (const b of Object.keys(totals)) byBiome[b] = ((wins[b] ?? 0) / totals[b]!) * 100;
+      return { overall: (allWins / allTotal) * 100, byBiome };
     };
 
     /** The build with `path` removed and its points respent on the rest. */
@@ -800,14 +818,20 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     };
 
     const contributions = new Map<string, number[]>();
+    const biomeContrib = new Map<string, Record<string, number[]>>();
     const pointsIn = new Map<string, number[]>();
     builds.forEach((build, bi) => {
       const base = winOf(build);
       const share = pathShare(tree, build);
       for (const [path, pts] of Object.entries(share)) {
         if (pts <= 0) continue;
-        const delta = base - winOf(respread(build, path, bi * 10 + paths.indexOf(path as (typeof paths)[number])));
-        contributions.set(path, [...(contributions.get(path) ?? []), delta]);
+        const after = winOf(respread(build, path, bi * 10 + paths.indexOf(path as (typeof paths)[number])));
+        contributions.set(path, [...(contributions.get(path) ?? []), base.overall - after.overall]);
+        const per = biomeContrib.get(path) ?? {};
+        for (const b of Object.keys(base.byBiome)) {
+          per[b] = [...(per[b] ?? []), base.byBiome[b]! - (after.byBiome[b] ?? 0)];
+        }
+        biomeContrib.set(path, per);
         pointsIn.set(path, [...(pointsIn.get(path) ?? []), pts]);
       }
     });
@@ -819,16 +843,24 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
       const pts = (pointsIn.get(p) ?? []).reduce((a, b) => a + b, 0) / cs.length;
       const perPt = mean / Math.max(1, pts);
       const flag = mean <= -8 ? '   ← a respec would win more' : mean >= 8 ? '   ← earns its points' : '';
+      const per = biomeContrib.get(p) ?? {};
+      const biomeCols = Object.keys(per)
+        .sort()
+        .map((b) => {
+          const v = per[b]!.reduce((a2, c) => a2 + c, 0) / per[b]!.length;
+          return `${b.split('-')[0]} ${(v >= 0 ? '+' : '') + v.toFixed(0)}`;
+        })
+        .join('  ');
       return (
         `  ${p.padEnd(6)} contribution ${(mean >= 0 ? '+' : '') + mean.toFixed(1).padStart(5)}pp ` +
-        `over ${String(cs.length).padStart(2)} builds  (~${pts.toFixed(1)}pt held, ` +
-        `${(perPt >= 0 ? '+' : '') + perPt.toFixed(1)}pp/pt)${flag}`
+        `over ${String(cs.length).padStart(2)} builds  (~${pts.toFixed(1)}pt, ` +
+        `${(perPt >= 0 ? '+' : '') + perPt.toFixed(1)}pp/pt)  [${biomeCols}]${flag}`
       );
     });
 
     console.log(
       `\n[CONTRIBUTION PROBE — M7.8's ask]  ${SAMPLES} builds × ablate-and-respread, ` +
-        `maps ${probeMaps.join(' + ')} × all bots × ${ABLATION_SEEDS.length} seeds\n` +
+        `all ${probeMaps.length} maps × all bots × ${ABLATION_SEEDS.length} seeds, per-biome breakdown\n` +
         lines.join('\n') +
         '\n  contribution = win(build) − win(same budget, this path respec into the rest).\n' +
         '  Positive: the points earn their place. Negative: a respec wins more.\n' +
