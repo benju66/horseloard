@@ -1000,7 +1000,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * harness has now made six times.
    */
   it('reports whether the authored biomes make different builds correct', { timeout: 900_000 }, () => {
-    const SAMPLES = 10;
+    const SAMPLES = 16;
     const paths = [...new Set(tree.nodes.map((n) => n.path))].sort();
     /** Below this spread between best and worst build, a row is not evidence. */
     const READABLE_SPREAD = 20;

@@ -864,6 +864,35 @@ is complement deadness in the control biome (semi-by-design for a teaching world
 trustworthy instrument for it is the contribution-scoring probe M7.8 already asked for,
 plus a bigger biome-probe sample. Both queued for the next instrument round.
 
+## Instrument round (2026-08-05): the mill trap, and the wall vindicated
+
+**The keystone probe learned to see boards** — towers built, upgrade depth, income share
+per arm — and the composition columns solved in two readings what win rates never could:
+wall-curtain built **98% mills**, and the bare wall path built 76%. The mechanism:
+incomeValue converts future coins at the best combat-per-coin rate, so the wall path's own
+damage buffs raised every mill's score, which bought more mills. The documented rich-bot
+trap, triggered at normal funding by a path's own identity. Ninth ledger entry.
+
+**The fix is the controlValue lesson a third time** — income is an amplifier that buys
+towers which must still be bought: incomeValue now scales by max(0, 1 − 2×incomeShare).
+
+**What the honest bot then said, in order:** wall bare 51% → **99%** (income 76% → 21%);
+the curtain collapse gone (93 vs 99, an even pair); ride pair even (87/81); six maps
+drifted easy and one under — re-priced in three passes, **ON TARGET on all twelve**; and
+the biome probe rewrote its story: **green's ride +47 → +7** — the "ride problem" that
+survived three nerfs was the poisoned instrument, hunt +23 carries green with wall +13
+recovered, iron reads ride +20, steppe hunt/wall. Two distinct carrying paths, pillar OK.
+
+**Watch item:** hunt reads top-third in all three rows (+23/+10/+23) at the old 10-build
+sample — the sample is now 16, and the **contribution probe** (ablation-based path
+marginal value, M7.8's ask) remains the queued instrument for it. Its motivating question
+changed tonight: from "is green broken" (answered: no) to "is hunt generically strong or
+noise" (open, now measurable).
+
+Three instrument fixes this ledger cycle — persona caps, slow pricing, income pricing —
+and each one re-priced the campaign. The lesson is now structural: **after any bot change,
+the difficulty curve is the first read, not the last.**
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 
