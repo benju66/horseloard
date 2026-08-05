@@ -59,6 +59,13 @@ export const SocketSchema = z.enum(['head', 'hand', 'back', 'mount', 'root']);
 /**
  * An extra mesh parented to a socket — the mechanism that turns one base model
  * into several units (shield, sack, crown, cape, bow).
+ *
+ * With `bone`, the prop rides the host's skeleton instead of a fixed socket:
+ * it is parented to that named node and inherits its animated motion. This is
+ * how a static rider sits on a rigged horse — anchored to the spine bone, it
+ * bobs with the gait for free, no rig of its own. The socket remains as the
+ * fallback for placeholder hosts and misnamed bones, so a missing bone
+ * degrades to today's behaviour instead of losing the prop.
  */
 export const ModelPropSchema = z.object({
   id: IdSchema,
@@ -69,8 +76,23 @@ export const ModelPropSchema = z.object({
     .enum(['box', 'cone', 'cylinder', 'sphere'])
     .default('box')
     .describe('placeholder geometry used until `file` is supplied'),
+  /**
+   * For `file` props: the prop's height as a fraction of unit height (a 0.72
+   * rider is 72% as tall as a standing character). For placeholder shapes it
+   * remains the primitive size multiplier it always was.
+   */
   scale: z.number().positive().default(1),
   tint: z.number().int().min(0).optional().describe('palette slot'),
+  /** Keep the prop glTF's own materials — same contract as ModelDef.keepMaterials. */
+  keepMaterials: z.boolean().default(false),
+  /**
+   * Name of a node/bone inside the host's glTF to anchor to. Find candidates
+   * with `npx gltf-transform inspect <host.glb>`. Only meaningful when the
+   * host has a real file; ignored (socket fallback) otherwise.
+   */
+  bone: z.string().min(1).optional(),
+  /** Offset from the anchor's rest position, as fractions of unit height. */
+  offset: z.tuple([z.number(), z.number(), z.number()]).optional(),
 });
 export type ModelProp = z.infer<typeof ModelPropSchema>;
 

@@ -53,6 +53,36 @@ function socketOffset(silhouette: string, socket: string): [number, number, numb
   return SOCKETS[silhouette]?.[socket] ?? SOCKETS['humanoid']![socket] ?? [0, 0, 0];
 }
 
+/**
+ * Parent `obj` to `anchor` so that, in the anchor's *rest* pose, it sits
+ * upright at the anchor's position plus `offset` — and thereafter follows
+ * every animated movement of the anchor rigidly.
+ *
+ * The naive `anchor.add(obj)` is wrong twice: the object inherits the bone's
+ * arbitrary local axes (riders lie down), and it inherits the host root's
+ * normalisation scale (riders shrink). Both are cancelled by interposing a
+ * holder whose local matrix is `anchorRestWorld⁻¹ × desiredRestWorld`; the
+ * anchor's matrixWorld must be current (relative to the model root) when this
+ * is called. From then on the composed transform is
+ * `anchorWorld × anchorRestWorld⁻¹ × desired` — identity-at-rest, plus
+ * whatever the animation does.
+ *
+ * Exported for tests: this is pure Object3D maths, no WebGL involved.
+ */
+export function attachAtRest(
+  anchor: THREE.Object3D,
+  obj: THREE.Object3D,
+  offset: THREE.Vector3,
+): void {
+  const rest = new THREE.Vector3().setFromMatrixPosition(anchor.matrixWorld).add(offset);
+  const desired = new THREE.Matrix4().makeTranslation(rest.x, rest.y, rest.z);
+  const holder = new THREE.Group();
+  holder.matrix.copy(anchor.matrixWorld).invert().multiply(desired);
+  holder.matrix.decompose(holder.position, holder.quaternion, holder.scale);
+  holder.add(obj);
+  anchor.add(holder);
+}
+
 /** A live view's animation state — mixer plus the actions its manifest maps. */
 interface ViewAnim {
   mixer: THREE.AnimationMixer;
@@ -125,6 +155,15 @@ export class ModelViewFactory {
   /** Advance every live view's animation. */
   tick(dt: number): void {
     for (const a of this.anims.values()) a.mixer.update(dt);
+  }
+
+  /**
+   * True when this view has a real clip wired for the state — i.e. the mixer,
+   * not procedural code, owns that motion. The hero uses this to mute the
+   * MountAnimator's fake gait once a rigged horse supplies a real one.
+   */
+  hasAction(view: THREE.Object3D, state: AnimationState): boolean {
+    return this.anims.get(view)?.actions[state] !== undefined;
   }
 
   /**
@@ -272,7 +311,33 @@ export class ModelViewFactory {
       this.anims.set(group, { mixer, actions, current: null });
     }
 
-    for (const prop of def.props) group.add(this.propMesh(def, prop));
+    // Bone-anchored props ride the skeleton; the rest hang at socket offsets
+    // as before. matrixWorld must be current for the rest-pose maths, and the
+    // group is not in a scene yet, so update it explicitly once.
+    const boneProps = def.props.filter((p) => p.bone);
+    if (boneProps.length > 0) group.updateMatrixWorld(true);
+    for (const prop of def.props) {
+      const anchor = prop.bone ? root.getObjectByName(prop.bone) : undefined;
+      if (anchor) {
+        const [ox, oy, oz] = prop.offset ?? [0, 0, 0];
+        // Anchored props scale with their host's manifest ratio, so a 1.5x
+        // hero carries a proportionally 1.5x rider.
+        const s = UNIT_HEIGHT * def.scale;
+        attachAtRest(
+          anchor,
+          this.propObject(def, prop, def.scale),
+          new THREE.Vector3(ox * s, oy * s, oz * s),
+        );
+      } else {
+        if (prop.bone) {
+          console.warn(
+            `[entityViews] "${def.id}" prop "${prop.id}" names bone "${prop.bone}" ` +
+              `which does not exist in "${def.file}" — falling back to socket "${prop.socket}".`,
+          );
+        }
+        group.add(this.propMesh(def, prop));
+      }
+    }
     return group;
   }
 
@@ -415,7 +480,34 @@ export class ModelViewFactory {
     return g;
   }
 
+  /** A prop placed at its silhouette socket — the non-anchored path. */
   private propMesh(def: ModelDef, prop: ModelProp): THREE.Object3D {
+    const obj = this.propObject(def, prop, 1);
+    const [ox, oy, oz] = socketOffset(def.silhouette, prop.socket);
+    obj.position.set(ox * UNIT_HEIGHT, oy * UNIT_HEIGHT, oz * UNIT_HEIGHT);
+    return obj;
+  }
+
+  /**
+   * The prop's mesh alone, unpositioned: a real glTF when `file` is loaded
+   * (height-normalised to `scale` × unit height × the host's ratio), else the
+   * placeholder primitive it has always been.
+   */
+  private propObject(def: ModelDef, prop: ModelProp, hostScale: number): THREE.Object3D {
+    const asset = prop.file ? this.loaded.get(prop.file) : undefined;
+    if (asset) {
+      const obj = cloneSkinned(asset.scene);
+      const box = new THREE.Box3().setFromObject(obj);
+      const height = Math.max(1e-3, box.max.y - box.min.y);
+      obj.scale.setScalar((UNIT_HEIGHT * prop.scale * hostScale) / height);
+      obj.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        if (mesh.isMesh) mesh.castShadow = true;
+      });
+      this.applyPalette(obj, prop.tint ?? def.tint, prop.keepMaterials);
+      return obj;
+    }
+
     const mat = this.material(prop.tint ?? def.tint);
     const s = UNIT_HEIGHT * 0.3 * prop.scale;
     let geo: THREE.BufferGeometry;
@@ -433,8 +525,6 @@ export class ModelViewFactory {
         geo = this.track(new THREE.BoxGeometry(s, s, s * 0.4));
     }
     const mesh = new THREE.Mesh(geo, mat);
-    const [ox, oy, oz] = socketOffset(def.silhouette, prop.socket);
-    mesh.position.set(ox * UNIT_HEIGHT, oy * UNIT_HEIGHT, oz * UNIT_HEIGHT);
     mesh.castShadow = true;
     return mesh;
   }

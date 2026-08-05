@@ -695,15 +695,17 @@ function step(dt: number): void {
     const heroSpeed = dt > 0 ? travelled / dt : 0;
 
     // Face the true heading, not the sprite-mirror flag — see HeroSystem. The
-    // animator springs toward it rather than snapping, and layers gait bob,
-    // pitch and bank on top; a fused horse-and-rider mesh cannot be skinned, so
-    // all of its motion lives here.
+    // animator springs toward it rather than snapping. On a fused rigid mesh
+    // it also fakes the whole gait; on a rigged horse whose walk clip is
+    // mapped, the mixer owns the gait and only yaw/bank remain procedural.
     mountAnim.update(
       heroView,
       dt,
       sim.hero.headingX,
       sim.hero.headingY,
       heroSpeed,
+      0,
+      views.hasAction(heroView, 'walk'),
     );
     views.setState(heroView, sim.hero.moving ? 'walk' : 'idle');
   }
