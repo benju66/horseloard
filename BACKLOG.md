@@ -173,6 +173,26 @@ forecloses `HERO-DESIGN.md`'s two-channel plan (rider tracks bow level, horse tr
 Swift Steed rank) unless the model is later split into pieces — fused, those channels
 multiply into 18 models instead of 9 parts.
 
+**Split hero (rigged mount + bone-anchored rider) — LIVE as default (2026-08-05), with
+a stand-in mount.** Ben judged the fused mesh's procedural rocking not good enough, and
+a fused mesh can never be rigged (no body plan). Props can now declare a `bone` in
+`models.json`: the prop loads its own glTF and parents to that named node in the host's
+skeleton, so a *static* rider inherits the mount's animated gait for free — no rider
+rig, and the two-channel plan above reopens as 9 parts instead of 18 models.
+`hero-mounted` ships as hero.json's default: the Khronos sample **Fox** (the only
+rigged quadruped reachable from the dev container — asset sites are network-blocked)
+with real `Walk`/`Survey` clips, KayKit Knight anchored to `b_Spine02_03`. The fox is
+explicitly temporary — see ASSETS.md for the swap procedure and its CC-BY rig
+attribution; replacing it with a real horse is a file drop plus three strings in
+models.json. `?heroModel=unit-hero` shows the old fused hero for side-by-side on a
+phone. MountAnimator mutes its fake bob/pitch whenever the hero has a real walk clip
+(yaw spring and bank stay — turning feel is not in any clip). Rider seat/scale
+(`scale`, `offset` on the prop) still needs judging on device. learned: the substrate
+test scans engine sources for *every* id in data JSON — a models.json prop id
+`"rider"` collided with the bots.ts policy of the same name; prop ids need namespacing
+(`hero-rider`). Also: the Fox faces +Z out of the box (verified by vertex-slice
+profile, same method as the hero's facing check).
+
 **Character design:** `HERO-DESIGN.md`. Naming unsettled: Ben has said "Horse King".
 
 **Making art with AI?** Read `ART-BRIEF.md` — §10 has exact Meshy settings, plus the hard

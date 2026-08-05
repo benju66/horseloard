@@ -322,6 +322,16 @@ const heroScaleOverride = (() => {
   const n = raw === null ? NaN : Number(raw);
   return Number.isFinite(n) && n > 0 ? n : undefined;
 })();
+/**
+ * Dev-only model probe: `?heroModel=unit-hero` rides the old fused hero for a
+ * side-by-side against whatever hero.json ships, same reasoning as heroScale —
+ * the comparison can only be judged on a phone, without a rebuild. Falls back
+ * to the manifest default if the id doesn't resolve.
+ */
+const heroModelOverride = (() => {
+  const raw = new URLSearchParams(location.search).get('heroModel');
+  return raw && raw.length > 0 ? raw : undefined;
+})();
 
 const host = {
   data,
@@ -502,8 +512,11 @@ function startMap(mapId: string, endless = false): void {
   abilityBar?.destroy();
   abilityBar = new AbilityBar(sim, overlay);
 
-  const heroModel = modded.hero.model;
+  const heroModel = heroModelOverride ?? modded.hero.model;
   heroView = heroModel ? views.acquire(heroModel) : undefined;
+  if (!heroView && heroModelOverride && modded.hero.model) {
+    heroView = views.acquire(modded.hero.model);
+  }
   if (heroView) {
     // ?heroScale=1.2 replaces the manifest scale for this load only. How big
     // the hero should read against the roster is a judgement that can only be
@@ -708,15 +721,17 @@ function step(dt: number): void {
     const heroSpeed = dt > 0 ? travelled / dt : 0;
 
     // Face the true heading, not the sprite-mirror flag — see HeroSystem. The
-    // animator springs toward it rather than snapping, and layers gait bob,
-    // pitch and bank on top; a fused horse-and-rider mesh cannot be skinned, so
-    // all of its motion lives here.
+    // animator springs toward it rather than snapping. On a fused rigid mesh
+    // it also fakes the whole gait; on a rigged horse whose walk clip is
+    // mapped, the mixer owns the gait and only yaw/bank remain procedural.
     mountAnim.update(
       heroView,
       dt,
       sim.hero.headingX,
       sim.hero.headingY,
       heroSpeed,
+      0,
+      views.hasAction(heroView, 'walk'),
     );
     views.setState(heroView, sim.hero.moving ? 'walk' : 'idle');
   }

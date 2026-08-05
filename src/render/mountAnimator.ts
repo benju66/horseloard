@@ -100,6 +100,10 @@ export class MountAnimator {
    * @param headingY  sim heading, y component (maps to world z)
    * @param speed     current speed in world units/second
    * @param groundY   world y the feet should rest on
+   * @param clipDriven when a real walk clip animates the body, the fake gait
+   *                  (bob, pitch, breathe) is muted so the two never stack —
+   *                  double-bobbing was the whole reason the rocking looked
+   *                  bad. Yaw and bank stay: turning feel is not in any clip.
    */
   update(
     view: THREE.Object3D,
@@ -108,6 +112,7 @@ export class MountAnimator {
     headingY: number,
     speed: number,
     groundY = 0,
+    clipDriven = false,
   ): void {
     const m = this.motion;
     // Guard against a frame hitch integrating a huge step and snapping the
@@ -157,11 +162,12 @@ export class MountAnimator {
     this.bank += (targetBank - this.bank) * bankK;
 
     // --- compose -------------------------------------------------------------
-    const bob = Math.sin(this.gait) * m.bobHeight * this.unitHeight * moving;
+    const gaitOn = clipDriven ? 0 : 1;
+    const bob = Math.sin(this.gait) * m.bobHeight * this.unitHeight * moving * gaitOn;
     const breathe =
-      Math.sin(this.breath) * m.breathHeight * this.unitHeight * (1 - moving);
+      Math.sin(this.breath) * m.breathHeight * this.unitHeight * (1 - moving) * gaitOn;
     // A quarter-cycle behind the bob: the body pitches nose-down as it rises.
-    const pitch = Math.cos(this.gait) * m.pitchAmount * moving;
+    const pitch = Math.cos(this.gait) * m.pitchAmount * moving * gaitOn;
 
     view.position.y = groundY + Math.abs(bob) + breathe;
     view.rotation.set(pitch, this.yaw, this.bank, 'YXZ');
