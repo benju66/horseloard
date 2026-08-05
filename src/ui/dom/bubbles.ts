@@ -151,6 +151,19 @@ export class BubbleLayer {
     return entry;
   }
 
+  /**
+   * Hide everything. The render loop stops calling `render` the moment the
+   * sim is gone, so without this the last frame's bubbles stay wherever they
+   * were — invisible behind the map select, then flashing over the next run's
+   * first frame.
+   */
+  clear(): void {
+    for (const entry of this.pool) {
+      entry.button.style.display = 'none';
+      entry.action = null;
+    }
+  }
+
   /** @param screens one {x,y} in CSS pixels per action, same order */
   render(actions: readonly BubbleAction[], screens: readonly { x: number; y: number }[]): void {
     for (let i = 0; i < actions.length; i++) {

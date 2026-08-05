@@ -77,6 +77,11 @@ class InstanceBatch {
   }
 
   dispose(): void {
+    // Out of the scene graph first — a disposed mesh left attached keeps
+    // rendering (three re-uploads freed buffers on demand), which is how a
+    // retreat left the previous run's soldiers and coins standing on the
+    // next map.
+    this.mesh.parent?.remove(this.mesh);
     this.mesh.geometry.dispose();
     (this.mesh.material as THREE.Material).dispose();
     this.mesh.dispose();

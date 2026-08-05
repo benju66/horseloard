@@ -76,6 +76,18 @@ const views = new ModelViewFactory(data.models);
 const entityGroup = new THREE.Group();
 scene.add(entityGroup);
 
+// Read-only diagnostics for the browser smoke. A retreat that leaks scene
+// objects (the InstanceBatch/RingPool dispose bug) is invisible to every
+// headless test; a stable child count across map re-entry is the regression
+// net for that whole class.
+(window as unknown as { __hl?: object }).__hl = {
+  sceneCount: () => {
+    let n = 0;
+    scene.traverse(() => n++);
+    return n;
+  },
+};
+
 // ─── Style ───
 
 const style = document.createElement('style');
@@ -522,6 +534,7 @@ function toMapSelect(): void {
   fx = null;
   instanced = null;
   sim = null;
+  bubbles.clear();
   abilityBar?.destroy();
   abilityBar = null;
   activeMapId = null;

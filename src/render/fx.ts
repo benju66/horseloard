@@ -66,6 +66,9 @@ class RingPool {
   }
 
   dispose(): void {
+    // Detach before freeing — an attached group keeps drawing its rings into
+    // the next run's scene (same leak as InstanceBatch; see its dispose).
+    this.group.parent?.remove(this.group);
     this.geo.dispose();
     this.material.dispose();
   }
@@ -147,6 +150,7 @@ class BurstPool {
   }
 
   dispose(): void {
+    this.group.parent?.remove(this.group);
     this.geo.dispose();
     for (const m of this.materials.values()) m.dispose();
   }

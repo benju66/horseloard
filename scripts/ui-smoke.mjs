@@ -126,6 +126,24 @@ await page.click('.pause-panel .run-again.ghost');
 await page.waitForTimeout(600);
 ok('retreat returns to map select', await page.isVisible('.screen'));
 
+// ── 5b. Re-entry leaves no scene debris: retreat → re-enter must not grow
+// the scene graph (the InstanceBatch/RingPool dispose-leak regression net).
+await page.click('.map-row:not([disabled])');
+await page.waitForTimeout(1200);
+const countFirst = await page.evaluate(() => window.__hl.sceneCount());
+await page.click('.pause-btn');
+await page.waitForTimeout(200);
+await page.click('.pause-panel .run-again.ghost');
+await page.waitForTimeout(600);
+await page.click('.map-row:not([disabled])');
+await page.waitForTimeout(1200);
+const countSecond = await page.evaluate(() => window.__hl.sceneCount());
+ok(`scene stable across re-entry (${countFirst} → ${countSecond})`, countSecond <= countFirst);
+await page.click('.pause-btn');
+await page.waitForTimeout(200);
+await page.click('.pause-panel .run-again.ghost');
+await page.waitForTimeout(600);
+
 // ── 6. Endless entry (needs the seeded completed map) and exit.
 ok('endless button exists on cleared map', (await page.$('.map-endless')) !== null);
 await page.click('.map-endless');
