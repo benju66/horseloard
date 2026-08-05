@@ -752,7 +752,7 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
    * One composition level per biome — the L3s, where each world's question is
    * sharpest — so a path can contribute in one world and not another.
    */
-  it("reports each path's marginal contribution (ablation, respread)", { timeout: 900_000 }, () => {
+  it("reports each path's marginal contribution (ablation, respread)", { timeout: 1_800_000 }, () => {
     const SAMPLES = 12;
     const ABLATION_SEEDS = SEEDS.slice(0, 6);
     /**

@@ -911,6 +911,20 @@ instrument rather than inferred around a broken one, and it is the next design t
 host's value must become real on boards players actually build, or its cost must fall to
 what the exposure is worth.
 
+## Host, acquitted on fair ground (2026-08-05)
+
+The all-maps contribution probe reads host at **−7.4pp — inside the −8 accept line** —
+against −24.1 on the three composition levels alone. Two-thirds of the "defect" was the
+instrument's map selection: composition levels are build-punishers by design and two of
+three punish the army. The per-biome columns say exactly what the design intends: green
+−13 (a host build SHOULD be wrong in farmland), iron −3 (near break-even in juggernaut
+country), steppe −6. **Every path now sits between −7.4 and +5.1 — the tree passes its
+causal accept criterion.** The triple-gated entry (unlock → gold → plot) is real and
+recorded as a known shape, not a defect: a pillar you earn is allowed to cost its gates
+while the campaign's juggernauts pay for them. No tree change shipped — the tenth ledger
+lesson is that the accused was the instrument again, and this time the better instrument
+acquitted the design.
+
 ## M4 — Publish polish
 Map 1 as diegetic tutorial · settings (audio, haptics, left-hand mode) · colorblind-safe enemy palette check · icons/splash/store-listing draft · performance pass on real devices · soft launch to friends · TWA wrapper decision for Play Store.
 
