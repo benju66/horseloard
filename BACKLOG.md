@@ -972,6 +972,41 @@ Learned: the whole layer is notify-only — bots subscribe to none of it, so the
 curve is untouched by construction, and the curve probe was still re-run first per the
 ledger rule.
 
+## The night rule (2026-08-05): dawn breaks on a clear field, and the instrument confesses
+
+From a phone report — "monsters were attacking the gate but the game acted as if the
+wave was cleared." The sim was right by its own rule and the rule was wrong for this
+game: dawn broke when nothing was still *coming*, so leaked besiegers chewed the gate
+through a day that sounded calm, showed a clear-toast, and paid an early-start bonus for
+stacking the next wave onto an unbroken siege. **Now every wave ends only when
+`aliveCount` is zero** — the Thronefall rule the day/night spine is modelled on, the
+final-wave special case retired, leaks-never-despawn untouched. Towers covering the gate
+and the hero's bow already fight in every phase; they are how the debt gets collected.
+
+The re-measurement then earned its cost three times over:
+
+**Ledger #11 — the harness never passed `biomes`.** BotGameData documents "the harness
+passes it"; it never did, so every probe measured every map under **no terrain rule**
+while the shipped game applied them — and the pool probe's per-biome override machinery
+silently no-oped for the same reason. Found when a crossroads defeat refused to
+reproduce outside the harness. One line fixes every probe at once.
+
+**Ledger #12 — the bot never finished a hold.** Steer targeted besiegers and the lead
+walker only, so an enemy a soldier held outside tower cover was nobody's job: under
+clear-field nights, defender stalled 12/12 on deep-gate at w3 with a full gate and a
+banked wallet. No human watches a stuck hold from the gate; the hero now rides to held
+enemies once the road is empty, leash ignored.
+
+**The retunes, honest at last.** Crossroads healed itself the moment the instrument did
+(36→67, mid-band — a speculative trim was reverted untouched). The iron biome, authored
+against the broken instrument, ran over its ceilings once the bots stopped stalling:
+late-wave HP raised (undercut w6+ ×1.215 — after ×1.25 flipped a kill-breakpoint and
+threw it 31pp, the sharpest cliff yet recorded; pit-heads w6+ ×1.12; deep-gate w10+
+×1.05). Gate-HP raises were tried first and moved nothing — mass-leak sieges outrun any
+plausible gate pool, which is the mechanism, not a knob. **Final curve: 12/12 in band.
+Endless: ON TARGET (meadow 28, crossroads 17, open-road 21).** Learned: a rule change
+is also an instrument audit — the two bugs it exposed predate it by weeks.
+
 ## M4 — Publish polish
 
 [—] **Map 1 as diegetic tutorial** — skipped by explicit call (2026-08-05).
