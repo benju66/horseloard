@@ -151,12 +151,21 @@ export function incomeValue(
   stats: TowerStats,
   horizonSeconds: number,
   valuePerGold: number,
+  incomeShare = 0,
 ): number {
   if (!stats.income) return 0;
   const goldEarned = (stats.income.value / stats.income.interval) * horizonSeconds;
   // The towers that gold buys arrive gradually, so they fight for roughly
   // half the remaining run on average.
-  return goldEarned * valuePerGold * INCOME_RAMP;
+  //
+  // And income is an amplifier: it buys towers that must still be BOUGHT, by
+  // a board that must survive long enough to spend. The share clamp is the
+  // controlValue lesson a third time — measured, the wall path's own damage
+  // buffs raised valuePerGold, which raised every mill's score, which bought
+  // more mills: 76% income towers on the bare path, 98% under a cost
+  // discount, 7% win rate. A second mill is worth half a first; a board that
+  // is half mills values a third at zero.
+  return goldEarned * valuePerGold * INCOME_RAMP * Math.max(0, 1 - 2 * incomeShare);
 }
 
 /**
@@ -248,6 +257,8 @@ interface Valuation {
   boardCombat: number;
   /** The build's live scaling specs, so a synergy the player bought is priced. */
   scaling: Record<string, { perUnit: number; max: number }>;
+  /** Fraction of standing towers that are income towers — the mill-trap clamp's input. */
+  incomeShare: number;
 }
 
 function totalValue(
@@ -264,7 +275,7 @@ function totalValue(
       // Amplification reaches a little past the aura: slowed enemies drift on.
       def?.behavior === 'aura' ? v.neighbourCombat(plot.x, plot.y, def.radius * 1.5) : 0,
     ) +
-    incomeValue(stats, v.horizonSeconds, v.valuePerGold) +
+    incomeValue(stats, v.horizonSeconds, v.valuePerGold, v.incomeShare) +
     supportValue(stats, stats.towerAura ? v.neighbourCombat(plot.x, plot.y, stats.towerAura.radius) : 0) +
     exposureValue(
       stats,
@@ -318,6 +329,14 @@ function valuation(sim: Simulation, file: TowersFile): Valuation {
     return sum;
   };
 
+  let built = 0;
+  let incomeBuilt = 0;
+  for (const p of sim.towerSystem.plots) {
+    if (p.towerId === null) continue;
+    built++;
+    if (sim.towerSystem.stats(p)?.income) incomeBuilt++;
+  }
+
   return {
     horizonSeconds: perWave * wavesLeft,
     valuePerGold,
@@ -326,6 +345,7 @@ function valuation(sim: Simulation, file: TowersFile): Valuation {
     // just what happens to sit near the plot being priced.
     boardCombat: combatAt(0, 0, Infinity),
     scaling: sim.scalingSpecs,
+    incomeShare: built > 0 ? incomeBuilt / built : 0,
   };
 }
 

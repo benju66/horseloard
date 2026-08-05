@@ -1244,7 +1244,33 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
             }
           }
         }
-        return (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100;
+        // Build composition, because a win rate alone cannot distinguish "the
+        // keystone is weak" from "the bot misplays under it" — the curtain
+        // collapse taught that the hard way. '@L2'/'@L3' entries carry their
+        // level; a ':branch' suffix is level 4; a bare id is level 1.
+        const depthOf = (t: string) =>
+          t.includes(':') ? 4 : t.includes('@L') ? Number(t.split('@L')[1]) : 1;
+        const towers = runs.reduce((s2, r) => s2 + r.towers.length, 0) / runs.length;
+        const totalBuilt = Math.max(1, runs.reduce((s2, r) => s2 + r.towers.length, 0));
+        const depth =
+          runs.reduce((s2, r) => s2 + r.towers.reduce((a2, t) => a2 + depthOf(t), 0), 0) / totalBuilt;
+        // Income share, because a board can have the right count and depth and
+        // still be mills all the way down — the documented rich-bot trap, and
+        // exactly what a cost discount amplifies.
+        const incomeIds = new Set(
+          data.towers.towers.filter((t) => t.levels[0]?.income).map((t) => t.id),
+        );
+        const income =
+          runs.reduce(
+            (s2, r) => s2 + r.towers.filter((t) => incomeIds.has(t.split(/[:@]/)[0]!)).length,
+            0,
+          ) / totalBuilt;
+        return {
+          win: (runs.filter((r) => r.outcome === 'win').length / runs.length) * 100,
+          towers,
+          depth,
+          income,
+        };
       };
 
       const a = rate(k.id);
@@ -1253,12 +1279,14 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
       // be read as "the path was already at 90%" rather than "both keystones
       // are enormous".
       const bare = rate('');
+      const comp = (r: { towers: number; depth: number; income: number }) =>
+        `[${r.towers.toFixed(1)}t@${r.depth.toFixed(1)} inc${Math.round(r.income * 100)}%]`;
       lines.push(
-        `  ${k.path.padEnd(6)} (no keystone ${bare.toFixed(0).padStart(3)}%)  ` +
-          `${k.id.padEnd(20)} ${a.toFixed(0).padStart(3)}%` +
+        `  ${k.path.padEnd(6)} (no keystone ${bare.win.toFixed(0).padStart(3)}% ${comp(bare)})  ` +
+          `${k.id.padEnd(20)} ${a.win.toFixed(0).padStart(3)}% ${comp(a)}` +
           (partner && b !== null
-            ? `   vs  ${partner.id.padEnd(20)} ${b.toFixed(0).padStart(3)}%` +
-              (Math.abs(a - b) > 25 ? '   ← one-sided' : '')
+            ? `   vs  ${partner.id.padEnd(20)} ${b.win.toFixed(0).padStart(3)}% ${comp(b)}` +
+              (Math.abs(a.win - b.win) > 25 ? '   ← one-sided' : '')
             : '   (unpaired)'),
       );
     }
