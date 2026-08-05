@@ -98,7 +98,7 @@
       ]
     },
     {
-      "hpMultiplier": 5.507,
+      "hpMultiplier": 6.168,
       "entries": [
         {
           "enemyId": "halberdier",
@@ -124,7 +124,7 @@
       ]
     },
     {
-      "hpMultiplier": 6.182,
+      "hpMultiplier": 6.924,
       "entries": [
         {
           "enemyId": "juggernaut",
@@ -150,7 +150,7 @@
       ]
     },
     {
-      "hpMultiplier": 6.955,
+      "hpMultiplier": 7.79,
       "entries": [
         {
           "enemyId": "brute",
@@ -176,7 +176,7 @@
       ]
     },
     {
-      "hpMultiplier": 7.727,
+      "hpMultiplier": 8.654,
       "entries": [
         {
           "enemyId": "halberdier",
@@ -202,7 +202,7 @@
       ]
     },
     {
-      "hpMultiplier": 8.693,
+      "hpMultiplier": 9.736,
       "archetypeId": "war-party",
       "entries": [
         {

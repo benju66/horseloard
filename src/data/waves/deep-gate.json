@@ -224,7 +224,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.045,
+      "hpMultiplier": 4.247,
       "entries": [
         {
           "enemyId": "halberdier",
@@ -257,7 +257,7 @@
       ]
     },
     {
-      "hpMultiplier": 4.502,
+      "hpMultiplier": 4.727,
       "archetypeId": "war-party",
       "entries": [
         {
@@ -298,7 +298,7 @@
       ]
     },
     {
-      "hpMultiplier": 5.037,
+      "hpMultiplier": 5.289,
       "entries": [
         {
           "enemyId": "juggernaut",
