@@ -485,6 +485,28 @@ function leadWalker(sim: Simulation): EnemyInstance | null {
   return best;
 }
 
+/**
+ * An enemy a soldier is holding — the hero's cleanup job once the road is
+ * empty. Soldiers barely damage by design, so a hold the towers do not cover
+ * ends only when the hero rides out; under clear-field nights (the wave ends
+ * on aliveCount 0) an uncollected hold stalls the night forever. No human
+ * sits at the gate watching that, so no bot should either — which is why the
+ * caller ignores the leash for this one target.
+ */
+function nearestHeld(sim: Simulation): EnemyInstance | null {
+  let best: EnemyInstance | null = null;
+  let bestSq = Infinity;
+  for (const e of sim.enemySystem.enemies) {
+    if (e.state !== 'blocked') continue;
+    const dSq = (e.x - sim.hero.x) ** 2 + (e.y - sim.hero.y) ** 2;
+    if (dSq < bestSq) {
+      bestSq = dSq;
+      best = e;
+    }
+  }
+  return best;
+}
+
 /** A coin worth detouring for, or null. Chests have no magnet — ride onto them. */
 function nearestPickup(sim: Simulation, maxDistance: number): { x: number; y: number } | null {
   let best: { x: number; y: number } | null = null;
@@ -658,11 +680,22 @@ function makePolicy(plan: Plan): BotFactory {
 
         if (lead && inLeash(lead.x, lead.y)) {
           seek(sim, lead.x, lead.y);
-        } else {
-          const coin = nearestPickup(sim, plan.leash);
-          if (coin) seek(sim, coin.x, coin.y);
-          else seek(sim, gate.x, gate.y);
+          return;
         }
+
+        // Road empty, gate quiet: finish what the soldiers are holding, leash
+        // or no leash — an uncollected hold keeps the night open indefinitely.
+        if (!lead) {
+          const held = nearestHeld(sim);
+          if (held) {
+            seek(sim, held.x, held.y);
+            return;
+          }
+        }
+
+        const coin = nearestPickup(sim, plan.leash);
+        if (coin) seek(sim, coin.x, coin.y);
+        else seek(sim, gate.x, gate.y);
       },
     };
   };
