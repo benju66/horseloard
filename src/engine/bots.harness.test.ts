@@ -172,6 +172,13 @@ describe.runIf(import.meta.env.MODE === 'balance')('bot matrix', () => {
     economy: data.economy,
     maps: data.maps,
     waveSets: data.waveSets,
+    // The terrain rules. BotGameData has always documented "the harness passes
+    // it" — and the harness never did, so every probe measured every map under
+    // no terrain rule while the shipped game applied them. Found when a
+    // crossroads defeat refused to reproduce outside the harness: the eleventh
+    // ledger entry, and the second time the instrument was not playing the
+    // same game as the player.
+    biomes: data.biomes,
   };
 
   const all: BotRunResult[] = [];

@@ -184,6 +184,30 @@ describe('wave lifecycle', () => {
     expect(sim.gold).toBe(before);
   });
 
+  it('holds the night open while besiegers live — dawn only on a clear field', () => {
+    const sim = new Simulation(
+      fixture({
+        waves: [
+          { hpMultiplier: 1, entries: [{ enemyId: 'walker', count: 2, spacing: 1, laneId: 'main', delay: 0 }] },
+          { hpMultiplier: 1, entries: [{ enemyId: 'walker', count: 1, spacing: 1, laneId: 'main', delay: 0 }] },
+        ],
+      }),
+      TEST_RNG,
+    );
+    sim.startNextWave();
+    advanceSeconds(sim, 20); // both walkers leak and besiege
+    expect(sim.enemySystem.walkingCount).toBe(0);
+    expect(sim.gate.besiegerCount).toBe(2);
+    // Not the final wave — under the old rule this would already be 'build'.
+    expect(sim.phase).toBe('wave');
+    sim.enemySystem.applyDamage(1, 999);
+    advanceSeconds(sim, SIM_DT * 2);
+    expect(sim.phase).toBe('wave'); // one besieger still standing
+    sim.enemySystem.applyDamage(2, 999);
+    advanceSeconds(sim, SIM_DT * 2);
+    expect(sim.phase).toBe('build'); // field clear, dawn breaks
+  });
+
   it('reports zero gate damage for a clean hold', () => {
     const sim = new Simulation(fixture(), TEST_RNG);
     const reports: Array<{ wave: number; damage: number }> = [];

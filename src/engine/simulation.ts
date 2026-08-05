@@ -337,17 +337,21 @@ export class Simulation {
     this.projectileSystem.tick(SIM_DT);
     this.economy.tick(SIM_DT, this.hero.x, this.hero.y, this.phase === 'wave');
 
+    // The night ends when the field is clear — every wave, not just the last
+    // (the Thronefall rule the day/night spine is modelled on). Besiegers hold
+    // the wave open exactly like walkers: dawn breaking while monsters chew
+    // the gate told the player "safe" through every channel — calm music,
+    // clear-toast, an early-start bonus for stacking the next wave onto an
+    // unbroken siege — and no banner repairs a contradiction. Leaks still
+    // never despawn (DESIGN §6); what changed is only that the day no longer
+    // starts until the debt is collected. Towers covering the gate and the
+    // hero's bow are the collectors — both already fight in every phase.
     if (
       this.phase === 'wave' &&
       !this.waveRunner.spawning &&
-      this.enemySystem.walkingCount === 0
+      this.enemySystem.aliveCount === 0
     ) {
-      if (this.endless || this.waveRunner.hasMoreWaves) {
-        this.onWaveCleared('build'); // endless: there is always another wave
-      } else if (this.enemySystem.aliveCount === 0) {
-        // Final wave only counts once the siege is broken too.
-        this.onWaveCleared('done');
-      }
+      this.onWaveCleared(this.endless || this.waveRunner.hasMoreWaves ? 'build' : 'done');
     }
   }
 
