@@ -167,6 +167,18 @@ export class ModelViewFactory {
   }
 
   /**
+   * Playback-rate control for one mapped clip. The hero locks its mount's walk
+   * cycle to ground speed with this — a clip authored as a walk reads as a
+   * lope at gallop speed and freezes at rest, and the feet stay in time with
+   * the ground at every speed in between (the same anti-skating reasoning as
+   * MountAnimator's distance-locked gait phase).
+   */
+  setActionTimeScale(view: THREE.Object3D, state: AnimationState, scale: number): void {
+    const action = this.anims.get(view)?.actions[state];
+    if (action) action.timeScale = scale;
+  }
+
+  /**
    * Play a logical state. The manifest maps state → clip name, so this file
    * never learns what a clip is called; `procedural` and unmapped states are
    * simply no-ops here and handled in code elsewhere.

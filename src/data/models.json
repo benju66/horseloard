@@ -76,19 +76,19 @@
       "id": "hero-mounted",
       "base": "base-horse",
       "scale": 1.5,
-      "file": "models/hero/mount-fox.glb",
+      "file": "models/hero/mount-amarok.glb",
       "keepMaterials": true,
       "clips": {
-        "walk": "Walk",
-        "idle": "Survey"
+        "walk": "Armature|Unreal Take|baselayer"
       },
       "props": [
         {
           "id": "hero-rider",
           "socket": "mount",
-          "bone": "b_Spine02_03",
-          "file": "models/kaykit/Knight.glb",
-          "scale": 0.62,
+          "bone": "chest",
+          "file": "models/hero/rider.glb",
+          "scale": 0.5,
+          "offset": [0, 0.06, -0.2],
           "keepMaterials": true
         }
       ]
