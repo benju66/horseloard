@@ -291,6 +291,11 @@ Rules that override anything a prompt tempts you into:
   not just from L3 — they are a player choice, and a choice you cannot see back is dead.
 - **Banners and devices are hero blue `#3b5dc9`.** Towers are player structures; red
   belongs to the enemy.
+- **Towers are unmanned.** No archer on the platform, no crew at the mortar, no
+  soldiers in the yard. These models are static and never animated, and at phone
+  size a frozen figure reads as a bug, not a garrison — the machine alone carries
+  the identity. (The barracks' *soldiers* are separate animated units the sim
+  posts on the road; the building itself is empty.)
 - **One mesh still applies.** The mill's sails are the sole tolerated second mesh (they
   spin); everything else merges.
 
@@ -302,7 +307,9 @@ SHARED SPEC (no "3 heads tall", no A-pose):
 > protruding geometry. Flat solid colours only - no gradients, no surface texture,
 > no painted highlights, no outlines, no baked shadows or ambient occlusion; the
 > game lights the model itself. Plain neutral grey background, no scenery, no
-> ground shadow, no characters, no props beyond the building itself. Three-quarter
+> ground shadow, no characters, no props beyond the building itself; the building
+> is completely unmanned - no people, no soldiers, no archers, no crew, no figures
+> of any kind on or around it. Three-quarter
 > view from clearly above, as though from a camera 55 degrees above the horizon -
 > the silhouette from above is what matters most. Bold simple silhouette readable
 > at roughly 60 pixels tall on a phone screen. Elegant and understated rather than
