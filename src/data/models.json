@@ -199,6 +199,12 @@
       "scale": 1.08
     },
     {
+      "id": "world-gatehouse",
+      "silhouette": "structure",
+      "keepMaterials": true,
+      "file": "models/meshy/gatehouse.glb"
+    },
+    {
       "id": "world-gate",
       "silhouette": "structure",
       "tint": 4,

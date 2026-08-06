@@ -613,11 +613,38 @@ function buildGateFromKit(
   return g;
 }
 
+/**
+ * The one-piece Meshy gatehouse (GATE.md §5). Already a single mesh with its
+ * own painted texture, so unlike the kit path there is nothing to compose,
+ * tint or merge — scale it to the fixed footprint and sit it on the ground.
+ * Width is held and height follows, same rule as the kit assembly.
+ */
+function buildGateFromModel(p: THREE.Vector3, views?: ModelViewFactory): THREE.Object3D | undefined {
+  const src = views?.sourceScene('world-gatehouse');
+  if (!src) return undefined;
+
+  const box = new THREE.Box3().setFromObject(src);
+  const size = box.getSize(new THREE.Vector3());
+  const s = (GATE_HALF_WIDTH * 2) / size.x;
+
+  const o = src.clone(true);
+  o.scale.setScalar(s);
+  // The model's origin is its centre, not its base — lift it onto the ground.
+  o.position.set(p.x, -box.min.y * s, p.z);
+  o.traverse((n) => {
+    const mesh = n as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+  });
+  return o;
+}
+
 function buildGate(map: MapDef, track: Track, views?: ModelViewFactory): THREE.Group {
   const g = new THREE.Group();
   const p = simToWorld(map, map.gate.position.x, map.gate.position.y);
 
-  const built = buildGateFromKit(map, p, views);
+  const built = buildGateFromModel(p, views) ?? buildGateFromKit(map, p, views);
   if (built) {
     g.add(built);
     return g;
