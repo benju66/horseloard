@@ -179,13 +179,15 @@ a fused mesh can never be rigged (no body plan). Props can now declare a `bone` 
 `models.json`: the prop loads its own glTF and parents to that named node in the host's
 skeleton, so a *static* rider inherits the mount's animated gait for free — no rider
 rig, and the two-channel plan above reopens as 9 parts instead of 18 models.
-`hero-mounted` ships as hero.json's default: the Khronos sample **Fox** (the only
-rigged quadruped reachable from the dev container — asset sites are network-blocked)
-with real `Walk`/`Survey` clips, KayKit Knight anchored to `b_Spine02_03`. The fox is
-explicitly temporary — see ASSETS.md for the swap procedure and its CC-BY rig
-attribution; replacing it with a real horse is a file drop plus three strings in
-models.json. `?heroModel=unit-hero` shows the old fused hero for side-by-side on a
-phone. MountAnimator mutes its fake bob/pitch whenever the hero has a real walk clip
+`hero-mounted` ships as hero.json's default: Ben's Meshy **Amarok** (2026-08-06 — the
+game is retheming toward a mythical direwolf mount, since Meshy auto-rigs wolf-like
+quadrupeds but not horses), walk clip only, and Ben's static seated Meshy rider
+anchored to its `chest` bone (PBR maps stripped; seat fit = prop `scale`/`offset`,
+judge on device). Walk-only is handled
+by locking the clip's tempo to ground speed (`WALK_CLIP_SPEED`, game3d.ts): frozen at
+rest, lope at gallop, no foot-skating between. The Khronos Fox that proved the
+pipeline is retired to a debug asset (see ASSETS.md). `?heroModel=unit-hero` shows the
+old fused hero for side-by-side on a phone. MountAnimator mutes its fake bob/pitch whenever the hero has a real walk clip
 (yaw spring and bank stay — turning feel is not in any clip). Rider seat/scale
 (`scale`, `offset` on the prop) still needs judging on device. learned: the substrate
 test scans engine sources for *every* id in data JSON — a models.json prop id

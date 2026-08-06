@@ -308,6 +308,12 @@ const FLASH_SECONDS = 0.08;
 const FLY_HEIGHT = 16;
 /** Wingbeat bob amplitude; the phase is offset per entity id so a flock is not synchronised. */
 const FLY_BOB = 2.4;
+/**
+ * Ground speed (world units/s) at which a mount's walk clip plays at 1x.
+ * Estimated from the Amarok: ~1s cycle, stride ≈ 0.75x its 60-unit height.
+ * Judge on device; raising it slows the legs at a given speed.
+ */
+const WALK_CLIP_SPEED = 45;
 let simClock = 0;
 const scratch = new THREE.Vector3();
 const projected = new THREE.Vector3();
@@ -722,8 +728,12 @@ function step(dt: number): void {
 
     // Face the true heading, not the sprite-mirror flag — see HeroSystem. The
     // animator springs toward it rather than snapping. On a fused rigid mesh
-    // it also fakes the whole gait; on a rigged horse whose walk clip is
-    // mapped, the mixer owns the gait and only yaw/bank remain procedural.
+    // it also fakes the whole gait; on a rigged mount whose clips are mapped,
+    // the mixer owns the gait and only yaw/bank remain procedural. The fake
+    // gait mutes per state: a walk-only mount (no idle clip) hands "standing
+    // still" back to the procedural breathe.
+    const hasWalkClip = views.hasAction(heroView, 'walk');
+    const hasIdleClip = views.hasAction(heroView, 'idle');
     mountAnim.update(
       heroView,
       dt,
@@ -731,9 +741,22 @@ function step(dt: number): void {
       sim.hero.headingY,
       heroSpeed,
       0,
-      views.hasAction(heroView, 'walk'),
+      sim.hero.moving ? hasWalkClip : hasIdleClip,
     );
-    views.setState(heroView, sim.hero.moving ? 'walk' : 'idle');
+    if (hasWalkClip) {
+      // Lock the clip's tempo to the ground: a walk cycle authored at
+      // WALK_CLIP_SPEED u/s reads as a lope at gallop speed, freezes at rest,
+      // and never foot-skates in between. Same reasoning as the distance-locked
+      // gait phase in MountAnimator.
+      views.setActionTimeScale(heroView, 'walk', Math.min(heroSpeed / WALK_CLIP_SPEED, 3.5));
+    }
+    // A walk-only mount keeps its walk action active while standing (frozen at
+    // timeScale ~0) — asking for an unmapped idle would leave it playing at
+    // full tempo instead.
+    views.setState(
+      heroView,
+      sim.hero.moving || (hasWalkClip && !hasIdleClip) ? 'walk' : 'idle',
+    );
   }
 
   // Day builds, night defends. The sim already draws this line — it is the same
