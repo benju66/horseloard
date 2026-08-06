@@ -75,7 +75,7 @@
     {
       "id": "hero-mounted",
       "base": "base-horse",
-      "scale": 0.95,
+      "scale": 0.85,
       "file": "models/hero/mount-amarok.glb",
       "keepMaterials": true,
       "clips": {
@@ -87,8 +87,12 @@
           "socket": "mount",
           "bone": "chest",
           "file": "models/hero/rider.glb",
-          "scale": 0.5,
-          "offset": [0, -0.02, -0.45],
+          "scale": 0.7,
+          "offset": [
+            0,
+            -0.02,
+            -0.45
+          ],
           "keepMaterials": true
         }
       ]
@@ -247,31 +251,36 @@
       "id": "build-archer",
       "silhouette": "structure",
       "tint": 6,
-      "file": "models/kenney-td/tower-round-build-a.glb"
+      "file": "models/kenney-td/tower-round-build-a.glb",
+      "scale": 1.2
     },
     {
       "id": "build-bombard",
       "silhouette": "structure",
       "tint": 5,
-      "file": "models/kenney-td/tower-round-build-b.glb"
+      "file": "models/kenney-td/tower-round-build-b.glb",
+      "scale": 1.2
     },
     {
       "id": "build-frost",
       "silhouette": "structure",
       "tint": 4,
-      "file": "models/kenney-td/tower-round-build-c.glb"
+      "file": "models/kenney-td/tower-round-build-c.glb",
+      "scale": 1.2
     },
     {
       "id": "build-mill",
       "silhouette": "structure",
       "tint": 7,
-      "file": "models/kenney-td/tower-round-build-d.glb"
+      "file": "models/kenney-td/tower-round-build-d.glb",
+      "scale": 1.2
     },
     {
       "id": "build-barracks",
       "silhouette": "structure",
       "tint": 8,
-      "file": "models/kenney-td/tower-round-build-e.glb"
+      "file": "models/kenney-td/tower-round-build-e.glb",
+      "scale": 1.2
     }
   ]
 }
