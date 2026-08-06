@@ -202,7 +202,7 @@
       "id": "world-gatehouse",
       "silhouette": "structure",
       "keepMaterials": true,
-      "file": "models/meshy/gatehouse.glb"
+      "file": "models/meshy/gatehouse-a2.glb"
     },
     {
       "id": "world-gate",
