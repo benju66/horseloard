@@ -75,7 +75,7 @@
     {
       "id": "hero-mounted",
       "base": "base-horse",
-      "scale": 1.5,
+      "scale": 0.95,
       "file": "models/hero/mount-amarok.glb",
       "keepMaterials": true,
       "clips": {
@@ -88,7 +88,7 @@
           "bone": "chest",
           "file": "models/hero/rider.glb",
           "scale": 0.5,
-          "offset": [0, 0.06, -0.2],
+          "offset": [0, -0.02, -0.45],
           "keepMaterials": true
         }
       ]

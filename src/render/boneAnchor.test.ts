@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { attachAtRest } from './entityViews';
+import { attachAtRest, measureRenderedHeight } from './entityViews';
 
 /**
  * Rendering does not generally get tests (CLAUDE.md); like world.test.ts this
@@ -26,6 +26,49 @@ function makeHost(): { group: THREE.Group; bone: THREE.Bone } {
   group.updateMatrixWorld(true);
   return { group, bone };
 }
+
+describe('measureRenderedHeight', () => {
+  /**
+   * The Amarok regression: a Meshy export whose mesh is microscopic while its
+   * armature carries the size. Box3.setFromObject saw the microscopic mesh, so
+   * the normaliser scaled the already-large skeleton up to map size on a phone.
+   */
+  it('measures a skinned mesh through its bones, not its raw geometry', () => {
+    // A 0.01-unit-tall strip of geometry, fully weighted to one bone…
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute([0, 0, 0, 0, 0.01, 0, 0.01, 0.01, 0], 3),
+    );
+    geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 4));
+    geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], 4));
+
+    // …driven by a bone whose *current* world scale is 200x its bind pose —
+    // the inverse-bind matrices stay identity, exactly how a glTF whose size
+    // lives in the armature arrives. (Binding after scaling would fold the
+    // 200x into the bind pose and cancel it, which is NOT the failure mode.)
+    const bone = new THREE.Bone();
+    bone.scale.setScalar(200);
+    const mesh = new THREE.SkinnedMesh(geo, new THREE.MeshBasicMaterial());
+    const group = new THREE.Group();
+    group.add(mesh);
+    mesh.add(bone);
+    mesh.bind(new THREE.Skeleton([bone], [new THREE.Matrix4()]), new THREE.Matrix4());
+    group.updateMatrixWorld(true);
+
+    const h = measureRenderedHeight(group);
+    expect(h).toBeCloseTo(0.01 * 200, 3); // renders 2 units tall, not 0.01
+  });
+
+  it('still measures rigid meshes through node transforms', () => {
+    const group = new THREE.Group();
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
+    mesh.scale.setScalar(3);
+    mesh.position.y = 10; // offset must not inflate height
+    group.add(mesh);
+    expect(measureRenderedHeight(group)).toBeCloseTo(3, 3);
+  });
+});
 
 describe('attachAtRest', () => {
   it('seats the prop at the bone rest position, upright, at its own scale', () => {
