@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Seat tuner (temp)</title>
+    <style>body { margin: 0; background: #2a3c31; } #hud { position: fixed; top: 8px; left: 8px; color: #cfe; font: 12px system-ui; }</style>
+  </head>
+  <body>
+    <div id="hud"></div>
+    <script type="module">
+      import * as THREE from 'three';
+      import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+      import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
+      import { attachAtRest, measureRenderedHeight, UNIT_HEIGHT } from '/src/render/entityViews.ts';
+
+      const q = new URLSearchParams(location.search);
+      const HOST_SCALE = Number(q.get('hs') ?? 0.85);
+      const RIDER_SCALE = Number(q.get('rs') ?? 0.7);
+      const OY = Number(q.get('oy') ?? -0.02);
+      const OZ = Number(q.get('oz') ?? -0.45);
+      const YAW = Number(q.get('yaw') ?? 90); // camera yaw degrees; 90 = side view
+      document.getElementById('hud').textContent = `hs=${HOST_SCALE} rs=${RIDER_SCALE} oy=${OY} oz=${OZ}`;
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(innerWidth, innerHeight);
+      document.body.appendChild(renderer.domElement);
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color('#2a3c31');
+      scene.add(new THREE.HemisphereLight('#cfe8ff', '#3a4a3a', 1.1));
+      const sun = new THREE.DirectionalLight('#fff2d8', 1.6);
+      sun.position.set(60, 80, 40);
+      scene.add(sun);
+
+      const loader = new GLTFLoader();
+      const [mountG, riderG] = await Promise.all([
+        loader.loadAsync('/models/hero/mount-amarok.glb'),
+        loader.loadAsync(q.get('rider') ?? '/models/hero/rider-a2.glb'),
+      ]);
+
+      const root = cloneSkinned(mountG.scene);
+      const norm = (UNIT_HEIGHT / measureRenderedHeight(root)) * HOST_SCALE;
+      const group = new THREE.Group();
+      root.scale.setScalar(norm);
+      group.add(root);
+      group.updateMatrixWorld(true);
+
+      const rider = cloneSkinned(riderG.scene);
+      const rh = measureRenderedHeight(rider);
+      rider.scale.setScalar((UNIT_HEIGHT * RIDER_SCALE * HOST_SCALE) / rh);
+      const s = UNIT_HEIGHT * HOST_SCALE;
+      const anchor = root.getObjectByName('chest');
+      group.updateMatrixWorld(true);
+      attachAtRest(anchor, rider, new THREE.Vector3(0, OY * s, OZ * s));
+      scene.add(group);
+
+      // hold the walk clip at frame 0 like the standing hero does
+      const mixer = new THREE.AnimationMixer(root);
+      mixer.clipAction(mountG.animations[0]).play();
+      mixer.update(0);
+      group.updateMatrixWorld(true);
+
+      const h = 80;
+      const aspect = innerWidth / innerHeight;
+      const cam = new THREE.OrthographicCamera((-h * aspect) / 2, (h * aspect) / 2, h / 2, -h / 2, 1, 1000);
+      const yawRad = (YAW * Math.PI) / 180;
+      cam.position.set(Math.sin(yawRad) * 200, 30, Math.cos(yawRad) * 200);
+      cam.lookAt(0, 28, 0);
+      renderer.render(scene, cam);
+      document.title = 'ready';
+    </script>
+  </body>
+</html>
