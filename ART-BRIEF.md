@@ -263,6 +263,129 @@ half a second.
 | **Frost spire** | A slender crystalline spire, pale blue-white ice over a stone base `#8f8f96`, faceted geometric crystal forms. Should read as magical and cold rather than mechanical - it slows rather than damages. |
 | **Mill** | A small windmill with four broad sails, wooden body `#6b4a2b`, thatched roof. Peaceful and civilian - it generates gold and never attacks. Sails should be a separate flat piece so they can spin. |
 
+### Tower upgrade tiers — Meshy prompt pack
+
+Each tower is a **family of five models**: levels 1–3 plus the two tier-4 branches from
+`src/data/towers.json`. Twenty-five buildings total. Before the prompts, the grammar —
+because a player must read "what is this and how upgraded is it" in half a second from
+55° above, and twenty-five unrelated buildings cannot deliver that.
+
+**The tier grammar (same for every family, so the player learns it once):**
+
+| Tier | Material read | Marker |
+|---|---|---|
+| L1 | rough timber `#6b4a2b` | small, plain — the cheap first commitment |
+| L2 | stone-footed `#8f8f96`, timber above | taller / heavier, same silhouette |
+| L3 | dressed stone, crenellation or full form | **one gold accent** `#f6c945` — gold means maxed, matching the palette's elite slot |
+| Branch | keep the family base, **replace the top silhouette** | the branch element IS the new silhouette |
+
+Rules that override anything a prompt tempts you into:
+
+- **Upgrade the top, not the base.** The camera looks down at ~55°; a fancier door is
+  invisible, a changed roofline is the whole read.
+- **L1→L3 must read as the same building growing.** Say "the same X" in every follow-up
+  prompt. Meshy will not keep continuity across independent generations for free —
+  generate a family in one sitting, pick the most consistent candidates, and regenerate
+  the outlier rather than accepting a mismatched set.
+- **The two branches of a family must be distinguishable from each other from above**,
+  not just from L3 — they are a player choice, and a choice you cannot see back is dead.
+- **Banners and devices are hero blue `#3b5dc9`.** Towers are player structures; red
+  belongs to the enemy.
+- **One mesh still applies.** The mill's sails are the sole tolerated second mesh (they
+  spin); everything else merges.
+
+**STRUCTURE SPEC** — prepend to every tower prompt *instead of* the character-flavoured
+SHARED SPEC (no "3 heads tall", no A-pose):
+
+> A single isolated building asset for a minimalist flat-shaded low-poly mobile
+> tower-defence game. Simplified geometric forms with faceted flat planes, no thin
+> protruding geometry. Flat solid colours only - no gradients, no surface texture,
+> no painted highlights, no outlines, no baked shadows or ambient occlusion; the
+> game lights the model itself. Plain neutral grey background, no scenery, no
+> ground shadow, no characters, no props beyond the building itself. Three-quarter
+> view from clearly above, as though from a camera 55 degrees above the horizon -
+> the silhouette from above is what matters most. Bold simple silhouette readable
+> at roughly 60 pixels tall on a phone screen. Elegant and understated rather than
+> detailed.
+
+Then the subject block, then the **output spec** from §6 (single merged mesh, ≤3,000
+tris — buildings usually want ≤1,500 — one material, Y-up, facing +Z, origin at the
+base, GLB). Structures skip Meshy's rigging step entirely; symmetry on, topology
+doesn't need quads.
+
+#### Archer family — height is the identity
+
+| Model | Subject block |
+|---|---|
+| **L1** | A slim wooden watchtower on a small grey stone footing `#8f8f96`, warm brown timber `#6b4a2b`, open railed platform under a simple peaked roof. Modest and plain — the first thing a player ever builds. Tall and narrow. |
+| **L2** | The same slim watchtower grown taller: stone lower half `#8f8f96`, timber platform `#6b4a2b` with a sturdier rail, steeper peaked roof. Clearly the same building, one storey taller and better built. |
+| **L3** | The same watchtower at full height: stone shaft, timber hoarding at the top with a crenellated rim, peaked roof carrying a small gold finial `#f6c945`. |
+| **Sniper** | A very tall, very thin stone spire-tower with a small enclosed lookout at the top pierced by a single narrow slit, one gold band `#f6c945` beneath the lookout. Noticeably taller than every other tower in the game — its height is its range. |
+| **Rapid** | A shorter, broader archer tower whose top is an open ring gallery with arrow slits all the way round, gold trim on the rail `#f6c945`. Width and repetition instead of height — it reads as many bows firing fast. |
+
+#### Bombard family — the muzzle is the identity
+
+| Model | Subject block |
+|---|---|
+| **L1** | A squat low emplacement: a short wide-mouthed mortar angled upward on a heavy timber mount `#6b4a2b` inside a low ring of rough stone `#8f8f96`. Wide and low, obviously slow and powerful. |
+| **L2** | The same emplacement reinforced: full circular stone wall `#8f8f96`, a larger mortar with dark iron bands `#44464e`. Same silhouette, heavier everything. |
+| **L3** | The same emplacement at full strength: dressed-stone bastion, a massive iron-banded mortar with a gold ring at the muzzle `#f6c945`. |
+| **Cluster** | A bombard emplacement whose single mortar is replaced by three smaller mortar mouths splayed at different angles from one central mount, gold muzzle rings `#f6c945`. The fan of muzzles must read from directly above — its shells split into bomblets. |
+| **Concussion** | A bombard emplacement carrying one enormous bell-mouthed mortar, exaggeratedly broad at the muzzle, on a massive dark iron mount `#44464e`. One huge mouth and nothing else — it stuns everything it hits. |
+
+#### Frost family — crystal, never machinery
+
+| Model | Subject block |
+|---|---|
+| **L1** | A single faceted ice crystal, pale blue-white, rising from a low grey stone base `#8f8f96`. Small and slender, clearly magical rather than mechanical. |
+| **L2** | The same spire grown: a taller central crystal flanked by two smaller shards at its base, pale blue-white over stone `#8f8f96`. |
+| **L3** | The same spire at full height: one tall faceted crystal ringed by a cluster of shards, a deeper blue core visible through the main facets. Elegant, cold, finished. |
+| **Deep Freeze** | A massive single blocky ice crystal, squat and heavy like a glacier fragment, set on a stone plinth `#8f8f96`. Mass instead of height — it periodically freezes the whole field solid, and it should look like it could. |
+| **Brittle** | A frost spire whose top erupts into a radiating crown of short thick shards, like a shatter frozen mid-burst. The jagged crown from above is the read — keep the shards chunky, not needle-thin. |
+
+#### Mill family — civilian, then rich
+
+| Model | Subject block |
+|---|---|
+| **L1** | A small timber windmill `#6b4a2b` with four broad plain sails and a thatched cap. Peaceful and civilian — it never attacks. |
+| **L2** | The same windmill grown: stone lower storey `#8f8f96`, timber above `#6b4a2b`, broader sails, a grain sack at the door. |
+| **L3** | The same windmill at full size: taller body, sails edged in gold `#f6c945`, a gold weathervane on the cap. |
+| **Market** | The windmill with a small market grown around its base: two or three stalls with plain awnings, crates and sacks, gold `#f6c945` spilling from an open chest. Wider footprint, busy and rich. |
+| **Beacon** | The windmill carrying a tall beacon mast beside its cap, topped with a gold flame bowl `#f6c945` and a deep blue banner `#3b5dc9`. The mast must read from above — it inspires every tower around it. |
+
+Sails stay a separate flat piece parented to the body so the renderer can spin them; if
+Meshy merges them, accept a static mill rather than a third mesh.
+
+#### Barracks family — the yard is the identity
+
+| Model | Subject block |
+|---|---|
+| **L1** | A small timber longhouse `#6b4a2b` with a beam-and-canvas roof, one deep blue banner `#3b5dc9` at the door, a wooden training post in front. Plain, military, low. |
+| **L2** | The same longhouse better built: stone footing `#8f8f96`, a short palisade fence enclosing a small yard, two blue banners `#3b5dc9`. |
+| **L3** | The same barracks in stone: crenellated walled yard, timber roof, a standard pole with a gold top `#f6c945` flying the blue banner `#3b5dc9`. |
+| **Shieldwall** | A squat fortress-like barracks whose entire front is a rack of enormous rectangular tower shields, steel grey `#8f8f96` with a blue device `#3b5dc9`, lined edge to edge. The unbroken row of shields is the whole silhouette — its soldiers hold where they stand. |
+| **Levy** | A sprawling low camp: the longhouse surrounded by rows of small canvas tents and many small blue banners `#3b5dc9` across a wide footprint. Numbers instead of walls — more bodies, replaced fast. |
+
+#### Wiring the results
+
+Two code facts to know before shipping these, or the models will not look or behave as
+generated:
+
+1. **The current `build-*` entries in `models.json` declare a `tint`, which replaces the
+   model's materials with one flat palette colour.** A multi-colour Meshy tower must
+   either drop the tint or set `"keepMaterials": true`, or the gold-accent grammar above
+   is silently erased.
+2. **The renderer does not yet swap models per level** — level reads as a scale factor
+   (`src/render/game3d.ts:712`). Landing per-tier models means adding ids like
+   `build-archer-l2` / `build-archer-sniper` to `models.json` and a small render change
+   to pick the model from `plot.level` and branch. Branch models matter most: branches
+   are a choice the player must be able to see; levels already read via height.
+
+Generate the archer family first as the pilot — five models, then the §4 family gate
+check (all five beside each other at gameplay zoom on a phone) before spending
+generations on the other twenty. And as always: `npm run asset:optimize`, then a line
+per model in `ASSETS.md` in the same commit.
+
 ### Structures and props
 
 | Asset | Subject block |
