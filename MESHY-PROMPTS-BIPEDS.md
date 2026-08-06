@@ -28,12 +28,20 @@ These are **rigged and animated** — everything ART-BRIEF §10 says applies:
 | Body plan | **Biped**, all eleven |
 | Clips | `walk` + `idle` looping = **essential**; `attack` (short!) and `death` nice to have; `siege` reuses `attack`; unmapped states fall back to procedural |
 
-**The tint caveat, before you spend generations on colour:** every enemy entry in
-`models.json` declares a `tint`, which replaces the model's materials with one flat
-palette red at load. **Silhouette is what you are buying from Meshy, not paint.**
-The prompts still specify the faction colours so the concept reads right and so a
-future `keepMaterials: true` decision has something worth keeping — but judge
-candidates by their outline from above, never their texture.
+**Painted, not tinted.** These models ship with their own painted flat low-poly
+colours — dull red cloth against steel and leather, not one flat palette red. That
+means every new enemy is wired with `"keepMaterials": true`: the enemy entries in
+`models.json` currently declare a `tint` that would repaint the whole model into a
+single palette slot at load, which was the right call for the colourless KayKit
+placeholders and is the wrong one for painted art. Two consequences to design by:
+
+- **The prompt colours are the final in-game colours.** They are chosen from the
+  game palette (`src/render/palette.ts`) on purpose — stay on them, because nothing
+  downstream will correct a drifted colour any more.
+- **Red must still dominate every design.** The faction read used to be enforced by
+  the tint; now it is enforced by the paint. An enemy where steel or leather
+  outweighs the red reads as neutral at phone size — check each candidate at
+  gameplay zoom under both the day and night lighting presets before accepting it.
 
 **The family gate decides everything (ART-BRIEF §10):** drop the first result beside
 a KayKit skeleton at gameplay zoom on a phone. If proportions clash, either re-prompt
@@ -208,9 +216,11 @@ keep or migrate:
 | warlord | ~1.80 + crown/cape props | ~1.8, props retired into the mesh |
 
 - Each new model: a `models.json` entry with `file`, `clips` mapping (name whatever
-  Meshy's clips are called; the manifest maps logical → actual), keep the existing
-  `tint` slots for the faction read, and the enemy's `model` field updated
-  (`sapper`, `juggernaut`, `warden`, `stalker` especially).
+  Meshy's clips are called; the manifest maps logical → actual), and
+  `"keepMaterials": true` so the painted colours survive — the `tint` inherited
+  from the base entries would otherwise flatten the model to one palette red.
+  Update the enemy's `model` field in `enemies.json` (`sapper`, `juggernaut`,
+  `warden`, `stalker` especially).
 - Verify **facing +Z** before wiring — ART-BRIEF §10 calls it the single most likely
   thing to be wrong, and a backwards-walking army is the failure mode.
 - `attack` clips must be **short** — siege reuses them and brutes hit every ~1s.
