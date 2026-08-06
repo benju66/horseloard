@@ -69,6 +69,49 @@ function socketOffset(silhouette: string, socket: string): [number, number, numb
  *
  * Exported for tests: this is pure Object3D maths, no WebGL involved.
  */
+/**
+ * The height a model will actually render at, in its local frame.
+ *
+ * `Box3.setFromObject` measures raw geometry through node transforms and is
+ * blind to skinning — but a skinned vertex renders where its *bones* put it.
+ * Meshy exports carry their entire size in the armature (the Amarok's mesh is
+ * 0.003 units tall; its skeleton scales it to life size), so measuring the
+ * geometry normalised a microscopic box and blew the mount up to map size.
+ * Skinned meshes are therefore sampled through `getVertexPosition`, which
+ * applies bone transforms; rigid parts (a KayKit eye parented to a head bone)
+ * still contribute via their node matrices. Bone matrices must be current —
+ * the caller's tree need not be in a scene, so this updates it explicitly.
+ *
+ * Exported for tests: pure Object3D/skinning maths, no WebGL.
+ */
+export function measureRenderedHeight(root: THREE.Object3D): number {
+  root.updateMatrixWorld(true);
+  let min = Infinity;
+  let max = -Infinity;
+  const v = new THREE.Vector3();
+  const box = new THREE.Box3();
+  root.traverse((o) => {
+    const skinned = o as THREE.SkinnedMesh;
+    if (skinned.isSkinnedMesh) {
+      const count = skinned.geometry.attributes['position']!.count;
+      const step = Math.max(1, Math.floor(count / 1024));
+      for (let i = 0; i < count; i += step) {
+        skinned.getVertexPosition(i, v);
+        skinned.localToWorld(v);
+        min = Math.min(min, v.y);
+        max = Math.max(max, v.y);
+      }
+    } else if ((o as THREE.Mesh).isMesh) {
+      box.makeEmpty().expandByObject(o);
+      if (!box.isEmpty()) {
+        min = Math.min(min, box.min.y);
+        max = Math.max(max, box.max.y);
+      }
+    }
+  });
+  return max > min ? Math.max(1e-3, max - min) : 1e-3;
+}
+
 export function attachAtRest(
   anchor: THREE.Object3D,
   obj: THREE.Object3D,
@@ -296,8 +339,7 @@ export class ModelViewFactory {
   ): THREE.Object3D {
     const root = cloneSkinned(asset.scene);
 
-    const box = new THREE.Box3().setFromObject(root);
-    const height = Math.max(1e-3, box.max.y - box.min.y);
+    const height = measureRenderedHeight(root);
     const norm = (UNIT_HEIGHT / height) * def.scale;
 
     const group = new THREE.Group();
@@ -509,8 +551,7 @@ export class ModelViewFactory {
     const asset = prop.file ? this.loaded.get(prop.file) : undefined;
     if (asset) {
       const obj = cloneSkinned(asset.scene);
-      const box = new THREE.Box3().setFromObject(obj);
-      const height = Math.max(1e-3, box.max.y - box.min.y);
+      const height = measureRenderedHeight(obj);
       obj.scale.setScalar((UNIT_HEIGHT * prop.scale * hostScale) / height);
       obj.traverse((o) => {
         const mesh = o as THREE.Mesh;

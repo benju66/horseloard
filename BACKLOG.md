@@ -193,7 +193,16 @@ old fused hero for side-by-side on a phone. MountAnimator mutes its fake bob/pit
 test scans engine sources for *every* id in data JSON — a models.json prop id
 `"rider"` collided with the bots.ts policy of the same name; prop ids need namespacing
 (`hero-rider`). Also: the Fox faces +Z out of the box (verified by vertex-slice
-profile, same method as the hero's facing check).
+profile, same method as the hero's facing check). And the big one, from Ben's first
+on-device screenshot of the Amarok: **height normalisation makes a long animal read
+enormous** — the wolf at the horse's `scale: 1.5` was 66 units tall but *124 long*,
+over twice the fused hero's footprint, amplified mid-screen by perspective. Verified
+and retuned with headless Chromium screenshots against the real build (playwright +
+`window.game3d`, dev server) — `scale: 0.95`, rider offset `[0,-0.02,-0.45]`. Judge
+long-bodied mounts by footprint, not height. `measureRenderedHeight` also now
+measures skinned meshes through their bones (Meshy armatures can carry the model's
+scale where Box3.setFromObject cannot see it — regression-tested even though this
+particular export measured the same both ways).
 
 **Character design:** `HERO-DESIGN.md`. Naming unsettled: Ben has said "Horse King".
 
