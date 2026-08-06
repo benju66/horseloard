@@ -318,8 +318,11 @@ export function buildWorld(map: MapDef, scene: THREE.Scene, views?: ModelViewFac
       v.copy(c).project(camera);
       worst = Math.max(worst, Math.abs(v.x), Math.abs(v.y));
     }
-    // 0.94 leaves room for notches and the HUD overlay.
-    apply(worst > 0 ? (PROBE * worst) / 0.94 : PROBE);
+    // Above 1.0 the frame overscans: outermost content padding (path wobble,
+    // prop dressing) may clip at the screen edge, buying zoom for character
+    // readability. 1.06 chosen by screenshot against Ben's "map feels small,
+    // roads should reach the screen edge" — playfield still fully visible.
+    apply(worst > 0 ? (PROBE * worst) / 1.06 : PROBE);
   }
 
   applyDaylight();
