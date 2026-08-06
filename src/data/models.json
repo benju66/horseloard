@@ -86,12 +86,12 @@
           "id": "hero-rider",
           "socket": "mount",
           "bone": "chest",
-          "file": "models/hero/rider.glb",
-          "scale": 0.7,
+          "file": "models/hero/rider-a3.glb",
+          "scale": 0.85,
           "offset": [
             0,
-            -0.02,
-            -0.45
+            -0.3,
+            -0.42
           ],
           "keepMaterials": true
         }
