@@ -82,6 +82,17 @@ without clashing.
   roughness/metalness maps, no baked ambient occlusion. Ideally **no texture at
   all** — per-face solid colour is the target, and a model whose colour comes
   entirely from `baseColorFactor` is the ideal case, not a compromise.
+- **Amended for Meshy models (2026-08-06): hand-painted textures are in.** The
+  gatehouse-a2 set the precedent — a painted low-poly texture (distinct colour
+  zones, gentle tonal variation, worn edges, like a painted tabletop miniature)
+  reads far better than a single tint and sits fine under the game's lighting.
+  These ship with `keepMaterials: true`. The two constraints that actually
+  matter survive unchanged: **no baked directional lighting** in the paint (it
+  fights the day/night presets — the emissive trap in ASSETS.md is the recorded
+  failure), and **geometry generated faceted-low-poly natively**, because
+  decimating a smooth sculpt melts the flat planes (the first gatehouse is the
+  recorded failure). "Solid colour, no texture" remains the floor for props and
+  kit repairs, not the ceiling for hero-tier and roster art.
 - **No baked lighting or shadows.** The scene lights everything with a low raking
   sun plus a hemisphere fill, and it does it twice — once for day, once for
   night. Painted-in shading is baked to *one* time of day and will fight the
