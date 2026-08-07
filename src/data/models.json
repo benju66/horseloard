@@ -99,7 +99,12 @@
     },
     {
       "id": "unit-grunt",
-      "base": "base-humanoid"
+      "silhouette": "humanoid",
+      "keepMaterials": true,
+      "clips": {
+        "walk": "Armature|walking_man|baselayer"
+      },
+      "file": "models/meshy/grunt.glb"
     },
     {
       "id": "unit-runner",
